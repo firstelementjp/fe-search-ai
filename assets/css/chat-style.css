@@ -1,0 +1,131 @@
+#feas-ai-chat-container {
+	position: fixed;
+	bottom: 20px;
+	right: 20px;
+	z-index: 1000;
+}
+
+#feas-ai-chat-bubble {
+	width: 60px;
+	height: 60px;
+	background-color: #0073aa;
+	color: white;
+	border-radius: 50%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	cursor: pointer;
+	box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+#feas-ai-chat-window {
+	width: 350px;
+	max-width: 90vw;
+	height: 500px;
+	max-height: 80vh;
+	background: white;
+	border-radius: 10px;
+	box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+#feas-ai-chat-window.hidden {
+	display: none;
+}
+
+#feas-ai-chat-header {
+	background: #f0f0f0;
+	padding: 10px 15px;
+	border-bottom: 1px solid #ddd;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+#feas-ai-chat-header h3 {
+	margin: 0;
+	font-size: 16px;
+}
+#feas-ai-chat-close {
+	background: none;
+	border: none;
+	font-size: 24px;
+	cursor: pointer;
+}
+
+#feas-ai-chat-messages {
+	flex-grow: 1;
+	padding: 15px;
+	overflow-y: auto;
+	background: #f9f9f9;
+}
+.feas-ai-message {
+	margin-bottom: 10px;
+	max-width: 95%; /* 少し広げて読みやすく */
+	display: flex; /* pタグ内のコンテンツが改行されるように */
+	flex-direction: column;
+}
+.feas-ai-message p,
+.feas-ai-message h3,
+.feas-ai-message ul {
+	margin: 0 0 0.5em 0; /*要素間のマージンを調整*/
+	padding: 10px;
+	border-radius: 8px;
+	line-height: 1.6;
+}
+.feas-ai-message-ai p,
+.feas-ai-message-ai h3,
+.feas-ai-message-ai ul {
+	background: #e9e9eb;
+	text-align: left;
+	align-self: flex-start;
+}
+.feas-ai-message-user {
+	align-items: flex-end;
+}
+.feas-ai-message-user p {
+	background: #0073aa;
+	color: white;
+	text-align: left;
+	align-self: flex-end;
+}
+.feas-ai-message-ai p:empty {
+	padding: 0; /*カーソルのみの時に余白ができないように*/
+}
+
+
+#feas-ai-chat-footer {
+	padding: 10px;
+	border-top: 1px solid #ddd;
+}
+#feas-ai-chat-form {
+	display: flex;
+}
+#feas-ai-chat-input {
+	flex-grow: 1;
+	border: 1px solid #ccc;
+	border-radius: 5px;
+	padding: 8px;
+}
+#feas-ai-chat-form button {
+	margin-left: 10px;
+	padding: 8px 15px;
+	border: none;
+	background: #0073aa;
+	color: white;
+	border-radius: 5px;
+	cursor: pointer;
+}
+
+.cursor {
+	display: inline-block;
+	width: 8px;
+	height: 1em;
+	background-color: #333;
+	animation: blink 1s step-end infinite;
+}
+@keyframes blink {
+	from, to { background-color: transparent }
+	50% { background-color: #333; }
+}
