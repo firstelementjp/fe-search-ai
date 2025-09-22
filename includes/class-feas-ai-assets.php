@@ -30,6 +30,8 @@ class FEAS_AI_Assets {
 				'ajax_url' => admin_url( 'admin-ajax.php' ),
 				'nonce'    => wp_create_nonce( 'feas_ai_ajax_nonce' ),
 				'home_url' => home_url('/'),
+				'rest_url'    => rest_url( 'feas-ai/v1/stream' ), // ★ストリーミング用URL
+				'rest_nonce'  => wp_create_nonce( 'wp_rest' ),
 			)
 		);
 	}

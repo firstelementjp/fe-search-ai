@@ -37,12 +37,18 @@ class FEAS_AI_Installer {
 			KEY `created_at` (`created_at`)
 		) {$charset_collate};";
 		dbDelta( $sql_logs );
+
+		// Cronジョブのスケジュールを追加
+		if ( ! wp_next_scheduled( 'feas_ai_daily_log_rotation_event' ) ) {
+			wp_schedule_event( time(), 'daily', 'feas_ai_daily_log_rotation_event' );
+		}
 	}
 
 	/**
-	 * プラグイン停止時に実行される処理（将来用）
+	 * プラグイン停止時に実行される処理
 	 */
 	public static function deactivate() {
-		// 何かあればここに記述
+		// Cronジョブのスケジュール解除を追加
+		wp_clear_scheduled_hook( 'feas_ai_daily_log_rotation_event' );
 	}
 }

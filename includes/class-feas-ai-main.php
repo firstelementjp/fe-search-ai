@@ -14,15 +14,41 @@ class FEAS_AI_Main {
 		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
 		add_action( 'admin_init', array( $this, 'settings_init' ) );
 		add_action( 'wp_footer', array( $this, 'add_chat_ui_html' ) );
+		add_action( 'feas_ai_daily_log_rotation_event', array( $this, 'execute_log_rotation' ) );
 	}
 
 	public function add_admin_menu() {
-		add_options_page(
-			'FE AI Search Settings',
-			'FE AI Search',
-			'manage_options',
-			'fe-ai-search',
+
+		$parent_slug = 'fe-ai-search';
+
+		add_menu_page(
+			'FE AI Search',                 // ページタイトル
+			'FE AI Search',                 // メニューに表示される名前
+			'manage_options',               // 権限
+			$parent_slug,                   // メニュースラッグ
+			array( $this, 'settings_page_html' ), // このメニューがクリックされた時に表示するページ
+			'dashicons-search',             // アイコン ( https://developer.wordpress.org/resource/dashicons/ )
+			80                              // 表示位置（数字が大きいほど下）
+		);
+
+		// 2. 「設定」サブメニューを追加
+		add_submenu_page(
+			$parent_slug,                   // 親のスラッグ
+			'Settings',                     // ページタイトル
+			'Settings',                     // メニュータイトル
+			'manage_options',               // 権限
+			$parent_slug,                   // 親と同じスラッグにすることで、親をクリックした時のページになる
 			array( $this, 'settings_page_html' )
+		);
+
+		// 3. 「アナリティクス」サブメニューを追加
+		add_submenu_page(
+			$parent_slug,
+			'Search Analytics',
+			'Analytics',
+			'manage_options',
+			$parent_slug . '-analytics',     // 固有のスラッグ
+			array( $this, 'analytics_page_html' )
 		);
 	}
 
@@ -33,6 +59,7 @@ class FEAS_AI_Main {
 		register_setting( $settings_group, 'feas_ai_openai_api_key' );
 		register_setting( $settings_group, 'feas_ai_api_provider' );
 		register_setting( $settings_group, 'feas_ai_google_api_key' );
+		register_setting( $settings_group, 'feas_ai_log_retention_days' );
 
 		add_settings_section(
 			'feas_ai_general_section',
@@ -64,6 +91,14 @@ class FEAS_AI_Main {
 			$page_slug,
 			'feas_ai_general_section'
 		);
+
+		add_settings_field(
+			'feas_ai_log_retention_days',
+			'ログ保存期間（日数）',
+			array( $this, 'log_retention_field_html' ),
+			$page_slug,
+			'feas_ai_general_section'
+		);
 	}
 
 	public function settings_page_html() {
@@ -92,7 +127,7 @@ class FEAS_AI_Main {
 				 $args = array(
 					 'post_type'      => array( 'post', 'page' ),
 					 'post_status'    => 'publish',
-					 'posts_per_page' => 5,
+					 'posts_per_page' => 10,
 				 );
 				 $all_posts = get_posts( $args );
 
@@ -207,5 +242,99 @@ class FEAS_AI_Main {
 			</div>
 		</div>
 		<?php
+	}
+
+	public function analytics_page_html() {
+		global $wpdb;
+		$logs_table = $wpdb->prefix . 'feas_ai_logs';
+
+		if ( isset( $_POST['feas_ai_delete_logs'] ) && check_admin_referer( 'feas_ai_delete_logs_nonce' ) ) {
+			$wpdb->query( "TRUNCATE TABLE `{$logs_table}`" );
+			echo '<div class="notice notice-success is-dismissible"><p>すべての検索ログを削除しました。</p></div>';
+		}
+
+		$logs = $wpdb->get_results( "SELECT * FROM `{$logs_table}` ORDER BY `created_at` DESC LIMIT 100" );
+		?>
+		<div class="wrap">
+			<h1>Search Analytics</h1>
+			<p>ユーザーからの直近100件の質問履歴です。</p>
+
+			<form method="post" action="" style="margin-bottom: 20px;">
+				<?php wp_nonce_field( 'feas_ai_delete_logs_nonce' ); ?>
+				<p class="description">注意：この操作は元に戻せません。</p>
+				<button type="submit" name="feas_ai_delete_logs" class="button button-danger" onclick="return confirm('本当にすべてのログを削除しますか？');">
+					全ログを削除
+				</button>
+			</form>
+
+			<table class="wp-list-table widefat fixed striped">
+				<thead>
+					<tr>
+						<th style="width: 15%;">検索日時</th>
+						<th style="width: 15%;">セッションID</th>
+						<th style="width: 30%;">質問内容</th>
+						<th style="width: 30%;">AIの回答</th>
+						<th style="width: 10%;">関連情報</th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php if ( empty( $logs ) ) : ?>
+						<tr><td colspan="5">まだログがありません。</td></tr>
+					<?php else : ?>
+						<?php foreach ( $logs as $log ) : ?>
+							<tr>
+								<td><?php echo esc_html( $log->created_at ); ?></td>
+								<td><?php echo esc_html( $log->session_id ); ?></td>
+								<td><?php echo esc_html( $log->question ); ?></td>
+								<td>
+									<div style="max-height: 100px; overflow-y: auto;">
+										<?php echo wp_kses_post( $log->answer ); ?>
+									</div>
+								</td>
+								<td>
+									<?php if ( $log->context_found ) : ?>
+										<span style="color: green;">✔</span>
+									<?php else : ?>
+										<span style="color: red;">✖</span>
+									<?php endif; ?>
+								</td>
+							</tr>
+						<?php endforeach; ?>
+					<?php endif; ?>
+				</tbody>
+			</table>
+		</div>
+		<?php
+	}
+
+	public function log_retention_field_html() {
+		$days = get_option( 'feas_ai_log_retention_days', 30 ); // デフォルト30日
+		?>
+		<input type="number" name="feas_ai_log_retention_days" value="<?php echo esc_attr( $days ); ?>" class="small-text"> 日
+		<p class="description">これ以上古くなった検索ログは、毎日自動的に削除されます。0にすると削除しません。</p>
+		<?php
+	}
+
+	/**
+	 * 古いログを削除するCronジョブ
+	 */
+	public function execute_log_rotation() {
+		$days_to_keep = (int) get_option( 'feas_ai_log_retention_days', 30 );
+
+		if ( $days_to_keep <= 0 ) {
+			return; // 0日以下の場合は何もしない
+		}
+
+		global $wpdb;
+		$logs_table = $wpdb->prefix . 'feas_ai_logs';
+
+		$threshold_date = date( 'Y-m-d H:i:s', strtotime( "-{$days_to_keep} days" ) );
+
+		$wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM `{$logs_table}` WHERE `created_at` < %s",
+				$threshold_date
+			)
+		);
 	}
 }
