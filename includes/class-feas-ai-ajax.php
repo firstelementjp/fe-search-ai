@@ -125,22 +125,38 @@ class FEAS_AI_Ajax {
 		curl_setopt( $ch, CURLOPT_POSTFIELDS, json_encode( $body ) );
 		curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json', 'Authorization: Bearer ' . $api_key) );
 
-		curl_setopt( $ch, CURLOPT_WRITEFUNCTION, function( $curl, $data ) {
-			$lines = explode("\n", trim($data));
-			foreach ($lines as $line) {
-				if (strpos($line, 'data: ') === 0) {
-					$json_data = substr($line, 6);
-					if ($json_data === '[DONE]') {
-						echo "data: [DONE]\n\n";
-					} else {
-						$chunk = json_decode($json_data, true);
-						if (isset($chunk['choices'][0]['delta']['content'])) {
-							$content = $chunk['choices'][0]['delta']['content'];
-							echo "data: " . json_encode(['text' => $content]) . "\n\n";
+		// 不完全なデータチャンクを一時的に保持するためのバッファ
+		$buffer = '';
+
+		curl_setopt( $ch, CURLOPT_WRITEFUNCTION, function( $curl, $data ) use (&$buffer) {
+			// 新しいデータをバッファに追加
+			$buffer .= $data;
+
+			// バッファ内に完全なSSEメッセージ（\n\nで終わる）があるか探す
+			while ( ( $pos = strpos( $buffer, "\n\n" ) ) !== false ) {
+				// 完全なメッセージを切り出す
+				$message = substr( $buffer, 0, $pos );
+				// バッファから切り出したメッセージを削除
+				$buffer = substr( $buffer, $pos + 2 );
+
+				// メッセージを解析してクライアントに送信
+				$lines = explode("\n", trim($message));
+				foreach ($lines as $line) {
+					if (strpos($line, 'data: ') === 0) {
+						$json_data = substr($line, 6);
+						if ($json_data === '[DONE]') {
+							echo "data: [DONE]\n\n";
+						} else {
+							$chunk = json_decode($json_data, true);
+							if (isset($chunk['choices'][0]['delta']['content'])) {
+								$content = $chunk['choices'][0]['delta']['content'];
+								echo "data: " . json_encode(['text' => $content]) . "\n\n";
+							}
 						}
 					}
 				}
 			}
+
 			if (ob_get_level() > 0) { ob_flush(); }
 			flush();
 			return strlen( $data );
