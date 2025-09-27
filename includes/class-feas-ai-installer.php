@@ -38,6 +38,17 @@ class FEAS_AI_Installer {
 		) {$charset_collate};";
 		dbDelta( $sql_logs );
 
+		// --- 3. キーワード索引テーブル ---
+		$table_name_index = $wpdb->prefix . 'feas_ai_keyword_index';
+		$sql_index = "CREATE TABLE `{$table_name_index}` (
+			`keyword` varchar(100) NOT NULL,
+			`vector_id` mediumint(9) NOT NULL,
+			PRIMARY KEY (`keyword`, `vector_id`),
+			KEY `keyword` (`keyword`),
+			KEY `vector_id` (`vector_id`)
+		) {$charset_collate};";
+		dbDelta( $sql_index );
+
 		// Cronジョブのスケジュールを追加
 		if ( ! wp_next_scheduled( 'feas_ai_daily_log_rotation_event' ) ) {
 			wp_schedule_event( time(), 'daily', 'feas_ai_daily_log_rotation_event' );

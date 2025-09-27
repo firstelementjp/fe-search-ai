@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
 	// === DOM要素の取得 ===
 	const bubble = document.getElementById('feas-ai-chat-bubble');
-	const windowEl = document.getElementById('feas-ai-chat-window'); // 'window'は予約語なので変更
+	const windowEl = document.getElementById('feas-ai-chat-window');
 	const closeBtn = document.getElementById('feas-ai-chat-close');
 	const form = document.getElementById('feas-ai-chat-form');
 	const input = document.getElementById('feas-ai-chat-input');
@@ -39,26 +39,28 @@ document.addEventListener('DOMContentLoaded', function() {
 		const aiMessageParagraph = aiMessageWrapper.querySelector('p');
 		aiMessageParagraph.innerHTML = '<span class="cursor"></span>';
 
-		// const streamUrl = new URL(feas_ai_ajax_obj.home_url);
-		// streamUrl.searchParams.append('feas_ai_stream', 'true');
-
-		const formData = new FormData();
-		formData.append('question', question);
-		formData.append('nonce', feas_ai_ajax_obj.nonce);
-		formData.append('history', JSON.stringify(history));
+		// ▼▼▼ データ送信形式をURLSearchParamsに統一 ▼▼▼
+		const bodyParams = new URLSearchParams();
+		bodyParams.append('question', question);
+		bodyParams.append('history', JSON.stringify(history));
 
 		let fullResponse = '';
-		let contextFound = false; // コンテキストが見つかったかのフラグ
+		let contextFound = false;
 
 		fetch(feas_ai_ajax_obj.rest_url, {
 			method: 'POST',
 			headers: {
-				'X-WP-Nonce': feas_ai_ajax_obj.rest_nonce // ヘッダーにNonceを設定
+				'X-WP-Nonce': feas_ai_ajax_obj.rest_nonce
 			},
-			body: formData,
+			body: bodyParams, // FormDataの代わりにURLSearchParamsを使用
 		})
+		// ▲▲▲ ここまで ▲▲▲
 		.then(response => {
-			if (!response.ok) { throw new Error('Network response was not ok'); }
+			if (!response.ok) {
+				return response.text().then(text => {
+					throw new Error('Network response was not ok. Server says: ' + text);
+				});
+			}
 			const reader = response.body.getReader();
 			const decoder = new TextDecoder();
 
@@ -68,8 +70,6 @@ document.addEventListener('DOMContentLoaded', function() {
 						aiMessageParagraph.innerHTML = marked.parse(fullResponse);
 						history.push({ role: 'assistant', content: fullResponse });
 						sessionStorage.setItem('feas_ai_chat_history', JSON.stringify(history));
-
-						// ▼ ログ送信処理を呼び出し ▼
 						logConversation(question, fullResponse, contextFound);
 						return;
 					}
@@ -88,10 +88,11 @@ document.addEventListener('DOMContentLoaded', function() {
 									aiMessageParagraph.innerHTML = marked.parse(fullResponse + '<span class="cursor"></span>');
 									messagesContainer.scrollTop = messagesContainer.scrollHeight;
 								}
-								if (jsonData.error) { fullResponse = 'エラー: ' + jsonData.error; }
-								// バックエンドから送られてくるメタデータを受け取る
 								if (jsonData.meta && jsonData.meta.context_found) {
 									contextFound = true;
+								}
+								if (jsonData.error) {
+									fullResponse = 'エラー: ' + jsonData.error;
 								}
 							} catch (e) {}
 						}
@@ -108,21 +109,14 @@ document.addEventListener('DOMContentLoaded', function() {
 	});
 
 	// === ヘルパー関数 ===
-
-	/**
-	 * メッセージをチャット欄に追加する
-	 */
 	function addMessage(text, type) {
 		const messageWrapper = document.createElement('div');
 		messageWrapper.className = `feas-ai-message feas-ai-message-${type}`;
-
 		const p = document.createElement('p');
-		p.innerHTML = text; // バックエンドからHTMLが来ることを想定
-
+		p.innerHTML = text;
 		messageWrapper.appendChild(p);
 		messagesContainer.appendChild(messageWrapper);
 		messagesContainer.scrollTop = messagesContainer.scrollHeight;
-
 		return messageWrapper;
 	}
 
@@ -130,17 +124,17 @@ document.addEventListener('DOMContentLoaded', function() {
 	 * 会話のログをサーバーに送信する
 	 */
 	function logConversation(question, answer, contextFound) {
-		const logFormData = new FormData();
-		logFormData.append('action', 'feas_ai_log_query');
-		logFormData.append('nonce', feas_ai_ajax_obj.nonce);
-		logFormData.append('session_id', sessionId);
-		logFormData.append('question', question);
-		logFormData.append('answer', answer);
-		logFormData.append('context_found', contextFound);
+		const logBodyParams = new URLSearchParams();
+		logBodyParams.append('action', 'feas_ai_log_query');
+		logBodyParams.append('nonce', feas_ai_ajax_obj.nonce);
+		logBodyParams.append('session_id', sessionId);
+		logBodyParams.append('question', question);
+		logBodyParams.append('answer', answer);
+		logBodyParams.append('context_found', contextFound ? '1' : '0');
 
 		fetch(feas_ai_ajax_obj.ajax_url, {
 			method: 'POST',
-			body: logFormData,
+			body: logBodyParams,
 		});
 	}
 });

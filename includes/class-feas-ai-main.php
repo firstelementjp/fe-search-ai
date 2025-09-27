@@ -1,4 +1,7 @@
 <?php
+
+use U7aro\TinySegmenter\TinySegmenter;
+
 class FEAS_AI_Main {
 
 	public $ajax;
@@ -15,6 +18,7 @@ class FEAS_AI_Main {
 		add_action( 'admin_init', array( $this, 'settings_init' ) );
 		add_action( 'wp_footer', array( $this, 'add_chat_ui_html' ) );
 		add_action( 'feas_ai_daily_log_rotation_event', array( $this, 'execute_log_rotation' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
 	}
 
 	public function add_admin_menu() {
@@ -114,74 +118,15 @@ class FEAS_AI_Main {
 				?>
 			</form>
 			<hr>
-			<form method="post" action="">
-				<h2>コンテンツの同期</h2>
-				<p>サイト内の投稿や固定ページをAIが検索できるように、データを準備します。</p>
-				<?php wp_nonce_field( 'feas_ai_sync_nonce' ); ?>
-				<button type="submit" name="start_sync" class="button button-primary">同期を開始する</button>
-			</form>
-			<?php
-			 if ( isset( $_POST['start_sync'] ) && check_admin_referer( 'feas_ai_sync_nonce' ) ) {
-				 global $wpdb;
-				 $table_name = $wpdb->prefix . 'feas_ai_vectors';
-				 $args = array(
-					 'post_type'      => array( 'post', 'page' ),
-					 'post_status'    => 'publish',
-					 'posts_per_page' => 10,
-				 );
-				 $all_posts = get_posts( $args );
-
-				if ( empty( $all_posts ) ) {
-					echo '<div class="notice notice-warning is-dismissible"><p>同期対象のコンテンツが見つかりませんでした。</p></div>';
-					return;
-				}
-
-				 echo '<h3>同期処理結果</h3><dl>';
-				 foreach ( $all_posts as $post ) {
-					 echo '<dt><strong>■ ' . esc_html( $post->post_title ) . '</strong></dt>';
-					 $wpdb->delete( $table_name, array( 'post_id' => $post->ID ), array( '%d' ) );
-
-					 $content = strip_shortcodes( $post->post_content );
-					 $content = wp_strip_all_tags( $content );
-					 $raw_chunks = explode( "\n\n", $content );
-					 $valid_chunks = array_filter( array_map( 'trim', $raw_chunks ) );
-
-					 if ( empty( $valid_chunks ) ) {
-						 echo '<dd>→ コンテンツが空のためスキップしました。</dd>';
-						 continue;
-					 }
-
-					 // ★ 別クラスのメソッド呼び出し方を修正
-					 $embedding_response = $this->ajax->get_embeddings_via_selected_provider( array_values($valid_chunks) );
-
-					 echo '<dd><ul>';
-					 if ( is_wp_error( $embedding_response ) ) {
-						 $error_message = $embedding_response->get_error_message();
-						 echo '<li style="color: red;">APIエラー: ' . esc_html( $error_message ) . '</li>';
-					 } else {
-						 $vectors_data = $embedding_response['data'];
-						 $saved_count = 0;
-						 foreach ( $vectors_data as $index => $vector_item ) {
-							 $result = $wpdb->insert(
-								 $table_name,
-								 array(
-									 'post_id'       => $post->ID,
-									 'chunk_index'   => $index,
-									 'content_chunk' => array_values($valid_chunks)[$index],
-									 'vector_data'   => json_encode( $vector_item['embedding'] ),
-									 'created_at'    => current_time( 'mysql' ),
-								 ),
-								 array( '%d', '%d', '%s', '%s', '%s' )
-							 );
-							 if ( $result ) { $saved_count++; }
-						 }
-						 echo '<li>' . $saved_count . '個のベクトルデータをデータベースに保存しました。💾</li>';
-					 }
-					 echo '</ul></dd>';
-				 }
-				 echo '</dl>';
-			 }
-			?>
+			<h2>コンテンツの同期</h2>
+			<p>サイト内の投稿や固定ページをAIが検索できるように、データを準備・索引化します。</p>
+			<div id="feas-ai-sync-wrapper">
+				<button id="feas-ai-start-sync" class="button button-primary">同期を開始する</button>
+				<div id="feas-ai-progress-bar-container" style="display: none; width: 100%; background-color: #ddd; border: 1px solid #ccc; margin-top: 10px;">
+					<div id="feas-ai-progress-bar" style="width: 0%; height: 20px; background-color: #0073aa; text-align: center; color: white; line-height: 20px;">0%</div>
+				</div>
+				<div id="feas-ai-sync-status" style="margin-top: 10px;"></div>
+			</div>
 		</div>
 		<?php
 	}
@@ -334,6 +279,44 @@ class FEAS_AI_Main {
 			$wpdb->prepare(
 				"DELETE FROM `{$logs_table}` WHERE `created_at` < %s",
 				$threshold_date
+			)
+		);
+	}
+
+	/**
+	 * 管理画面用のスクリプトとスタイルを読み込む
+	 */
+	public function enqueue_admin_assets( $hook_suffix ) {
+
+		$allowed_hooks = array(
+			'toplevel_page_fe-ai-search',             // 親メニューのページ
+			'fe-ai-search_page_fe-ai-search-analytics'  // Analyticsサブメニューのページ
+		);
+
+		if ( ! in_array( $hook_suffix, $allowed_hooks ) ) {
+			return;
+		}
+
+		// 自分の設定ページでのみスクリプトを読み込む
+		// if ( 'settings_page_fe-ai-search' !== $hook_suffix && 'fe-ai-search_page_fe-ai-search-analytics' !== $hook_suffix ) {
+		// 	return;
+		// }
+
+		wp_enqueue_script(
+			'feas-ai-admin-sync',
+			plugin_dir_url( __DIR__ ) . 'assets/js/admin-sync.js',
+			array('jquery'), // jQueryに依存
+			FEAS_AI_VERSION,
+			true
+		);
+
+		// ★ 同期JSが必要とするNonceをここで渡す
+		wp_localize_script(
+			'feas-ai-admin-sync',
+			'feas_ai_sync_obj',
+			array(
+				'ajax_url' => admin_url( 'admin-ajax.php' ),
+				'nonce'    => wp_create_nonce( 'feas_ai_ajax_nonce' ),
 			)
 		);
 	}

@@ -1,19 +1,16 @@
 <?php
+
+use U7aro\TinySegmenter\TinySegmenter;
+
 class FEAS_AI_Ajax {
 
 	public function __construct() {
-		// add_action( 'template_redirect', array( $this, 'setup_stream_endpoint' ) );
 		add_action( 'rest_api_init', array( $this, 'register_stream_endpoint' ) );
 		add_action( 'wp_ajax_nopriv_feas_ai_log_query', array( $this, 'ajax_log_query' ) );
 		add_action( 'wp_ajax_feas_ai_log_query', array( $this, 'ajax_log_query' ) );
+		add_action( 'wp_ajax_feas_ai_start_sync', array( $this, 'ajax_start_sync' ) );
+		add_action( 'wp_ajax_feas_ai_process_batch', array( $this, 'ajax_process_batch' ) );
 	}
-
-	// public function setup_stream_endpoint() {get_embeddings_via_selected_provider
-	// 	if ( isset( $_GET['feas_ai_stream'] ) && $_GET['feas_ai_stream'] === 'true' ) {
-	// 		$this->stream_handler();
-	// 		exit;
-	// 	}
-	// }
 
 	/**
 	 * ストリーミング用のREST APIエンドポイントを登録する
@@ -22,11 +19,9 @@ class FEAS_AI_Ajax {
 		register_rest_route( 'feas-ai/v1', '/stream', array(
 			'methods'             => 'POST',
 			'callback'            => array( $this, 'stream_handler' ),
-			'permission_callback' => '__return_true', // 誰でもアクセス可能
+			'permission_callback' => '__return_true',
 		) );
 	}
-
-	// in includes/class-feas-ai-ajax.php
 
 	/**
 	 * REST APIのリクエストを処理するストリームハンドラ
@@ -51,148 +46,69 @@ class FEAS_AI_Ajax {
 
 		// パラメータの取得
 		$question = sanitize_text_field( $request->get_param( 'question' ) );
-		$history_json = stripslashes( $request->get_param( 'history' ) ?? '[]' );
-		$history = json_decode( $history_json, true );
+		$history = json_decode( stripslashes( $request->get_param( 'history' ) ?? '[]' ), true );
+		if ( empty( $question ) ) { return; }
 
-		if ( empty( $question ) ) {
-			echo "data: " . json_encode(['error' => '質問が空です。']) . "\n\n";
-			flush();
-			return;
-		}
+		// 1. 高速なローカル検索で関連情報を探す
+		$similar_chunks = $this->find_similar_chunks( $question );
 
-		// --- 新しい思考プロセス ---
-
-		// 1. まず、質問のベクトル化と情報検索を試みる
-		$question_vector_response = $this->get_embeddings_via_selected_provider( array( $question ) );
-
-		if ( is_wp_error( $question_vector_response ) ) {
-			// ベクトル化でエラーが発生した場合
-			$error_message = 'エラー: 質問のベクトル化に失敗しました。(' . $question_vector_response->get_error_message() . ')';
-			echo "data: " . json_encode(['text' => $error_message]) . "\n\n";
-			echo "data: [DONE]\n\n";
-			flush();
-			return;
-		}
-
-		$question_vector = $question_vector_response['data'][0]['embedding'];
-		$similar_chunks = $this->find_similar_chunks( $question, $question_vector );
-
-		// 2. 検索結果を元に、AIの振る舞いを決定する
+		// 2. 検索結果の有無を判断し、メタ情報を送信
 		$context_found = ! empty( $similar_chunks );
 		echo "data: " . json_encode(['meta' => ['context_found' => $context_found]]) . "\n\n";
 		flush();
 
-		// 3. 回答を生成する (コンテキストの有無でAIの役割が自動で変わる)
+		// 3. 取得した情報と会話履歴を元に、一度だけAIを呼び出して回答を生成
 		$this->stream_chat_completion( $question, $similar_chunks, $history );
-	}
-
-	// public function get_query_intent( $question, $history = array() ) {
-	// 	$system_prompt = "ユーザーの最新の質問が、直前の会話履歴を踏まえて、以下のどれに該当するかを分類してください。\n- 'new_search': 明確に新しいトピックの検索を開始している（例：「〜の仕事はありますか？」）。\n- 'follow_up': 直前の会話内容を指す言葉（「それ」「その給与」など）を使い、深掘りしている。\n- 'greeting': 単純な挨拶や雑談。\n\n回答は必ず 'new_search', 'follow_up', 'greeting' のいずれか一言だけにしてください。";
-//
-	// 	// 新しい「思考」用の関数を呼び出す
-	// 	$intent = $this->get_simple_chat_response( $question, $system_prompt );
-//
-	// 	// エラーが発生した場合は、安全のため「新しい検索」として扱う
-	// 	if ( is_wp_error( $intent ) ) {
-	// 		return 'new_search';
-	// 	}
-//
-	// 	// AIからの回答が期待通りかチェックし、そうでなければ「新しい検索」として扱う
-	// 	if ( in_array( $intent, ['new_search', 'follow_up', 'greeting'] ) ) {
-	// 		return $intent;
-	// 	} else {
-	// 		return 'new_search';
-	// 	}
-	// }
-
-	/**
-	 * 内部的な思考タスクのための、シンプルな非ストリーミングAI応答関数
-	 */
-	private function get_simple_chat_response( $question, $system_prompt ) {
-		$api_key = get_option( 'feas_ai_openai_api_key' );
-		if ( empty( $api_key ) ) {
-			return new WP_Error( 'api_key_missing', 'APIキーが設定されていません。' );
-		}
-
-		$messages = array(
-			array( 'role' => 'system', 'content' => $system_prompt ),
-			array( 'role' => 'user', 'content' => $question ),
-		);
-
-		$api_url = 'https://api.openai.com/v1/chat/completions';
-		$body = array( 'model' => 'gpt-4o', 'messages' => $messages, 'temperature' => 0 );
-
-		// ストリーミングではない、通常のwp_remote_postを使用
-		$response = wp_remote_post( $api_url, array(
-			'headers' => array('Content-Type'  => 'application/json', 'Authorization' => 'Bearer ' . $api_key),
-			'body' => json_encode( $body ), 'timeout' => 20,
-		));
-
-		if ( is_wp_error( $response ) ) return $response;
-
-		$response_body = json_decode( wp_remote_retrieve_body( $response ), true );
-		if ( wp_remote_retrieve_response_code( $response ) !== 200 ) {
-			$error_message = $response_body['error']['message'] ?? '不明なAPIエラー';
-			return new WP_Error( 'api_error', 'APIエラー: ' . $error_message );
-		}
-
-		return $response_body['choices'][0]['message']['content'] ?? '';
 	}
 
 	/**
 	 * ユーザーへの最終的な回答をストリーミングで生成・出力する
 	 */
-	// in includes/class-feas-ai-ajax.php
-
 	public function stream_chat_completion( $question, $context_chunks, $history = array() ) {
 		$api_key = get_option( 'feas_ai_openai_api_key' );
-		if ( empty( $api_key ) ) { return; }
+		if ( empty( $api_key ) ) {
+			echo "data: " . json_encode(['error' => 'APIキーが設定されていません。']) . "\n\n";
+			echo "data: [DONE]\n\n";
+			flush();
+			return;
+		}
 
 		$messages = array();
+		$context_str = '';
 
-		if ( empty( $context_chunks ) ) {
-			// --- コンテキストがない（挨拶など）場合 ---
-			$system_prompt = "あなたはウェブサイト「" . get_bloginfo('name') . "」の、フレンドリーで親切なAIアシスタントです。ユーザーとの会話の文脈を考慮し、自然に応じてください。回答は簡潔にしてください。";
+		$system_prompt = "あなたは、提供された「サイト内情報」と「会話履歴」を元に、ユーザーの質問に回答する、高度なAIアシスタントです。
 
-			$messages[] = array('role' => 'system', 'content' => $system_prompt);
-			// 過去の会話履歴をメッセージに追加
-			if( ! empty( $history ) ) {
-				foreach( $history as $message ) {
-					$messages[] = $message;
-				}
-			}
-			// 履歴がない場合（＝最初の挨拶）でも、ユーザーの質問を必ず含める
-			if ( empty( $history ) ) {
-				$messages[] = array('role' => 'user', 'content' => $question);
-			}
+		## あなたの思考プロセス
+		1. まず「会話履歴」を読み、ユーザーの最新の質問の**真の意図**を理解してください。質問が「それ」「勤務地は？」のように省略されている場合、履歴から何についての質問かを特定してください。
+		2. 次に、あなたの思考の元となる「サイト内情報」を読みます。もし「サイト内情報」が空の場合、ユーザーは検索ではなく挨拶や雑談をしていると判断してください。
+		3. ユーザーの質問の真意に**関連する情報だけ**を「サイト内情報」から選び出し、それ以外の無関係な情報は無視してください。
+		4. 選び出した情報だけを根拠として、ユーザーの質問に対する回答を生成してください。
+		5. もし、関連する情報が「サイト内情報」の中に一つもなかった場合は、正直に「ご質問に関連する情報がサイト内見つかりませんでした。」とだけ回答してください。
+		6. もし、ユーザーが挨拶や雑談をしていると判断した場合は、フレンドリーかつ簡潔に応答してください。
 
-		} else {
-			// --- コンテキストがある（検索）場合 ---
-			$context_str = '';
+		## 回答フォーマット
+		- 回答は必ずMarkdown形式を使用してください。
+		- 複数の情報を提示する場合は、必ず箇条書きを使用してください。
+		- 各求人のタイトルを`###`（H3見出し）で示してください。
+		- 各求人の要約の直後に、情報元となるURL自体を記載してください。";
+
+		if ( ! empty( $context_chunks ) ) {
 			$grouped_chunks = array();
-			foreach ( $context_chunks as $chunk ) {
-				$grouped_chunks[ $chunk['permalink'] ][] = $chunk['content_chunk'];
-			}
-
+			foreach ( $context_chunks as $chunk ) { $grouped_chunks[ $chunk['permalink'] ][] = $chunk['content_chunk']; }
 			foreach ( $grouped_chunks as $permalink => $chunks ) {
-				$context_str .= "--- 記事ここから ---\n";
-				$context_str .= "情報元URL: " . $permalink . "\n";
-				$context_str .= "内容:\n" . implode( "\n", $chunks ) . "\n";
-				$context_str .= "--- 記事ここまで ---\n\n";
+				$context_str .= "--- 記事ここから ---\n情報元URL: " . $permalink . "\n内容:\n" . implode( "\n", $chunks ) . "\n--- 記事ここまで ---\n\n";
 			}
-
-			$system_prompt = "あなたはウェブサイト「" . get_bloginfo('name') . "」の求人情報を案内する、親切で有能なAIアシスタントです。\n以下の「サイト内情報」を元に、ユーザーの質問に回答してください。\n\n## 指示\n- まず最初に「〜に関するお仕事がX件見つかりました。」のように、検索結果の概要を述べてください。\n- サイト内情報は、情報元となる記事ごとに区切られています。記事ごとに個別の要約を作成してください。\n- 各求人について、以下の項目を**必ず**抽出して箇条書きで示してください：\n    - 【仕事内容】\n    - 【雇用形態】\n    - 【勤務地】\n    - 【給与】\n- 各記事の要約の直後に、情報元となるURL自体を記載してください。\n- 最後に「他に何かお探しですか？」のような、会話を促す一言を加えてください。\n- 文脈にない情報（例：「➡️ 詳細はこちら」）を創作しないでください。\n\n## 回答フォーマット\n- 全体をMarkdown形式で記述してください。\n- 各求人のタイトル（【募集要項】など）を`###`（H3見出し）で示してください。";
-
-			$messages[] = array('role' => 'system', 'content' => $system_prompt);
-			// 過去の会話履歴を追加
-			if( ! empty( $history ) ) {
-				foreach( $history as $message ) {
-					$messages[] = $message;
-				}
-			}
-			// 最後に、今回の質問と検索結果コンテキストを追加
-			$messages[] = array('role' => 'user', 'content' => "サイト内情報:\n" . $context_str . "\n\n上記の情報を元に、次の質問に答えてください:\n" . $question);
 		}
+
+		$messages[] = array('role' => 'system', 'content' => $system_prompt);
+		if( ! empty( $history ) ) {
+			foreach( $history as $message ) {
+				$messages[] = $message;
+			}
+		}
+
+		$last_user_message = "サイト内情報:\n" . $context_str . "\n\n上記の情報を元に、次の質問に答えてください:\n" . $question;
+		$messages[] = array('role' => 'user', 'content' => $last_user_message);
 
 		$api_url = 'https://api.openai.com/v1/chat/completions';
 		$body = array(
@@ -202,16 +118,13 @@ class FEAS_AI_Ajax {
 			'stream' => true,
 		);
 
-		// cURLを使ってストリーミング通信を行う
 		$ch = curl_init();
 		curl_setopt( $ch, CURLOPT_URL, $api_url );
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
 		curl_setopt( $ch, CURLOPT_POST, true );
 		curl_setopt( $ch, CURLOPT_POSTFIELDS, json_encode( $body ) );
-		curl_setopt( $ch, CURLOPT_HTTPHEADER, array(
-			'Content-Type: application/json',
-			'Authorization: Bearer ' . $api_key
-		) );
+		curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json', 'Authorization: Bearer ' . $api_key) );
+
 		curl_setopt( $ch, CURLOPT_WRITEFUNCTION, function( $curl, $data ) {
 			$lines = explode("\n", trim($data));
 			foreach ($lines as $line) {
@@ -237,63 +150,46 @@ class FEAS_AI_Ajax {
 		curl_close( $ch );
 	}
 
-	public function expand_query( $question ) {
-		$system_prompt = "ユーザーの質問から中心となる検索キーワードを抽出し、その類義語や関連語をリストアップして、検索クエリを強化してください。元のキーワードも含め、最も重要な5つまでの単語をカンマ区切りで返してください。\n例1: コールスタッフの仕事 → コールスタッフ,コールセンター,電話応対,カスタマーサポート,仕事\n例2: 在宅でできる仕事 → 在宅,リモートワーク,縫製,パタンナー,仕事";
-
-		/// ▼ 呼び出す関数を変更 ▼
-		$response = $this->get_simple_chat_response( $question, $system_prompt );
-
-		if ( is_wp_error( $response ) ) return array( $question );
-
-		$keywords = explode( ',', trim( $response ) );
-		return array_map( 'trim', $keywords );
-	}
-
-	// in includes/class-feas-ai-ajax.php
-
-	// in includes/class-feas-ai-ajax.php
-
-	public function find_similar_chunks( $question, $question_vector ) {
+	public function find_similar_chunks( $question ) {
 		global $wpdb;
-		$table_name = $wpdb->prefix . 'feas_ai_vectors';
+		$vectors_table = $wpdb->prefix . 'feas_ai_vectors';
+		$index_table   = $wpdb->prefix . 'feas_ai_keyword_index';
 
-		// ステップ1：AIによるクエリ拡張
-		$expanded_keywords = $this->expand_query( $question );
-
-		// ステップ2：拡張されたキーワードでOR検索を行い、候補を広く集める
-		$sql = "SELECT post_id, content_chunk, vector_data FROM `{$table_name}`";
-		$where_clauses = array();
-		$params = array();
-
-		if ( ! empty( $expanded_keywords ) ) {
-			foreach ( $expanded_keywords as $keyword ) {
-				if( empty(trim($keyword)) ) continue; // 空のキーワードを無視
-				$where_clauses[] = "`content_chunk` LIKE %s";
-				$params[] = '%' . $wpdb->esc_like( $keyword ) . '%';
+		$segmenter = new TinySegmenter();
+		$keywords = array_unique( $segmenter->segment($question) );
+		$valid_keywords = [];
+		foreach( $keywords as $keyword ) {
+			if( mb_strlen($keyword) > 1 ) {
+				$valid_keywords[] = $keyword;
 			}
 		}
 
-		// キーワードがない、または空の場合はヒットしないので、空の配列を返す
-		if ( empty( $where_clauses ) ) {
+		if ( empty( $valid_keywords ) ) {
 			return array();
 		}
 
-		$sql .= " WHERE " . implode( ' OR ', $where_clauses );
+		$placeholders = implode( ', ', array_fill( 0, count( $valid_keywords ), '%s' ) );
+		$sql = "SELECT DISTINCT `vector_id` FROM `{$index_table}` WHERE `keyword` IN ( {$placeholders} ) LIMIT 500";
+		$vector_ids = $wpdb->get_col( $wpdb->prepare( $sql, $valid_keywords ) );
 
-		$candidate_rows = $wpdb->get_results( $wpdb->prepare( $sql, $params ) );
-
-		// ▼▼▼ このブロックを削除 ▼▼▼
-		// // もしキーワードでヒットしなければ、ベクトル検索で全件から探す
-		// if ( empty( $candidate_rows ) ) {
-		//     $candidate_rows = $wpdb->get_results( "SELECT post_id, content_chunk, vector_data FROM {$table_name}" );
-		// }
-		// ▲▲▲ このブロックを削除 ▲▲▲
-
-		if ( empty( $candidate_rows ) ) {
+		if ( empty( $vector_ids ) ) {
 			return array();
 		}
 
-		// ステップ3：全ての候補チャンクの類似度を計算する
+		$placeholders_ids = implode( ', ', array_fill( 0, count( $vector_ids ), '%d' ) );
+		$sql_candidates   = "SELECT `post_id`, `content_chunk`, `vector_data` FROM `{$vectors_table}` WHERE `id` IN ( {$placeholders_ids} )";
+		$candidate_rows   = $wpdb->get_results( $wpdb->prepare( $sql_candidates, $vector_ids ) );
+
+		if( empty($candidate_rows) ) {
+			return array();
+		}
+
+		$question_vector_response = $this->get_embeddings_via_selected_provider( array( $question ) );
+		if( is_wp_error($question_vector_response) ){
+			return array();
+		}
+		$question_vector = $question_vector_response['data'][0]['embedding'];
+
 		$similarities = array();
 		foreach ( $candidate_rows as $row ) {
 			$db_vector = json_decode( $row->vector_data, true );
@@ -309,12 +205,10 @@ class FEAS_AI_Ajax {
 			);
 		}
 
-		// ステップ4：類似度スコアで配列を降順にソート
 		usort( $similarities, function( $a, $b ) {
 			return $b['similarity'] <=> $a['similarity'];
 		} );
 
-		// ステップ5：上位7件の「チャンク」をコンテキストとして返す
 		return array_slice( $similarities, 0, 7 );
 	}
 
@@ -470,5 +364,143 @@ class FEAS_AI_Ajax {
 		}
 
 		wp_send_json_success();
+	}
+
+	/**
+	 * 同期プロセスの開始をハンドルする
+	 */
+	public function ajax_start_sync() {
+		check_ajax_referer( 'feas_ai_ajax_nonce', 'nonce' );
+
+		// 古いデータをすべて削除
+		global $wpdb;
+		$vectors_table = $wpdb->prefix . 'feas_ai_vectors';
+		$index_table   = $wpdb->prefix . 'feas_ai_keyword_index';
+		$wpdb->query( "TRUNCATE TABLE `{$vectors_table}`" );
+		$wpdb->query( "TRUNCATE TABLE `{$index_table}`" );
+
+		// 処理すべき投稿の総数を計算
+		$args = array(
+			'post_type'      => array( 'post', 'page' ),
+			'post_status'    => 'publish',
+			'posts_per_page' => 3,
+			'fields'         => 'ids', // IDだけ取得すれば高速
+		);
+		$all_post_ids = get_posts( $args );
+
+		// 総ページ数を計算してJSに返す
+		$batch_size = 100;
+		$total_posts = count($all_post_ids);
+		$total_pages = ceil( $total_posts / $batch_size );
+
+		wp_send_json_success( array(
+			'total_pages' => $total_pages,
+			'total_posts' => $total_posts,
+		) );
+	}
+
+	/**
+	 * 1バッチ分の同期処理をハンドルする
+	 */
+	public function ajax_process_batch() {
+		check_ajax_referer( 'feas_ai_ajax_nonce', 'nonce' );
+
+		$page = isset( $_POST['page'] ) ? absint( $_POST['page'] ) : 1;
+		$batch_size = 100;
+
+		$args = array(
+			'post_type'      => array( 'post', 'page' ),
+			'post_status'    => 'publish',
+			'posts_per_page' => $batch_size,
+			'paged'          => $page,
+			'orderby'        => 'ID',
+			'order'          => 'ASC',
+		);
+		$posts_batch = get_posts( $args );
+
+		if ( empty( $posts_batch ) ) {
+			wp_send_json_success( array('message' => 'No more posts to process.') );
+			return;
+		}
+
+		$segmenter = new TinySegmenter();
+		global $wpdb;
+		$vectors_table = $wpdb->prefix . 'feas_ai_vectors';
+		$index_table   = $wpdb->prefix . 'feas_ai_keyword_index';
+
+		foreach ( $posts_batch as $post ) {
+			$content = strip_shortcodes( $post->post_content );
+			$content = wp_strip_all_tags( $content );
+			$raw_chunks = explode( "\n\n", $content );
+			$valid_chunks = array_values( array_filter( array_map( 'trim', $raw_chunks ) ) );
+
+			if ( empty( $valid_chunks ) ) { continue; }
+
+			$embedding_response = $this->get_embeddings_via_selected_provider( $valid_chunks );
+
+			if ( ! is_wp_error( $embedding_response ) ) {
+				$vectors_data = $embedding_response['data'];
+				foreach ( $vectors_data as $index => $vector_item ) {
+					$wpdb->insert(
+						$vectors_table,
+						array(
+							'post_id'       => $post->ID,
+							'chunk_index'   => $index,
+							'content_chunk' => $valid_chunks[$index],
+							'vector_data'   => json_encode( $vector_item['embedding'] ),
+							'created_at'    => current_time( 'mysql' ),
+						),
+						// ▼▼▼ 抜けていたフォーマット指定子を追加 ▼▼▼
+						array( '%d', '%d', '%s', '%s', '%s' )
+					);
+					$vector_id = $wpdb->insert_id;
+					if ($vector_id) {
+						$keywords = $segmenter->segment($valid_chunks[$index]);
+						foreach ( array_unique( $keywords ) as $keyword ) {
+							if ( mb_strlen( $keyword ) > 1 ) {
+								$wpdb->insert(
+									$index_table,
+									array(
+										'keyword'   => $keyword,
+										'vector_id' => $vector_id,
+									),
+									// こちらも念のため追加
+									array( '%s', '%d' )
+								);
+							}
+						}
+					}
+				}
+			}
+		}
+
+		wp_send_json_success( array('message' => 'Batch ' . $page . ' processed.') );
+	}
+
+	private function reframe_query_with_history( $question, $history ) {
+		if ( empty( $history ) ) {
+			return $question; // 履歴がなければ元の質問をそのまま返す
+		}
+
+		$system_prompt = "あなたは、会話の文脈を理解し、ユーザーの最新の質問を自己完結した検索クエリに書き換える専門家です。もし質問が既に自己完結している場合は、そのまま質問を返してください。\n\n例:\n履歴:\nuser: 動物を扱う仕事はある？\nassistant: はい、犬の洋服を販売する仕事があります。\nユーザーの最新質問: 勤務先はどこ？\n書き換えたクエリ: 犬の洋服を販売する仕事の勤務地";
+
+		$messages = array(
+			array('role' => 'system', 'content' => $system_prompt)
+		);
+		// 履歴（現在の質問は除く）を追加
+		$history_for_prompt = array_slice( $history, 0, -1 );
+		foreach( $history_for_prompt as $message ) {
+			$messages[] = $message;
+		}
+		$messages[] = array('role' => 'user', 'content' => $question);
+
+		// 以前作成した、messages配列を扱えるヘルパー関数を呼び出す
+		$reframed_question = $this->get_simple_chat_response_with_messages( $messages );
+
+		if ( is_wp_error( $reframed_question ) || empty( $reframed_question ) ) {
+			return $question; // エラー時は元の質問を返す
+		}
+
+		return $reframed_question;
 	}
 }

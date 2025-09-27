@@ -19,6 +19,7 @@ define( 'FEAS_AI_PLUGIN_FILE', __FILE__ );
 
 // 外部ライブラリを読み込み
 require_once FEAS_AI_PLUGIN_DIR . 'vendor/Parsedown.php';
+require_once FEAS_AI_PLUGIN_DIR . 'vendor/TinySegmenter.php';
 
 // プラグインのコアファイルを読み込み
 require_once FEAS_AI_PLUGIN_DIR . 'includes/class-feas-ai-installer.php';
