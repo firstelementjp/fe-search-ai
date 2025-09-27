@@ -122,10 +122,16 @@ class FEAS_AI_Main {
 			<p>サイト内の投稿や固定ページをAIが検索できるように、データを準備・索引化します。</p>
 			<div id="feas-ai-sync-wrapper">
 				<button id="feas-ai-start-sync" class="button button-primary">同期を開始する</button>
-				<div id="feas-ai-progress-bar-container" style="display: none; width: 100%; background-color: #ddd; border: 1px solid #ccc; margin-top: 10px;">
-					<div id="feas-ai-progress-bar" style="width: 0%; height: 20px; background-color: #0073aa; text-align: center; color: white; line-height: 20px;">0%</div>
+
+				<div id="feas-ai-progress-container" style="display: none; margin-top: 10px;">
+					<div id="feas-ai-progress-bar-wrapper" style="width: 100%; background-color: #ddd; border: 1px solid #ccc;">
+						<div id="feas-ai-progress-bar" style="width: 0%; height: 24px; background-color: #0073aa; text-align: right; color: white; line-height: 24px; padding-right: 8px; box-sizing: border-box;">0%</div>
+					</div>
+					<div id="feas-ai-sync-status" style="margin-top: 5px; min-height: 20px;">
+						<span class="dashicons dashicons-update-alt spin" style="display: none; vertical-align: middle; margin-right: 5px;"></span>
+						<span class="status-text"></span>
+					</div>
 				</div>
-				<div id="feas-ai-sync-status" style="margin-top: 10px;"></div>
 			</div>
 		</div>
 		<?php
@@ -301,6 +307,13 @@ class FEAS_AI_Main {
 		// if ( 'settings_page_fe-ai-search' !== $hook_suffix && 'fe-ai-search_page_fe-ai-search-analytics' !== $hook_suffix ) {
 		// 	return;
 		// }
+
+		wp_enqueue_style(
+			'feas-ai-admin-style',
+			plugin_dir_url( __DIR__ ) . 'assets/css/admin-style.css',
+			array(),
+			FEAS_AI_VERSION
+		);
 
 		wp_enqueue_script(
 			'feas-ai-admin-sync',

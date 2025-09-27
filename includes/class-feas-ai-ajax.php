@@ -90,7 +90,7 @@ class FEAS_AI_Ajax {
 
 		## 回答フォーマット
 		- 全体をMarkdown形式で記述してください。
-		- 各求人のタイトル（【募集要項】など）を`###`（H3見出し）で示してください。
+		- 各求人のタイトル（【募集要項】など）を`**`（太字）で示してください。
 		- 箇条書きのリスト（`-`）を使用してください。
 		- 各記事の要約の直後に、情報元となるURL自体を記載してください。";
 
@@ -401,13 +401,13 @@ class FEAS_AI_Ajax {
 		$args = array(
 			'post_type'      => array( 'post', 'page' ),
 			'post_status'    => 'publish',
-			'posts_per_page' => 3,
+			'posts_per_page' => 1000,
 			'fields'         => 'ids', // IDだけ取得すれば高速
 		);
 		$all_post_ids = get_posts( $args );
 
 		// 総ページ数を計算してJSに返す
-		$batch_size = 100;
+		$batch_size = 10;
 		$total_posts = count($all_post_ids);
 		$total_pages = ceil( $total_posts / $batch_size );
 
@@ -424,7 +424,7 @@ class FEAS_AI_Ajax {
 		check_ajax_referer( 'feas_ai_ajax_nonce', 'nonce' );
 
 		$page = isset( $_POST['page'] ) ? absint( $_POST['page'] ) : 1;
-		$batch_size = 100;
+		$batch_size = 10;
 
 		$args = array(
 			'post_type'      => array( 'post', 'page' ),
