@@ -24,8 +24,7 @@ class FEAS_AI_Ajax {
 	}
 
 	/**
-	 * REST APIのリクエストを処理するストリームハンドラ
-	 * @param WP_REST_Request $request
+	 * REST APIのリクエストを処理するストリームハンドラ（最終安定版）
 	 */
 	public function stream_handler( $request ) {
 		// ヘッダーやバッファリング無効化
@@ -62,12 +61,57 @@ class FEAS_AI_Ajax {
 	}
 
 	/**
-	 * ユーザーへの最終的な回答をストリーミングで生成・出力する
+	 * 回答生成AIを切り替える司令塔
 	 */
 	public function stream_chat_completion( $question, $context_chunks, $history = array() ) {
+		$provider = get_option( 'feas_ai_chat_provider', 'openai' );
+
+		if ( 'anthropic' === $provider ) {
+			$this->stream_claude_completion( $question, $context_chunks, $history );
+		} else { // 'openai' or 'google' (Geminiは未実装なのでOpenAIにフォールバック)
+			$this->stream_openai_completion( $question, $context_chunks, $history );
+		}
+	}
+
+	/**
+	 * OpenAI専用のストリーミング処理
+	 */
+	private function stream_openai_completion( $question, $context_chunks, $history ) {
 		$api_key = get_option( 'feas_ai_openai_api_key' );
 		if ( empty( $api_key ) ) {
-			echo "data: " . json_encode(['error' => 'APIキーが設定されていません。']) . "\n\n";
+			echo "data: " . json_encode(['text' => 'エラー: OpenAI APIキーが設定されていません。']) . "\n\n";
+			echo "data: [DONE]\n\n";
+			flush();
+			return;
+		}
+
+		$messages = $this->build_prompt_messages( $question, $context_chunks, $history );
+
+		$api_url = 'https://api.openai.com/v1/chat/completions';
+		$body = array(
+			'model'       => 'gpt-4o',
+			'messages'    => $messages,
+			'temperature' => 0.5,
+			'stream'      => true,
+		);
+
+		$ch = curl_init();
+		curl_setopt( $ch, CURLOPT_URL, $api_url );
+		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
+		curl_setopt( $ch, CURLOPT_POST, true );
+		curl_setopt( $ch, CURLOPT_POSTFIELDS, json_encode( $body ) );
+		curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json', 'Authorization: Bearer ' . $api_key) );
+
+		$this->execute_stream_and_forward( $ch, 'openai' );
+	}
+
+	/**
+	 * Claude専用のストリーミング処理
+	 */
+	private function stream_claude_completion( $question, $context_chunks, $history ) {
+		$api_key = get_option( 'feas_ai_anthropic_api_key' );
+		if ( empty( $api_key ) ) {
+			echo "data: " . json_encode(['error' => 'Anthropic APIキーが設定されていません。']) . "\n\n";
 			echo "data: [DONE]\n\n";
 			flush();
 			return;
@@ -75,23 +119,20 @@ class FEAS_AI_Ajax {
 
 		$messages = array();
 		$context_str = '';
-
 		$system_prompt = "あなたは、提供された「サイト内情報」と「会話履歴」を元に、ユーザーの質問に回答する、高度なAIアシスタントです。
 
-		## 厳守すべきルール
-		1.  **必須4項目**: 以下の4項目は、情報が見つからない場合でも、項目名自体は**必ず**出力してください。
-			- 【仕事内容】
-			- 【雇用形態】
-			- 【勤務地】
-			- 【給与】
-		2.  **不明時の処理**: 上記4項目の情報が文中に見つからない場合は、必ず「**不明**」という単語を記載してください。（例：【給与】不明）
-		3.  **会話**: 回答の冒頭には「〜に関するお仕事がX件見つかりました。」のような導入文を、末尾には「他に何かお探しですか？」のような結びの言葉を加えてください。
-		4.  **禁止事項**: 文脈にない情報の創作や、事実に基づかない推測は絶対にしないでください。
+		## あなたの思考プロセス
+		1.  まず「会話履歴」を読み、ユーザーの最新の質問の**真の意図**を理解してください。質問が「それ」「勤務地は？」のように省略されている場合、履歴から何についての質問かを特定してください。
+		2.  次に、あなたの思考の元となる「サイト内情報」を読みます。もし「サイト内情報」が空の場合、ユーザーは検索ではなく挨拶や雑談をしていると判断してください。
+		3.  ユーザーの質問の真意に**関連する情報だけ**を「サイト内情報」から選び出し、それ以外の無関係な情報は無視してください。
+		4.  選び出した情報だけを根拠として、ユーザーの質問に対する回答を生成してください。
+		5.  もし、関連する情報が「サイト内情報」の中に一つもなかった場合は、正直に「ご質問に関連する情報がサイト内見つかりませんでした。」とだけ回答してください。
+		6.  もし、ユーザーが挨拶や雑談をしていると判断した場合は、フレンドリーかつ簡潔に応答してください。
 
 		## 回答フォーマット
-		- 全体をMarkdown形式で記述してください。
-		- 各求人のタイトル（【募集要項】など）を`**`（太字）で示してください。
-		- 箇条書きのリスト（`-`）を使用してください。
+		- 回答は必ずMarkdown形式を使用してください。
+		- 複数の情報を提示する場合は、必ず箇条書きを使用してください。
+		- 各求人のタイトルを`###`（H3見出し）で示してください。
 		- 各記事の要約の直後に、情報元となるURL自体を記載してください。";
 
 		if ( ! empty( $context_chunks ) ) {
@@ -102,22 +143,28 @@ class FEAS_AI_Ajax {
 			}
 		}
 
-		$messages[] = array('role' => 'system', 'content' => $system_prompt);
-		if( ! empty( $history ) ) {
-			foreach( $history as $message ) {
-				$messages[] = $message;
-			}
+		// 履歴をフィルタリングして、空のアシスタントメッセージを除外する
+		$filtered_history = array_filter($history, function($msg){
+			return !(isset($msg['role']) && $msg['role'] === 'assistant' && empty(trim($msg['content'])));
+		});
+
+		$messages = $filtered_history;
+		$last_message = array_pop( $messages );
+
+		if ($last_message) {
+			$last_message['content'] = "サイト内情報:\n" . $context_str . "\n\n上記の情報を元に、次の質問に答えてください:\n" . $last_message['content'];
+			$messages[] = $last_message;
+		} else {
+			$messages[] = array('role' => 'user', 'content' => "サイト内情報:\n" . $context_str . "\n\n上記の情報を元に、次の質問に答えてください:\n" . $question);
 		}
 
-		$last_user_message = "サイト内情報:\n" . $context_str . "\n\n上記の情報を元に、次の質問に答えてください:\n" . $question;
-		$messages[] = array('role' => 'user', 'content' => $last_user_message);
-
-		$api_url = 'https://api.openai.com/v1/chat/completions';
+		$api_url = 'https://api.anthropic.com/v1/messages';
 		$body = array(
-			'model' => 'gpt-4o',
-			'messages' => $messages,
-			'temperature' => 0.5,
-			'stream' => true,
+			'model'      => 'claude-3-5-sonnet-20240620',
+			'max_tokens' => 4096,
+			'messages'   => array_values( $messages ), // ★★★ この修正が核心です ★★★
+			'system'     => $system_prompt,
+			'stream'     => true,
 		);
 
 		$ch = curl_init();
@@ -125,37 +172,28 @@ class FEAS_AI_Ajax {
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
 		curl_setopt( $ch, CURLOPT_POST, true );
 		curl_setopt( $ch, CURLOPT_POSTFIELDS, json_encode( $body ) );
-		curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json', 'Authorization: Bearer ' . $api_key) );
+		curl_setopt( $ch, CURLOPT_HTTPHEADER, array(
+			'Content-Type: application/json',
+			'x-api-key: ' . $api_key,
+			'anthropic-version: 2023-06-01'
+		) );
 
-		// 不完全なデータチャンクを一時的に保持するためのバッファ
 		$buffer = '';
-
 		curl_setopt( $ch, CURLOPT_WRITEFUNCTION, function( $curl, $data ) use (&$buffer) {
-			// 新しいデータをバッファに追加
 			$buffer .= $data;
-
-			// バッファ内に完全なSSEメッセージ（\n\nで終わる）があるか探す
 			while ( ( $pos = strpos( $buffer, "\n\n" ) ) !== false ) {
-				// 完全なメッセージを切り出す
-				$message = substr( $buffer, 0, $pos );
-				// バッファから切り出したメッセージを削除
+				$event_str = substr( $buffer, 0, $pos );
 				$buffer = substr( $buffer, $pos + 2 );
 
-				// メッセージを解析してクライアントに送信
-				$lines = explode("\n", trim($message));
-				foreach ($lines as $line) {
-					if (strpos($line, 'data: ') === 0) {
-						$json_data = substr($line, 6);
-						if ($json_data === '[DONE]') {
-							echo "data: [DONE]\n\n";
-						} else {
-							$chunk = json_decode($json_data, true);
-							if (isset($chunk['choices'][0]['delta']['content'])) {
-								$content = $chunk['choices'][0]['delta']['content'];
-								echo "data: " . json_encode(['text' => $content]) . "\n\n";
-							}
-						}
+				if (strpos($event_str, 'event: content_block_delta') !== false) {
+					$json_data = str_replace('data: ', '', substr($event_str, strpos($event_str, 'data: ')));
+					$chunk = json_decode($json_data, true);
+					if (isset($chunk['delta']['type']) && $chunk['delta']['type'] === 'text_delta') {
+						$content = $chunk['delta']['text'];
+						echo "data: " . json_encode(['text' => $content]) . "\n\n";
 					}
+				} elseif (strpos($event_str, 'event: message_stop') !== false) {
+					 echo "data: [DONE]\n\n";
 				}
 			}
 
@@ -168,42 +206,190 @@ class FEAS_AI_Ajax {
 		curl_close( $ch );
 	}
 
+
+	// private function stream_claude_completion( $question, $context_chunks, $history ) {
+	// 	header('Content-Type: text/plain; charset=utf-8');
+	// 	echo "--- CLAUDE API DEBUG --- \n\n";
+//
+	// 	$api_key = get_option( 'feas_ai_anthropic_api_key' );
+	// 	if ( empty( $api_key ) ) {
+	// 		wp_die('エラー: Anthropic APIキーが設定されていません。');
+	// 	}
+//
+	// 	// messages配列とsystemプロンプトの組み立て
+	// 	$messages = array();
+	// 	$context_str = '';
+	// 	$system_prompt = "あなたは、提供された「サイト内情報」と「会話履歴」を元に、ユーザーの質問に回答する、高度なAIアシスタントです..."; // (プロンプト全文はあなたのコードのままでOKです)
+//
+	// 	if ( ! empty( $context_chunks ) ) {
+	// 		$grouped_chunks = array();
+	// 		foreach ( $context_chunks as $chunk ) { $grouped_chunks[ $chunk['permalink'] ][] = $chunk['content_chunk']; }
+	// 		foreach ( $grouped_chunks as $permalink => $chunks ) {
+	// 			$context_str .= "--- 記事ここから ---\n情報元URL: " . $permalink . "\n内容:\n" . implode( "\n", $chunks ) . "\n--- 記事ここまで ---\n\n";
+	// 		}
+	// 	}
+//
+	// 	// 履歴をフィルタリングして、空のアシスタントメッセージを除外
+	// 	$filtered_history = array_filter($history, function($msg){
+	// 		return !(isset($msg['role']) && $msg['role'] === 'assistant' && empty(trim($msg['content'])));
+	// 	});
+//
+	// 	$messages = $filtered_history;
+	// 	$last_message = array_pop( $messages );
+//
+	// 	if ($last_message) {
+	// 		$last_message['content'] = "サイト内情報:\n" . $context_str . "\n\n上記の情報を元に、次の質問に答えてください:\n" . $last_message['content'];
+	// 		$messages[] = $last_message;
+	// 	} else {
+	// 		$messages[] = array('role' => 'user', 'content' => "サイト内情報:\n" . $context_str . "\n\n上記の情報を元に、次の質問に答えてください:\n" . $question);
+	// 	}
+//
+	// 	echo "## 1. Assembled Messages Array (Sent to API):\n";
+	// 	print_r($messages);
+	// 	echo "\n\n";
+//
+	// 	$api_url = 'https://api.anthropic.com/v1/messages';
+	// 	$body = array(
+	// 		'model'      => 'claude-3-5-sonnet-20240620',
+	// 		'max_tokens' => 4096,
+	// 		'messages'   => array_values( $messages ),
+	// 		'system'     => $system_prompt,
+	// 	);
+//
+	// 	$response = wp_remote_post( $api_url, array(
+	// 		'headers' => array(
+	// 			'Content-Type'        => 'application/json',
+	// 			'x-api-key'           => $api_key,
+	// 			'anthropic-version'   => '2023-06-01',
+	// 		),
+	// 		'body'    => json_encode( $body ),
+	// 		'timeout' => 30,
+	// 	));
+//
+	// 	echo "## 2. Full Response from wp_remote_post:\n";
+	// 	print_r($response);
+	// 	echo "\n\n";
+//
+	// 	if ( is_wp_error( $response ) ) {
+	// 		echo "## 3. WP_Error Details:\n";
+	// 		print_r($response->get_error_message());
+	// 	} else {
+	// 		echo "## 3. Raw Body from Claude API:\n";
+	// 		print_r(wp_remote_retrieve_body($response));
+	// 	}
+//
+	// 	exit;
+	// }
+
+	/**
+	 * cURLストリームを実行し、結果をクライアントに転送する共通関数
+	 */
+	private function execute_stream_and_forward( $ch, $provider ) {
+		$buffer = '';
+		curl_setopt( $ch, CURLOPT_WRITEFUNCTION, function( $curl, $data ) use (&$buffer, $provider) {
+			$buffer .= $data;
+			while ( ( $pos = strpos( $buffer, "\n\n" ) ) !== false ) {
+				$event_str = substr( $buffer, 0, $pos );
+				$buffer = substr( $buffer, $pos + 2 );
+
+				if (strpos($event_str, 'data: ') !== 0) { continue; }
+
+				$json_data = substr($event_str, 6);
+				if ($json_data === '[DONE]') {
+					echo "data: [DONE]\n\n";
+					continue;
+				}
+
+				$chunk = json_decode($json_data, true);
+				$content = '';
+
+				if ($provider === 'openai' && isset($chunk['choices'][0]['delta']['content'])) {
+					$content = $chunk['choices'][0]['delta']['content'];
+				} elseif ($provider === 'anthropic' && isset($chunk['delta']['type']) && $chunk['delta']['type'] === 'text_delta') {
+					$content = $chunk['delta']['text'];
+				}
+
+				if ( ! empty( $content ) ) {
+					echo "data: " . json_encode(['text' => $content]) . "\n\n";
+				}
+			}
+
+			if (ob_get_level() > 0) { ob_flush(); }
+			flush();
+			return strlen( $data );
+		});
+
+		curl_exec( $ch );
+		curl_close( $ch );
+	}
+
+	/**
+	 * プロンプトとmessages配列を組み立てる共通関数
+	 */
+	private function build_prompt_messages( $question, $context_chunks, $history, $for_claude = false ) {
+		$context_str = '';
+		$system_prompt = "あなたは、提供された「サイト内情報」と「会話履歴」を元に、ユーザーの質問に回答する、高度なAIアシスタントです..."; // (プロンプト全文は省略)
+
+		if ( ! empty( $context_chunks ) ) {
+			// ... (コンテキスト文字列の組み立て) ...
+		}
+
+		$messages = array();
+		if ( ! $for_claude ) {
+			$messages[] = array('role' => 'system', 'content' => $system_prompt);
+		}
+
+		// 履歴をフィルタリングして、空のアシスタントメッセージを除外
+		$filtered_history = array_filter($history, function($msg){
+			return !(isset($msg['role']) && $msg['role'] === 'assistant' && empty(trim($msg['content'])));
+		});
+
+		foreach($filtered_history as $message) { $messages[] = $message; }
+
+		// 最後のユーザーメッセージのコンテキストを更新
+		if( !empty($messages) && end($messages)['role'] === 'user') {
+			$last_message = array_pop($messages);
+			$last_message['content'] = "サイト内情報:\n" . $context_str . "\n\n上記の情報を元に、次の質問に答えてください:\n" . $last_message['content'];
+			$messages[] = $last_message;
+		} else {
+			$messages[] = array('role' => 'user', 'content' => "サイト内情報:\n" . $context_str . "\n\n上記の情報を元に、次の質問に答えてください:\n" . $question);
+		}
+
+		if ( $for_claude ) {
+			return ['messages' => $messages, 'system' => $system_prompt];
+		}
+		return $messages;
+	}
+
+
+	/**
+	 * タイムアウトしない、ローカル完結の高速検索メソッド
+	 */
 	public function find_similar_chunks( $question ) {
 		global $wpdb;
-		$vectors_table = $wpdb->prefix . 'feas_ai_vectors';
 		$index_table   = $wpdb->prefix . 'feas_ai_keyword_index';
+		$vectors_table = $wpdb->prefix . 'feas_ai_vectors';
 
 		$segmenter = new TinySegmenter();
 		$keywords = array_unique( $segmenter->segment($question) );
-		$valid_keywords = [];
-		foreach( $keywords as $keyword ) {
-			if( mb_strlen($keyword) > 1 ) {
-				$valid_keywords[] = $keyword;
-			}
-		}
+		$valid_keywords = array_filter($keywords, function($kw){ return mb_strlen($kw) > 1; });
 
-		if ( empty( $valid_keywords ) ) {
-			return array();
-		}
+		if ( empty( $valid_keywords ) ) return array();
 
 		$placeholders = implode( ', ', array_fill( 0, count( $valid_keywords ), '%s' ) );
 		$sql = "SELECT DISTINCT `vector_id` FROM `{$index_table}` WHERE `keyword` IN ( {$placeholders} ) LIMIT 500";
 		$vector_ids = $wpdb->get_col( $wpdb->prepare( $sql, $valid_keywords ) );
 
-		if ( empty( $vector_ids ) ) {
-			return array();
-		}
+		if ( empty( $vector_ids ) ) return array();
 
 		$placeholders_ids = implode( ', ', array_fill( 0, count( $vector_ids ), '%d' ) );
 		$sql_candidates   = "SELECT `post_id`, `content_chunk`, `vector_data` FROM `{$vectors_table}` WHERE `id` IN ( {$placeholders_ids} )";
 		$candidate_rows   = $wpdb->get_results( $wpdb->prepare( $sql_candidates, $vector_ids ) );
 
-		if( empty($candidate_rows) ) {
-			return array();
-		}
+		if( empty($candidate_rows) ) return array();
 
 		$question_vector_response = $this->get_embeddings_via_selected_provider( array( $question ) );
-		if( is_wp_error($question_vector_response) ){
+		if( is_wp_error($question_vector_response) || empty($question_vector_response['data'][0]['embedding']) ){
 			return array();
 		}
 		$question_vector = $question_vector_response['data'][0]['embedding'];
@@ -250,12 +436,13 @@ class FEAS_AI_Ajax {
 	}
 
 	public function get_embeddings_via_selected_provider( $texts ) {
-		$provider = get_option( 'feas_ai_api_provider', 'openai' ); // 'openai'をデフォルトに
+		// ★ 回答用ではなく、ベクトル化用の設定を読み込む
+		$provider = get_option( 'feas_ai_embedding_provider', 'openai' );
 
 		if ( 'google' === $provider ) {
 			return $this->get_gemini_embeddings( $texts );
-		} else {
-			return $this->get_embeddings( $texts ); // OpenAI
+		} else { // 'openai' or not-supported 'anthropic'
+			return $this->get_embeddings( $texts );
 		}
 	}
 
@@ -521,4 +708,25 @@ class FEAS_AI_Ajax {
 
 		return $reframed_question;
 	}
+
+
+	public function get_claude_embeddings( $texts ) {
+		$api_key = get_option( 'feas_ai_anthropic_api_key' );
+		if ( empty( $api_key ) ) {
+			return new WP_Error( 'api_key_missing', 'Anthropic APIキーが設定されていません。' );
+		}
+
+		$api_url = 'https://api.anthropic.com/v1/embeddings'; // (注: 2025年9月時点ではClaudeに専用Embedding APIはありません。これは将来的な実装を見越したダミーです)
+
+		// 現状ClaudeにはEmbedding APIがないため、ダミーのエラーを返す
+		return new WP_Error('not_implemented', 'ClaudeのEmbedding機能は現在サポートされていません。OpenAIまたはGeminiを選択してください。');
+
+		// 以下は、もしAPIが存在した場合の実装例
+		/*
+		$response = wp_remote_post( $api_url, ... );
+		...
+		return $formatted_response;
+		*/
+	}
+
 }

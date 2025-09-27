@@ -60,9 +60,13 @@ class FEAS_AI_Main {
 		$settings_group = 'feas-ai-settings';
 		$page_slug      = 'fe-ai-search';
 
+		register_setting( $settings_group, 'feas_ai_chat_provider' );      // ★ 回答生成用
+		register_setting( $settings_group, 'feas_ai_embedding_provider' ); // ★ ベクトル化用
+
+		// register_setting( $settings_group, 'feas_ai_api_provider' );
 		register_setting( $settings_group, 'feas_ai_openai_api_key' );
-		register_setting( $settings_group, 'feas_ai_api_provider' );
 		register_setting( $settings_group, 'feas_ai_google_api_key' );
+		register_setting( $settings_group, 'feas_ai_anthropic_api_key' );
 		register_setting( $settings_group, 'feas_ai_log_retention_days' );
 
 		add_settings_section(
@@ -73,36 +77,26 @@ class FEAS_AI_Main {
 		);
 
 		add_settings_field(
-			'feas_ai_api_provider',
-			'API Provider',
-			array( $this, 'api_provider_field_html' ),
+			'feas_ai_chat_provider',
+			'回答生成モデル',
+			array( $this, 'chat_provider_field_html' ),
 			$page_slug,
 			'feas_ai_general_section'
 		);
 
 		add_settings_field(
-			'feas_ai_openai_api_key',
-			'OpenAI API Key',
-			array( $this, 'openai_api_key_field_html' ),
+			'feas_ai_embedding_provider',
+			'ベクトル化モデル',
+			array( $this, 'embedding_provider_field_html' ),
 			$page_slug,
 			'feas_ai_general_section'
 		);
 
-		add_settings_field(
-			'feas_ai_google_api_key',
-			'Google Cloud API Key',
-			array( $this, 'google_api_key_field_html' ),
-			$page_slug,
-			'feas_ai_general_section'
-		);
+		add_settings_field( 'feas_ai_openai_api_key', 'OpenAI API Key', array( $this, 'openai_api_key_field_html' ), $page_slug, 'feas_ai_general_section' );
+		add_settings_field( 'feas_ai_google_api_key', 'Google Cloud API Key', array( $this, 'google_api_key_field_html' ), $page_slug, 'feas_ai_general_section' );
+		add_settings_field( 'feas_ai_anthropic_api_key', 'Anthropic (Claude) API Key', array( $this, 'anthropic_api_key_field_html' ), $page_slug, 'feas_ai_general_section' );
+		add_settings_field( 'feas_ai_log_retention_days', 'ログ保存期間（日数）', array( $this, 'log_retention_field_html' ), $page_slug, 'feas_ai_general_section' );
 
-		add_settings_field(
-			'feas_ai_log_retention_days',
-			'ログ保存期間（日数）',
-			array( $this, 'log_retention_field_html' ),
-			$page_slug,
-			'feas_ai_general_section'
-		);
 	}
 
 	public function settings_page_html() {
@@ -141,13 +135,27 @@ class FEAS_AI_Main {
 		echo '<p>AI検索機能を利用するためのAPI設定を行います。</p>';
 	}
 
-	public function api_provider_field_html() {
-		$provider = get_option( 'feas_ai_api_provider', 'openai' );
+	public function chat_provider_field_html() {
+		$provider = get_option( 'feas_ai_chat_provider', 'openai' );
 		?>
-		<fieldset>
-			<label><input type="radio" name="feas_ai_api_provider" value="openai" <?php checked( 'openai', $provider ); ?>> <span>OpenAI</span></label><br>
-			<label><input type="radio" name="feas_ai_api_provider" value="google" <?php checked( 'google', $provider ); ?>> <span>Google (Gemini)</span></label>
-		</fieldset>
+		<select name="feas_ai_chat_provider">
+			<option value="openai" <?php selected( $provider, 'openai' ); ?>>OpenAI (GPT-4oなど)</option>
+			<option value="google" <?php selected( $provider, 'google' ); ?>>Google (Gemini)</option>
+			<option value="anthropic" <?php selected( $provider, 'anthropic' ); ?>>Anthropic (Claude)</option>
+		</select>
+		<p class="description">ユーザーへの回答を生成するAIを選択します。</p>
+		<?php
+	}
+
+	public function embedding_provider_field_html() {
+		$provider = get_option( 'feas_ai_embedding_provider', 'openai' );
+		?>
+		<select name="feas_ai_embedding_provider">
+			<option value="openai" <?php selected( $provider, 'openai' ); ?>>OpenAI (text-embedding-3)</option>
+			<option value="google" <?php selected( $provider, 'google' ); ?>>Google (text-embedding-004)</option>
+			<option value="anthropic" disabled="disabled">Anthropic (Claude) - (現在API未提供)</option>
+		</select>
+		<p class="description">サイト内コンテンツをベクトル化（AIが理解できる形式に変換）するAIを選択します。</p>
 		<?php
 	}
 
@@ -332,5 +340,13 @@ class FEAS_AI_Main {
 				'nonce'    => wp_create_nonce( 'feas_ai_ajax_nonce' ),
 			)
 		);
+	}
+
+	public function anthropic_api_key_field_html() {
+		$api_key = get_option( 'feas_ai_anthropic_api_key' );
+		?>
+		<input type="password" name="feas_ai_anthropic_api_key" value="<?php echo esc_attr( $api_key ); ?>" class="regular-text">
+		<p class="description">Anthropic (Claude) のAPIキーを入力してください。</p>
+		<?php
 	}
 }
