@@ -31,15 +31,15 @@ document.addEventListener('DOMContentLoaded', function() {
 		if (!question) return;
 
 		let history = JSON.parse(sessionStorage.getItem('feas_ai_chat_history')) || [];
-		addMessage(question, 'user');
+
+		// ユーザーの質問メッセージを表示
+		addMessage(`<p>${question}</p>`, 'user');
 		history.push({ role: 'user', content: question });
 		input.value = '';
 
-		const aiMessageWrapper = addMessage('', 'ai');
-		const aiMessageParagraph = aiMessageWrapper.querySelector('p');
-		aiMessageParagraph.innerHTML = '<span class="cursor"></span>';
+		// AIの返信欄を、カーソル付きの初期状態で表示
+		const aiMessageWrapper = addMessage('<p><span class="cursor"></span></p>', 'ai');
 
-		// ▼▼▼ データ送信形式をURLSearchParamsに統一 ▼▼▼
 		const bodyParams = new URLSearchParams();
 		bodyParams.append('question', question);
 		bodyParams.append('history', JSON.stringify(history));
@@ -52,9 +52,8 @@ document.addEventListener('DOMContentLoaded', function() {
 			headers: {
 				'X-WP-Nonce': feas_ai_ajax_obj.rest_nonce
 			},
-			body: bodyParams, // FormDataの代わりにURLSearchParamsを使用
+			body: bodyParams,
 		})
-		// ▲▲▲ ここまで ▲▲▲
 		.then(response => {
 			if (!response.ok) {
 				return response.text().then(text => {
@@ -67,7 +66,8 @@ document.addEventListener('DOMContentLoaded', function() {
 			function processStream() {
 				reader.read().then(({ done, value }) => {
 					if (done) {
-						aiMessageParagraph.innerHTML = marked.parse(fullResponse);
+						// ストリーム完了後、ラッパーの中身全体を最終的なHTMLで置き換える
+						aiMessageWrapper.innerHTML = marked.parse(fullResponse);
 						history.push({ role: 'assistant', content: fullResponse });
 						sessionStorage.setItem('feas_ai_chat_history', JSON.stringify(history));
 						logConversation(question, fullResponse, contextFound);
@@ -85,14 +85,12 @@ document.addEventListener('DOMContentLoaded', function() {
 								const jsonData = JSON.parse(dataContent);
 								if (jsonData.text) {
 									fullResponse += jsonData.text;
-									aiMessageParagraph.innerHTML = marked.parse(fullResponse + '<span class="cursor"></span>');
+									// ストリーミング中、ラッパーの中身全体を更新し続ける
+									aiMessageWrapper.innerHTML = marked.parse(fullResponse + '<span class="cursor"></span>');
 									messagesContainer.scrollTop = messagesContainer.scrollHeight;
 								}
 								if (jsonData.meta && jsonData.meta.context_found) {
 									contextFound = true;
-								}
-								if (jsonData.error) {
-									fullResponse = 'エラー: ' + jsonData.error;
 								}
 							} catch (e) {}
 						}
@@ -103,18 +101,17 @@ document.addEventListener('DOMContentLoaded', function() {
 			processStream();
 		})
 		.catch(error => {
-			aiMessageParagraph.textContent = '通信エラーが発生しました。';
+			aiMessageWrapper.innerHTML = '<p>通信エラーが発生しました。</p>';
 			console.error('Fetch error:', error);
 		});
 	});
 
 	// === ヘルパー関数 ===
-	function addMessage(text, type) {
+	function addMessage(html, type) {
 		const messageWrapper = document.createElement('div');
 		messageWrapper.className = `feas-ai-message feas-ai-message-${type}`;
-		const p = document.createElement('p');
-		p.innerHTML = text;
-		messageWrapper.appendChild(p);
+		messageWrapper.innerHTML = html; // 受け取ったHTMLをそのまま設定
+
 		messagesContainer.appendChild(messageWrapper);
 		messagesContainer.scrollTop = messagesContainer.scrollHeight;
 		return messageWrapper;
