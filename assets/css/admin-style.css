@@ -3,6 +3,12 @@
 	padding: 1rem;
 	border-radius: 5px;
 }
+
+.feas-ai-tabs-wrapper .tab-content {
+	display: none;
+	margin-top: 1em;
+}
+
 .spin {
 	animation: spin 1s infinite linear;
 }

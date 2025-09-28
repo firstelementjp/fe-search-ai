@@ -321,11 +321,18 @@ class FEAS_AI_Ajax {
 	private function build_prompt_messages( $question, $context_chunks, $history, $for_claude = false ) {
 		$context_str = '';
 
-		// 1. プロンプトを取得
-		$custom_prompt = get_option( 'feas_ai_custom_system_prompt' );
-		$system_prompt = ( class_exists('FEAS_AI_Pro_Analytics') && ! empty( $custom_prompt ) )
-			? $custom_prompt
-			: self::get_default_system_prompt();
+		// プロバイダーとカスタムプロンプト設定を取得
+		$provider = get_option( 'feas_ai_chat_provider', 'openai' );
+		$custom_prompts = get_option( 'feas_ai_custom_prompts', [] );
+		$is_pro = class_exists('FEAS_AI_Pro');
+		$custom_prompt_for_provider = $custom_prompts[$provider] ?? '';
+
+		// Pro版が有効で、プロバイダー別のカスタムプロンプトがあればそれを使用。なければデフォルト。
+		if ( $is_pro && ! empty( $custom_prompt_for_provider ) ) {
+			$system_prompt = $custom_prompt_for_provider;
+		} else {
+			$system_prompt = self::get_default_system_prompt();
+		}
 
 		// 2. コンテキスト文字列を組み立て
 		if ( ! empty( $context_chunks ) ) {

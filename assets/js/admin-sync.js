@@ -129,4 +129,29 @@ jQuery(document).ready(function($) {
 		});
 	});
 
+	// プロンプト設定のタブ切り替え
+	$('.feas-ai-tabs-wrapper .nav-tab').on('click', function(e) {
+		e.preventDefault();
+		const wrapper = $(this).closest('.feas-ai-tabs-wrapper');
+		wrapper.find('.nav-tab').removeClass('nav-tab-active');
+		$(this).addClass('nav-tab-active');
+
+		wrapper.find('.tab-content').hide();
+		const targetTab = $(this).attr('href');
+		$(targetTab).show();
+	});
+
+	// 初期表示で最初のタブを選択状態にする
+	if ($('.feas-ai-tabs-wrapper .nav-tab').length) {
+		$('.feas-ai-tabs-wrapper .nav-tab').first().trigger('click');
+	}
+
+	$('.feas-ai-prompt-editor').each(function() {
+		CodeMirror.fromTextArea(this, {
+			lineNumbers: true,
+			mode: 'markdown',
+			lineWrapping: true
+		});
+	});
+
 });

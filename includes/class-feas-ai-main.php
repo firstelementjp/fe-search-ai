@@ -97,7 +97,16 @@ class FEAS_AI_Main {
 				$page_slug,
 				'feas_ai_prompt_section'
 			);
+			register_setting( $settings_group, 'feas_ai_custom_prompts' );
+			add_settings_field(
+				'feas_ai_custom_prompts',
+				'モデル別カスタムプロンプト',
+				array( $this, 'custom_prompts_field_html' ),
+				$page_slug,
+				'feas_ai_prompt_section'
+			);
 		}
+
 	}
 
 	public function settings_page_html() {
@@ -259,10 +268,8 @@ class FEAS_AI_Main {
 			return;
 		}
 
-		// 自分の設定ページでのみスクリプトを読み込む
-		// if ( 'settings_page_fe-ai-search' !== $hook_suffix && 'fe-ai-search_page_fe-ai-search-analytics' !== $hook_suffix ) {
-		// 	return;
-		// }
+		// CodeMirrorのCSSを追加
+		wp_enqueue_style( 'codemirror-css', 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.css' );
 
 		wp_enqueue_style(
 			'feas-ai-admin-style',
@@ -270,6 +277,10 @@ class FEAS_AI_Main {
 			array(),
 			FEAS_AI_VERSION
 		);
+
+		wp_enqueue_script( 'codemirror-js', 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.js', array(), false, true );
+		wp_enqueue_script( 'codemirror-markdown', 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/mode/markdown/markdown.min.js', array('codemirror-js'), false, true );
+
 
 		wp_enqueue_script(
 			'feas-ai-admin-sync',
@@ -703,8 +714,43 @@ class FEAS_AI_Main {
 		$default_prompt = FEAS_AI_Ajax::get_default_system_prompt();
 		$custom_prompt = get_option( 'feas_ai_custom_system_prompt', $default_prompt );
 		?>
-		<textarea name="feas_ai_custom_system_prompt" rows="20" class="large-text"><?php echo esc_textarea( $custom_prompt ); ?></textarea>
+		<textarea name="feas_ai_custom_system_prompt" rows="20" class="large-text feas-ai-prompt-editor"><?php echo esc_textarea( $custom_prompt ); ?></textarea>
 		<p class="description">AIアシスタントへの指示書（システムプロンプト）をカスタマイズします。空にすると、プラグイン標準のプロンプトが使用されます。</p>
+		<?php
+	}
+
+	public function custom_prompts_field_html() {
+		$prompts = get_option( 'feas_ai_custom_prompts', [] );
+		// FEAS_AI_Ajaxクラスの静的メソッドとしてデフォルトプロンプトを取得
+		$default_prompt = FEAS_AI_Ajax::get_default_system_prompt();
+
+		$providers = [
+			'openai'    => 'OpenAI (GPT)',
+			'anthropic' => 'Anthropic (Claude)',
+			'google'    => 'Google (Gemini)',
+		];
+		?>
+		<div class="feas-ai-tabs-wrapper">
+			<div class="nav-tab-wrapper">
+				<?php foreach($providers as $key => $name): ?>
+					<a href="#tab-<?php echo esc_attr($key); ?>" class="nav-tab"><?php echo esc_html($name); ?></a>
+				<?php endforeach; ?>
+			</div>
+
+			<?php foreach($providers as $key => $name):
+				$prompt_value = $prompts[$key] ?? $default_prompt;
+			?>
+				<div id="tab-<?php echo esc_attr($key); ?>" class="tab-content">
+					<textarea
+						name="feas_ai_custom_prompts[<?php echo esc_attr($key); ?>]"
+						rows="20"
+						class="large-text feas-ai-prompt-editor"
+						style="font-family: monospace;"
+					><?php echo esc_textarea( $prompt_value ); ?></textarea>
+				</div>
+			<?php endforeach; ?>
+		</div>
+		<p class="description">AIモデルごとにシステムプロンプトをカスタマイズします。空にすると、プラグイン標準のプロンプトが使用されます。</p>
 		<?php
 	}
 }
