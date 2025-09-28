@@ -87,7 +87,7 @@ class FEAS_AI_Ajax {
 			return;
 		}
 
-		$messages = $this->build_prompt_messages( $question, $context_chunks, $history );
+		$messages = $this->build_prompt_messages( $question, $context_chunks, $history, false );
 
 		$api_url = 'https://api.openai.com/v1/chat/completions';
 		$body = array(
@@ -119,60 +119,15 @@ class FEAS_AI_Ajax {
 			return;
 		}
 
-		$messages = array();
-		$context_str = '';
-		$system_prompt = "あなたは、提供された「サイト内情報」と「会話履歴」を元に、ユーザーの質問に回答する、高度なAIアシスタントです。
-
-		## あなたの思考プロセス
-		1.  まず「会話履歴」を読み、ユーザーの最新の質問の**真の意図**を理解してください。
-		2.  次に、思考の元となる「サイト内情報」を読みます。もし「サイト内情報」が空の場合、ユーザーは挨拶や雑談をしていると判断してください。
-		3.  ユーザーの質問の真意に**関連する情報だけ**を「サイト内情報」から選び出し、無関係な情報は無視してください。
-		4.  選び出した情報だけを根拠として、ユーザーの質問に対する回答を生成してください。
-		5.  もし、関連する情報が「サイト内情報」の中に一つもなかった場合は、正直に「ご質問に関連する情報がサイト内見つかりませんでした。」とだけ回答してください。
-		6.  もし、ユーザーが挨拶や雑談をしていると判断した場合は、フレンドリーかつ簡潔に応答してください。
-
-		## 回答フォーマットと厳守すべきルール
-		- **書式**: 回答は必ず**標準的なMarkdown形式**を使用してください。不自然な改行コード（nnなど）は絶対に使用しないでください。段落の間は必ず空行を1行入れてください。
-		- **リスト**: 複数の情報を提示する場合は、必ず箇条書き（`-`）を使用してください。
-		- **見出し**: 各求人のタイトルは`###`（H3見出し）で示してください。
-		- **URL**: 各記事の要約の直後に、情報元となるURL自体を記載してください。
-		- **必須項目**: 求人情報を要約する場合、以下の4項目は情報が見つからなくても項目名自体は必ず出力し、見つからない場合は「不明」と記載してください。
-			- 【仕事内容】
-			- 【雇用形態】
-			- 【勤務地】
-			- 【給与】
-		- **会話**: 回答の冒頭には自然な導入文を、末尾には「他に何かお探しですか？」のような会話を促す一言を加えてください。
-		- **禁止事項**: 文脈にない情報の創作や、事実に基づかない推測は絶対にしないでください。";
-
-		if ( ! empty( $context_chunks ) ) {
-			$grouped_chunks = array();
-			foreach ( $context_chunks as $chunk ) { $grouped_chunks[ $chunk['permalink'] ][] = $chunk['content_chunk']; }
-			foreach ( $grouped_chunks as $permalink => $chunks ) {
-				$context_str .= "--- 記事ここから ---\n情報元URL: " . $permalink . "\n内容:\n" . implode( "\n", $chunks ) . "\n--- 記事ここまで ---\n\n";
-			}
-		}
-
-		// 履歴をフィルタリングして、空のアシスタントメッセージを除外する
-		$filtered_history = array_filter($history, function($msg){
-			return !(isset($msg['role']) && $msg['role'] === 'assistant' && empty(trim($msg['content'])));
-		});
-
-		$messages = $filtered_history;
-		$last_message = array_pop( $messages );
-
-		if ($last_message) {
-			$last_message['content'] = "サイト内情報:\n" . $context_str . "\n\n上記の情報を元に、次の質問に答えてください:\n" . $last_message['content'];
-			$messages[] = $last_message;
-		} else {
-			$messages[] = array('role' => 'user', 'content' => "サイト内情報:\n" . $context_str . "\n\n上記の情報を元に、次の質問に答えてください:\n" . $question);
-		}
+		// ★ 共通ヘルパー関数を呼び出して、プロンプトとmessages配列を一度に生成
+		$messages_data = $this->build_prompt_messages( $question, $context_chunks, $history, true ); // trueはClaude用を示す
 
 		$api_url = 'https://api.anthropic.com/v1/messages';
 		$body = array(
 			'model'      => 'claude-3-5-sonnet-20240620',
 			'max_tokens' => 4096,
-			'messages'   => array_values( $messages ), // ★★★ この修正が核心です ★★★
-			'system'     => $system_prompt,
+			'messages'   => $messages_data['messages'],
+			'system'     => $messages_data['system'],
 			'stream'     => true,
 		);
 
@@ -187,6 +142,7 @@ class FEAS_AI_Ajax {
 			'anthropic-version: 2023-06-01'
 		) );
 
+		// 安定化されたストリーミング処理 (変更なし)
 		$buffer = '';
 		curl_setopt( $ch, CURLOPT_WRITEFUNCTION, function( $curl, $data ) use (&$buffer) {
 			$buffer .= $data;
@@ -202,7 +158,7 @@ class FEAS_AI_Ajax {
 						echo "data: " . json_encode(['text' => $content]) . "\n\n";
 					}
 				} elseif (strpos($event_str, 'event: message_stop') !== false) {
-					 echo "data: [DONE]\n\n";
+						echo "data: [DONE]\n\n";
 				}
 			}
 
@@ -333,41 +289,75 @@ class FEAS_AI_Ajax {
 	}
 
 	/**
+	 * デフォルトのシステムプロンプトを返す
+	 * @return string
+	 */
+	public static function get_default_system_prompt() {
+		return "あなたは、提供された「サイト内情報」と「会話履歴」を元に、ユーザーの質問に回答する、求人情報アシスタントです。あなたの回答は、必ず以下の思考プロセスと厳守すべきルールに従ってください。
+
+		## 思考プロセス
+		1.  まず「会話履歴」を読み、ユーザーの最新の質問の**真の意図**を理解する。
+		2.  次に「サイト内情報」を読む。もし空なら、ユーザーは挨拶や雑談をしていると判断する。
+		3.  ユーザーの意図に**関連する情報だけ**を「サイト内情報」から選び出す。無関係な情報は完全に無視する。
+		4.  選び出した情報だけを根拠として、回答を生成する。
+
+		## 厳守すべきルール
+		- **役割**: あなたの役割は、情報を抽出し、指定されたフォーマットでリストアップすることです。リスト以外の、自由な文章による解説や補足は最小限にしてください。
+		- **書式**: 回答は必ず**標準的なMarkdown形式**を使用し、段落の間には空行を1行だけ入れてください。`nn`のような不自然な改行は絶対に使用しないでください。
+		- **必須項目**: サイト内情報から求人情報を要約する場合、必ず以下の4項目を出力してください。情報が見つからない場合は、必ず「不明」と記載してください。
+			- 【仕事内容】
+			- 【雇用形態】
+			- 【勤務地】
+			- 【給与】
+		- **見出し**: 各求人のタイトルは`###`（H3見出し）で示してください。
+		- **URL**: 各求人の要約の直後に、情報元となるURL自体を記載してください。
+		- **会話**: 回答の冒頭には「〜に関するお仕事がX件見つかりました。」のような導入文を、末尾には「他に何かお探しですか？」という定型文を**必ず**加えてください。
+		- **禁止事項**: サイト内情報に記載のない情報の創作や、事実に基づかない推測は絶対に禁止です。";
+	}
+
+	/**
 	 * プロンプトとmessages配列を組み立てる共通関数
 	 */
 	private function build_prompt_messages( $question, $context_chunks, $history, $for_claude = false ) {
 		$context_str = '';
-		$system_prompt = "あなたは、提供された「サイト内情報」と「会話履歴」を元に、ユーザーの質問に回答する、高度なAIアシスタントです..."; // (プロンプト全文は省略)
 
+		// 1. プロンプトを取得
+		$custom_prompt = get_option( 'feas_ai_custom_system_prompt' );
+		$system_prompt = ( class_exists('FEAS_AI_Pro_Analytics') && ! empty( $custom_prompt ) )
+			? $custom_prompt
+			: self::get_default_system_prompt();
+
+		// 2. コンテキスト文字列を組み立て
 		if ( ! empty( $context_chunks ) ) {
-			// ... (コンテキスト文字列の組み立て) ...
+			$grouped_chunks = array();
+			foreach ( $context_chunks as $chunk ) { $grouped_chunks[ $chunk['permalink'] ][] = $chunk['content_chunk']; }
+			foreach ( $grouped_chunks as $permalink => $chunks ) {
+				$context_str .= "--- 記事ここから ---\n情報元URL: " . $permalink . "\n内容:\n" . implode( "\n", $chunks ) . "\n--- 記事ここまで ---\n\n";
+			}
 		}
 
-		$messages = array();
-		if ( ! $for_claude ) {
-			$messages[] = array('role' => 'system', 'content' => $system_prompt);
-		}
-
-		// 履歴をフィルタリングして、空のアシスタントメッセージを除外
-		$filtered_history = array_filter($history, function($msg){
+		// 3. 履歴をフィルタリング
+		$messages = array_filter($history, function($msg){
 			return !(isset($msg['role']) && $msg['role'] === 'assistant' && empty(trim($msg['content'])));
 		});
 
-		foreach($filtered_history as $message) { $messages[] = $message; }
-
-		// 最後のユーザーメッセージのコンテキストを更新
-		if( !empty($messages) && end($messages)['role'] === 'user') {
-			$last_message = array_pop($messages);
+		// 4. 最後のユーザーメッセージにコンテキストを付加
+		$last_message = array_pop( $messages );
+		if ( $last_message && $last_message['role'] === 'user' ) {
 			$last_message['content'] = "サイト内情報:\n" . $context_str . "\n\n上記の情報を元に、次の質問に答えてください:\n" . $last_message['content'];
 			$messages[] = $last_message;
 		} else {
+			if ($last_message) { $messages[] = $last_message; } // 予期せぬ場合は元に戻す
 			$messages[] = array('role' => 'user', 'content' => "サイト内情報:\n" . $context_str . "\n\n上記の情報を元に、次の質問に答えてください:\n" . $question);
 		}
 
+		// 5. プロバイダーの形式に合わせて最終的なデータを返す
 		if ( $for_claude ) {
-			return ['messages' => $messages, 'system' => $system_prompt];
+			return ['messages' => array_values($messages), 'system' => $system_prompt];
+		} else { // for OpenAI
+			array_unshift( $messages, array('role' => 'system', 'content' => $system_prompt) );
+			return $messages;
 		}
-		return $messages;
 	}
 
 

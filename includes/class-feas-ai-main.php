@@ -36,11 +36,13 @@ class FEAS_AI_Main {
 		add_submenu_page( $parent_slug, 'Settings', 'Settings', 'manage_options', $parent_slug, array( $this, 'settings_page_html' ) );
 	}
 
+	// in includes/class-feas-ai-main.php
+
 	public function settings_init() {
 		$settings_group = 'feas-ai-settings';
 		$page_slug      = 'fe-ai-search';
 
-		// 1. API設定セクション
+		// --- 1. API設定セクション ---
 		add_settings_section( 'feas_ai_api_section', 'API設定', null, $page_slug );
 		register_setting( $settings_group, 'feas_ai_chat_provider' );
 		register_setting( $settings_group, 'feas_ai_embedding_provider' );
@@ -53,12 +55,25 @@ class FEAS_AI_Main {
 		add_settings_field( 'feas_ai_google_api_key', 'Google Cloud API Key', array( $this, 'google_api_key_field_html' ), $page_slug, 'feas_ai_api_section' );
 		add_settings_field( 'feas_ai_anthropic_api_key', 'Anthropic (Claude) API Key', array( $this, 'anthropic_api_key_field_html' ), $page_slug, 'feas_ai_api_section' );
 
-		// 2. 同期・表示設定セクション
-		add_settings_section( 'feas_ai_sync_section', '同期・表示設定', null, $page_slug );
-		register_setting( $settings_group, 'feas_ai_sync_options' );
-		add_settings_field( 'feas_ai_sync_options', '同期対象と表示', array( $this, 'sync_options_field_html' ), $page_slug, 'feas_ai_sync_section' );
+		// --- 2. 同期設定セクション ---
+		add_settings_section( 'feas_ai_sync_section', '同期設定', null, $page_slug );
+		register_setting( $settings_group, 'feas_ai_sync_options' ); // この配列一つに集約
+		register_setting( $settings_group, 'feas_ai_include_post_ids' );
+		register_setting( $settings_group, 'feas_ai_exclude_post_ids' );
+		register_setting( $settings_group, 'feas_ai_sync_limit' );
+		add_settings_field( 'feas_ai_sync_options', '同期対象と内容', array( $this, 'sync_options_field_html' ), $page_slug, 'feas_ai_sync_section' );
+		add_settings_field( 'feas_ai_include_post_ids', '含める投稿ID', array( $this, 'include_post_ids_field_html' ), $page_slug, 'feas_ai_sync_section' );
+		add_settings_field( 'feas_ai_exclude_post_ids', '除外する投稿ID', array( $this, 'exclude_post_ids_field_html' ), $page_slug, 'feas_ai_sync_section' );
+		add_settings_field( 'feas_ai_sync_limit', '同期する最大投稿数', array( $this, 'sync_limit_field_html' ), $page_slug, 'feas_ai_sync_section' );
 
-		// 3. データ管理セクション (Pro機能)
+		// --- 3. 表示設定セクション ---
+		add_settings_section( 'feas_ai_display_section', '表示設定', null, $page_slug );
+		add_settings_field( 'feas_ai_display_mode', '表示モード', array( $this, 'display_mode_field_html' ), $page_slug, 'feas_ai_display_section' );
+		add_settings_field( 'feas_ai_greeting_message', '最初の挨拶文', array( $this, 'greeting_message_field_html' ), $page_slug, 'feas_ai_display_section' );
+		add_settings_field( 'feas_ai_placeholder_text', '入力欄のプレースホルダー', array( $this, 'placeholder_text_field_html' ), $page_slug, 'feas_ai_display_section' );
+		add_settings_field( 'feas_ai_display_rules', 'フローティング表示ルール', array( $this, 'display_rules_field_html' ), $page_slug, 'feas_ai_display_section' );
+
+		// --- 4. データ管理セクション (Pro機能) ---
 		add_settings_section( 'feas_ai_data_section', 'データ管理 (Pro機能)', null, $page_slug );
 		register_setting( $settings_group, 'feas_ai_enable_logging' );
 		register_setting( $settings_group, 'feas_ai_log_retention_days' );
@@ -66,6 +81,23 @@ class FEAS_AI_Main {
 		add_settings_field( 'feas_ai_enable_logging', '会話履歴の保存', array( $this, 'enable_logging_field_html' ), $page_slug, 'feas_ai_data_section' );
 		add_settings_field( 'feas_ai_log_retention_days', '履歴保存期間（日数）', array( $this, 'log_retention_field_html' ), $page_slug, 'feas_ai_data_section' );
 		add_settings_field( 'feas_ai_delete_on_uninstall', 'アンインストール時の設定', array( $this, 'delete_on_uninstall_field_html' ), $page_slug, 'feas_ai_data_section' );
+
+		if ( $this->is_pro_active() ) {
+			add_settings_section(
+				'feas_ai_prompt_section',
+				'プロンプト設定 (Pro機能)',
+				null,
+				$page_slug
+			);
+			register_setting( $settings_group, 'feas_ai_custom_system_prompt' );
+			add_settings_field(
+				'feas_ai_custom_system_prompt',
+				'カスタムシステムプロンプト',
+				array( $this, 'custom_prompt_field_html' ),
+				$page_slug,
+				'feas_ai_prompt_section'
+			);
+		}
 	}
 
 	public function settings_page_html() {
@@ -459,10 +491,34 @@ class FEAS_AI_Main {
 	 */
 	public function maybe_render_floating_chat() {
 		$options = get_option( 'feas_ai_sync_options' );
-		$mode = $options['display_mode'] ?? 'float';
+		$display_mode = $options['display_mode'] ?? 'float';
 
-		if ( 'float' === $mode ) {
-			$this->assets->enqueue_assets();
+		// フローティングモードでなければ、何もしない
+		if ( 'float' !== $display_mode ) {
+			return;
+		}
+
+		// --- 表示ルールの判定ロジック ---
+		$rules = get_option( 'feas_ai_display_rules', ['mode' => 'all'] );
+		$rule_mode = $rules['mode'] ?? 'all';
+		$should_display = false;
+
+		switch ($rule_mode) {
+			case 'post_types':
+				$allowed_post_types = $rules['post_types'] ?? [];
+				if ( is_singular( $allowed_post_types ) ) {
+					$should_display = true;
+				}
+				break;
+
+			case 'all':
+			default:
+				$should_display = true;
+				break;
+		}
+
+		// 最終的な表示判定
+		if ( apply_filters( 'feas_ai_should_display_chat', $should_display ) ) {
 			echo $this->get_chat_ui_html('float');
 		}
 	}
@@ -479,36 +535,11 @@ class FEAS_AI_Main {
 	public function sync_options_field_html() {
 		$options = get_option( 'feas_ai_sync_options', [] );
 
-		// --- 表示モード ---
-		$display_mode = $options['display_mode'] ?? 'float';
-		?>
-		<h4>表示モード</h4>
-		<fieldset>
-			<label>
-				<input type="radio" name="feas_ai_sync_options[display_mode]" value="float" <?php checked( 'float', $display_mode ); ?>>
-				<span>フローティングモード（サイトの右下に自動で表示）</span>
-			</label><br>
-			<label>
-				<input type="radio" name="feas_ai_sync_options[display_mode]" value="shortcode" <?php checked( 'shortcode', $display_mode ); ?>>
-				<span>手動設置モード（ショートコード <code>[feas_ai_chat]</code> で好きな場所に設置）</span>
-			</label>
-		</fieldset>
-
-		<?php $greeting = $options['greeting_message'] ?? 'こんにちは！サイト内の情報について、何でも質問してください。'; ?>
-		<h4 style="margin-top: 20px;">最初の挨拶文</h4>
-		<textarea name="feas_ai_sync_options[greeting_message]" rows="3" class="large-text"><?php echo esc_textarea( $greeting ); ?></textarea>
-
-		<?php $placeholder = $options['placeholder_text'] ?? '質問を入力してください...'; ?>
-		<h4 style="margin-top: 20px;">入力欄のプレースホルダー</h4>
-		<input type="text" name="feas_ai_sync_options[placeholder_text]" value="<?php echo esc_attr( $placeholder ); ?>" class="regular-text">
-		<hr>
-		<?php
-
 		// --- 同期対象 ---
 		$post_types = get_post_types( ['public' => true], 'objects' );
 		$excluded_post_types = ['attachment'];
 
-		echo '<h4>同期対象と内容</h4>';
+		//echo '<h4>同期対象と内容</h4>';
 		echo '<p class="description">AI検索の対象とする投稿タイプと、各投稿タイプでチャンクに含めるメタデータを選択してください。</p>';
 		echo '<div id="feas-ai-sync-options-accordion">';
 
@@ -627,6 +658,53 @@ class FEAS_AI_Main {
 		<?php if ( ! $this->is_pro_active() ) : // Proでなければ案内を表示 ?>
 			<p class="description">この機能はPro版で利用できます。<a href="https://example.com/pro-upgrade" target="_blank">Pro版にアップグレード</a></p>
 		<?php endif; ?>
+		<?php
+	}
+
+	public function display_rules_field_html() {
+		$rules = get_option( 'feas_ai_display_rules', ['mode' => 'all'] );
+		$mode = $rules['mode'] ?? 'all';
+		$post_types = $rules['post_types'] ?? [];
+		?>
+		<fieldset>
+			<p>
+				<label>
+					<input type="radio" name="feas_ai_display_rules[mode]" value="all" <?php checked($mode, 'all'); ?>>
+					サイト全体で表示する
+				</label>
+			</p>
+			<p>
+				<label>
+					<input type="radio" name="feas_ai_display_rules[mode]" value="post_types" <?php checked($mode, 'post_types'); ?>>
+					選択した投稿タイプでのみ表示する
+				</label>
+			</p>
+			<div style="padding-left: 25px;">
+				<?php
+				$all_post_types = get_post_types( ['public' => true], 'objects' );
+				foreach ($all_post_types as $pt) {
+					if ('attachment' === $pt->name) continue;
+					?>
+					<label>
+						<input type="checkbox" name="feas_ai_display_rules[post_types][]" value="<?php echo esc_attr($pt->name); ?>" <?php checked(in_array($pt->name, $post_types)); ?>>
+						<?php echo esc_html($pt->label); ?>
+					</label><br>
+					<?php
+				}
+				?>
+			</div>
+		</fieldset>
+		<p class="description">フローティングモードが有効な場合に、チャットUIを表示するページを制限します。</p>
+		<?php
+	}
+
+	public function custom_prompt_field_html() {
+		// Free版のAjaxクラスからデフォルトプロンプトを取得
+		$default_prompt = FEAS_AI_Ajax::get_default_system_prompt();
+		$custom_prompt = get_option( 'feas_ai_custom_system_prompt', $default_prompt );
+		?>
+		<textarea name="feas_ai_custom_system_prompt" rows="20" class="large-text"><?php echo esc_textarea( $custom_prompt ); ?></textarea>
+		<p class="description">AIアシスタントへの指示書（システムプロンプト）をカスタマイズします。空にすると、プラグイン標準のプロンプトが使用されます。</p>
 		<?php
 	}
 }
