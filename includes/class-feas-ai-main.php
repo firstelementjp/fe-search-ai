@@ -8,58 +8,30 @@ class FEAS_AI_Main {
 	public $assets;
 
 	public function __construct() {
-		// 各機能クラスを初期化
-		// FEAS_AI_AjaxとFEAS_AI_Assetsはメインローダーで読み込まれている前提
 		$this->ajax = new FEAS_AI_Ajax();
 		$this->assets = new FEAS_AI_Assets();
 
-		// アクションフックを登録
 		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
 		add_action( 'admin_init', array( $this, 'settings_init' ) );
-		// add_action( 'wp_footer', array( $this, 'add_chat_ui_html' ) );
-		add_action( 'feas_ai_daily_log_rotation_event', array( $this, 'execute_log_rotation' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
-		// 投稿が公開・更新された時に実行
+		add_action( 'feas_ai_daily_log_rotation_event', array( $this, 'execute_log_rotation' ) );
 		add_action( 'save_post', array( $this, 'sync_single_post_on_update' ), 10, 2 );
-		// 投稿がゴミ箱に入れられた時に実行
 		add_action( 'wp_trash_post', array( $this, 'delete_post_from_index' ) );
-		// ゴミ箱から完全に削除された時に実行
 		add_action( 'delete_post', array( $this, 'delete_post_from_index' ) );
 		add_action( 'init', array( $this, 'register_shortcode' ) );
 		add_action( 'wp_footer', array( $this, 'maybe_render_floating_chat' ) );
 	}
 
 	public function add_admin_menu() {
-
 		$parent_slug = 'fe-ai-search';
-
-		add_menu_page(
-			'FE AI Search',                 // ページタイトル
-			'FE AI Search',                 // メニューに表示される名前
-			'manage_options',               // 権限
-			$parent_slug,                   // メニュースラッグ
-			array( $this, 'settings_page_html' ), // このメニューがクリックされた時に表示するページ
-			'dashicons-search',             // アイコン ( https://developer.wordpress.org/resource/dashicons/ )
-			80                              // 表示位置（数字が大きいほど下）
-		);
-
-		// 2. 「設定」サブメニューを追加
-		add_submenu_page(
-			$parent_slug,                   // 親のスラッグ
-			'Settings',                     // ページタイトル
-			'Settings',                     // メニュータイトル
-			'manage_options',               // 権限
-			$parent_slug,                   // 親と同じスラッグにすることで、親をクリックした時のページになる
-			array( $this, 'settings_page_html' )
-		);
-
-		// 3. 「アナリティクス」サブメニューを追加
+		add_menu_page( 'FE AI Search', 'FE AI Search', 'manage_options', $parent_slug, array( $this, 'settings_page_html' ), 'dashicons-search', 80 );
+		add_submenu_page( $parent_slug, 'Settings', 'Settings', 'manage_options', $parent_slug, array( $this, 'settings_page_html' ) );
 		add_submenu_page(
 			$parent_slug,
 			'Search Analytics',
 			'Analytics',
 			'manage_options',
-			$parent_slug . '-analytics',     // 固有のスラッグ
+			$parent_slug . '-analytics',
 			array( $this, 'analytics_page_html' )
 		);
 	}
@@ -68,107 +40,50 @@ class FEAS_AI_Main {
 		$settings_group = 'feas-ai-settings';
 		$page_slug      = 'fe-ai-search';
 
-		register_setting( $settings_group, 'feas_ai_chat_provider' );      // ★ 回答生成用
-		register_setting( $settings_group, 'feas_ai_embedding_provider' ); // ★ ベクトル化用
-
-		// register_setting( $settings_group, 'feas_ai_api_provider' );
+		// --- 1. API設定セクション ---
+		add_settings_section( 'feas_ai_api_section', 'API設定', null, $page_slug );
+		register_setting( $settings_group, 'feas_ai_chat_provider' );
+		register_setting( $settings_group, 'feas_ai_embedding_provider' );
 		register_setting( $settings_group, 'feas_ai_openai_api_key' );
 		register_setting( $settings_group, 'feas_ai_google_api_key' );
 		register_setting( $settings_group, 'feas_ai_anthropic_api_key' );
-		register_setting( $settings_group, 'feas_ai_log_retention_days' );
-		register_setting( $settings_group, 'feas_ai_sync_post_types' );
+		add_settings_field( 'feas_ai_chat_provider', '回答生成モデル', array( $this, 'chat_provider_field_html' ), $page_slug, 'feas_ai_api_section' );
+		add_settings_field( 'feas_ai_embedding_provider', 'ベクトル化モデル', array( $this, 'embedding_provider_field_html' ), $page_slug, 'feas_ai_api_section' );
+		add_settings_field( 'feas_ai_openai_api_key', 'OpenAI API Key', array( $this, 'openai_api_key_field_html' ), $page_slug, 'feas_ai_api_section' );
+		add_settings_field( 'feas_ai_google_api_key', 'Google Cloud API Key', array( $this, 'google_api_key_field_html' ), $page_slug, 'feas_ai_api_section' );
+		add_settings_field( 'feas_ai_anthropic_api_key', 'Anthropic (Claude) API Key', array( $this, 'anthropic_api_key_field_html' ), $page_slug, 'feas_ai_api_section' );
+
+		// --- 2. 同期設定セクション ---
+		add_settings_section( 'feas_ai_sync_section', '同期設定', null, $page_slug );
+		register_setting( $settings_group, 'feas_ai_sync_options' );
 		register_setting( $settings_group, 'feas_ai_include_post_ids' );
 		register_setting( $settings_group, 'feas_ai_exclude_post_ids' );
 		register_setting( $settings_group, 'feas_ai_sync_limit' );
+		add_settings_field( 'feas_ai_sync_options', '同期対象と内容', array( $this, 'sync_options_field_html' ), $page_slug, 'feas_ai_sync_section' );
+		add_settings_field( 'feas_ai_include_post_ids', '含める投稿ID', array( $this, 'include_post_ids_field_html' ), $page_slug, 'feas_ai_sync_section' );
+		add_settings_field( 'feas_ai_exclude_post_ids', '除外する投稿ID', array( $this, 'exclude_post_ids_field_html' ), $page_slug, 'feas_ai_sync_section' );
+		add_settings_field( 'feas_ai_sync_limit', '同期する最大投稿数', array( $this, 'sync_limit_field_html' ), $page_slug, 'feas_ai_sync_section' );
+
+		// --- 3. 表示設定セクション (★復活★) ---
+		add_settings_section( 'feas_ai_display_section', '表示設定', null, $page_slug );
+		register_setting( $settings_group, 'feas_ai_sync_options' );
+
+		add_settings_field( 'feas_ai_display_mode', '表示モード', array( $this, 'display_mode_field_html' ), $page_slug, 'feas_ai_display_section' );
+		add_settings_field( 'feas_ai_greeting_message', '最初の挨拶文', array( $this, 'greeting_message_field_html' ), $page_slug, 'feas_ai_display_section' );
+
+		add_settings_field( 'feas_ai_placeholder_text', '入力欄のプレースホルダー', array( $this, 'placeholder_text_field_html' ), $page_slug, 'feas_ai_display_section' );
+
+		// --- 4. データ管理セクション ---
+		add_settings_section( 'feas_ai_data_section', 'データ管理 (Pro機能)', null, $page_slug );
+		register_setting( $settings_group, 'feas_ai_enable_logging' );
+		register_setting( $settings_group, 'feas_ai_log_retention_days' );
 		register_setting( $settings_group, 'feas_ai_delete_on_uninstall' );
-		register_setting( $settings_group, 'feas_ai_display_mode' );
-
-		add_settings_section(
-			'feas_ai_general_section',
-			'API設定',
-			array( $this, 'general_section_callback' ),
-			$page_slug
-		);
-		add_settings_section(
-			'feas_ai_sync_section', // 同期設定用の新しいセクション
-			'同期設定',
-			null, // コールバックは不要
-			$page_slug
-		);
-		add_settings_section(
-			'feas_ai_display_section', // 表示設定用の新しいセクション
-			'表示設定',
-			null,
-			$page_slug
-		);
-
-		add_settings_field(
-			'feas_ai_chat_provider',
-			'回答生成モデル',
-			array( $this, 'chat_provider_field_html' ),
-			$page_slug,
-			'feas_ai_general_section'
-		);
-
-		add_settings_field(
-			'feas_ai_embedding_provider',
-			'ベクトル化モデル',
-			array( $this, 'embedding_provider_field_html' ),
-			$page_slug,
-			'feas_ai_general_section'
-		);
-
-		add_settings_field( 'feas_ai_openai_api_key', 'OpenAI API Key', array( $this, 'openai_api_key_field_html' ), $page_slug, 'feas_ai_general_section' );
-		add_settings_field( 'feas_ai_google_api_key', 'Google Cloud API Key', array( $this, 'google_api_key_field_html' ), $page_slug, 'feas_ai_general_section' );
-		add_settings_field( 'feas_ai_anthropic_api_key', 'Anthropic (Claude) API Key', array( $this, 'anthropic_api_key_field_html' ), $page_slug, 'feas_ai_general_section' );
-		add_settings_field( 'feas_ai_log_retention_days', 'ログ保存期間（日数）', array( $this, 'log_retention_field_html' ), $page_slug, 'feas_ai_general_section' );
-		add_settings_field(
-			'feas_ai_sync_post_types',
-			'同期対象の投稿タイプ',
-			array( $this, 'sync_post_types_field_html' ),
-			$page_slug,
-			'feas_ai_sync_section' // 新しいセクションに所属させる
-		);
-		add_settings_field(
-			'feas_ai_sync_limit',
-			'同期する最大投稿数',
-			array( $this, 'sync_limit_field_html' ),
-			$page_slug,
-			'feas_ai_sync_section'
-		);
-		add_settings_field(
-			'feas_ai_delete_on_uninstall',
-			'アンインストール時の設定',
-			array( $this, 'delete_on_uninstall_field_html' ),
-			$page_slug,
-			'feas_ai_sync_section' // 同期設定セクションに追加
-		);
-		add_settings_field(
-			'feas_ai_include_post_ids',
-			'含める投稿ID',
-			array( $this, 'include_post_ids_field_html' ),
-			$page_slug,
-			'feas_ai_sync_section'
-		);
-		add_settings_field(
-			'feas_ai_exclude_post_ids',
-			'除外する投稿ID',
-			array( $this, 'exclude_post_ids_field_html' ),
-			$page_slug,
-			'feas_ai_sync_section'
-		);
-		add_settings_field(
-			'feas_ai_display_mode',
-			'表示モード',
-			array( $this, 'display_mode_field_html' ),
-			$page_slug,
-			'feas_ai_display_section' // 新しいセクションに所属
-		);
-
+		add_settings_field( 'feas_ai_enable_logging', '会話履歴の保存', array( $this, 'enable_logging_field_html' ), $page_slug, 'feas_ai_data_section' );
+		add_settings_field( 'feas_ai_log_retention_days', '履歴保存期間（日数）', array( $this, 'log_retention_field_html' ), $page_slug, 'feas_ai_data_section' );
+		add_settings_field( 'feas_ai_delete_on_uninstall', 'アンインストール時の設定', array( $this, 'delete_on_uninstall_field_html' ), $page_slug, 'feas_ai_data_section' );
 	}
 
 	public function settings_page_html() {
-		// フォーム送信の処理を関数の先頭にまとめる
 		if ( isset( $_POST['feas_ai_delete_vectors'] ) && check_admin_referer( 'feas_ai_delete_vectors_nonce' ) ) {
 			global $wpdb;
 			$vectors_table = $wpdb->prefix . 'feas_ai_vectors';
@@ -181,7 +96,6 @@ class FEAS_AI_Main {
 		?>
 		<div class="wrap">
 			<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
-
 			<form action="options.php" method="post">
 				<?php
 				settings_fields( 'feas-ai-settings' );
@@ -190,17 +104,13 @@ class FEAS_AI_Main {
 				?>
 			</form>
 			<hr>
-
 			<h2>コンテンツの同期</h2>
 			<p>サイト内の投稿や固定ページをAIが検索できるように、データを準備・索引化します。</p>
-
 			<?php
-			// --- 最終同期日時と登録記事数を表示 ---
 			global $wpdb;
 			$vectors_table = $wpdb->prefix . 'feas_ai_vectors';
 			$indexed_post_count = $wpdb->get_var( "SELECT COUNT(DISTINCT post_id) FROM `{$vectors_table}`" );
 			$last_sync = get_option( 'feas_ai_last_sync_timestamp' );
-
 			echo '<div style="margin-bottom: 1em; padding: 10px; background-color: #f7f7f7; border: 1px solid #ddd;">';
 			if ( $last_sync ) {
 				echo '<p style="margin: 0;"><strong>最終同期日時:</strong> ' . date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $last_sync ) . '</p>';
@@ -208,29 +118,16 @@ class FEAS_AI_Main {
 			echo '<p style="margin: 0;"><strong>インデックス登録済み記事数:</strong> ' . esc_html( $indexed_post_count ) . ' 件</p>';
 			echo '</div>';
 			?>
-
 			<div id="feas-ai-sync-wrapper">
 				<button id="feas-ai-start-sync" class="button button-primary">同期を開始する</button>
 				<div id="feas-ai-progress-container" style="display: none; margin-top: 10px;">
-					<div id="feas-ai-progress-bar-wrapper" style="width: 100%; background-color: #ddd; border: 1px solid #ccc;">
-						<div id="feas-ai-progress-bar" style="width: 0%; height: 24px; background-color: #0073aa; text-align: right; color: white; line-height: 24px; padding-right: 8px; box-sizing: border-box;">0%</div>
-					</div>
-					<div id="feas-ai-sync-status" style="margin-top: 5px; min-height: 20px;">
-						<span class="dashicons dashicons-update-alt spin" style="display: none; vertical-align: middle; margin-right: 5px;"></span>
-						<span class="status-text"></span>
-					</div>
+					<div id="feas-ai-progress-bar-wrapper" style="width: 100%; background-color: #ddd; border: 1px solid #ccc;"><div id="feas-ai-progress-bar" style="width: 0%; height: 24px; background-color: #0073aa; text-align: right; color: white; line-height: 24px; padding-right: 8px; box-sizing: border-box;">0%</div></div>
+					<div id="feas-ai-sync-status" style="margin-top: 5px; min-height: 20px;"><span class="dashicons dashicons-update-alt spin" style="display: none; vertical-align: middle; margin-right: 5px;"></span><span class="status-text"></span></div>
 				</div>
 			</div>
-
 			<div style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px;">
 				<h3>データ管理</h3>
-				<form method="post" action="">
-					<p>同期されたベクトルデータとキーワード索引をすべて削除します。再度同期を行うまで、AI検索は機能しなくなります。</p>
-					<?php wp_nonce_field( 'feas_ai_delete_vectors_nonce' ); ?>
-					<button type="submit" name="feas_ai_delete_vectors" class="button button-secondary" onclick="return confirm('本当にすべての同期データを削除しますか？この操作は元に戻せません。');">
-						同期データを全削除
-					</button>
-				</form>
+				<form method="post" action=""><p>同期されたベクトルデータとキーワード索引をすべて削除します。再度同期を行うまで、AI検索は機能しなくなります。</p><?php wp_nonce_field( 'feas_ai_delete_vectors_nonce' ); ?><button type="submit" name="feas_ai_delete_vectors" class="button button-secondary" onclick="return confirm('本当にすべての同期データを削除しますか？この操作は元に戻せません。');">同期データを全削除</button></form>
 			</div>
 		</div>
 		<?php
@@ -298,6 +195,11 @@ class FEAS_AI_Main {
 	}
 
 	public function get_chat_ui_html( $mode = 'float' ) {
+
+		$options = get_option('feas_ai_sync_options', []);
+		$placeholder = $options['placeholder_text'] ?? '質問を入力してください...';
+		$greeting = $options['greeting_message'] ?? 'こんにちは！サイト内の情報について、何でも質問してください。';
+
 		ob_start(); // 出力バッファリングを開始
 		?>
 		<div id="feas-ai-chat-container" class="feas-ai-mode-<?php echo esc_attr( $mode ); ?>">
@@ -312,7 +214,7 @@ class FEAS_AI_Main {
 				</div>
 				<div id="feas-ai-chat-messages">
 					<div class="feas-ai-message feas-ai-message-ai">
-						<p>こんにちは！サイト内の情報について、何でも質問してください。</p>
+						<p><?php echo esc_html( $greeting ); ?></p>
 					</div>
 				</div>
 				<div id="feas-ai-chat-footer">
@@ -402,6 +304,11 @@ class FEAS_AI_Main {
 	 * 古いログを削除するCronジョブ
 	 */
 	public function execute_log_rotation() {
+
+		if ( ! get_option( 'feas_ai_enable_logging' ) ) {
+			return; // ログ保存機能が無効なら何もしない
+		}
+
 		$days_to_keep = (int) get_option( 'feas_ai_log_retention_days', 30 );
 
 		if ( $days_to_keep <= 0 ) {
@@ -640,17 +547,12 @@ class FEAS_AI_Main {
 	}
 
 	public function display_mode_field_html() {
-		$mode = get_option( 'feas_ai_display_mode', 'float' ); // デフォルトはフローティング
+		$options = get_option( 'feas_ai_sync_options', [] );
+		$mode = $options['display_mode'] ?? 'float';
 		?>
 		<fieldset>
-			<label>
-				<input type="radio" name="feas_ai_display_mode" value="float" <?php checked( 'float', $mode ); ?>>
-				<span>フローティングモード（サイトの全ページ右下に自動で表示）</span>
-			</label><br>
-			<label>
-				<input type="radio" name="feas_ai_display_mode" value="shortcode" <?php checked( 'shortcode', $mode ); ?>>
-				<span>手動設置モード（ショートコード <code>[feas_ai_chat]</code> で好きな場所に設置）</span>
-			</label>
+			<label><input type="radio" name="feas_ai_sync_options[display_mode]" value="float" <?php checked( 'float', $mode ); ?>> <span>フローティングモード</span></label><br>
+			<label><input type="radio" name="feas_ai_sync_options[display_mode]" value="shortcode" <?php checked( 'shortcode', $mode ); ?>> <span>手動設置モード (<code>[feas_ai_chat]</code>)</span></label>
 		</fieldset>
 		<?php
 	}
@@ -679,5 +581,149 @@ class FEAS_AI_Main {
 			// ショートコードの処理を再利用して出力
 			echo $this->get_chat_ui_html('float');
 		}
+	}
+
+	public function enable_logging_field_html() {
+		$option = get_option( 'feas_ai_enable_logging' );
+		?>
+		<fieldset>
+			<label>
+				<input type="checkbox" name="feas_ai_enable_logging" value="1" <?php checked( $option, '1' ); ?> disabled="disabled" />
+				ユーザーとの会話履歴をデータベースに保存する
+			</label>
+			<p class="description">この機能を有効にすると、管理画面の「Analytics」ページで会話の分析ができます。</p>
+		</fieldset>
+		<?php
+	}
+
+	public function placeholder_text_field_html() {
+		$options = get_option( 'feas_ai_sync_options', [] );
+		$placeholder = $options['placeholder_text'] ?? '質問を入力してください...';
+		?>
+		<input type="text" name="feas_ai_sync_options[placeholder_text]" value="<?php echo esc_attr( $placeholder ); ?>" class="regular-text">
+		<p class="description">チャット入力欄のプレースホルダーをカスタマイズします。</p>
+		<?php
+	}
+
+	public function sync_options_field_html() {
+		$options = get_option( 'feas_ai_sync_options', [] );
+
+		// 表示モードの選択
+		$display_mode = $options['display_mode'] ?? 'float';
+		?>
+		<h4>表示モード</h4>
+		<fieldset>
+			<label>
+				<input type="radio" name="feas_ai_sync_options[display_mode]" value="float" <?php checked( 'float', $display_mode ); ?>>
+				<span>フローティングモード（サイトの右下に自動で表示）</span>
+			</label><br>
+			<label>
+				<input type="radio" name="feas_ai_sync_options[display_mode]" value="shortcode" <?php checked( 'shortcode', $display_mode ); ?>>
+				<span>手動設置モード（ショートコード <code>[feas_ai_chat]</code> で好きな場所に設置）</span>
+			</label>
+		</fieldset>
+		<hr>
+		<?php
+
+		// 同期対象の選択
+		$post_types = get_post_types( ['public' => true], 'objects' );
+		$excluded_post_types = ['attachment'];
+
+		echo '<h4>同期対象と内容</h4>';
+		echo '<p class="description">AI検索の対象とする投稿タイプと、各投稿タイプでチャンクに含めるメタデータを選択してください。</p>';
+		echo '<div id="feas-ai-sync-options-accordion">';
+
+		foreach ( $post_types as $post_type ) {
+			if ( in_array( $post_type->name, $excluded_post_types ) ) continue;
+
+			// ★ デフォルト値をここで定義
+			$defaults = [
+				'enabled' => ($post_type->name === 'post' || $post_type->name === 'page'),
+				'include_title' => true,
+				'include_content' => true, // 本文をデフォルトで有効に
+				'include_date' => true,
+			];
+			$pt_options = wp_parse_args($options['post_types'][ $post_type->name ] ?? [], $defaults);
+
+			?>
+			<div class="post-type-accordion-item" style="border: 1px solid #c3c4c7; margin-bottom: -1px; background: #fff;">
+				<h4 class="accordion-title" style="margin: 0; padding: 10px; cursor: pointer; font-size: 14px; border-bottom: 1px solid #c3c4c7;">
+					<label>
+						<input type="checkbox" name="feas_ai_sync_options[post_types][<?php echo esc_attr($post_type->name); ?>][enabled]" value="1" <?php checked($pt_options['enabled']); ?>>
+						<?php echo esc_html( $post_type->label ); ?> (<code><?php echo esc_html( $post_type->name ); ?></code>)
+					</label>
+				</h4>
+				<div class="accordion-content" style="<?php echo $pt_options['enabled'] ? '' : 'display: none;'; ?> padding: 15px; border-top: 1px solid #ddd;">
+					<fieldset>
+						<label>
+							<input type="checkbox" name="feas_ai_sync_options[post_types][<?php echo esc_attr($post_type->name); ?>][include_title]" value="1" <?php checked($pt_options['include_title']); ?>>
+							タイトルを含める
+						</label><br>
+
+						<label>
+							<input type="checkbox" name="feas_ai_sync_options[post_types][<?php echo esc_attr($post_type->name); ?>][include_content]" value="1" <?php checked($pt_options['include_content']); ?>>
+							本文を含める
+						</label><br>
+						<label>
+							<input type="checkbox" name="feas_ai_sync_options[post_types][<?php echo esc_attr($post_type->name); ?>][include_date]" value="1" <?php checked($pt_options['include_date']); ?>>
+							投稿日を含める
+						</label><br>
+
+						<?php
+						$taxonomies = get_object_taxonomies( $post_type->name, 'objects' );
+						if ( ! empty($taxonomies) ) {
+							foreach( $taxonomies as $tax ) {
+								if (!$tax->public) continue;
+								?>
+								<label>
+									<input type="checkbox" name="feas_ai_sync_options[post_types][<?php echo esc_attr($post_type->name); ?>][taxonomies][]" value="<?php echo esc_attr($tax->name); ?>" <?php checked( !empty($pt_options['taxonomies']) && in_array($tax->name, $pt_options['taxonomies'])); ?>>
+									<?php echo esc_html( $tax->label ); ?>を含める
+								</label><br>
+								<?php
+							}
+						}
+						?>
+
+						<div style="margin-top: 10px;">
+							<label for="feas_ai_custom_fields_<?php echo esc_attr($post_type->name); ?>">
+								<strong>カスタムフィールドを含める (Pro機能)</strong>
+							</label><br>
+							<input
+								type="text"
+								id="feas_ai_custom_fields_<?php echo esc_attr($post_type->name); ?>"
+								name="feas_ai_sync_options[post_types][<?php echo esc_attr($post_type->name); ?>][custom_fields]"
+								value="<?php echo esc_attr($pt_options['custom_fields'] ?? ''); ?>"
+								class="regular-text"
+								placeholder="field_name_1, field_name_2"
+								disabled="disabled" >
+							<p class="description">含めたいカスタムフィールドのキーをカンマ区切りで入力します。</p>
+						</div>
+					</fieldset>
+				</div>
+			</div>
+			<?php
+		}
+		echo '</div>'; // アコーディオンコンテナの閉じタグ
+
+		// アコーディオンを動かすための簡単なJavaScript
+		?>
+		<script>
+		jQuery(document).ready(function($) {
+			$('#feas-ai-sync-options-accordion .accordion-title').on('click', function(e){
+				if (e.target.type === 'checkbox') return; // チェックボックス自体のクリックは無視
+				$(this).next('.accordion-content').slideToggle();
+			});
+		});
+		</script>
+		<?php
+	}
+
+	public function greeting_message_field_html() {
+		$options = get_option('feas_ai_sync_options', []);
+		$greeting = $options['greeting_message'] ?? 'こんにちは！サイト内の情報について、何でも質問してください。';
+		?>
+		<textarea name="feas_ai_sync_options[greeting_message]" rows="3" class="large-text"><?php echo esc_textarea( $greeting ); ?></textarea>
+		<p class="description">チャットウィンドウを開いた時に、最初にAIが表示する挨拶文をカスタマイズします。</p>
+		<?php
 	}
 }

@@ -547,6 +547,12 @@ class FEAS_AI_Ajax {
 	}
 
 	public function ajax_log_query() {
+
+		if ( ! get_option( 'feas_ai_enable_logging' ) ) {
+			wp_send_json_success();
+			return;
+		}
+
 		check_ajax_referer( 'feas_ai_ajax_nonce', 'nonce' );
 
 		global $wpdb;
