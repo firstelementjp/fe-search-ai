@@ -1,8 +1,8 @@
 #feas-ai-chat-container {
-	position: fixed;
-	bottom: 20px;
-	right: 20px;
-	z-index: 1000;
+	/* position: fixed; */
+	/* bottom: 20px; */
+	/* right: 20px; */
+	/* z-index: 1000; */
 }
 
 #feas-ai-chat-bubble {
@@ -129,3 +129,77 @@
 	from, to { background-color: transparent }
 	50% { background-color: #333; }
 }
+
+
+ /* ==========================================================================
+	フローティングモード (.feas-ai-mode-float) 専用スタイル
+	========================================================================== */
+ .feas-ai-mode-float {
+	 position: fixed;
+	 bottom: 20px;
+	 right: 20px;
+	 z-index: 1000;
+ }
+
+ .feas-ai-mode-float #feas-ai-chat-bubble {
+	 width: 60px;
+	 height: 60px;
+	 background-color: #0073aa;
+	 color: white;
+	 border-radius: 50%;
+	 display: flex;
+	 justify-content: center;
+	 align-items: center;
+	 cursor: pointer;
+	 box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+ }
+
+ .feas-ai-mode-float #feas-ai-chat-window {
+	 width: 350px;
+	 max-width: 90vw;
+	 height: 500px;
+	 max-height: 80vh;
+	 background: white;
+	 border-radius: 10px;
+	 box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+	 display: flex;
+	 flex-direction: column;
+	 overflow: hidden;
+ }
+
+ .feas-ai-mode-float #feas-ai-chat-window.hidden {
+	 display: none;
+ }
+
+
+ /* ==========================================================================
+	埋め込みモード (.feas-ai-mode-embed) 専用スタイル
+	========================================================================== */
+ .feas-ai-mode-embed {
+	 position: relative;
+	 width: 100%;
+	 margin-bottom: 1.5em;
+ }
+
+ .feas-ai-mode-embed #feas-ai-chat-bubble {
+	 /* 埋め込みモードでは、常にウィンドウを開いた状態にするためバブルは不要 */
+	 display: none;
+ }
+
+ .feas-ai-mode-embed #feas-ai-chat-window {
+	 width: 100%;
+	 height: 500px; /* 高さは好みに応じて調整 */
+	 max-height: 80vh;
+	 background: white;
+	 border: 1px solid #ddd; /* 枠線を追加 */
+	 border-radius: 8px;
+	 box-shadow: none; /* 影は不要 */
+	 display: flex;
+	 flex-direction: column;
+	 overflow: hidden;
+ }
+
+ /* 埋め込みモードでは常に表示するので、hiddenクラスは影響しない */
+ .feas-ai-mode-embed #feas-ai-chat-window.hidden {
+	 display: flex;
+ }

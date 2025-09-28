@@ -75,6 +75,9 @@ jQuery(document).ready(function($) {
 					statusText.html(`<strong style="color: green;">同期が完了しました！(${totalPosts}件)</strong>`);
 					startBtn.prop('disabled', false);
 					statusSpinner.hide();
+
+					// ▼▼▼ タイムスタンプ更新のリクエストを追加 ▼▼▼
+					$.post(ajaxurl, { action: 'feas_ai_update_sync_timestamp', nonce: feas_ai_sync_obj.nonce });
 				}
 			} else {
 				statusText.html(`<span style="color: red;">エラー: バッチ ${currentPage} の処理中に問題が発生しました。</span>`);
@@ -88,4 +91,42 @@ jQuery(document).ready(function($) {
 			statusSpinner.hide();
 		});
 	}
+
+	$('.feas-ai-test-api').on('click', function() {
+		const $button = $(this);
+		const provider = $button.data('provider');
+		const $input = $('#feas_ai_' + provider + '_api_key');
+		const apiKey = $input.val();
+		const $spinner = $button.siblings('.spinner');
+		const $status = $button.siblings('.feas-ai-api-status');
+
+		if (!apiKey) {
+			alert('APIキーを入力してください。');
+			return;
+		}
+
+		$spinner.css('visibility', 'visible');
+		$status.text('');
+
+		$.post(ajaxurl, {
+			action: 'feas_ai_test_api_key',
+			nonce: feas_ai_sync_obj.nonce,
+			provider: provider,
+			api_key: apiKey
+		})
+		.done(function(response) {
+			if (response.success) {
+				$status.html(response.data);
+			} else {
+				$status.html(response.data);
+			}
+		})
+		.fail(function() {
+			$status.html('<span style="color: red;">✖ 通信エラーが発生しました。</span>');
+		})
+		.always(function() {
+			$spinner.css('visibility', 'hidden');
+		});
+	});
+
 });

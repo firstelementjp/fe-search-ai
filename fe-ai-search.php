@@ -36,3 +36,10 @@ function feas_ai_run_plugin() {
 	new FEAS_AI_Main();
 }
 add_action( 'plugins_loaded', 'feas_ai_run_plugin' );
+
+/**
+ * FE AI SearchのチャットUIを直接描画するためのテンプレートタグ
+ */
+function feas_ai_render_chat() {
+	echo do_shortcode('[feas_ai_chat]');
+}

@@ -10,6 +10,8 @@ class FEAS_AI_Ajax {
 		add_action( 'wp_ajax_feas_ai_log_query', array( $this, 'ajax_log_query' ) );
 		add_action( 'wp_ajax_feas_ai_start_sync', array( $this, 'ajax_start_sync' ) );
 		add_action( 'wp_ajax_feas_ai_process_batch', array( $this, 'ajax_process_batch' ) );
+		add_action( 'wp_ajax_feas_ai_test_api_key', array( $this, 'ajax_test_api_key' ) );
+		add_action( 'wp_ajax_feas_ai_update_sync_timestamp', array( $this, 'ajax_update_sync_timestamp' ) );
 	}
 
 	/**
@@ -577,25 +579,50 @@ class FEAS_AI_Ajax {
 	public function ajax_start_sync() {
 		check_ajax_referer( 'feas_ai_ajax_nonce', 'nonce' );
 
-		// 古いデータをすべて削除
 		global $wpdb;
 		$vectors_table = $wpdb->prefix . 'feas_ai_vectors';
 		$index_table   = $wpdb->prefix . 'feas_ai_keyword_index';
 		$wpdb->query( "TRUNCATE TABLE `{$vectors_table}`" );
 		$wpdb->query( "TRUNCATE TABLE `{$index_table}`" );
 
-		// 処理すべき投稿の総数を計算
+		$post_types_to_sync = get_option( 'feas_ai_sync_post_types', array('post', 'page') );
+		$include_ids_str    = get_option( 'feas_ai_include_post_ids', '' );
+		$exclude_ids_str    = get_option( 'feas_ai_exclude_post_ids', '' );
+		$sync_limit         = (int) get_option( 'feas_ai_sync_limit', 0 );
+
+		// 基本となるクエリ引数を設定
 		$args = array(
-			'post_type'      => array( 'post', 'page' ),
 			'post_status'    => 'publish',
-			'posts_per_page' => 1000,
-			'fields'         => 'ids', // IDだけ取得すれば高速
+			'posts_per_page' => -1, // ★★★ -1に修正して全件を対象にする
+			'fields'         => 'ids',
+			'cache_results'  => false, // キャッシュを無効化してメモリを節約
 		);
-		$all_post_ids = get_posts( $args );
+
+		if ( $sync_limit > 0 ) {
+			$args['posts_per_page'] = $sync_limit;
+		} else {
+			$args['posts_per_page'] = -1; // 0の場合は全件取得
+		}
+
+		// ID指定のロジックを適用
+		$include_ids = array_filter( array_map('intval', explode(',', $include_ids_str)) );
+		$exclude_ids = array_filter( array_map('intval', explode(',', $exclude_ids_str)) );
+
+		if ( ! empty( $include_ids ) ) {
+			$args['post__in'] = $include_ids;
+		} else {
+			$args['post_type'] = empty($post_types_to_sync) ? array('post', 'page') : $post_types_to_sync;
+			if ( ! empty( $exclude_ids ) ) {
+				$args['post__not_in'] = $exclude_ids;
+			}
+		}
+
+		// WP_Queryを使って投稿の総数を安全に取得
+		$query = new WP_Query( $args );
+		$total_posts = $query->found_posts;
 
 		// 総ページ数を計算してJSに返す
-		$batch_size = 10;
-		$total_posts = count($all_post_ids);
+		$batch_size = 10; // バッチサイズは100件が効率的
 		$total_pages = ceil( $total_posts / $batch_size );
 
 		wp_send_json_success( array(
@@ -613,14 +640,41 @@ class FEAS_AI_Ajax {
 		$page = isset( $_POST['page'] ) ? absint( $_POST['page'] ) : 1;
 		$batch_size = 10;
 
+		$post_types_to_sync = get_option( 'feas_ai_sync_post_types', array('post', 'page') );
+		$include_ids_str    = get_option( 'feas_ai_include_post_ids', '' );
+		$exclude_ids_str    = get_option( 'feas_ai_exclude_post_ids', '' );
+
+		if ( empty($post_types_to_sync) ) {
+			wp_send_json_success( array('message' => 'No post types selected.') );
+			return;
+		}
+
 		$args = array(
-			'post_type'      => array( 'post', 'page' ),
+			'post_type'      => $post_types_to_sync,
 			'post_status'    => 'publish',
 			'posts_per_page' => $batch_size,
 			'paged'          => $page,
 			'orderby'        => 'ID',
 			'order'          => 'ASC',
 		);
+
+		$include_ids = array_map('intval', explode(',', $include_ids_str));
+		$exclude_ids = array_map('intval', explode(',', $exclude_ids_str));
+
+		if ( ! empty( array_filter($include_ids) ) ) {
+			$args['post__in'] = $include_ids;
+			// post__in を使う場合、pagedは機能しないため、手動でページングする
+			$offset = ($page - 1) * $batch_size;
+			$args['offset'] = $offset;
+			$args['posts_per_page'] = $batch_size;
+			unset($args['paged']); // pagedとoffsetは同時に使えない
+		} else {
+			$args['post_type'] = empty($post_types_to_sync) ? array('post', 'page') : $post_types_to_sync;
+			if ( ! empty( array_filter($exclude_ids) ) ) {
+				$args['post__not_in'] = $exclude_ids;
+			}
+		}
+
 		$posts_batch = get_posts( $args );
 
 		if ( empty( $posts_batch ) ) {
@@ -727,6 +781,65 @@ class FEAS_AI_Ajax {
 		...
 		return $formatted_response;
 		*/
+	}
+
+	public function ajax_test_api_key() {
+		check_ajax_referer( 'feas_ai_ajax_nonce', 'nonce' );
+		$provider = isset($_POST['provider']) ? sanitize_key($_POST['provider']) : '';
+		$api_key = isset($_POST['api_key']) ? sanitize_text_field($_POST['api_key']) : '';
+
+		if ( empty($provider) || empty($api_key) ) {
+			wp_send_json_error('プロバイダーまたはAPIキーがありません。');
+		}
+
+		$is_valid = false;
+		$error_message = '';
+
+		switch ($provider) {
+			case 'openai':
+				$response = wp_remote_get('https://api.openai.com/v1/models', [
+					'headers' => ['Authorization' => 'Bearer ' . $api_key]
+				]);
+				if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
+					$is_valid = true;
+				} else {
+					$error_message = is_wp_error($response) ? $response->get_error_message() : '認証に失敗しました。';
+				}
+				break;
+			case 'anthropic':
+				$response = wp_remote_post('https://api.anthropic.com/v1/messages', [
+					'headers' => [
+						'x-api-key' => $api_key,
+						'anthropic-version' => '2023-06-01',
+						'Content-Type' => 'application/json'
+					],
+					'body' => json_encode([
+						'model' => 'claude-3-haiku-20240307', // 最も軽量なモデルでテスト
+						'max_tokens' => 1,
+						'messages' => [['role' => 'user', 'content' => 'Hello']]
+					])
+				]);
+				// Claudeは不正なキーでも200を返すことがあるため、ボディのエラータイプで判断
+				if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 401) {
+					 $error_message = '認証に失敗しました (401 Unauthorized)。';
+				} else {
+					 $is_valid = true; // 401以外の応答はキーが有効である可能性が高い
+				}
+				break;
+			// (Geminiのテストも同様に追加可能)
+		}
+
+		if ($is_valid) {
+			wp_send_json_success('<span style="color: green;">✔ 接続に成功しました</span>');
+		} else {
+			wp_send_json_error('<span style="color: red;">✖ 接続に失敗しました: ' . $error_message . '</span>');
+		}
+	}
+
+	public function ajax_update_sync_timestamp() {
+		check_ajax_referer( 'feas_ai_ajax_nonce', 'nonce' );
+		update_option( 'feas_ai_last_sync_timestamp', current_time( 'timestamp' ) );
+		wp_send_json_success();
 	}
 
 }
