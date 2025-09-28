@@ -1,11 +1,15 @@
-#feas-ai-chat-container {
-	/* position: fixed; */
-	/* bottom: 20px; */
-	/* right: 20px; */
-	/* z-index: 1000; */
-}
+/* #feas-ai-chat-container {
+	position: fixed;
+	bottom: 20px;
+	right: 20px;
+	z-index: 1000;
+} */
 
 #feas-ai-chat-bubble {
+	position: fixed;
+	bottom: 20px;
+	right: 20px;
+	z-index: 1000;
 	width: 60px;
 	height: 60px;
 	background-color: #0073aa;
@@ -139,6 +143,10 @@
 	 bottom: 20px;
 	 right: 20px;
 	 z-index: 1000;
+ }
+
+ .feas-ai-mode-float #feas-ai-chat-bubble.hidden {
+	 display: none;
  }
 
  .feas-ai-mode-float #feas-ai-chat-bubble {
