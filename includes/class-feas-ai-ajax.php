@@ -12,6 +12,7 @@ class FEAS_AI_Ajax {
 		add_action( 'wp_ajax_feas_ai_process_batch', array( $this, 'ajax_process_batch' ) );
 		add_action( 'wp_ajax_feas_ai_test_api_key', array( $this, 'ajax_test_api_key' ) );
 		add_action( 'wp_ajax_feas_ai_update_sync_timestamp', array( $this, 'ajax_update_sync_timestamp' ) );
+		add_action( 'wp_ajax_feas_ai_delete_vectors', array( $this, 'ajax_delete_vectors' ) );
 	}
 
 	/**
@@ -605,146 +606,235 @@ class FEAS_AI_Ajax {
 		$wpdb->query( "TRUNCATE TABLE `{$vectors_table}`" );
 		$wpdb->query( "TRUNCATE TABLE `{$index_table}`" );
 
-		$post_types_to_sync = get_option( 'feas_ai_sync_post_types', array('post', 'page') );
-		$include_ids_str    = get_option( 'feas_ai_include_post_ids', '' );
-		$exclude_ids_str    = get_option( 'feas_ai_exclude_post_ids', '' );
-		$sync_limit         = (int) get_option( 'feas_ai_sync_limit', 0 );
+		$sync_options    = get_option( 'feas_ai_sync_options', [] );
+		$include_ids_str = get_option( 'feas_ai_include_post_ids', '' );
+		$exclude_ids_str = get_option( 'feas_ai_exclude_post_ids', '' );
+		$sync_limit      = (int) get_option( 'feas_ai_sync_limit', 0 );
 
-		// 基本となるクエリ引数を設定
-		$args = array(
-			'post_status'    => 'publish',
-			'posts_per_page' => -1, // ★★★ -1に修正して全件を対象にする
-			'fields'         => 'ids',
-			'cache_results'  => false, // キャッシュを無効化してメモリを節約
-		);
-
-		if ( $sync_limit > 0 ) {
-			$args['posts_per_page'] = $sync_limit;
-		} else {
-			$args['posts_per_page'] = -1; // 0の場合は全件取得
+		$post_types_to_sync = [];
+		if ( !empty($sync_options['post_types']) && is_array($sync_options['post_types']) ) {
+			foreach ($sync_options['post_types'] as $pt_slug => $pt_options) {
+				if ( !empty($pt_options['enabled']) ) {
+					$post_types_to_sync[] = $pt_slug;
+				}
+			}
 		}
 
-		// ID指定のロジックを適用
+		$args = [
+			'post_status'    => 'publish',
+			'fields'         => 'ids',
+			'cache_results'  => false,
+			'posts_per_page' => ($sync_limit > 0) ? $sync_limit : -1,
+			'orderby'        => 'date',
+			'order'          => 'DESC',
+		];
+
 		$include_ids = array_filter( array_map('intval', explode(',', $include_ids_str)) );
 		$exclude_ids = array_filter( array_map('intval', explode(',', $exclude_ids_str)) );
 
 		if ( ! empty( $include_ids ) ) {
 			$args['post__in'] = $include_ids;
 		} else {
-			$args['post_type'] = empty($post_types_to_sync) ? array('post', 'page') : $post_types_to_sync;
+			$args['post_type'] = empty($post_types_to_sync) ? ['post', 'page'] : $post_types_to_sync;
 			if ( ! empty( $exclude_ids ) ) {
 				$args['post__not_in'] = $exclude_ids;
 			}
 		}
 
-		// WP_Queryを使って投稿の総数を安全に取得
-		$query = new WP_Query( $args );
-		$total_posts = $query->found_posts;
+		$all_post_ids = get_posts( $args );
+		$total_posts = count($all_post_ids);
 
-		// 総ページ数を計算してJSに返す
-		$batch_size = 10; // バッチサイズは100件が効率的
+		$batch_size = 10;
 		$total_pages = ceil( $total_posts / $batch_size );
 
-		wp_send_json_success( array(
+		wp_send_json_success( [
 			'total_pages' => $total_pages,
 			'total_posts' => $total_posts,
-		) );
+			'post_ids'    => $all_post_ids, // ★★★ 処理対象のIDリストをJSに渡す
+		] );
 	}
 
 	/**
 	 * 1バッチ分の同期処理をハンドルする
 	 */
+	// public function ajax_process_batch() {
+	// 	// ログファイルのヘッダーとして機能
+	// 	error_log("\n--- NEW BATCH PROCESS ---");
+//
+	// 	// 1. Nonce検証
+	// 	if ( ! check_ajax_referer( 'feas_ai_ajax_nonce', 'nonce', false ) ) {
+	// 		error_log("Nonce verification failed.");
+	// 		wp_send_json_error( 'Nonce failed.' );
+	// 	}
+	// 	error_log("Nonce OK.");
+//
+	// 	// 2. パラメータ取得
+	// 	$page = isset( $_POST['page'] ) ? absint( $_POST['page'] ) : 1;
+	// 	$post_ids_json = isset($_POST['post_ids']) ? stripslashes($_POST['post_ids']) : '[]';
+	// 	$all_post_ids = json_decode($post_ids_json, true);
+	// 	error_log("Page: {$page}");
+	// 	error_log("Received Post IDs Count: " . count($all_post_ids));
+//
+	// 	// 3. バッチIDの切り出し
+	// 	$batch_size = 100;
+	// 	$offset = ($page - 1) * $batch_size;
+	// 	$batch_ids = array_slice($all_post_ids, $offset, $batch_size);
+	// 	error_log("Batch IDs Count for this page: " . count($batch_ids));
+//
+	// 	if ( empty($batch_ids) ) {
+	// 		error_log("Batch IDs are empty. Exiting.");
+	// 		wp_send_json_success( ['message' => 'No more posts to process.'] );
+	// 		return;
+	// 	}
+//
+	// 	// 4. get_postsの実行
+	// 	error_log("Calling get_posts()...");
+	// 	$posts_batch = get_posts([
+	// 		'post__in'            => $batch_ids,
+	// 		'post_type'           => 'any',
+	// 		'orderby'             => 'post__in',
+	// 		'posts_per_page'      => count($batch_ids),
+	// 		'ignore_sticky_posts' => 1,
+	// 	]);
+	// 	error_log("get_posts() finished. Found " . count($posts_batch) . " posts.");
+//
+	// 	if ( empty( $posts_batch ) ) {
+	// 		error_log("Fetched posts are empty. Exiting.");
+	// 		wp_send_json_success( ['message' => 'No more posts to process.'] );
+	// 		return;
+	// 	}
+//
+	// 	// 5. ループ処理開始
+	// 	error_log("Starting foreach loop...");
+	// 	foreach ( $posts_batch as $post ) {
+	// 		error_log("Processing Post ID: " . $post->ID);
+	// 		// ループ内の処理は一旦省略して、ここまで到達するかを確認
+	// 	}
+	// 	error_log("Foreach loop finished.");
+//
+	// 	wp_send_json_success( ['message' => 'Batch ' . $page . ' processed.'] );
+	// }
+
+
 	public function ajax_process_batch() {
 		check_ajax_referer( 'feas_ai_ajax_nonce', 'nonce' );
 
 		$page = isset( $_POST['page'] ) ? absint( $_POST['page'] ) : 1;
+		$post_ids_json = isset($_POST['post_ids']) ? stripslashes($_POST['post_ids']) : '[]';
+		$post_ids = json_decode($post_ids_json, true);
+
 		$batch_size = 10;
 
-		$post_types_to_sync = get_option( 'feas_ai_sync_post_types', array('post', 'page') );
-		$include_ids_str    = get_option( 'feas_ai_include_post_ids', '' );
-		$exclude_ids_str    = get_option( 'feas_ai_exclude_post_ids', '' );
+		// ★ JSから渡されたIDリストを元に、このバッチの担当分を切り出す
+		$offset = ($page - 1) * $batch_size;
+		$batch_ids = array_slice($post_ids, $offset, $batch_size);
 
-		if ( empty($post_types_to_sync) ) {
-			wp_send_json_success( array('message' => 'No post types selected.') );
+		if ( empty($batch_ids) ) {
+			wp_send_json_success( ['message' => 'No more posts to process.'] );
 			return;
 		}
 
-		$args = array(
-			'post_type'      => $post_types_to_sync,
-			'post_status'    => 'publish',
-			'posts_per_page' => $batch_size,
-			'paged'          => $page,
-			'orderby'        => 'ID',
-			'order'          => 'ASC',
-		);
+		$sql_query_catcher = function( $request ) {
+			error_log( '--- GENERATED SQL QUERY for get_posts ---' );
+			error_log( $request );
+			return $request;
+		};
+		add_filter( 'posts_request', $sql_query_catcher, 10, 1 );
 
-		$include_ids = array_map('intval', explode(',', $include_ids_str));
-		$exclude_ids = array_map('intval', explode(',', $exclude_ids_str));
+		$posts_batch = get_posts([
+			'post__in'            => $batch_ids,
+			'post_type'           => 'any',
+			'orderby'             => 'post__in',
+			'posts_per_page'      => count($batch_ids),
+			'ignore_sticky_posts' => 1,
+		]);
 
-		if ( ! empty( array_filter($include_ids) ) ) {
-			$args['post__in'] = $include_ids;
-			// post__in を使う場合、pagedは機能しないため、手動でページングする
-			$offset = ($page - 1) * $batch_size;
-			$args['offset'] = $offset;
-			$args['posts_per_page'] = $batch_size;
-			unset($args['paged']); // pagedとoffsetは同時に使えない
-		} else {
-			$args['post_type'] = empty($post_types_to_sync) ? array('post', 'page') : $post_types_to_sync;
-			if ( ! empty( array_filter($exclude_ids) ) ) {
-				$args['post__not_in'] = $exclude_ids;
-			}
-		}
+		remove_filter( 'posts_request', $sql_query_catcher, 10 );
 
-		$posts_batch = get_posts( $args );
+		// デバッグログを出力
+		error_log('--- FE AI Batch Debug ---');
+		error_log('Page: ' . $page);
+		error_log('Batch IDs Count: ' . count($batch_ids));
+		error_log('Fetched Posts Count: ' . count($posts_batch));
 
-		if ( empty( $posts_batch ) ) {
-			wp_send_json_success( array('message' => 'No more posts to process.') );
-			return;
-		}
+		$sync_options = get_option('feas_ai_sync_options', []);
 
+		// --- 3. 投稿をループ処理し、設定に応じてチャンクを作成・保存 ---
 		$segmenter = new TinySegmenter();
 		global $wpdb;
 		$vectors_table = $wpdb->prefix . 'feas_ai_vectors';
 		$index_table   = $wpdb->prefix . 'feas_ai_keyword_index';
 
 		foreach ( $posts_batch as $post ) {
-			$content = strip_shortcodes( $post->post_content );
-			$content = wp_strip_all_tags( $content );
-			$raw_chunks = explode( "\n\n", $content );
+			$pt_options = $sync_options['post_types'][ $post->post_type ] ?? [];
+
+			$metadata_header = '';
+			if ( !empty($pt_options['include_title']) ) $metadata_header .= "タイトル: " . $post->post_title . "\n";
+			if ( !empty($pt_options['include_date']) ) $metadata_header .= "投稿日: " . $post->post_date . "\n";
+
+			if ( !empty($pt_options['taxonomies']) && is_array($pt_options['taxonomies']) ) {
+				foreach($pt_options['taxonomies'] as $tax_slug) {
+					$terms = get_the_terms($post->ID, $tax_slug);
+					if ( !is_wp_error($terms) && !empty($terms) ) {
+						$term_names = wp_list_pluck($terms, 'name');
+						$taxonomy_obj = get_taxonomy($tax_slug);
+						$metadata_header .= $taxonomy_obj->label . ": " . implode(', ', $term_names) . "\n";
+					}
+				}
+			}
+
+			if ( class_exists('FEAS_AI_Pro') && !empty($pt_options['custom_fields']) ) {
+				$custom_field_keys = array_map('trim', explode(',', $pt_options['custom_fields']));
+				foreach ($custom_field_keys as $key) {
+					$value = get_post_meta($post->ID, $key, true);
+					if ($value) {
+						$metadata_header .= "{$key}: {$value}\n";
+					}
+				}
+			}
+
+			$content = '';
+			if ( !empty($pt_options['include_content']) ) {
+				$content = strip_shortcodes( $post->post_content );
+				$content = wp_strip_all_tags( $content );
+			}
+
+			$raw_chunks = empty(trim($content)) ? [''] : explode( "\n\n", $content );
 			$valid_chunks = array_values( array_filter( array_map( 'trim', $raw_chunks ) ) );
+			if ( empty($valid_chunks) && !empty(trim($metadata_header)) ) {
+				$valid_chunks = ['']; // メタデータのみの場合も処理
+			}
+			if ( empty( $valid_chunks ) ) continue;
 
-			if ( empty( $valid_chunks ) ) { continue; }
+			$chunks_with_meta = [];
+			foreach($valid_chunks as $chunk) {
+				$chunks_with_meta[] = trim($metadata_header) . "\n---\n" . $chunk;
+			}
 
-			$embedding_response = $this->get_embeddings_via_selected_provider( $valid_chunks );
-
-			if ( ! is_wp_error( $embedding_response ) ) {
+			$embedding_response = $this->get_embeddings_via_selected_provider( $chunks_with_meta );
+			if ( ! is_wp_error( $embedding_response ) && !empty($embedding_response['data']) ) {
 				$vectors_data = $embedding_response['data'];
 				foreach ( $vectors_data as $index => $vector_item ) {
 					$wpdb->insert(
 						$vectors_table,
-						array(
+						[
 							'post_id'       => $post->ID,
 							'chunk_index'   => $index,
-							'content_chunk' => $valid_chunks[$index],
+							'content_chunk' => $chunks_with_meta[$index],
 							'vector_data'   => json_encode( $vector_item['embedding'] ),
 							'created_at'    => current_time( 'mysql' ),
-						),
-						// ▼▼▼ 抜けていたフォーマット指定子を追加 ▼▼▼
-						array( '%d', '%d', '%s', '%s', '%s' )
+						],
+						[ '%d', '%d', '%s', '%s', '%s' ]
 					);
 					$vector_id = $wpdb->insert_id;
 					if ($vector_id) {
-						$keywords = $segmenter->segment($valid_chunks[$index]);
+						$keywords = $segmenter->segment($chunks_with_meta[$index]);
 						foreach ( array_unique( $keywords ) as $keyword ) {
 							if ( mb_strlen( $keyword ) > 1 ) {
 								$wpdb->insert(
 									$index_table,
-									array(
-										'keyword'   => $keyword,
-										'vector_id' => $vector_id,
-									),
-									// こちらも念のため追加
-									array( '%s', '%d' )
+									[ 'keyword' => $keyword, 'vector_id' => $vector_id ],
+									[ '%s', '%d' ]
 								);
 							}
 						}
@@ -752,8 +842,7 @@ class FEAS_AI_Ajax {
 				}
 			}
 		}
-
-		wp_send_json_success( array('message' => 'Batch ' . $page . ' processed.') );
+		wp_send_json_success( ['message' => 'Batch ' . $page . ' processed.'] );
 	}
 
 	private function reframe_query_with_history( $question, $history ) {
@@ -1011,6 +1100,21 @@ class FEAS_AI_Ajax {
 
 		echo "data: [DONE]\n\n";
 		flush();
+	}
+
+	public function ajax_delete_vectors() {
+		check_ajax_referer( 'feas_ai_ajax_nonce', 'nonce' );
+
+		global $wpdb;
+		$vectors_table = $wpdb->prefix . 'feas_ai_vectors';
+		$index_table   = $wpdb->prefix . 'feas_ai_keyword_index';
+
+		$wpdb->query( "TRUNCATE TABLE `{$vectors_table}`" );
+		$wpdb->query( "TRUNCATE TABLE `{$index_table}`" );
+
+		delete_option( 'feas_ai_last_sync_timestamp' );
+
+		wp_send_json_success('すべての同期データを削除しました。');
 	}
 
 

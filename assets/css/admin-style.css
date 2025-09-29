@@ -1,12 +1,21 @@
-.wrap h2 {
+/* .wrap h2 {
 	background: #d4d6dc;
 	padding: 1rem;
 	border-radius: 5px;
-}
+} */
 
 .feas-ai-tabs-wrapper .tab-content {
 	display: none;
 	margin-top: 1em;
+}
+
+/* タブコンテンツの基本スタイル */
+.tab-content {
+	display: none;
+	padding-top: 1.5em;
+}
+.tab-content.active {
+	display: block;
 }
 
 .spin {

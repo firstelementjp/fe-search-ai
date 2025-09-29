@@ -119,6 +119,7 @@
 	background: #0073aa;
 	color: white;
 	border-radius: 5px;
+	white-space: nowrap;
 	cursor: pointer;
 }
 
@@ -205,6 +206,10 @@
 	 display: flex;
 	 flex-direction: column;
 	 overflow: hidden;
+ }
+
+ .feas-ai-mode-embed #feas-ai-chat-close {
+	 display: none;
  }
 
  /* 埋め込みモードでは常に表示するので、hiddenクラスは影響しない */
