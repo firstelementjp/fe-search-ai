@@ -9,12 +9,14 @@ class FEAS_AI_Assets {
 	 * フロントエンド用のスクリプトとスタイルを読み込む
 	 */
 	public function enqueue_assets() {
-		wp_enqueue_style(
-			'feas-ai-chat-style',
-			plugin_dir_url( __DIR__ ) . 'assets/css/chat-style.css',
-			array(),
-			FEAS_AI_VERSION
-		);
+		if ( ! get_option( 'feas_ai_disable_css' ) ) {
+			wp_enqueue_style(
+				'feas-ai-chat-style',
+				plugin_dir_url( __DIR__ ) . 'assets/css/chat-style.css',
+				array(),
+				FEAS_AI_VERSION
+			);
+		}
 
 		wp_enqueue_script(
 			'feas-ai-chat-main',

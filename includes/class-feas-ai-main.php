@@ -72,6 +72,8 @@ class FEAS_AI_Main {
 		add_settings_field( 'feas_ai_greeting_message', '最初の挨拶文', array( $this, 'greeting_message_field_html' ), $page_slug, 'feas_ai_display_section' );
 		add_settings_field( 'feas_ai_placeholder_text', '入力欄のプレースホルダー', array( $this, 'placeholder_text_field_html' ), $page_slug, 'feas_ai_display_section' );
 		add_settings_field( 'feas_ai_display_rules', 'フローティング表示ルール', array( $this, 'display_rules_field_html' ), $page_slug, 'feas_ai_display_section' );
+		register_setting( $settings_group, 'feas_ai_disable_css' );
+		add_settings_field( 'feas_ai_disable_css', 'CSS設定', array( $this, 'disable_css_field_html' ), $page_slug, 'feas_ai_display_section' );
 
 		// --- 4. データ管理セクション (Pro機能) ---
 		add_settings_section( 'feas_ai_data_section', 'データ管理 (Pro機能)', null, $page_slug );
@@ -751,6 +753,21 @@ class FEAS_AI_Main {
 			<?php endforeach; ?>
 		</div>
 		<p class="description">AIモデルごとにシステムプロンプトをカスタマイズします。空にすると、プラグイン標準のプロンプトが使用されます。</p>
+		<?php
+	}
+
+	public function disable_css_field_html() {
+		$option = get_option( 'feas_ai_disable_css' );
+		?>
+		<fieldset>
+			<label>
+				<input type="checkbox" name="feas_ai_disable_css" value="1" <?php checked( $option, '1' ); ?> />
+				プラグイン同梱のCSS（chat-style.css）を読み込まない
+			</label>
+			<p class="description">
+				チャットウィンドウのデザインを、ご自身のテーマのCSSで完全にカスタマイズしたい上級者向けのオプションです。
+			</p>
+		</fieldset>
 		<?php
 	}
 }

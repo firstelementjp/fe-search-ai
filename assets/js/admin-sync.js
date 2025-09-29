@@ -154,4 +154,33 @@ jQuery(document).ready(function($) {
 		});
 	});
 
+	function manageLicense(action, button) {
+		const $button = $(button);
+		const $spinner = $button.siblings('.spinner');
+		const licenseKey = $('#feas_ai_pro_license_key_input').val();
+
+		$spinner.css('visibility', 'visible');
+		$button.prop('disabled', true);
+
+		$.post(ajaxurl, {
+			action: 'feas_ai_manage_license',
+			security: feas_ai_sync_obj.nonce, // Nonceをsecurityというキーで送る
+			license_key: licenseKey,
+			license_action: action
+		})
+		.always(function() {
+			// 完了後、ページをリロードして表示を更新
+			location.reload();
+		});
+	}
+
+	// クリックイベントの登録（イベント委譲を使うとより堅牢）
+	$('body').on('click', '#feas_ai_license_activate', function(){
+		manageLicense('activate', this);
+	});
+
+	$('body').on('click', '#feas_ai_license_deactivate', function(){
+		manageLicense('deactivate', this);
+	});
+
 });

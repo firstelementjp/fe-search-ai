@@ -68,9 +68,11 @@ class FEAS_AI_Ajax {
 	public function stream_chat_completion( $question, $context_chunks, $history = array() ) {
 		$provider = get_option( 'feas_ai_chat_provider', 'openai' );
 
-		if ( 'anthropic' === $provider ) {
+		if ( 'google' === $provider ) {
+			$this->stream_gemini_completion( $question, $context_chunks, $history );
+		} elseif ( 'anthropic' === $provider ) {
 			$this->stream_claude_completion( $question, $context_chunks, $history );
-		} else { // 'openai' or 'google' (Geminiは未実装なのでOpenAIにフォールバック)
+		} else {
 			$this->stream_openai_completion( $question, $context_chunks, $history );
 		}
 	}
@@ -401,18 +403,27 @@ class FEAS_AI_Ajax {
 		$question_vector = $question_vector_response['data'][0]['embedding'];
 
 		$similarities = array();
+		$similarity_threshold = 0.35; // 類似度の足切りスコア
+
 		foreach ( $candidate_rows as $row ) {
 			$db_vector = json_decode( $row->vector_data, true );
 			if ( ! is_array( $db_vector ) || empty( $db_vector ) ) continue;
 
 			$similarity = $this->calculate_cosine_similarity_php( $question_vector, $db_vector );
 
-			$similarities[] = array(
-				'post_id'       => $row->post_id,
-				'content_chunk' => $row->content_chunk,
-				'similarity'    => $similarity,
-				'permalink'     => get_permalink( $row->post_id ),
-			);
+			if ( $similarity >= $similarity_threshold ) {
+				$similarities[] = array(
+					'post_id'       => $row->post_id,
+					'content_chunk' => $row->content_chunk,
+					'similarity'    => $similarity,
+					'permalink'     => get_permalink( $row->post_id ),
+					'post_date'     => $row->post_date,
+				);
+			}
+		}
+
+		if ( empty($similarities) ) {
+			return array();
 		}
 
 		usort( $similarities, function( $a, $b ) {
@@ -815,6 +826,7 @@ class FEAS_AI_Ajax {
 					$error_message = is_wp_error($response) ? $response->get_error_message() : '認証に失敗しました。';
 				}
 				break;
+
 			case 'anthropic':
 				$response = wp_remote_post('https://api.anthropic.com/v1/messages', [
 					'headers' => [
@@ -835,7 +847,22 @@ class FEAS_AI_Ajax {
 					 $is_valid = true; // 401以外の応答はキーが有効である可能性が高い
 				}
 				break;
-			// (Geminiのテストも同様に追加可能)
+
+			case 'google':
+			// モデル一覧を取得する、コストのかからないAPIを叩く
+			$api_url = 'https://generativelanguage.googleapis.com/v1beta/models?key=' . $api_key;
+			$response = wp_remote_get($api_url);
+
+			if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
+				$is_valid = true;
+			} else {
+				$error_message = '認証に失敗しました。';
+				if (!is_wp_error($response)) {
+					$body = json_decode(wp_remote_retrieve_body($response), true);
+					$error_message = $body['error']['message'] ?? $error_message;
+				}
+			}
+			break;
 		}
 
 		if ($is_valid) {
@@ -850,5 +877,141 @@ class FEAS_AI_Ajax {
 		update_option( 'feas_ai_last_sync_timestamp', current_time( 'timestamp' ) );
 		wp_send_json_success();
 	}
+
+	// private function stream_gemini_completion( $question, $context_chunks, $history ) {
+	// 	header('Content-Type: text/plain; charset=utf-8');
+	// 	echo "--- GEMINI API DEBUG (Final Check v2) --- \n\n";
+//
+	// 	$api_key = get_option( 'feas_ai_google_api_key' );
+	// 	if ( empty( $api_key ) ) {
+	// 		wp_die('エラー: Google APIキーが設定されていません。');
+	// 	}
+//
+	// 	// 1. 本番と同じロジックでプロンプトとmessages配列を組み立てる
+	// 	$messages_data = $this->build_prompt_messages( $question, $context_chunks, $history, false );
+	// 	$system_prompt_data = array_shift($messages_data);
+	// 	$system_prompt_text = $system_prompt_data['content'];
+//
+	// 	$gemini_contents = array();
+	// 	foreach ($messages_data as $message) {
+	// 		$role = ($message['role'] === 'assistant') ? 'model' : 'user';
+	// 		if (!empty($gemini_contents) && end($gemini_contents)['role'] === $role) {
+	// 			continue;
+	// 		}
+	// 		$gemini_contents[] = ['role' => $role, 'parts' => [['text' => $message['content']]]];
+	// 	}
+//
+	// 	// 2. APIエンドポイントとリクエストボディを準備 (非ストリーミング用)
+	// 	$api_url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-latest:streamGenerateContent?alt=sse&key=' . $api_key;
+	// 	$body = array(
+	// 		'contents' => $gemini_contents,
+	// 		'systemInstruction' => [ 'parts' => [ ['text' => $system_prompt_text] ] ],
+	// 	);
+//
+	// 	echo "## 1. Sending this body to Gemini:\n";
+	// 	echo json_encode($body, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+	// 	echo "\n\n";
+//
+	// 	// 3. wp_remote_postでAPIを呼び出す
+	// 	$response = wp_remote_post( $api_url, [
+	// 		'headers' => ['Content-Type' => 'application/json'],
+	// 		'body'    => json_encode( $body ),
+	// 		'timeout' => 30,
+	// 	]);
+//
+	// 	echo "## 2. Full Response from wp_remote_post:\n";
+	// 	print_r($response);
+	// 	echo "\n\n";
+//
+	// 	if ( is_wp_error( $response ) ) {
+	// 		echo "## 3. WP_Error Details:\n";
+	// 		print_r($response->get_error_message());
+	// 	} else {
+	// 		echo "## 3. Raw Body from Gemini API:\n";
+	// 		print_r(wp_remote_retrieve_body($response));
+	// 	}
+//
+	// 	exit;
+	// }
+
+	private function stream_gemini_completion($question, $context_chunks, $history) {
+		$api_key = get_option('feas_ai_google_api_key');
+		if (empty($api_key)) {
+			echo "data: " . json_encode(['text' => 'エラー: Google APIキーが設定されていません。']) . "\n\n";
+			echo "data: [DONE]\n\n";
+			flush();
+			return;
+		}
+
+		$messages_data = $this->build_prompt_messages($question, $context_chunks, $history, false);
+		$system_prompt_data = array_shift($messages_data);
+		$system_prompt_text = $system_prompt_data['content'];
+
+		$gemini_contents = [];
+		foreach ($messages_data as $message) {
+			$role = ($message['role'] === 'assistant') ? 'model' : 'user';
+			if (!empty($gemini_contents) && end($gemini_contents)['role'] === $role) continue;
+			$gemini_contents[] = ['role' => $role, 'parts' => [['text' => $message['content']]]];
+		}
+
+		$api_url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=' . $api_key;
+
+		$body = [
+			'contents' => $gemini_contents,
+			'systemInstruction' => [
+				'parts' => [['text' => $system_prompt_text]]
+			],
+		];
+
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $api_url);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($ch, CURLOPT_POST, true);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body));
+		curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+
+		$buffer = '';
+		curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($curl, $data) use (&$buffer) {
+			$buffer .= $data;
+
+			// SSEイベントごとに処理
+			while (preg_match('/^data: (.*?)(\r?\n\r?\n|$)/s', $buffer, $matches)) {
+
+				$json_str = trim($matches[1]);
+				$buffer = substr($buffer, strlen($matches[0]));
+
+				if ($json_str === '[DONE]') continue; // 完了チャンク
+
+				// JSONが不完全な場合は末尾の閉じ中括弧まで切り出す
+				$pos = strrpos($json_str, '}');
+				if ($pos !== false) {
+					$json_str = substr($json_str, 0, $pos + 1);
+				}
+
+				$chunk = json_decode($json_str, true);
+
+				if (is_array($chunk)) {
+					if (isset($chunk['candidates'][0]['content']['parts'][0]['text'])) {
+						$content = $chunk['candidates'][0]['content']['parts'][0]['text'];
+						echo "data: " . json_encode(['text' => $content]) . "\n\n";
+					}
+				} else {
+					error_log('Gemini JSON decode error: ' . json_last_error_msg());
+					error_log('Problematic JSON: ' . $json_str);
+				}
+			}
+
+			if (ob_get_level() > 0) ob_flush();
+			flush();
+			return strlen($data);
+		});
+
+		curl_exec($ch);
+		curl_close($ch);
+
+		echo "data: [DONE]\n\n";
+		flush();
+	}
+
 
 }
