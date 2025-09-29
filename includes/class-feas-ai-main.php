@@ -56,9 +56,9 @@ class FEAS_AI_Main {
 		// --- 2. 同期設定セクション ---
 		add_settings_section( 'feas_ai_sync_section', '同期設定', null, $page_slug );
 		register_setting( $settings_group, 'feas_ai_sync_options' );
-		register_setting( $settings_group, 'feas_ai_include_post_ids' );
-		register_setting( $settings_group, 'feas_ai_exclude_post_ids' );
-		register_setting( $settings_group, 'feas_ai_sync_limit' );
+		register_setting( $settings_group, 'feas_ai_include_post_ids', [ 'sanitize_callback' => array( $this, 'sanitize_numeric_string' ) ] );
+		register_setting( $settings_group, 'feas_ai_exclude_post_ids', [ 'sanitize_callback' => array( $this, 'sanitize_numeric_string' ) ] );
+		register_setting( $settings_group, 'feas_ai_sync_limit', [ 'sanitize_callback' => array( $this, 'sanitize_numeric_string' ) ] );
 		add_settings_field( 'feas_ai_sync_options', '同期対象と内容', array( $this, 'sync_options_field_html' ), $page_slug, 'feas_ai_sync_section' );
 		add_settings_field( 'feas_ai_include_post_ids', '含める投稿ID', array( $this, 'include_post_ids_field_html' ), $page_slug, 'feas_ai_sync_section' );
 		add_settings_field( 'feas_ai_exclude_post_ids', '除外する投稿ID', array( $this, 'exclude_post_ids_field_html' ), $page_slug, 'feas_ai_sync_section' );
@@ -69,6 +69,11 @@ class FEAS_AI_Main {
 		add_settings_section( 'feas_ai_display_section', '表示設定', null, $page_slug );
 		register_setting( $settings_group, 'feas_ai_display_options' );
 		add_settings_field( 'feas_ai_display_options', 'チャット表示設定', array( $this, 'display_options_field_html' ), $page_slug, 'feas_ai_display_section' );
+		register_setting(
+			$settings_group,
+			'feas_ai_display_options',
+			[ 'sanitize_callback' => array( $this, 'sanitize_display_options' ) ]
+		);
 
 		// --- 4. データ管理セクション ---
 		add_settings_section( 'feas_ai_data_section', 'データ管理', null, $page_slug );
@@ -207,8 +212,11 @@ class FEAS_AI_Main {
 	}
 
 	public function get_chat_ui_html( $mode = 'float' ) {
+		$options = get_option('feas_ai_display_options', []);
+		$window_title = $options['window_title'] ?? 'サイト内をAI検索';
 		$placeholder = $options['placeholder_text'] ?? '質問を入力してください...';
 		$greeting = $options['greeting_message'] ?? 'こんにちは！サイト内の情報について、何でも質問してください。';
+		$submit_text = $options['submit_button_text'] ?? '送信';
 		ob_start(); // 出力バッファリングを開始
 		?>
 		<div id="feas-ai-chat-container" class="feas-ai-mode-<?php echo esc_attr( $mode ); ?>">
@@ -218,7 +226,7 @@ class FEAS_AI_Main {
 			</div>
 			<div id="feas-ai-chat-window" class="hidden">
 				<div id="feas-ai-chat-header">
-					<h3>サイト内をAI検索</h3>
+					<h3><?php echo esc_html( $window_title ); ?></h3>
 					<button id="feas-ai-chat-close">&times;</button>
 				</div>
 				<div id="feas-ai-chat-messages">
@@ -229,7 +237,7 @@ class FEAS_AI_Main {
 				<div id="feas-ai-chat-footer">
 					<form id="feas-ai-chat-form">
 						<input type="text" id="feas-ai-chat-input" placeholder="<?php echo esc_attr( $placeholder ); ?>" autocomplete="off">
-						<button type="submit">送信</button>
+						<button type="submit"><?php echo esc_html( $submit_text ); ?></button>
 					</form>
 				</div>
 			</div>
@@ -336,7 +344,7 @@ class FEAS_AI_Main {
 	}
 
 	public function sync_limit_field_html() {
-		$limit = get_option( 'feas_ai_sync_limit', 0 ); // デフォルトは0（全件）
+		$limit = get_option( 'feas_ai_sync_limit', 100 ); // デフォルトは0（全件）
 		?>
 		<input type="number" name="feas_ai_sync_limit" value="<?php echo esc_attr( $limit ); ?>" class="small-text"> 件
 		<p class="description">同期する投稿を、最新のものから指定した件数に制限します。お試しでの同期や、APIコストを抑えたい場合に設定してください。<br><strong>0</strong>にすると、対象の投稿をすべて同期します。</p>
@@ -351,64 +359,60 @@ class FEAS_AI_Main {
 	 * @param WP_Post $post 投稿オブジェクト.
 	 */
 	public function sync_single_post_on_update( $post_id, $post ) {
-		// 同期対象として設定した投稿タイプかチェック
-		$post_types_to_sync = get_option( 'feas_ai_sync_post_types', array('post', 'page') );
-		if ( ! in_array( $post->post_type, $post_types_to_sync ) ) {
+		$sync_options = get_option( 'feas_ai_sync_options', [] );
+		$pt_options = $sync_options['post_types'][ $post->post_type ] ?? [];
+
+		if ( empty( $pt_options['enabled'] ) ) {
 			return;
 		}
-		// 公開されている投稿のみを対象
+
 		if ( $post->post_status !== 'publish' ) {
 			return;
 		}
-		// 自動保存やリビジョンは無視
+
 		if ( wp_is_post_autosave( $post_id ) || wp_is_post_revision( $post_id ) ) {
 			return;
 		}
 
-		// まず、この投稿の古い索引とベクトルを削除
 		$this->delete_post_from_index( $post_id );
 
-		// ★★★ ajax_process_batch とほぼ同じロジックで、単一投稿を索引化 ★★★
-		$segmenter = new TinySegmenter();
-		global $wpdb;
-		$vectors_table = $wpdb->prefix . 'feas_ai_vectors';
-		$index_table   = $wpdb->prefix . 'feas_ai_keyword_index';
+		$chunks_with_meta = $this->ajax->create_chunks_from_post( $post );
 
-		$content = strip_shortcodes( $post->post_content );
-		$content = wp_strip_all_tags( $content );
-		$raw_chunks = explode( "\n\n", $content );
-		$valid_chunks = array_values( array_filter( array_map( 'trim', $raw_chunks ) ) );
+		if ( empty($chunks_with_meta) ) {
+			return;
+		}
 
-		if ( empty( $valid_chunks ) ) { return; }
+		$embedding_response = $this->ajax->get_embeddings_via_selected_provider( $chunks_with_meta );
 
-		$embedding_response = $this->ajax->get_embeddings_via_selected_provider( $valid_chunks );
+		if ( ! is_wp_error( $embedding_response ) && !empty($embedding_response['data']) ) {
+			global $wpdb;
+			$vectors_table = $wpdb->prefix . 'feas_ai_vectors';
+			$index_table   = $wpdb->prefix . 'feas_ai_keyword_index';
+			$segmenter = new TinySegmenter();
 
-		if ( ! is_wp_error( $embedding_response ) ) {
 			$vectors_data = $embedding_response['data'];
+
 			foreach ( $vectors_data as $index => $vector_item ) {
 				$wpdb->insert(
 					$vectors_table,
-					array(
+					[
 						'post_id'       => $post->ID,
 						'chunk_index'   => $index,
-						'content_chunk' => $valid_chunks[$index],
+						'content_chunk' => $chunks_with_meta[$index],
 						'vector_data'   => json_encode( $vector_item['embedding'] ),
 						'created_at'    => current_time( 'mysql' ),
-					),
-					array( '%d', '%d', '%s', '%s', '%s' )
+					],
+					[ '%d', '%d', '%s', '%s', '%s' ]
 				);
 				$vector_id = $wpdb->insert_id;
 				if ($vector_id) {
-					$keywords = $segmenter->segment($valid_chunks[$index]);
+					$keywords = $segmenter->segment($chunks_with_meta[$index]);
 					foreach ( array_unique( $keywords ) as $keyword ) {
 						if ( mb_strlen( $keyword ) > 1 ) {
 							$wpdb->insert(
 								$index_table,
-								array(
-									'keyword'   => $keyword,
-									'vector_id' => $vector_id,
-								),
-								array( '%s', '%d' )
+								[ 'keyword' => $keyword, 'vector_id' => $vector_id ],
+								[ '%s', '%d' ]
 							);
 						}
 					}
@@ -460,17 +464,6 @@ class FEAS_AI_Main {
 		<?php
 	}
 
-	public function display_mode_field_html() {
-		$options = get_option( 'feas_ai_sync_options', [] );
-		$mode = $options['display_mode'] ?? 'float';
-		?>
-		<fieldset>
-			<label><input type="radio" name="feas_ai_sync_options[display_mode]" value="float" <?php checked( 'float', $mode ); ?>> <span>フローティングモード</span></label><br>
-			<label><input type="radio" name="feas_ai_sync_options[display_mode]" value="shortcode" <?php checked( 'shortcode', $mode ); ?>> <span>手動設置モード (<code>[feas_ai_chat]</code>)</span></label>
-		</fieldset>
-		<?php
-	}
-
 	public function register_shortcode() {
 		add_shortcode( 'feas_ai_chat', array( $this, 'render_chat_shortcode' ) );
 	}
@@ -487,46 +480,61 @@ class FEAS_AI_Main {
 	 * フローティングモードの場合のみ、フッターにチャットUIを出力する
 	 */
 	public function maybe_render_floating_chat() {
-		$options = get_option( 'feas_ai_sync_options' );
+		$options = get_option( 'feas_ai_display_options' );
 		$display_mode = $options['display_mode'] ?? 'float';
 
-		// フローティングモードでなければ、何もしない
 		if ( 'float' !== $display_mode ) {
 			return;
 		}
 
-		// --- 表示ルールの判定ロジック ---
-		$rules = get_option( 'feas_ai_display_rules', ['mode' => 'all'] );
-		$rule_mode = $rules['mode'] ?? 'all';
+		$rules = get_option( 'feas_ai_display_rules', [
+			'show_on_front_page' => '1',
+			'show_on_archives'   => '1',
+		]);
+
 		$should_display = false;
 
-		switch ($rule_mode) {
-			case 'post_types':
-				$allowed_post_types = $rules['post_types'] ?? [];
-				if ( is_singular( $allowed_post_types ) ) {
-					$should_display = true;
-				}
-				break;
+		$include_ids_str = $rules['include_ids'] ?? '';
+		$exclude_ids_str = $rules['exclude_ids'] ?? '';
 
-			case 'all':
-			default:
+		$include_ids = array_filter( array_map('intval', explode(',', $include_ids_str)) );
+		$exclude_ids = array_filter( array_map('intval', explode(',', $exclude_ids_str)) );
+
+		$current_id = get_the_ID();
+
+		// 1. Include IDが最優先
+		if ( ! empty( $include_ids ) ) {
+			if ( is_singular() && in_array( $current_id, $include_ids ) ) {
 				$should_display = true;
-				break;
+			}
+		} else {
+			// 2. 基本ルールと投稿タイプルールで判定
+			if ( (is_front_page() && !empty($rules['show_on_front_page'])) ||
+				 (is_archive() && !empty($rules['show_on_archives'])) ) {
+				$should_display = true;
+			}
+
+			$allowed_post_types = [];
+			if ( !empty($rules['post_types']) ) {
+				foreach ($rules['post_types'] as $pt => $enabled) {
+					if ($enabled) {
+						$allowed_post_types[] = $pt;
+					}
+				}
+			}
+			if ( is_singular($allowed_post_types) ) {
+				$should_display = true;
+			}
 		}
 
-		// 最終的な表示判定
+		// 3. Exclude IDが最終決定権を持つ
+		if ( is_singular() && in_array( $current_id, $exclude_ids ) ) {
+			$should_display = false;
+		}
+
 		if ( apply_filters( 'feas_ai_should_display_chat', $should_display ) ) {
 			echo $this->get_chat_ui_html('float');
 		}
-	}
-
-	public function placeholder_text_field_html() {
-		$options = get_option( 'feas_ai_sync_options', [] );
-		$placeholder = $options['placeholder_text'] ?? '質問を入力してください...';
-		?>
-		<input type="text" name="feas_ai_sync_options[placeholder_text]" value="<?php echo esc_attr( $placeholder ); ?>" class="regular-text">
-		<p class="description">チャット入力欄のプレースホルダーをカスタマイズします。</p>
-		<?php
 	}
 
 	public function sync_options_field_html() {
@@ -622,15 +630,6 @@ class FEAS_AI_Main {
 		<?php
 	}
 
-	public function greeting_message_field_html() {
-		$options = get_option('feas_ai_sync_options', []);
-		$greeting = $options['greeting_message'] ?? 'こんにちは！サイト内の情報について、何でも質問してください。';
-		?>
-		<textarea name="feas_ai_sync_options[greeting_message]" rows="3" class="large-text"><?php echo esc_textarea( $greeting ); ?></textarea>
-		<p class="description">チャットウィンドウを開いた時に、最初にAIが表示する挨拶文をカスタマイズします。</p>
-		<?php
-	}
-
 	public function enable_logging_field_html() {
 		$option = get_option( 'feas_ai_enable_logging' );
 		?>
@@ -664,43 +663,6 @@ class FEAS_AI_Main {
 		<?php
 	}
 
-	public function display_rules_field_html() {
-		$rules = get_option( 'feas_ai_display_rules', ['mode' => 'all'] );
-		$mode = $rules['mode'] ?? 'all';
-		$post_types = $rules['post_types'] ?? [];
-		?>
-		<fieldset>
-			<p>
-				<label>
-					<input type="radio" name="feas_ai_display_rules[mode]" value="all" <?php checked($mode, 'all'); ?>>
-					サイト全体で表示する
-				</label>
-			</p>
-			<p>
-				<label>
-					<input type="radio" name="feas_ai_display_rules[mode]" value="post_types" <?php checked($mode, 'post_types'); ?>>
-					選択した投稿タイプでのみ表示する
-				</label>
-			</p>
-			<div style="padding-left: 25px;">
-				<?php
-				$all_post_types = get_post_types( ['public' => true], 'objects' );
-				foreach ($all_post_types as $pt) {
-					if ('attachment' === $pt->name) continue;
-					?>
-					<label>
-						<input type="checkbox" name="feas_ai_display_rules[post_types][]" value="<?php echo esc_attr($pt->name); ?>" <?php checked(in_array($pt->name, $post_types)); ?>>
-						<?php echo esc_html($pt->label); ?>
-					</label><br>
-					<?php
-				}
-				?>
-			</div>
-		</fieldset>
-		<p class="description">フローティングモードが有効な場合に、チャットUIを表示するページを制限します。</p>
-		<?php
-	}
-
 	public function custom_prompt_field_html() {
 		// Free版のAjaxクラスからデフォルトプロンプトを取得
 		$default_prompt = FEAS_AI_Ajax::get_default_system_prompt();
@@ -708,21 +670,6 @@ class FEAS_AI_Main {
 		?>
 		<textarea name="feas_ai_custom_system_prompt" rows="20" class="large-text feas-ai-prompt-editor"><?php echo esc_textarea( $custom_prompt ); ?></textarea>
 		<p class="description">AIアシスタントへの指示書（システムプロンプト）をカスタマイズします。空にすると、プラグイン標準のプロンプトが使用されます。</p>
-		<?php
-	}
-
-	public function disable_css_field_html() {
-		$option = get_option( 'feas_ai_disable_css' );
-		?>
-		<fieldset>
-			<label>
-				<input type="checkbox" name="feas_ai_disable_css" value="1" <?php checked( $option, '1' ); ?> />
-				プラグイン同梱のCSS（chat-style.css）を読み込まない
-			</label>
-			<p class="description">
-				チャットウィンドウのデザインを、ご自身のテーマのCSSで完全にカスタマイズしたい上級者向けのオプションです。
-			</p>
-		</fieldset>
 		<?php
 	}
 
@@ -766,53 +713,135 @@ class FEAS_AI_Main {
 		<?php
 	}
 
+
 	public function display_options_field_html() {
 		$options = get_option( 'feas_ai_display_options', [] );
 
-		$display_mode = $options['display_mode'] ?? 'float';
-		$greeting = $options['greeting_message'] ?? 'こんにちは！サイト内の情報について、何でも質問してください。';
-		$placeholder = $options['placeholder_text'] ?? '質問を入力してください...';
-		$rules = $options['display_rules'] ?? ['mode' => 'all'];
-		$rule_mode = $rules['mode'] ?? 'all';
-		$rule_post_types = $rules['post_types'] ?? [];
-		$disable_css = $options['disable_css'] ?? false;
+		// デフォルト値を設定
+		$defaults = [
+			'display_mode'     => 'float',
+			'window_title'     => 'サイト内をAI検索',
+			'greeting_message' => 'こんにちは！サイト内の情報について、何でも質問してください。',
+			'placeholder_text' => '質問を入力してください...',
+			'submit_button_text' => '送信',
+			'display_rules'    => [
+				'show_on_front_page' => '1',
+				'show_on_archives'   => '1',
+				'post_types'         => [],
+				'include_ids'        => '',
+				'exclude_ids'        => '',
+			],
+			'disable_css'      => false,
+		];
+		$options = wp_parse_args($options, $defaults);
+
 		?>
 
 		<h4>表示モード</h4>
 		<fieldset>
-			<label><input type="radio" name="feas_ai_display_options[display_mode]" value="float" <?php checked( 'float', $display_mode ); ?>> <span>フローティングモード</span></label><br>
-			<label><input type="radio" name="feas_ai_display_options[display_mode]" value="shortcode" <?php checked( 'shortcode', $display_mode ); ?>> <span>手動設置モード (<code>[feas_ai_chat]</code>)</span></label>
+			<label><input type="radio" name="feas_ai_display_options[display_mode]" value="float" <?php checked( 'float', $options['display_mode'] ); ?>> <span>フローティングモード</span></label><br>
+			<label><input type="radio" name="feas_ai_display_options[display_mode]" value="shortcode" <?php checked( 'shortcode', $options['display_mode'] ); ?>> <span>手動設置モード (<code>[feas_ai_chat]</code>)</span></label>
 		</fieldset>
 
 		<hr>
 		<h4>フローティング表示ルール</h4>
+		<p class="description">フローティングモードが有効な場合に、チャットUIを表示するページを制限します。</p>
 		<fieldset>
-			<p><label><input type="radio" name="feas_ai_display_options[display_rules][mode]" value="all" <?php checked($rule_mode, 'all'); ?>> サイト全体で表示</label></p>
-			<p><label><input type="radio" name="feas_ai_display_options[display_rules][mode]" value="post_types" <?php checked($rule_mode, 'post_types'); ?>> 選択した投稿タイプの個別ページでのみ表示</label></p>
+			<p><label><input type="checkbox" name="feas_ai_display_options[display_rules][show_on_front_page]" value="1" <?php checked( $options['display_rules']['show_on_front_page'] ?? '1' ); ?>> トップページに表示する</label></p>
+			<p><label><input type="checkbox" name="feas_ai_display_options[display_rules][show_on_archives]" value="1" <?php checked( $options['display_rules']['show_on_archives'] ?? '1' ); ?>> アーカイブページ（一覧ページ）に表示する</label></p>
+
+			<h5 style="margin-bottom: 0.5em;">投稿タイプごとのルール</h5>
 			<div style="padding-left: 25px;">
 				<?php
 				$all_post_types = get_post_types( ['public' => true], 'objects' );
+				$rule_post_types = $options['display_rules']['post_types'] ?? [];
 				foreach ($all_post_types as $pt) {
 					if ('attachment' === $pt->name) continue;
-					echo '<label><input type="checkbox" name="feas_ai_display_options[display_rules][post_types][]" value="'.esc_attr($pt->name).'" '.checked(in_array($pt->name, $rule_post_types), true, false).'> '.esc_html($pt->label).'</label><br>';
+					echo '<label><input type="checkbox" name="feas_ai_display_options[display_rules][post_types]['.esc_attr($pt->name).']" value="1" '.checked(!empty($rule_post_types[$pt->name]), true, false).'> '.esc_html($pt->label).' の個別ページに表示する</label><br>';
 				}
 				?>
 			</div>
+
+			<h5 style="margin-top: 1.5em; margin-bottom: 0.5em;">投稿IDによる個別ルール</h5>
+			<p>
+				<label for="feas_ai_include_ids">これらの投稿IDでのみ表示する:</label><br>
+				<input type="text" id="feas_ai_include_ids" name="feas_ai_display_options[display_rules][include_ids]" value="<?php echo esc_attr($options['display_rules']['include_ids'] ?? ''); ?>" class="regular-text" placeholder="例: 10, 25, 103">
+				<p class="description">ここにIDを入力すると、他のルールは無視されます。</p>
+			</p>
+			<p>
+				<label for="feas_ai_exclude_ids">これらの投稿IDでは表示しない:</label><br>
+				<input type="text" id="feas_ai_exclude_ids" name="feas_ai_display_options[display_rules][exclude_ids]" value="<?php echo esc_attr($options['display_rules']['exclude_ids'] ?? ''); ?>" class="regular-text" placeholder="例: 15, 30">
+			</p>
 		</fieldset>
 
 		<hr>
 		<h4>チャット文言設定</h4>
+		<p>
+			<label for="feas_window_title">ウィンドウのタイトル</label><br>
+			<input
+				type="text"
+				id="feas_window_title"
+				name="feas_ai_display_options[window_title]"
+				value="<?php echo esc_attr( $options['window_title'] ); ?>"
+				class="regular-text"
+			>
+		</p>
 		<p><label for="feas_greeting_message">最初の挨拶文</label><br>
-		<textarea id="feas_greeting_message" name="feas_ai_display_options[greeting_message]" rows="3" class="large-text"><?php echo esc_textarea( $greeting ); ?></textarea></p>
+		<textarea id="feas_greeting_message" name="feas_ai_display_options[greeting_message]" rows="3" class="large-text"><?php echo esc_textarea( $options['greeting_message'] ); ?></textarea></p>
 
 		<p><label for="feas_placeholder_text">入力欄のプレースホルダー</label><br>
-		<input type="text" id="feas_placeholder_text" name="feas_ai_display_options[placeholder_text]" value="<?php echo esc_attr( $placeholder ); ?>" class="regular-text"></p>
+		<input type="text" id="feas_placeholder_text" name="feas_ai_display_options[placeholder_text]" value="<?php echo esc_attr( $options['placeholder_text'] ); ?>" class="regular-text"></p>
+
+		<p>
+			<label for="feas_submit_button_text">送信ボタンの文言</label><br>
+			<input
+				type="text"
+				id="feas_submit_button_text"
+				name="feas_ai_display_options[submit_button_text]"
+				value="<?php echo esc_attr( $options['submit_button_text'] ); ?>"
+				class="regular-text"
+			>
+		</p>
 
 		<hr>
 		<h4>上級者向け設定</h4>
 		<fieldset>
-			<label><input type="checkbox" name="feas_ai_display_options[disable_css]" value="1" <?php checked( $disable_css, '1' ); ?> /> プラグイン同梱のCSSを読み込まない</label>
+			<label><input type="checkbox" name="feas_ai_display_options[disable_css]" value="1" <?php checked( $options['disable_css'], '1' ); ?> /> プラグイン同梱のCSSを読み込まない</label>
 		</fieldset>
 		<?php
+	}
+
+	/**
+	 * 表示設定オプションを保存する前にサニタイズする
+	 * @param array $input 保存される前のオプション配列
+	 * @return array サニタイズ後のオプション配列
+	 */
+	public function sanitize_display_options( $input ) {
+		$new_input = $input;
+
+		// --- Include/Exclude IDの全角数字を半角に変換 ---
+		if ( isset( $new_input['display_rules']['include_ids'] ) ) {
+			// 'n' オプションは数字を半角に変換
+			$new_input['display_rules']['include_ids'] = mb_convert_kana( $new_input['display_rules']['include_ids'], 'n' );
+		}
+		if ( isset( $new_input['display_rules']['exclude_ids'] ) ) {
+			$new_input['display_rules']['exclude_ids'] = mb_convert_kana( $new_input['display_rules']['exclude_ids'], 'n' );
+		}
+
+		return $new_input;
+	}
+
+	/**
+	 * 入力値に含まれる全角数字などを半角に変換し、不要な文字を削除する
+	 * @param string $input 保存される前の値
+	 * @return string サニタイズ後の値
+	 */
+	public function sanitize_numeric_string( $input ) {
+		// 全角の数字・スペース・カンマを半角に変換
+		$sanitized_input = mb_convert_kana( $input, 'ns' );
+		$sanitized_input = str_replace( '，', ',', $sanitized_input );
+		$sanitized_input = preg_replace( '/[^0-9,]/', '', $sanitized_input );
+
+		return $sanitized_input;
 	}
 }

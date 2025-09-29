@@ -766,52 +766,13 @@ class FEAS_AI_Ajax {
 		$index_table   = $wpdb->prefix . 'feas_ai_keyword_index';
 
 		foreach ( $posts_batch as $post ) {
-			$pt_options = $sync_options['post_types'][ $post->post_type ] ?? [];
 
-			$metadata_header = '';
-			if ( !empty($pt_options['include_title']) ) $metadata_header .= "タイトル: " . $post->post_title . "\n";
-			if ( !empty($pt_options['include_date']) ) $metadata_header .= "投稿日: " . $post->post_date . "\n";
+			$chunks_with_meta = $this->create_chunks_from_post( $post );
 
-			if ( !empty($pt_options['taxonomies']) && is_array($pt_options['taxonomies']) ) {
-				foreach($pt_options['taxonomies'] as $tax_slug) {
-					$terms = get_the_terms($post->ID, $tax_slug);
-					if ( !is_wp_error($terms) && !empty($terms) ) {
-						$term_names = wp_list_pluck($terms, 'name');
-						$taxonomy_obj = get_taxonomy($tax_slug);
-						$metadata_header .= $taxonomy_obj->label . ": " . implode(', ', $term_names) . "\n";
-					}
-				}
-			}
-
-			if ( class_exists('FEAS_AI_Pro') && !empty($pt_options['custom_fields']) ) {
-				$custom_field_keys = array_map('trim', explode(',', $pt_options['custom_fields']));
-				foreach ($custom_field_keys as $key) {
-					$value = get_post_meta($post->ID, $key, true);
-					if ($value) {
-						$metadata_header .= "{$key}: {$value}\n";
-					}
-				}
-			}
-
-			$content = '';
-			if ( !empty($pt_options['include_content']) ) {
-				$content = strip_shortcodes( $post->post_content );
-				$content = wp_strip_all_tags( $content );
-			}
-
-			$raw_chunks = empty(trim($content)) ? [''] : explode( "\n\n", $content );
-			$valid_chunks = array_values( array_filter( array_map( 'trim', $raw_chunks ) ) );
-			if ( empty($valid_chunks) && !empty(trim($metadata_header)) ) {
-				$valid_chunks = ['']; // メタデータのみの場合も処理
-			}
-			if ( empty( $valid_chunks ) ) continue;
-
-			$chunks_with_meta = [];
-			foreach($valid_chunks as $chunk) {
-				$chunks_with_meta[] = trim($metadata_header) . "\n---\n" . $chunk;
-			}
+			if ( empty($chunks_with_meta) ) { continue; }
 
 			$embedding_response = $this->get_embeddings_via_selected_provider( $chunks_with_meta );
+
 			if ( ! is_wp_error( $embedding_response ) && !empty($embedding_response['data']) ) {
 				$vectors_data = $embedding_response['data'];
 				foreach ( $vectors_data as $index => $vector_item ) {
@@ -1117,5 +1078,59 @@ class FEAS_AI_Ajax {
 		wp_send_json_success('すべての同期データを削除しました。');
 	}
 
+	/**
+	 * 投稿オブジェクトから、メタデータ付きのチャンク配列を作成する
+	 * @param WP_Post $post 投稿オブジェクト.
+	 * @return array メタデータ付きのチャンク文字列の配列.
+	 */
+	public function create_chunks_from_post( $post ) {
+		$sync_options = get_option('feas_ai_sync_options', []);
+		$pt_options = $sync_options['post_types'][ $post->post_type ] ?? [];
+
+		$metadata_header = '';
+		if ( !empty($pt_options['include_title']) ) { $metadata_header .= "タイトル: " . $post->post_title . "\n"; }
+		if ( !empty($pt_options['include_date']) ) { $metadata_header .= "投稿日: " . $post->post_date . "\n"; }
+
+		if ( !empty($pt_options['taxonomies']) && is_array($pt_options['taxonomies']) ) {
+			foreach($pt_options['taxonomies'] as $tax_slug) {
+				$terms = get_the_terms($post->ID, $tax_slug);
+				if ( !is_wp_error($terms) && !empty($terms) ) {
+					$term_names = wp_list_pluck($terms, 'name');
+					$taxonomy_obj = get_taxonomy($tax_slug);
+					if ($taxonomy_obj) {
+						$metadata_header .= $taxonomy_obj->label . ": " . implode(', ', $term_names) . "\n";
+					}
+				}
+			}
+		}
+
+		if ( class_exists('FEAS_AI_Pro') && !empty($pt_options['custom_fields']) ) {
+			$custom_field_keys = array_map('trim', explode(',', $pt_options['custom_fields']));
+			foreach ($custom_field_keys as $key) {
+				$value = get_post_meta($post->ID, $key, true);
+				if ($value) { $metadata_header .= "{$key}: {$value}\n"; }
+			}
+		}
+
+		$content = '';
+		if ( !empty($pt_options['include_content']) ) {
+			$content = strip_shortcodes( $post->post_content );
+			$content = wp_strip_all_tags( $content );
+		}
+
+		$raw_chunks = empty(trim($content)) ? [''] : explode( "\n\n", $content );
+		$valid_chunks = array_values( array_filter( array_map( 'trim', $raw_chunks ) ) );
+		if ( empty($valid_chunks) && !empty(trim($metadata_header)) ) {
+			$valid_chunks = [''];
+		}
+		if ( empty( $valid_chunks ) ) { return []; }
+
+		$chunks_with_meta = [];
+		foreach($valid_chunks as $chunk) {
+			$chunks_with_meta[] = trim($metadata_header) . "\n---\n" . $chunk;
+		}
+
+		return $chunks_with_meta;
+	}
 
 }
