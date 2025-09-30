@@ -3,7 +3,7 @@
  * Plugin Name: FE AI Search
  * Plugin URI:  https://fe-advanced-search.com/
  * Description: AI-powered search for WordPress.
- * Version:     0.1
+ * Version:     0.3
  * Author:      FirstElement, Inc.
  * Author URI:  https://www.firstelement.co.jp/
  * Text Domain: fe-ai-search
@@ -12,34 +12,68 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-// 定数を定義
-define( 'FEAS_AI_VERSION', '0.1' );
+define( 'FEAS_AI_VERSION', '1.0.0' );
 define( 'FEAS_AI_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FEAS_AI_PLUGIN_FILE', __FILE__ );
 
-// 外部ライブラリを読み込み
-require_once FEAS_AI_PLUGIN_DIR . 'vendor/Parsedown.php';
-require_once FEAS_AI_PLUGIN_DIR . 'vendor/TinySegmenter.php';
+if ( file_exists( FEAS_AI_PLUGIN_DIR . 'vendor/autoload.php' ) ) {
+    require_once FEAS_AI_PLUGIN_DIR . 'vendor/autoload.php';
+}
 
-// プラグインのコアファイルを読み込み
-require_once FEAS_AI_PLUGIN_DIR . 'includes/class-feas-ai-installer.php';
-require_once FEAS_AI_PLUGIN_DIR . 'includes/class-feas-ai-assets.php';
-require_once FEAS_AI_PLUGIN_DIR . 'includes/class-feas-ai-ajax.php';
-require_once FEAS_AI_PLUGIN_DIR . 'includes/class-feas-ai-main.php';
+/**
+ *  Custom Autoloader
+ */
+spl_autoload_register(function ($class) {
+    $prefix = 'FEAISearch\\';
+    $base_dir = FEAS_AI_PLUGIN_DIR . 'includes/';
+    $len = strlen($prefix);
 
-register_activation_hook( FEAS_AI_PLUGIN_FILE, array( 'FEAS_AI_Installer', 'activate' ) );
-register_deactivation_hook( FEAS_AI_PLUGIN_FILE, array( 'FEAS_AI_Installer', 'deactivate' ) );
+    if (strncmp($prefix, $class, $len) !== 0) {
+        return;
+    }
 
+    $relative_class = substr($class, $len);
 
-// プラグインを起動
+    // First, search for files in PSR-4 format (e.g., FEAS_AI_Admin.php).
+    $psr4_file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
+    if (file_exists($psr4_file)) {
+        require $psr4_file;
+        return;
+    }
+
+    // If not found with PSR-4, look for a WordPress-style file (e.g., class-feas-ai-admin.php).
+    $parts = explode('\\', $relative_class);
+    $class_name = array_pop($parts);
+    $wp_file_name = 'class-' . str_replace('_', '-', strtolower($class_name)) . '.php';
+
+    $wp_file_path = $base_dir . strtolower(implode('/', $parts));
+    if (!empty($parts)) {
+        $wp_file_path .= '/';
+    }
+    $wp_file_path .= $wp_file_name;
+
+    if (file_exists($wp_file_path)) {
+        require $wp_file_path;
+        return;
+    }
+});
+
 function feas_ai_run_plugin() {
-	new FEAS_AI_Main();
+    $GLOBALS['feas_ai_assets'] = new FEAISearch\Core\FEAS_AI_Assets();
+    $GLOBALS['feas_ai_sync_handler'] = new FEAISearch\Ajax\FEAS_AI_Sync_Handler();
+
+    new FEAISearch\Admin\FEAS_AI_Admin();
+    new FEAISearch\Frontend\FEAS_AI_Chat_UI();
+    new FEAISearch\Ajax\FEAS_AI_Chat_Handler();
 }
 add_action( 'plugins_loaded', 'feas_ai_run_plugin' );
 
+register_activation_hook( FEAS_AI_PLUGIN_FILE, ['FEAISearch\Core\FEAS_AI_Activator', 'activate'] );
+register_deactivation_hook( FEAS_AI_PLUGIN_FILE, ['FEAISearch\Core\FEAS_AI_Activator', 'deactivate'] );
+
 /**
- * FE AI SearchのチャットUIを直接描画するためのテンプレートタグ
+ * Template Tag
  */
 function feas_ai_render_chat() {
-	echo do_shortcode('[feas_ai_chat]');
+    echo do_shortcode('[feas_ai_chat]');
 }

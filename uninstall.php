@@ -1,5 +1,15 @@
 <?php
-// WordPressのアンインストールプロセス以外で呼び出された場合は終了
+/**
+ * Fired when the plugin is uninstalled.
+ *
+ * When a user deletes the plugin from the WordPress admin, this file is executed
+ * to remove all of the plugin's data from the database, such as custom tables
+ * and options.
+ *
+ * @package    fe-ai-search
+ * @since      1.0.0
+ */
+
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
@@ -7,7 +17,7 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 if ( get_option( 'feas_ai_delete_on_uninstall' ) ) {
 	global $wpdb;
 
-	// --- 1. カスタムテーブルを削除 ---
+	// Delete custom table
 	$table_names = array(
 		$wpdb->prefix . 'feas_ai_vectors',
 		$wpdb->prefix . 'feas_ai_logs',
@@ -18,7 +28,7 @@ if ( get_option( 'feas_ai_delete_on_uninstall' ) ) {
 		$wpdb->query( "DROP TABLE IF EXISTS `{$table_name}`" );
 	}
 
-	// --- 2. オプションを削除 ---
+	// Delete option
 	$option_names = array(
 		'feas_ai_chat_provider',
 		'feas_ai_embedding_provider',
@@ -37,6 +47,6 @@ if ( get_option( 'feas_ai_delete_on_uninstall' ) ) {
 	}
 	delete_option( 'feas_ai_delete_on_uninstall' );
 
-	// --- 3. Cronジョブを削除 ---
+	// Delete Cron Job
 	wp_clear_scheduled_hook( 'feas_ai_daily_log_rotation_event' );
 }

@@ -1,0 +1,14 @@
+{
+	"name": "firstelementjp/fe-ai-search",
+	"description": "AI-powered search for WordPress.",
+	"type": "wordpress-plugin",
+	"autoload": {
+		"psr-4": {
+			"FEAISearch\\": "includes/"
+		},
+		"classmap": [
+			"vendor/TinySegmenter.php"
+		]
+	},
+	"require": {}
+}
