@@ -564,41 +564,46 @@ class FEAS_AI_Chat_Handler {
 		$buffer = '';
 		curl_setopt( $ch, CURLOPT_WRITEFUNCTION, function( $curl, $data ) use (&$buffer, $provider) {
 			$buffer .= $data;
+
+			// "data: {...}\n\n" というイベントの塊が完全に届くまで待つ
 			while ( ( $pos = strpos( $buffer, "\n\n" ) ) !== false ) {
 				$event_str = substr( $buffer, 0, $pos );
 				$buffer = substr( $buffer, $pos + 2 );
 
-				if (strpos($event_str, 'data: ') !== 0) { continue; }
+				if (strpos($event_str, 'data: ') !== 0) {
+					continue;
+				}
 
 				$json_data = substr($event_str, 6);
-				if ($json_data === '[DONE]') {
-					echo "data: [DONE]\n\n";
+				if (trim($json_data) === '[DONE]') {
 					continue;
 				}
 
 				$chunk = json_decode($json_data, true);
 				$content = '';
 
-				if ($provider === 'openai' && isset($chunk['choices'][0]['delta']['content'])) {
+				// 各プロバイダーの形式に合わせてテキストを抽出
+				if ('openai' === $provider && isset($chunk['choices'][0]['delta']['content'])) {
 					$content = $chunk['choices'][0]['delta']['content'];
-				} elseif ($provider === 'anthropic' && isset($chunk['delta']['type']) && $chunk['delta']['type'] === 'text_delta') {
-					$content = $chunk['delta']['type'] === 'text_delta' ? $chunk['delta']['text'] : '';
-				} elseif ($provider === 'google' && isset($chunk['candidates'][0]['content']['parts'][0]['text'])) {
+				} elseif ('anthropic' === $provider && isset($chunk['delta']['type']) && 'text_delta' === $chunk['delta']['type']) {
+					$content = $chunk['delta']['text'];
+				} elseif ('google' === $provider && isset($chunk['candidates'][0]['content']['parts'][0]['text'])) {
 					$content = $chunk['candidates'][0]['content']['parts'][0]['text'];
 				}
 
 				if ( ! empty( $content ) ) {
 					$content = apply_filters( 'feas_ai_filter_model_response', $content );
 					echo "data: " . json_encode(['text' => $content]) . "\n\n";
+					if (ob_get_level() > 0) { ob_flush(); }
+					flush();
 				}
 			}
-
-			if (ob_get_level() > 0) { ob_flush(); }
-			flush();
 			return strlen( $data );
 		});
 
 		curl_exec( $ch );
+		echo "data: [DONE]\n\n";
+		flush();
 		curl_close( $ch );
 	}
 

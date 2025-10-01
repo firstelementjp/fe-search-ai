@@ -404,18 +404,6 @@ class FEAS_AI_Settings {
 			];
 
 			$pt_options = wp_parse_args( $options['post_types'][ $post_type->name ] ?? [], $defaults );
-//
-			// if ( ! isset( $options['post_types'][ $post_type->name ] ) ) {
-			// 	$is_enabled = ($post_type->name === 'post' || $post_type->name === 'page');
-			// 	$include_title = true;
-			// 	$include_content = true;
-			// 	$include_date = true;
-			// } else {
-			// 	$is_enabled = $pt_options['enabled'] ?? false;
-			// 	$include_title = $pt_options['include_title'] ?? false;
-			// 	$include_content = $pt_options['include_content'] ?? false;
-			// 	$include_date = $pt_options['include_date'] ?? false;
-			// }
 
 			?>
 			<div class="post-type-accordion-item" style="border: 1px solid #c3c4c7; margin-bottom: -1px; background: #fff;">

@@ -216,3 +216,15 @@
  .feas-ai-mode-embed #feas-ai-chat-window.hidden {
 	 display: flex;
  }
+
+ .cursor {
+	 display: inline-block;
+	 width: 8px;
+	 height: 1.2em;
+	 background-color: #333;
+	 animation: blink 1s step-end infinite;
+	 vertical-align: text-bottom;
+ }
+ @keyframes blink {
+	 50% { opacity: 0; }
+ }

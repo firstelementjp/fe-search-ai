@@ -222,29 +222,30 @@ class FEAS_AI_Sync_Handler {
 	 * タイムアウトしない、ローカル完結の高速検索メソッド
 	 */
 	public function find_similar_chunks( $question ) {
-		error_log('--- find_similar_chunks START --- Question: ' . $question);
 		global $wpdb;
 		$index_table   = $wpdb->prefix . 'feas_ai_keyword_index';
 		$vectors_table = $wpdb->prefix . 'feas_ai_vectors';
 		$posts_table   = $wpdb->posts;
 
+		//$segmenter = new TinySegmenter();
 		$keywords = array_unique( $this->segmenter->segment($question) );
 		$valid_keywords = array_filter($keywords, function($kw){ return mb_strlen($kw) > 1; });
-		error_log('Valid Keywords: ' . print_r($valid_keywords, true));
 
-		if ( empty( $valid_keywords ) ) { return []; }
+		if ( empty( $valid_keywords ) ) return array();
 
 		$placeholders = implode( ', ', array_fill( 0, count( $valid_keywords ), '%s' ) );
 		$sql = "SELECT DISTINCT `vector_id` FROM `{$index_table}` WHERE `keyword` IN ( {$placeholders} ) LIMIT 500";
 		$vector_ids = $wpdb->get_col( $wpdb->prepare( $sql, $valid_keywords ) );
-		error_log('Found ' . count($vector_ids) . ' potential vector IDs.');
 
-		if ( empty( $vector_ids ) ) { return []; }
+		if ( empty( $vector_ids ) ) return array();
 
 		$placeholders_ids = implode( ', ', array_fill( 0, count( $vector_ids ), '%d' ) );
-		$sql_candidates = "SELECT v.post_id, v.content_chunk, v.vector_data, p.post_date FROM `{$vectors_table}` AS v JOIN `{$posts_table}` AS p ON v.post_id = p.ID WHERE v.id IN ( {$placeholders_ids} )";
-		$candidate_rows = $wpdb->get_results( $wpdb->prepare( $sql_candidates, $vector_ids ) );
-		error_log('Fetched ' . count($candidate_rows) . ' candidate rows.');
+		$sql_candidates   = "
+			SELECT `post_id`, `content_chunk`, `vector_data`, p.post_date
+			FROM `{$vectors_table}` AS v
+			JOIN `{$posts_table}` AS p ON v.post_id = p.ID
+			WHERE v.id IN ( {$placeholders_ids} )";
+		$candidate_rows   = $wpdb->get_results( $wpdb->prepare( $sql_candidates, $vector_ids ) );
 
 		if( empty($candidate_rows) ) return array();
 
@@ -284,71 +285,6 @@ class FEAS_AI_Sync_Handler {
 
 		return array_slice( $similarities, 0, 7 );
 	}
-
-	// public function find_similar_chunks( $question ) {
-	// 	global $wpdb;
-	// 	$index_table   = $wpdb->prefix . 'feas_ai_keyword_index';
-	// 	$vectors_table = $wpdb->prefix . 'feas_ai_vectors';
-	// 	$posts_table   = $wpdb->posts;
-//
-	// 	//$segmenter = new TinySegmenter();
-	// 	$keywords = array_unique( $this->segmenter->segment($question) );
-	// 	$valid_keywords = array_filter($keywords, function($kw){ return mb_strlen($kw) > 1; });
-//
-	// 	if ( empty( $valid_keywords ) ) return array();
-//
-	// 	$placeholders = implode( ', ', array_fill( 0, count( $valid_keywords ), '%s' ) );
-	// 	$sql = "SELECT DISTINCT `vector_id` FROM `{$index_table}` WHERE `keyword` IN ( {$placeholders} ) LIMIT 500";
-	// 	$vector_ids = $wpdb->get_col( $wpdb->prepare( $sql, $valid_keywords ) );
-//
-	// 	if ( empty( $vector_ids ) ) return array();
-//
-	// 	$placeholders_ids = implode( ', ', array_fill( 0, count( $vector_ids ), '%d' ) );
-	// 	$sql_candidates   = "
-	// 		SELECT `post_id`, `content_chunk`, `vector_data`, p.post_date
-	// 		FROM `{$vectors_table}` AS v
-	// 		JOIN `{$posts_table}` AS p ON v.post_id = p.ID
-	// 		WHERE `id` IN ( {$placeholders_ids} )";
-	// 	$candidate_rows   = $wpdb->get_results( $wpdb->prepare( $sql_candidates, $vector_ids ) );
-//
-	// 	if( empty($candidate_rows) ) return array();
-//
-	// 	$question_vector_response = $this->get_embeddings_via_selected_provider( array( $question ) );
-	// 	if( is_wp_error($question_vector_response) || empty($question_vector_response['data'][0]['embedding']) ){
-	// 		return array();
-	// 	}
-	// 	$question_vector = $question_vector_response['data'][0]['embedding'];
-//
-	// 	$similarities = array();
-	// 	$similarity_threshold = 0.35; // 類似度の足切りスコア
-//
-	// 	foreach ( $candidate_rows as $row ) {
-	// 		$db_vector = json_decode( $row->vector_data, true );
-	// 		if ( ! is_array( $db_vector ) || empty( $db_vector ) ) continue;
-//
-	// 		$similarity = $this->calculate_cosine_similarity_php( $question_vector, $db_vector );
-//
-	// 		if ( $similarity >= $similarity_threshold ) {
-	// 			$similarities[] = array(
-	// 				'post_id'       => $row->post_id,
-	// 				'content_chunk' => $row->content_chunk,
-	// 				'similarity'    => $similarity,
-	// 				'permalink'     => get_permalink( $row->post_id ),
-	// 				'post_date'     => $row->post_date,
-	// 			);
-	// 		}
-	// 	}
-//
-	// 	if ( empty($similarities) ) {
-	// 		return array();
-	// 	}
-//
-	// 	usort( $similarities, function( $a, $b ) {
-	// 		return $b['similarity'] <=> $a['similarity'];
-	// 	} );
-//
-	// 	return array_slice( $similarities, 0, 7 );
-	// }
 
 	public function create_chunks_from_post( $post ) {
 		$sync_options = get_option('feas_ai_sync_options', []);
