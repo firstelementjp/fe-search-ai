@@ -47,9 +47,15 @@ class FEAS_AI_Assets {
 		wp_enqueue_script(
 			'feas-ai-chat-main',
 			plugin_dir_url( FEAS_AI_PLUGIN_FILE ) . 'assets/js/frontend-scripts.js',
-			array(),
+			array( 'wp-i18n' ),
 			FEAS_AI_VERSION,
 			true
+		);
+
+		wp_set_script_translations(
+			'feas-ai-chat-main',
+			'fe-ai-search',
+			plugin_dir_path( FEAS_AI_PLUGIN_FILE ) . 'languages'
 		);
 
 		wp_localize_script(

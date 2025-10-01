@@ -59,13 +59,13 @@ spl_autoload_register(function ($class) {
 });
 
 function feas_ai_run_plugin() {
-    $GLOBALS['feas_ai_assets'] = new FEAISearch\Core\FEAS_AI_Assets();
-    $GLOBALS['feas_ai_sync_handler'] = new FEAISearch\Ajax\FEAS_AI_Sync_Handler();
+    $assets_handler = new FEAISearch\Core\FEAS_AI_Assets();
+    $sync_handler   = new FEAISearch\Ajax\FEAS_AI_Sync_Handler();
 
     new FEAISearch\Admin\FEAS_AI_Admin();
-    new FEAISearch\Frontend\FEAS_AI_Chat_UI();
-    new FEAISearch\Ajax\FEAS_AI_Chat_Handler();
-    new FEAISearch\Core\FEAS_AI_Sync_Hooks();
+    new FEAISearch\Frontend\FEAS_AI_Chat_UI( $assets_handler );
+    new FEAISearch\Ajax\FEAS_AI_Chat_Handler( $sync_handler );
+    new FEAISearch\Core\FEAS_AI_Sync_Hooks( $sync_handler );
 }
 add_action( 'plugins_loaded', 'feas_ai_run_plugin' );
 

@@ -28,7 +28,12 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  */
 class FEAS_AI_Chat_UI {
 
-	public function __construct() {
+	private static $is_rendered = false;
+	private $assets_handler;
+
+	public function __construct( $assets_handler ) {
+		$this->assets_handler = $assets_handler;
+
 		add_action( 'init', array( $this, 'register_shortcode' ) );
 		add_action( 'wp_footer', array( $this, 'maybe_render_floating_chat' ) );
 	}
@@ -38,11 +43,20 @@ class FEAS_AI_Chat_UI {
 	}
 
 	public function render_chat_shortcode() {
-		\FEAISearch\Core\FEAS_AI_Assets::enqueue_assets();
+		if ( self::$is_rendered ) {
+			return '';
+		}
+		self::$is_rendered = true;
+
+		$this->assets_handler->enqueue_assets();
 		return $this->get_chat_ui_html('embed');
 	}
 
 	public function maybe_render_floating_chat() {
+		if ( self::$is_rendered ) {
+			return;
+		}
+
 		$options = get_option( 'feas_ai_display_options' );
 		$display_mode = $options['display_mode'] ?? 'float';
 
@@ -50,11 +64,7 @@ class FEAS_AI_Chat_UI {
 			return;
 		}
 
-		$rules = get_option( 'feas_ai_display_rules', [
-			'show_on_front_page' => '1',
-			'show_on_archives'   => '1',
-		]);
-
+		$rules = $options['display_rules'] ?? [];
 		$should_display = false;
 
 		$include_ids_str = $rules['include_ids'] ?? '';
@@ -65,37 +75,32 @@ class FEAS_AI_Chat_UI {
 
 		$current_id = get_the_ID();
 
-		// Include ID is the top priority.
 		if ( ! empty( $include_ids ) ) {
 			if ( is_singular() && in_array( $current_id, $include_ids ) ) {
 				$should_display = true;
 			}
 		} else {
-			// Judgment Based on Basic Rules and Post Type Rules
 			if ( (is_front_page() && !empty($rules['show_on_front_page'])) ||
 				 (is_archive() && !empty($rules['show_on_archives'])) ) {
 				$should_display = true;
 			}
 
-			$allowed_post_types = [];
-			if ( !empty($rules['post_types']) ) {
-				foreach ($rules['post_types'] as $pt => $enabled) {
-					if ($enabled) {
-						$allowed_post_types[] = $pt;
-					}
+			if ( is_singular() && !empty($rules['post_types']) ) {
+				$current_post_type = get_post_type();
+				if ( !empty($rules['post_types'][$current_post_type]) ) {
+					$should_display = true;
 				}
-			}
-			if ( is_singular($allowed_post_types) ) {
-				$should_display = true;
 			}
 		}
 
-		// Exclude ID has the final decision-making authority.
 		if ( is_singular() && in_array( $current_id, $exclude_ids ) ) {
 			$should_display = false;
 		}
 
 		if ( apply_filters( 'feas_ai_should_display_chat', $should_display ) ) {
+			self::$is_rendered = true;
+
+			$this->assets_handler->enqueue_assets();
 			echo $this->get_chat_ui_html('float');
 		}
 	}

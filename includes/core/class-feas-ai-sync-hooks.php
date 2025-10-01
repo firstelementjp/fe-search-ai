@@ -3,8 +3,11 @@
 namespace FEAISearch\Core;
 
 class FEAS_AI_Sync_Hooks {
+	private $sync_handler;
 
-	public function __construct() {
+	public function __construct( $sync_handler ) {
+		$this->sync_handler = $sync_handler;
+
 		add_action( 'save_post', [ $this, 'sync_single_post_on_update' ], 10, 2 );
 		add_action( 'wp_trash_post', [ $this, 'delete_post_from_index' ] );
 		add_action( 'delete_post', [ $this, 'delete_post_from_index' ] );
@@ -33,7 +36,7 @@ class FEAS_AI_Sync_Hooks {
 
 		$this->delete_post_from_index( $post_id );
 
-		$chunks_with_meta = $GLOBALS['feas_ai_sync_handler']->create_chunks_from_post( $post );
+		$chunks_with_meta = $this->sync_handler->create_chunks_from_post( $post );
 
 		if ( empty($chunks_with_meta) ) {
 			return;
