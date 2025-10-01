@@ -16,6 +16,7 @@ namespace FEAISearch\Ajax;
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 use U7aro\TinySegmenter\TinySegmenter;
+use WP_Error;
 
 /**
  * Main controller for all data synchronization processes.
@@ -34,13 +35,12 @@ class FEAS_AI_Sync_Handler {
 
 	public function __construct() {
 
-		$this->segmenter = new TinySegmenter();
+		$this->segmenter = new \U7aro\TinySegmenter\TinySegmenter();
 
 		add_action( 'wp_ajax_feas_ai_start_sync', array( $this, 'ajax_start_sync' ) );
 		add_action( 'wp_ajax_feas_ai_process_batch', array( $this, 'ajax_process_batch' ) );
 		add_action( 'wp_ajax_feas_ai_update_sync_timestamp', array( $this, 'ajax_update_sync_timestamp' ) );
-		add_action( 'save_post', array( $this, 'sync_single_post_on_update' ), 10, 2 );
-		add_action( 'wp_trash_post', array( $this, 'delete_post_from_index' ) );
+		add_action( 'wp_ajax_feas_ai_delete_vectors', array( $this, 'ajax_delete_vectors' ) );
 	}
 
 	public function ajax_start_sync() {
@@ -86,6 +86,13 @@ class FEAS_AI_Sync_Handler {
 				$args['post__not_in'] = $exclude_ids;
 			}
 		}
+
+		/**
+		 * 同期対象の投稿を取得するクエリ引数をフィルターする。
+		 *
+		 * @param array $args WP_Query / get_posts に渡される引数の配列。
+		 */
+		$args = apply_filters( 'feas_ai_sync_query_args', $args );
 
 		$all_post_ids = get_posts( $args );
 		$total_posts = count($all_post_ids);
@@ -212,121 +219,32 @@ class FEAS_AI_Sync_Handler {
 	}
 
 	/**
-	 * 投稿が更新された際に、単一の投稿を同期する
-	 * @param int $post_id 投稿ID.
-	 * @param WP_Post $post 投稿オブジェクト.
-	 */
-	public function sync_single_post_on_update( $post_id, $post ) {
-		$sync_options = get_option( 'feas_ai_sync_options', [] );
-		$pt_options = $sync_options['post_types'][ $post->post_type ] ?? [];
-
-		if ( empty( $pt_options['enabled'] ) ) {
-			return;
-		}
-
-		if ( $post->post_status !== 'publish' ) {
-			return;
-		}
-
-		if ( wp_is_post_autosave( $post_id ) || wp_is_post_revision( $post_id ) ) {
-			return;
-		}
-
-		$this->delete_post_from_index( $post_id );
-
-		$chunks_with_meta = $this->create_chunks_from_post( $post );
-
-		if ( empty($chunks_with_meta) ) {
-			return;
-		}
-
-		$embedding_response = $this->get_embeddings_via_selected_provider( $chunks_with_meta );
-
-		if ( ! is_wp_error( $embedding_response ) && !empty($embedding_response['data']) ) {
-			global $wpdb;
-			$vectors_table = $wpdb->prefix . 'feas_ai_vectors';
-			$index_table   = $wpdb->prefix . 'feas_ai_keyword_index';
-			$segmenter = new TinySegmenter();
-
-			$vectors_data = $embedding_response['data'];
-
-			foreach ( $vectors_data as $index => $vector_item ) {
-				$wpdb->insert(
-					$vectors_table,
-					[
-						'post_id'       => $post->ID,
-						'chunk_index'   => $index,
-						'content_chunk' => $chunks_with_meta[$index],
-						'vector_data'   => json_encode( $vector_item['embedding'] ),
-						'created_at'    => current_time( 'mysql' ),
-					],
-					[ '%d', '%d', '%s', '%s', '%s' ]
-				);
-				$vector_id = $wpdb->insert_id;
-				if ($vector_id) {
-					$keywords = $segmenter->segment($chunks_with_meta[$index]);
-					foreach ( array_unique( $keywords ) as $keyword ) {
-						if ( mb_strlen( $keyword ) > 1 ) {
-							$wpdb->insert(
-								$index_table,
-								[ 'keyword' => $keyword, 'vector_id' => $vector_id ],
-								[ '%s', '%d' ]
-							);
-						}
-					}
-				}
-			}
-		}
-
-		update_option( 'feas_ai_last_sync_timestamp', current_time( 'timestamp' ) );
-	}
-
-	/**
-	 * 投稿が削除された際に、索引から関連データを削除する
-	 * @param int $post_id 投稿ID.
-	 */
-	public function delete_post_from_index( $post_id ) {
-		global $wpdb;
-		$vectors_table = $wpdb->prefix . 'feas_ai_vectors';
-		$index_table   = $wpdb->prefix . 'feas_ai_keyword_index';
-
-		// 削除対象の投稿に紐づくベクトルIDを取得
-		$vector_ids = $wpdb->get_col( $wpdb->prepare( "SELECT id FROM `{$vectors_table}` WHERE `post_id` = %d", $post_id ) );
-
-		if ( ! empty( $vector_ids ) ) {
-			$placeholders = implode( ', ', array_fill( 0, count( $vector_ids ), '%d' ) );
-
-			// 索引テーブルから削除
-			$wpdb->query( $wpdb->prepare( "DELETE FROM `{$index_table}` WHERE `vector_id` IN ( {$placeholders} )", $vector_ids ) );
-
-			// ベクトルテーブルから削除
-			$wpdb->query( $wpdb->prepare( "DELETE FROM `{$vectors_table}` WHERE `post_id` = %d", $post_id ) );
-		}
-	}
-
-	/**
 	 * タイムアウトしない、ローカル完結の高速検索メソッド
 	 */
 	public function find_similar_chunks( $question ) {
+		error_log('--- find_similar_chunks START --- Question: ' . $question);
 		global $wpdb;
 		$index_table   = $wpdb->prefix . 'feas_ai_keyword_index';
 		$vectors_table = $wpdb->prefix . 'feas_ai_vectors';
+		$posts_table   = $wpdb->posts;
 
-		//$segmenter = new TinySegmenter();
 		$keywords = array_unique( $this->segmenter->segment($question) );
 		$valid_keywords = array_filter($keywords, function($kw){ return mb_strlen($kw) > 1; });
+		error_log('Valid Keywords: ' . print_r($valid_keywords, true));
 
-		if ( empty( $valid_keywords ) ) return array();
+		if ( empty( $valid_keywords ) ) { return []; }
 
 		$placeholders = implode( ', ', array_fill( 0, count( $valid_keywords ), '%s' ) );
 		$sql = "SELECT DISTINCT `vector_id` FROM `{$index_table}` WHERE `keyword` IN ( {$placeholders} ) LIMIT 500";
 		$vector_ids = $wpdb->get_col( $wpdb->prepare( $sql, $valid_keywords ) );
+		error_log('Found ' . count($vector_ids) . ' potential vector IDs.');
 
-		if ( empty( $vector_ids ) ) return array();
+		if ( empty( $vector_ids ) ) { return []; }
 
 		$placeholders_ids = implode( ', ', array_fill( 0, count( $vector_ids ), '%d' ) );
-		$sql_candidates   = "SELECT `post_id`, `content_chunk`, `vector_data` FROM `{$vectors_table}` WHERE `id` IN ( {$placeholders_ids} )";
-		$candidate_rows   = $wpdb->get_results( $wpdb->prepare( $sql_candidates, $vector_ids ) );
+		$sql_candidates = "SELECT v.post_id, v.content_chunk, v.vector_data, p.post_date FROM `{$vectors_table}` AS v JOIN `{$posts_table}` AS p ON v.post_id = p.ID WHERE v.id IN ( {$placeholders_ids} )";
+		$candidate_rows = $wpdb->get_results( $wpdb->prepare( $sql_candidates, $vector_ids ) );
+		error_log('Fetched ' . count($candidate_rows) . ' candidate rows.');
 
 		if( empty($candidate_rows) ) return array();
 
@@ -366,6 +284,71 @@ class FEAS_AI_Sync_Handler {
 
 		return array_slice( $similarities, 0, 7 );
 	}
+
+	// public function find_similar_chunks( $question ) {
+	// 	global $wpdb;
+	// 	$index_table   = $wpdb->prefix . 'feas_ai_keyword_index';
+	// 	$vectors_table = $wpdb->prefix . 'feas_ai_vectors';
+	// 	$posts_table   = $wpdb->posts;
+//
+	// 	//$segmenter = new TinySegmenter();
+	// 	$keywords = array_unique( $this->segmenter->segment($question) );
+	// 	$valid_keywords = array_filter($keywords, function($kw){ return mb_strlen($kw) > 1; });
+//
+	// 	if ( empty( $valid_keywords ) ) return array();
+//
+	// 	$placeholders = implode( ', ', array_fill( 0, count( $valid_keywords ), '%s' ) );
+	// 	$sql = "SELECT DISTINCT `vector_id` FROM `{$index_table}` WHERE `keyword` IN ( {$placeholders} ) LIMIT 500";
+	// 	$vector_ids = $wpdb->get_col( $wpdb->prepare( $sql, $valid_keywords ) );
+//
+	// 	if ( empty( $vector_ids ) ) return array();
+//
+	// 	$placeholders_ids = implode( ', ', array_fill( 0, count( $vector_ids ), '%d' ) );
+	// 	$sql_candidates   = "
+	// 		SELECT `post_id`, `content_chunk`, `vector_data`, p.post_date
+	// 		FROM `{$vectors_table}` AS v
+	// 		JOIN `{$posts_table}` AS p ON v.post_id = p.ID
+	// 		WHERE `id` IN ( {$placeholders_ids} )";
+	// 	$candidate_rows   = $wpdb->get_results( $wpdb->prepare( $sql_candidates, $vector_ids ) );
+//
+	// 	if( empty($candidate_rows) ) return array();
+//
+	// 	$question_vector_response = $this->get_embeddings_via_selected_provider( array( $question ) );
+	// 	if( is_wp_error($question_vector_response) || empty($question_vector_response['data'][0]['embedding']) ){
+	// 		return array();
+	// 	}
+	// 	$question_vector = $question_vector_response['data'][0]['embedding'];
+//
+	// 	$similarities = array();
+	// 	$similarity_threshold = 0.35; // 類似度の足切りスコア
+//
+	// 	foreach ( $candidate_rows as $row ) {
+	// 		$db_vector = json_decode( $row->vector_data, true );
+	// 		if ( ! is_array( $db_vector ) || empty( $db_vector ) ) continue;
+//
+	// 		$similarity = $this->calculate_cosine_similarity_php( $question_vector, $db_vector );
+//
+	// 		if ( $similarity >= $similarity_threshold ) {
+	// 			$similarities[] = array(
+	// 				'post_id'       => $row->post_id,
+	// 				'content_chunk' => $row->content_chunk,
+	// 				'similarity'    => $similarity,
+	// 				'permalink'     => get_permalink( $row->post_id ),
+	// 				'post_date'     => $row->post_date,
+	// 			);
+	// 		}
+	// 	}
+//
+	// 	if ( empty($similarities) ) {
+	// 		return array();
+	// 	}
+//
+	// 	usort( $similarities, function( $a, $b ) {
+	// 		return $b['similarity'] <=> $a['similarity'];
+	// 	} );
+//
+	// 	return array_slice( $similarities, 0, 7 );
+	// }
 
 	public function create_chunks_from_post( $post ) {
 		$sync_options = get_option('feas_ai_sync_options', []);
@@ -418,17 +401,50 @@ class FEAS_AI_Sync_Handler {
 	}
 
 	public function get_embeddings_via_selected_provider( $texts ) {
-		// ★ 回答用ではなく、ベクトル化用の設定を読み込む
 		$provider = get_option( 'feas_ai_embedding_provider', 'openai' );
 
-		if ( 'google' === $provider ) {
-			return $this->get_gemini_embeddings( $texts );
-		} else { // 'openai' or not-supported 'anthropic'
-			return $this->get_embeddings( $texts );
+		/**
+		 * 独自のEmbeddingプロバイダー処理を割り込ませるためのフィルターフック。
+		 * フック名: feas_ai_embedding_result_for_{プロバイダーのスラッグ}
+		 *
+		 * @param WP_Error|array|null $result   結果。nullの場合、デフォルト処理が実行される.
+		 * @param array               $texts    ベクトル化するテキストの配列.
+		 */
+		$result = apply_filters( "feas_ai_embedding_result_for_{$provider}", null, $texts );
+
+		if ( null !== $result ) {
+			return $result;
+		}
+
+		switch ($provider) {
+			case 'google':
+				return $this->fetch_embeddings_for_gemini( $texts );
+			case 'openai':
+			default:
+				return $this->fetch_embeddings_for_openai( $texts );
 		}
 	}
 
-	public function get_embeddings( $texts ) {
+	public function calculate_cosine_similarity_php( $vec1, $vec2 ) {
+		$dot_product = 0;
+		$norm1 = 0;
+		$norm2 = 0;
+		$count = count( $vec1 );
+
+		for ( $i = 0; $i < $count; $i++ ) {
+			$dot_product += $vec1[$i] * $vec2[$i];
+			$norm1 += $vec1[$i] * $vec1[$i];
+			$norm2 += $vec2[$i] * $vec2[$i];
+		}
+
+		if ( $norm1 == 0 || $norm2 == 0 ) {
+			return 0.0;
+		}
+
+		return $dot_product / ( sqrt( $norm1 ) * sqrt( $norm2 ) );
+	}
+
+	public function fetch_embeddings_for_openai( $texts ) {
 		$api_key = get_option( 'feas_ai_openai_api_key' );
 		if ( empty( $api_key ) ) {
 			return new WP_Error( 'api_key_missing', 'OpenAI APIキーが設定されていません。' );
@@ -481,7 +497,7 @@ class FEAS_AI_Sync_Handler {
 		// TODO
 	}
 
-	public function get_gemini_embeddings( $texts ) {
+	public function fetch_embeddings_for_gemini( $texts ) {
 		$api_key = get_option( 'feas_ai_google_api_key' ); // Google用のAPIキーを取得
 		if ( empty( $api_key ) ) {
 			return new WP_Error( 'api_key_missing', 'Google Cloud APIキーが設定されていません。' );
@@ -538,25 +554,6 @@ class FEAS_AI_Sync_Handler {
 		}
 
 		return $formatted_response;
-	}
-
-	public function calculate_cosine_similarity_php( $vec1, $vec2 ) {
-		$dot_product = 0;
-		$norm1 = 0;
-		$norm2 = 0;
-		$count = count( $vec1 );
-
-		for ( $i = 0; $i < $count; $i++ ) {
-			$dot_product += $vec1[$i] * $vec2[$i];
-			$norm1 += $vec1[$i] * $vec1[$i];
-			$norm2 += $vec2[$i] * $vec2[$i];
-		}
-
-		if ( $norm1 == 0 || $norm2 == 0 ) {
-			return 0.0;
-		}
-
-		return $dot_product / ( sqrt( $norm1 ) * sqrt( $norm2 ) );
 	}
 
 }

@@ -65,6 +65,7 @@ function feas_ai_run_plugin() {
     new FEAISearch\Admin\FEAS_AI_Admin();
     new FEAISearch\Frontend\FEAS_AI_Chat_UI();
     new FEAISearch\Ajax\FEAS_AI_Chat_Handler();
+    new FEAISearch\Core\FEAS_AI_Sync_Hooks();
 }
 add_action( 'plugins_loaded', 'feas_ai_run_plugin' );
 

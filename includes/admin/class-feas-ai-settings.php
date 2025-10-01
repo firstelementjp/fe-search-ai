@@ -37,25 +37,24 @@ class FEAS_AI_Settings {
 	public static function render_page() {
 		?>
 		<div class="wrap">
-			<h1>FE AI Search</h1>
+			<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
 
 			<h2 class="nav-tab-wrapper">
-				<a href="#tab-api" class="nav-tab"><?php _e( 'API Settings', 'fe-ai-search' ); ?></a>
-				<a href="#tab-sync" class="nav-tab"><?php _e( 'Sync Settings', 'fe-ai-search' ); ?></a>
-				<a href="#tab-display" class="nav-tab"><?php _e( 'Display settings', 'fe-ai-search' ); ?></a>
-				<a href="#tab-data" class="nav-tab"><?php _e( 'Data Management', 'fe-ai-search' ); ?></a>
+				<a href="#tab-api" class="nav-tab">API設定</a>
+				<a href="#tab-sync" class="nav-tab">同期設定</a>
+				<a href="#tab-display" class="nav-tab">表示設定</a>
+				<a href="#tab-data" class="nav-tab">データ管理</a>
 				<?php do_action( 'feas_ai_settings_tabs' ); ?>
 			</h2>
 
 			<form action="options.php" method="post">
-				<?php
-				settings_fields( 'feas-ai-settings' );
-				?>
+				<?php settings_fields( 'feas-ai-settings' ); ?>
 
 				<div id="tab-api" class="tab-content">
 					<table class="form-table">
 						<?php do_settings_fields( 'fe-ai-search', 'feas_ai_api_section' ); ?>
 					</table>
+					<?php do_action( 'feas_ai_after_api_settings_fields' ); ?>
 				</div>
 
 				<div id="tab-sync" class="tab-content">
@@ -63,9 +62,7 @@ class FEAS_AI_Settings {
 					<table class="form-table">
 						<?php do_settings_fields( 'fe-ai-search', 'feas_ai_sync_section' ); ?>
 					</table>
-					<table class="form-table">
-						<?php do_settings_fields( 'fe-ai-search', 'feas_ai_sync_ui' ); ?>
-					</table>
+					<?php do_action( 'feas_ai_after_sync_settings_fields' ); ?>
 				</div>
 
 				<div id="tab-display" class="tab-content">
@@ -73,6 +70,7 @@ class FEAS_AI_Settings {
 					<table class="form-table">
 						<?php do_settings_fields( 'fe-ai-search', 'feas_ai_display_section' ); ?>
 					</table>
+					<?php do_action( 'feas_ai_after_display_settings_fields' ); ?>
 				</div>
 
 				<div id="tab-data" class="tab-content">
@@ -80,13 +78,12 @@ class FEAS_AI_Settings {
 					<table class="form-table">
 						<?php do_settings_fields( 'fe-ai-search', 'feas_ai_data_section' ); ?>
 					</table>
+					<?php do_action( 'feas_ai_after_data_settings_fields' ); ?>
 				</div>
 
 				<?php do_action( 'feas_ai_settings_tabs_content' ); ?>
 
-				<?php
-				submit_button( __( 'Save Settings', 'fe-ai-search' ));
-				?>
+				<?php submit_button( '設定を保存' ); ?>
 			</form>
 		</div>
 		<?php
@@ -262,17 +259,22 @@ class FEAS_AI_Settings {
 
 	public function chat_provider_field_html() {
 		$provider = get_option( 'feas_ai_chat_provider', 'openai' );
+
+		$providers = [
+			'openai'    => __( 'OpenAI (GPT-4o)', 'fe-ai-search' ),
+			'google'    => __( 'Google (Gemini)', 'fe-ai-search' ),
+			'anthropic' => __( 'Anthropic (Claude)', 'fe-ai-search' ),
+		];
+
+		$providers = apply_filters( 'feas_ai_chat_providers', $providers );
+
 		?>
 		<select name="feas_ai_chat_provider">
-			<option value="openai" <?php selected( $provider, 'openai' ); ?>>
-				<?php esc_html_e( 'OpenAI (GPT-4o)', 'fe-ai-search' ); ?>
-			</option>
-			<option value="google" <?php selected( $provider, 'google' ); ?>>
-				<?php esc_html_e( 'Google (Gemini)', 'fe-ai-search' ); ?>
-			</option>
-			<option value="anthropic" <?php selected( $provider, 'anthropic' ); ?>>
-				<?php esc_html_e( 'Anthropic (Claude)', 'fe-ai-search' ); ?>
-			</option>
+			<?php foreach ( $providers as $key => $name ) : ?>
+				<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $provider, $key ); ?>>
+					<?php echo esc_html( $name ); ?>
+				</option>
+			<?php endforeach; ?>
 		</select>
 		<p class="description">
 			<?php esc_html_e( 'Select the AI that generates answers for the user.', 'fe-ai-search' ); ?>
@@ -282,17 +284,24 @@ class FEAS_AI_Settings {
 
 	public function embedding_provider_field_html() {
 		$provider = get_option( 'feas_ai_embedding_provider', 'openai' );
+
+		$providers = [
+			'openai'    => __( 'OpenAI (text-embedding-3)', 'fe-ai-search' ),
+			'google'    => __( 'Google (text-embedding-004)', 'fe-ai-search' ),
+			'anthropic' => __( 'Anthropic (Claude) - (Not available)', 'fe-ai-search' ),
+		];
+
+		$providers = apply_filters( 'feas_ai_embedding_providers', $providers );
+
 		?>
 		<select name="feas_ai_embedding_provider">
-			<option value="openai" <?php selected( $provider, 'openai' ); ?>>
-				<?php esc_html_e( 'OpenAI (text-embedding-3)', 'fe-ai-search' ); ?>
-			</option>
-			<option value="google" <?php selected( $provider, 'google' ); ?>>
-				<?php esc_html_e( 'Google (text-embedding-004)', 'fe-ai-search' ); ?>
-			</option>
-			<option value="anthropic" disabled="disabled">
-				<?php esc_html_e( 'Anthropic (Claude) - (API not currently available)', 'fe-ai-search' ); ?>
-			</option>
+			<?php foreach ( $providers as $key => $name ) : ?>
+				<option
+					value="<?php echo esc_attr( $key ); ?>" <?php selected( $provider, $key ); ?>
+					<?php if ( 'anthropic' === $key ) echo 'disabled="disabled"'; ?>>
+					<?php echo esc_html( $name ); ?>
+				</option>
+			<?php endforeach; ?>
 		</select>
 		<p class="description">
 			<?php esc_html_e( 'Select an AI that will vectorize (convert) your site content into a format that AI can understand.', 'fe-ai-search' ); ?>
@@ -366,10 +375,6 @@ class FEAS_AI_Settings {
 	public function sync_options_field_html() {
 		$options = get_option( 'feas_ai_sync_options', [] );
 
-		// Synchronization Target
-		$post_types = get_post_types( ['public' => true], 'objects' );
-		$excluded_post_types = ['attachment'];
-
 		echo wp_kses_post(
 			__(
 				'<p class="description">' .
@@ -381,22 +386,36 @@ class FEAS_AI_Settings {
 		);
 		echo '<div id="feas-ai-sync-options-accordion">';
 
+		// Synchronization Target
+		$post_types = get_post_types( ['public' => true], 'objects' );
+		$excluded_post_types = ['attachment'];
+
 		foreach ( $post_types as $post_type ) {
-			if ( in_array( $post_type->name, $excluded_post_types ) ) continue;
-
-			$pt_options = $options['post_types'][ $post_type->name ] ?? [];
-
-			if ( ! isset( $options['post_types'][ $post_type->name ] ) ) {
-				$is_enabled = ($post_type->name === 'post' || $post_type->name === 'page');
-				$include_title = true;
-				$include_content = true;
-				$include_date = true;
-			} else {
-				$is_enabled = $pt_options['enabled'] ?? false;
-				$include_title = $pt_options['include_title'] ?? false;
-				$include_content = $pt_options['include_content'] ?? false;
-				$include_date = $pt_options['include_date'] ?? false;
+			if ( in_array( $post_type->name, $excluded_post_types ) ) {
+				continue;
 			}
+
+			$defaults = [
+				'enabled'         => ($post_type->name === 'post' || $post_type->name === 'page'),
+				'include_title'   => true,
+				'include_content' => true,
+				'include_date'    => true,
+				'include_author'  => true,
+			];
+
+			$pt_options = wp_parse_args( $options['post_types'][ $post_type->name ] ?? [], $defaults );
+//
+			// if ( ! isset( $options['post_types'][ $post_type->name ] ) ) {
+			// 	$is_enabled = ($post_type->name === 'post' || $post_type->name === 'page');
+			// 	$include_title = true;
+			// 	$include_content = true;
+			// 	$include_date = true;
+			// } else {
+			// 	$is_enabled = $pt_options['enabled'] ?? false;
+			// 	$include_title = $pt_options['include_title'] ?? false;
+			// 	$include_content = $pt_options['include_content'] ?? false;
+			// 	$include_date = $pt_options['include_date'] ?? false;
+			// }
 
 			?>
 			<div class="post-type-accordion-item" style="border: 1px solid #c3c4c7; margin-bottom: -1px; background: #fff;">
@@ -418,7 +437,7 @@ class FEAS_AI_Settings {
 								type="checkbox"
 								name="feas_ai_sync_options[post_types][<?php echo esc_attr( $post_type->name ); ?>][include_title]"
 								value="1"
-								<?php checked( $include_title ); ?>
+								<?php checked( $pt_options['include_title'] ); ?>
 							>
 							<?php esc_html_e( 'Include Post Title', 'fe-ai-search' ); ?>
 						</label><br>
@@ -427,7 +446,7 @@ class FEAS_AI_Settings {
 								type="checkbox"
 								name="feas_ai_sync_options[post_types][<?php echo esc_attr( $post_type->name ); ?>][include_content]"
 								value="1"
-								<?php checked( $include_content ); ?>
+								<?php checked( $pt_options['include_content'] ); ?>
 							>
 							<?php esc_html_e( 'Include Post Content', 'fe-ai-search' ); ?>
 						</label><br>
@@ -436,9 +455,18 @@ class FEAS_AI_Settings {
 								type="checkbox"
 								name="feas_ai_sync_options[post_types][<?php echo esc_attr( $post_type->name ); ?>][include_date]"
 								value="1"
-								<?php checked( $include_date ); ?>
+								<?php checked( $pt_options['include_date'] ); ?>
 							>
 							<?php esc_html_e( 'Include Post Date', 'fe-ai-search' ); ?>
+						</label><br>
+						<label>
+							<input
+								type="checkbox"
+								name="feas_ai_sync_options[post_types][<?php echo esc_attr($post_type->name); ?>][include_author]"
+								value="1"
+								<?php checked($pt_options['include_author']); ?>
+							>
+							<?php esc_html_e( 'Include Post Author', 'fe-ai-search' ); ?>
 						</label><br>
 
 						<?php

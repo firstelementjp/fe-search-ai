@@ -74,15 +74,35 @@ class FEAS_AI_Chat_Handler {
 
 		$question = sanitize_text_field( $request->get_param( 'question' ) );
 		$history = json_decode( stripslashes( $request->get_param( 'history' ) ?? '[]' ), true );
-		if ( empty( $question ) ) { return; }
+
+		/**
+		 * AIに渡す前の、ユーザーの質問文字列をフィルターする。
+		 *
+		 * @param string $question サニタイズ済みのユーザーの質問.
+		 */
+		$question = apply_filters( 'feas_ai_filter_user_question', $question );
+
+		if ( empty( $question ) ) {
+			return;
+		}
 
 		$similar_chunks = $GLOBALS['feas_ai_sync_handler']->find_similar_chunks( $question );
+
+		/**
+		 * AIに渡す直前の、検索で見つかったチャンクの配列をフィルターする。
+		 *
+		 * @param array  $similar_chunks 関連性の高いチャンクの配列.
+		 * @param string $question       元のユーザーの質問.
+		 */
+		$similar_chunks = apply_filters( 'feas_ai_retrieved_chunks', $similar_chunks, $question );
 
 		$context_found = ! empty( $similar_chunks );
 		echo "data: " . json_encode(['meta' => ['context_found' => $context_found]]) . "\n\n";
 		flush();
 
 		$this->stream_chat_completion( $question, $similar_chunks, $history );
+
+		exit;
 	}
 
 	/**
@@ -91,12 +111,26 @@ class FEAS_AI_Chat_Handler {
 	public function stream_chat_completion( $question, $context_chunks, $history = array() ) {
 		$provider = get_option( 'feas_ai_chat_provider', 'openai' );
 
-		if ( 'google' === $provider ) {
-			$this->stream_completion_for_gemini( $question, $context_chunks, $history );
-		} elseif ( 'anthropic' === $provider ) {
-			$this->stream_completion_for_claude( $question, $context_chunks, $history );
-		} else {
-			$this->stream_completion_for_openai( $question, $context_chunks, $history );
+		/**
+		 * 独自のAIプロバイダー処理を割り込ませるためのアクションフック。
+		 * フック名: feas_ai_stream_for_{プロバイダーのスラッグ}
+		 *
+		 * @param string $question       ユーザーの質問.
+		 * @param array  $context_chunks 関連情報のチャンク.
+		 * @param array  $history        会話履歴.
+		 */
+		do_action( "feas_ai_stream_for_{$provider}", $question, $context_chunks, $history );
+
+		switch ($provider) {
+			case 'google':
+				$this->stream_completion_for_gemini( $question, $context_chunks, $history );
+				break;
+			case 'anthropic':
+				$this->stream_completion_for_claude( $question, $context_chunks, $history );
+				break;
+			case 'openai':
+				$this->stream_completion_for_openai( $question, $context_chunks, $history );
+				break;
 		}
 	}
 
@@ -548,10 +582,13 @@ class FEAS_AI_Chat_Handler {
 				if ($provider === 'openai' && isset($chunk['choices'][0]['delta']['content'])) {
 					$content = $chunk['choices'][0]['delta']['content'];
 				} elseif ($provider === 'anthropic' && isset($chunk['delta']['type']) && $chunk['delta']['type'] === 'text_delta') {
-					$content = $chunk['delta']['text'];
+					$content = $chunk['delta']['type'] === 'text_delta' ? $chunk['delta']['text'] : '';
+				} elseif ($provider === 'google' && isset($chunk['candidates'][0]['content']['parts'][0]['text'])) {
+					$content = $chunk['candidates'][0]['content']['parts'][0]['text'];
 				}
 
 				if ( ! empty( $content ) ) {
+					$content = apply_filters( 'feas_ai_filter_model_response', $content );
 					echo "data: " . json_encode(['text' => $content]) . "\n\n";
 				}
 			}
@@ -583,6 +620,8 @@ class FEAS_AI_Chat_Handler {
 		} else {
 			$system_prompt = self::get_default_system_prompt();
 		}
+
+		$system_prompt = apply_filters( 'feas_ai_system_prompt', $system_prompt, $provider );
 
 		// 2. コンテキスト文字列を組み立て
 		if ( ! empty( $context_chunks ) ) {
