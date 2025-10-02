@@ -107,8 +107,11 @@ class FEAS_AI_Settings {
 		register_setting( $settings_group, 'feas_ai_chat_provider' );
 		register_setting( $settings_group, 'feas_ai_embedding_provider' );
 		register_setting( $settings_group, 'feas_ai_openai_api_key' );
+		// register_setting( $settings_group, 'feas_ai_openai_model' );
 		register_setting( $settings_group, 'feas_ai_google_api_key' );
+		// register_setting( $settings_group, 'feas_ai_google_model' );
 		register_setting( $settings_group, 'feas_ai_anthropic_api_key' );
+		// register_setting( $settings_group, 'feas_ai_anthropic_model' );
 
 		add_settings_field(
 			'feas_ai_chat_provider',
@@ -261,7 +264,7 @@ class FEAS_AI_Settings {
 		$provider = get_option( 'feas_ai_chat_provider', 'openai' );
 
 		$providers = [
-			'openai'    => __( 'OpenAI (GPT-4o)', 'fe-ai-search' ),
+			'openai'    => __( 'OpenAI', 'fe-ai-search' ),
 			'google'    => __( 'Google (Gemini)', 'fe-ai-search' ),
 			'anthropic' => __( 'Anthropic (Claude)', 'fe-ai-search' ),
 		];
@@ -311,6 +314,11 @@ class FEAS_AI_Settings {
 
 	public function openai_api_key_field_html() {
 		$api_key = get_option( 'feas_ai_openai_api_key' );
+
+		$model_to_display = 'gpt-4o-mini';
+		if ( class_exists( 'FEAISearch\Pro\FEAS_AI_Pro' ) ) {
+			$model_to_display = get_option( 'feas_ai_openai_model', $model_to_display );
+		}
 		?>
 		<input
 			type="password"
@@ -327,11 +335,23 @@ class FEAS_AI_Settings {
 		<p class="description">
 			<?php esc_html_e( 'Enter your OpenAI API key.', 'fe-ai-search' ); ?>
 		</p>
+
+		<div style="margin-top: 10px;">
+			<p style="margin: 0;">
+				<strong>使用モデル:</strong> <code><?php echo esc_html( $model_to_display ); ?></code><br>
+				<span class="description">モデルの選択機能は<a href="#" target="_blank">Pro版</a>で利用可能です。</span>
+			</p>
+		</div>
 		<?php
 	}
 
 	public function google_api_key_field_html() {
 		$api_key = get_option( 'feas_ai_google_api_key' );
+
+		$model_to_display = 'gemini-2.5-flash';
+		if ( class_exists( 'FEAISearch\Pro\FEAS_AI_Pro' ) ) {
+			$model_to_display = get_option( 'feas_ai_google_model', $model_to_display );
+		}
 		?>
 		<input
 			type="password"
@@ -348,11 +368,23 @@ class FEAS_AI_Settings {
 		<p class="description">
 			<?php esc_html_e( 'Enter your Google Cloud API key.', 'fe-ai-search' ); ?>
 		</p>
+
+		<div style="margin-top: 10px;">
+			<p style="margin: 0;">
+				<strong>使用モデル:</strong> <code><?php echo esc_html( $model_to_display ); ?></code><br>
+				<span class="description">モデルの選択機能は<a href="#" target="_blank">Pro版</a>で利用可能です。</span>
+			</p>
+		</div>
 		<?php
 	}
 
 	public function anthropic_api_key_field_html() {
 		$api_key = get_option( 'feas_ai_anthropic_api_key' );
+
+		$model_to_display = 'claude-3-5-haiku';
+		if ( class_exists( 'FEAISearch\Pro\FEAS_AI_Pro' ) ) {
+			$model_to_display = get_option( 'feas_ai_anthropic_model', $model_to_display );
+		}
 		?>
 		<input
 			type="password"
@@ -369,6 +401,13 @@ class FEAS_AI_Settings {
 		<p class="description">
 			<?php esc_html_e( 'Enter your Anthropic (Claude) API key.', 'fe-ai-search' ); ?>
 		</p>
+
+		<div style="margin-top: 10px;">
+			<p style="margin: 0;">
+				<strong>使用モデル:</strong> <code><?php echo esc_html( $model_to_display ); ?></code><br>
+				<span class="description">モデルの選択機能は<a href="#" target="_blank">Pro版</a>で利用可能です。</span>
+			</p>
+		</div>
 		<?php
 	}
 
