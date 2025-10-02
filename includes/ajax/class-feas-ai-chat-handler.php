@@ -61,11 +61,13 @@ class FEAS_AI_Chat_Handler {
 	 * Stream handler for processing REST API requests
 	 */
 	public function stream_handler( $request ) {
+		// サーバーのバッファリングを無効化する強力な命令
 		@ini_set('output_buffering', 'off');
 		@ini_set('zlib.output_compression', 0);
 		@ini_set('implicit_flush', 1);
 		ob_implicit_flush(1);
 
+		// 既存のすべての出力バッファをクリアする
 		while (ob_get_level() > 0) {
 			ob_end_flush();
 		}
@@ -73,53 +75,104 @@ class FEAS_AI_Chat_Handler {
 		header('Content-Type: text/event-stream');
 		header('Cache-Control: no-cache');
 		header('Connection: keep-alive');
-		header('X-Accel-Buffering: no');
+		header('X-Accel-Buffering: no'); // Nginx用
 
-		$nonce = $request->get_header( 'X-WP-Nonce' );
-		if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
-			echo "data: " . json_encode(['error' => 'Nonce verification failed.']) . "\n\n";
+		try {
+			$nonce = $request->get_header( 'X-WP-Nonce' );
+			if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+				throw new \Exception('Nonce verification failed.');
+			}
+
+			$provider = get_option( 'feas_ai_chat_provider', 'openai' );
+
+			$question = sanitize_text_field( $request->get_param( 'question' ) );
+			$history = json_decode( stripslashes( $request->get_param( 'history' ) ?? '[]' ), true );
+
+			$question = apply_filters( 'feas_ai_filter_user_question', $question );
+			if ( empty( $question ) ) { return; }
+
+			$similar_chunks = $this->sync_handler->find_similar_chunks( $question );
+			$similar_chunks = apply_filters( 'feas_ai_retrieved_chunks', $similar_chunks, $question );
+
+			$context_found = ! empty( $similar_chunks );
+			echo "data: " . json_encode(['meta' => [
+				'context_found' => $context_found,
+				'provider'      => $provider,
+			]]) . "\n\n";
 			flush();
-			return;
+
+			$this->stream_chat_completion( $question, $similar_chunks, $history, $provider );
+
+		} catch (\Exception $e) {
+			error_log('FE AI Search Stream Error: ' . $e->getMessage());
+			echo "data: " . json_encode(['error' => 'An error occurred during processing.']) . "\n\n";
+			flush();
+		} finally {
+			// 正常・異常に関わらず、ここでスクリプトを完全に終了させる
+			exit;
 		}
-
-		$question = sanitize_text_field( $request->get_param( 'question' ) );
-		$history = json_decode( stripslashes( $request->get_param( 'history' ) ?? '[]' ), true );
-
-		/**
-		 * AIに渡す前の、ユーザーの質問文字列をフィルターする。
-		 *
-		 * @param string $question サニタイズ済みのユーザーの質問.
-		 */
-		$question = apply_filters( 'feas_ai_filter_user_question', $question );
-
-		if ( empty( $question ) ) {
-			return;
-		}
-
-		$similar_chunks = $this->sync_handler->find_similar_chunks( $question );
-
-		/**
-		 * AIに渡す直前の、検索で見つかったチャンクの配列をフィルターする。
-		 *
-		 * @param array  $similar_chunks 関連性の高いチャンクの配列.
-		 * @param string $question       元のユーザーの質問.
-		 */
-		$similar_chunks = apply_filters( 'feas_ai_retrieved_chunks', $similar_chunks, $question );
-
-		$context_found = ! empty( $similar_chunks );
-		echo "data: " . json_encode(['meta' => ['context_found' => $context_found]]) . "\n\n";
-		flush();
-
-		$this->stream_chat_completion( $question, $similar_chunks, $history );
-
-		exit;
 	}
+
+	// public function stream_handler( $request ) {
+	// 	@ini_set('output_buffering', 'off');
+	// 	@ini_set('zlib.output_compression', 0);
+	// 	@ini_set('implicit_flush', 1);
+	// 	ob_implicit_flush(1);
+//
+	// 	while (ob_get_level() > 0) {
+	// 		ob_end_flush();
+	// 	}
+//
+	// 	header('Content-Type: text/event-stream');
+	// 	header('Cache-Control: no-cache');
+	// 	header('Connection: keep-alive');
+	// 	header('X-Accel-Buffering: no'); // nginx
+//
+	// 	$nonce = $request->get_header( 'X-WP-Nonce' );
+	// 	if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+	// 		echo "data: " . json_encode(['error' => 'Nonce verification failed.']) . "\n\n";
+	// 		flush();
+	// 		return;
+	// 	}
+//
+	// 	$question = sanitize_text_field( $request->get_param( 'question' ) );
+	// 	$history = json_decode( stripslashes( $request->get_param( 'history' ) ?? '[]' ), true );
+//
+	// 	/**
+	// 	 * AIに渡す前の、ユーザーの質問文字列をフィルターする。
+	// 	 *
+	// 	 * @param string $question サニタイズ済みのユーザーの質問.
+	// 	 */
+	// 	$question = apply_filters( 'feas_ai_filter_user_question', $question );
+//
+	// 	if ( empty( $question ) ) {
+	// 		return;
+	// 	}
+//
+	// 	$similar_chunks = $this->sync_handler->find_similar_chunks( $question );
+//
+	// 	/**
+	// 	 * AIに渡す直前の、検索で見つかったチャンクの配列をフィルターする。
+	// 	 *
+	// 	 * @param array  $similar_chunks 関連性の高いチャンクの配列.
+	// 	 * @param string $question       元のユーザーの質問.
+	// 	 */
+	// 	$similar_chunks = apply_filters( 'feas_ai_retrieved_chunks', $similar_chunks, $question );
+//
+	// 	$context_found = ! empty( $similar_chunks );
+	// 	echo "data: " . json_encode(['meta' => ['context_found' => $context_found]]) . "\n\n";
+	// 	flush();
+//
+	// 	$this->stream_chat_completion( $question, $similar_chunks, $history );
+//
+	// 	exit;
+	// }
 
 	/**
 	 * Command tower for switching response-generating AI
 	 */
-	public function stream_chat_completion( $question, $context_chunks, $history = array() ) {
-		$provider = get_option( 'feas_ai_chat_provider', 'openai' );
+	public function stream_chat_completion( $question, $context_chunks, $history = array(), $provider ) {
+		// $provider = get_option( 'feas_ai_chat_provider', 'openai' );
 
 		/**
 		 * 独自のAIプロバイダー処理を割り込ませるためのアクションフック。
@@ -260,7 +313,6 @@ class FEAS_AI_Chat_Handler {
 		return true;
 	}
 
-
 	/**
 	 * /query APIのリクエストを処理するハンドラ
 	 */
@@ -314,7 +366,11 @@ class FEAS_AI_Chat_Handler {
 		}
 
 		$messages = $this->build_prompt_messages( $question, $context_chunks, $history, false );
-		$body     = [ 'model' => 'gpt-4o', 'messages' => $messages, 'stream' => true ];
+		$body     = [
+			'model'    => 'gpt-4o',
+			'messages' => $messages,
+			'stream'   => true,
+		];
 		$ch       = curl_init();
 
 		curl_setopt( $ch, CURLOPT_URL, 'https://api.openai.com/v1/chat/completions' );
@@ -327,30 +383,15 @@ class FEAS_AI_Chat_Handler {
 			$lines = explode("\n", $data);
 			foreach ($lines as $line) {
 				if (strpos($line, 'data: ') === 0) {
-
 					$json_data = substr($line, 6);
-
-					if (trim($json_data) === '[DONE]') continue;
-
+					if (trim($json_data) === '[DONE]') {
+						continue;
+					}
 					$chunk = json_decode($json_data, true);
-
 					if (isset($chunk['choices'][0]['delta']['content'])) {
-
-						/**
-						 * Filters a chunk of the AI's response text right before it is sent to the user.
-						 *
-						 * This hook allows for real-time censorship or modification of the AI's output
-						 * as it is being streamed.
-						 *
-						 * @since 1.0.0
-						 *
-						 * @param string $content The text chunk generated by the AI model.
-						 */
 						$content = apply_filters( 'feas_ai_filter_model_response', $chunk['choices'][0]['delta']['content'] );
-
 						echo "data: " . json_encode(['text' => $content]) . "\n\n";
-
-						if (ob_get_level() > 0) ob_flush();
+						if (ob_get_level() > 0) { ob_flush(); }
 						flush();
 					}
 				}
@@ -360,6 +401,65 @@ class FEAS_AI_Chat_Handler {
 		curl_exec( $ch );
 		curl_close( $ch );
 	}
+
+	// private function stream_completion_for_openai( $question, $context_chunks, $history ) {
+	// 	$api_key = get_option( 'feas_ai_openai_api_key' );
+	// 	if ( empty( $api_key ) ) {
+	// 		echo "data: " . json_encode(['text' => __( 'Error: OpenAI API key not set.', 'fe-ai-search' )]) . "\n\n";
+	// 		echo "data: [DONE]\n\n";
+	// 		flush();
+	// 		return;
+	// 	}
+//
+	// 	$messages = $this->build_prompt_messages( $question, $context_chunks, $history, false );
+	// 	$body     = [ 'model' => 'gpt-4o', 'messages' => $messages, 'stream' => true ];
+	// 	$ch       = curl_init();
+//
+	// 	curl_setopt( $ch, CURLOPT_URL, 'https://api.openai.com/v1/chat/completions' );
+	// 	curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
+	// 	curl_setopt( $ch, CURLOPT_POST, true );
+	// 	curl_setopt( $ch, CURLOPT_POSTFIELDS, json_encode( $body ) );
+	// 	curl_setopt( $ch, CURLOPT_HTTPHEADER, [ 'Content-Type: application/json', 'Authorization: Bearer ' . $api_key ] );
+//
+	// 	curl_setopt( $ch, CURLOPT_WRITEFUNCTION, function( $curl, $data ) {
+	// 		$lines = explode("\n", $data);
+	// 		foreach ($lines as $line) {
+	// 			if (strpos($line, 'data: ') === 0) {
+//
+	// 				$json_data = substr($line, 6);
+//
+	// 				if (trim($json_data) === '[DONE]') continue;
+//
+	// 				$chunk = json_decode($json_data, true);
+//
+	// 				if (isset($chunk['choices'][0]['delta']['content'])) {
+//
+	// 					/**
+	// 					 * Filters a chunk of the AI's response text right before it is sent to the user.
+	// 					 *
+	// 					 * This hook allows for real-time censorship or modification of the AI's output
+	// 					 * as it is being streamed.
+	// 					 *
+	// 					 * @since 1.0.0
+	// 					 *
+	// 					 * @param string $content The text chunk generated by the AI model.
+	// 					 */
+	// 					$content = apply_filters( 'feas_ai_filter_model_response', $chunk['choices'][0]['delta']['content'] );
+//
+	// 					echo "data: " . json_encode(['text' => $content]) . "\n\n";
+//
+	// 					if (ob_get_level() > 0) ob_flush();
+	// 					flush();
+	// 				}
+	// 			}
+	// 		}
+	// 		return strlen($data);
+	// 	});
+	// 	curl_exec( $ch );
+	// 	curl_close( $ch );
+	// 	echo "data: [DONE]\n\n";
+	// 	flush();
+	// }
 
 	/**
 	 * Claude専用のストリーミング処理

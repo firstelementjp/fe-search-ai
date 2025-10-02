@@ -23,7 +23,6 @@ document.addEventListener('DOMContentLoaded', function() {
 	let charQueue = [];
 	let renderInterval;
 	let currentAiMessageElement = null;
-	let fullResponse = '';
 
 	bubble.addEventListener('click', () => {
 		windowEl.classList.remove('hidden');
@@ -48,13 +47,11 @@ document.addEventListener('DOMContentLoaded', function() {
 		input.value = '';
 		disableForm();
 
-		currentAiMessageElement = addMessage('<p><span class="feas-ai-spinner"></span></p>', 'ai').querySelector('p');
-
-		fullResponse = '';
+		const aiMessageWrapper = addMessage('<p><span class="feas-ai-spinner"></span></p>', 'ai');
+		let fullResponse = '';
 		let contextFound = false;
 		let isFirstChunk = true;
-
-		startRenderingQueue();
+		// let currentProvider = 'openai';
 
 		fetch(feas_ai_ajax_obj.rest_url, {
 			method: 'POST',
@@ -72,44 +69,56 @@ document.addEventListener('DOMContentLoaded', function() {
 			function processStream() {
 				reader.read().then(({ done, value }) => {
 					if (done) {
-						waitForQueueToEmpty().then(() => {
-							clearInterval(renderInterval);
-							currentAiMessageElement.innerHTML = marked.parse(fullResponse);
-							history.push({ role: 'assistant', content: fullResponse });
-							sessionStorage.setItem('feas_ai_chat_history', JSON.stringify(history));
-							logConversation(question, fullResponse, contextFound);
-							enableForm();
-						});
+						aiMessageWrapper.querySelector('.cursor')?.remove();
+						aiMessageWrapper.innerHTML = marked.parse(fullResponse);
+						history.push({ role: 'assistant', content: fullResponse });
+						sessionStorage.setItem('feas_ai_chat_history', JSON.stringify(history));
+						logConversation(question, fullResponse, contextFound);
+						enableForm();
 						return;
 					}
-
 					const chunk = decoder.decode(value, {stream: true});
 					const lines = chunk.split('\n\n');
+
 					lines.forEach(line => {
 						if (line.startsWith('data: ')) {
 							const dataContent = line.substring(6).trim();
 							if (dataContent === '[DONE]') return;
 							try {
 								const jsonData = JSON.parse(dataContent);
-								if (jsonData.meta) { contextFound = jsonData.meta.context_found; }
+								if (jsonData.meta) {
+									contextFound = jsonData.meta.context_found;
+									// currentProvider = jsonData.meta.provider; // ★ PHPからプロバイダー名を受け取る
+								}
 								if (jsonData.text) {
 									if (isFirstChunk) {
-										charQueue = [];
+										aiMessageWrapper.innerHTML = ''; // スピナーを消す
 										isFirstChunk = false;
 									}
-									charQueue.push(...jsonData.text.split(''));
+									fullResponse += jsonData.text;
+									// if (currentProvider === 'openai') {
+										// OpenAIの場合：単純な改行置換で、暫定的に表示
+										// aiMessageWrapper.innerHTML = fullResponse.replace(/\n/g, '<br>');
+									// } else {
+										// Claude, Geminiの場合：毎回Markdownとしてパース
+										aiMessageWrapper.innerHTML = marked.parse(fullResponse);
+									// }
+									// messagesContainer.scrollTop = messagesContainer.scrollHeight;
 								}
-							} catch (e) {
-								console.error("JSON Parse Error:", e, dataContent);
-							}
+								// if (jsonData.meta && jsonData.meta.context_found) {
+								// 	contextFound = true;
+								// }
+							} catch (e) {}
 						}
 					});
+					messagesContainer.scrollTop = messagesContainer.scrollHeight;
 					processStream();
-				}).catch(error => { handleError(error); });
+
+				}).catch(error => {handleError(error);});
 			}
 			processStream();
 		})
-		.catch(error => { handleError(error); });
+		.catch(error => {handleError(error);});
 	});
 
 	function addMessage(html, type) {
@@ -136,14 +145,10 @@ document.addEventListener('DOMContentLoaded', function() {
 	}
 
 	function renderQueue() {
-		if (currentAiMessageElement && currentAiMessageElement.querySelector('.feas-ai-spinner') && charQueue.length > 0) {
-			currentAiMessageElement.innerHTML = '';
-		}
 		if (charQueue.length === 0) return;
 
-		fullResponse += charQueue.shift();
-
-		currentAiMessageElement.innerHTML = marked.parse(fullResponse);
+		const char = charQueue.shift();
+		currentAiMessageElement.innerHTML += (char === '\n' ? '<br>' : char);
 		messagesContainer.scrollTop = messagesContainer.scrollHeight;
 	}
 
@@ -177,7 +182,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	function handleError(error) {
 		clearInterval(renderInterval);
 		if (currentAiMessageElement) {
-			currentAiMessageElement.innerHTML = '<p>通信エラーが発生しました。</p>';
+			currentAiMessageElement.innerHTML = '<p>' + __( 'A communication error has occurred.', 'fe-ai-search' ) + '</p>';
 		}
 		console.error('Chat Error:', error);
 		enableForm();
