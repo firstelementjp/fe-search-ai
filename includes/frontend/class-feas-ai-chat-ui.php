@@ -141,13 +141,18 @@ class FEAS_AI_Chat_UI {
 
 			<div id="feas-ai-chat-window" class="hidden">
 				<div id="feas-ai-chat-header">
+					<a href="<?php echo esc_url( home_url( '/' ) ); ?>" id="feas-ai-chat-home-link" class="feas-ai-header-icon">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"></path></svg>
+					</a>
 					<h3><?php echo esc_html( $window_title ); ?></h3>
 					<div class="feas-ai-header-buttons">
 						<button id="feas-ai-chat-fullscreen-toggle" class="feas-ai-header-icon">
 							<svg class="icon-maximize" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
 							<svg class="icon-minimize" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>
 						</button>
-						<button id="feas-ai-chat-close" class="feas-ai-header-icon">&times;</button>
+						<button id="feas-ai-chat-close" class="feas-ai-header-icon">
+							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path></svg>
+						</button>
 					</div>
 				</div>
 				<div id="feas-ai-chat-messages">

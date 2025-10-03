@@ -155,7 +155,9 @@ function initFEAIChat() {
 			}
 			if (charQueue.length === 0) return;
 
-			fullResponse += charQueue.shift();
+			const charsToRender = charQueue.splice(0, 10).join(''); // Render every 10 characters
+
+			fullResponse += charsToRender;
 
 			currentAiMessageElement.innerHTML = marked.parse(fullResponse);
 			messagesContainer.scrollTop = messagesContainer.scrollHeight;
