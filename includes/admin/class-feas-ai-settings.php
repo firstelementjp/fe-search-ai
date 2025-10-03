@@ -705,7 +705,8 @@ class FEAS_AI_Settings {
 
 		// デフォルト値を設定
 		$defaults = [
-			'display_mode'     => 'float',
+			'enable_floating_mode' => '1',
+			'fullscreen_page'  => 0,
 			'window_title'     => __( 'AI search within the site', 'fe-ai-search' ),
 			'greeting_message' => __( 'Hello! Please feel free to ask any questions about the information on this site.', 'fe-ai-search' ),
 			'placeholder_text' => __( 'Enter your question...', 'fe-ai-search' ),
@@ -725,25 +726,43 @@ class FEAS_AI_Settings {
 
 		<h4><?php esc_html_e( 'Display Mode', 'fe-ai-search' ); ?></h4>
 		<fieldset>
-			<label>
-				<input
-					type="radio"
-					name="feas_ai_display_options[display_mode]"
-					value="float"
-					<?php checked( 'float', $options['display_mode'] ); ?>
-				>
-				<span><?php esc_html_e( 'Floating Mode', 'fe-ai-search' ); ?></span>
-			</label><br>
-			<label>
-				<input
-					type="radio"
-					name="feas_ai_display_options[display_mode]"
-					value="shortcode"
-					<?php checked( 'shortcode', $options['display_mode'] ); ?>
-				>
-				<span><?php esc_html_e( 'Manual Installation Mode', 'fe-ai-search' ); ?> (<code>[feas_ai_chat]</code>)</span>
-			</label>
+			<p>
+				<label>
+					<input type="checkbox" name="feas_ai_display_options[enable_floating_mode]" value="1" <?php checked( $options['enable_floating_mode'] ); ?>>
+					サイト全体でフローティングチャットを有効にする
+				</label>
+			</p>
+			<p>
+				<label for="feas_fullscreen_page_id">チャット専用ページを選択</label><br>
+				<?php
+				wp_dropdown_pages([
+					'name'              => 'feas_ai_display_options[fullscreen_page_id]',
+					'selected'          => $options['fullscreen_page_id'],
+					'show_option_none'  => '— 専用ページを使用しない —',
+					'option_none_value' => '0',
+				]);
+				?>
+				<p class="description">ここで選択した固定ページにアクセスすると、直接全画面のチャットUIが表示されます。</p>
+			</p>
 		</fieldset>
+
+		<?php // 簡単なJSで、全画面モード選択時のみ設定項目を表示 ?>
+		<script>
+			document.addEventListener('DOMContentLoaded', function() {
+				const displayModeRadios = document.querySelectorAll('input[name="feas_ai_display_options[display_mode]"]');
+				const fullscreenOptions = document.getElementById('fullscreen-options');
+
+				function toggleFullscreenOptions() {
+					if (document.querySelector('input[name="feas_ai_display_options[display_mode]"]:checked').value === 'fullscreen') {
+						fullscreenOptions.style.display = 'block';
+					} else {
+						fullscreenOptions.style.display = 'none';
+					}
+				}
+
+				displayModeRadios.forEach(radio => radio.addEventListener('change', toggleFullscreenOptions));
+			});
+		</script>
 
 		<hr>
 

@@ -5,6 +5,7 @@
 	z-index: 1000;
 } */
 
+
 #feas-ai-chat-bubble {
 	position: fixed;
 	bottom: 20px;
@@ -111,6 +112,7 @@
 	border: 1px solid #ccc;
 	border-radius: 5px;
 	padding: 8px;
+	margin: 0;
 }
 #feas-ai-chat-form button {
 	margin-left: 10px;
@@ -244,3 +246,76 @@
  @keyframes spin {
 	 to { transform: rotate(360deg); }
  }
+
+
+
+ /* ==========================================================================
+	 Header Buttons
+	 ========================================================================== */
+  .feas-ai-header-buttons {
+	  display: flex;
+	  align-items: center;
+  }
+
+ .feas-ai-header-icon {
+	 background: none;
+	 border: none;
+	 color: #fff;
+	 cursor: pointer;
+	 padding: 0 8px;
+	 font-size: 24px;
+	 line-height: 1; /* 行の高さをフォントサイズに合わせる */
+	 display: inline-flex; /* 中身を中央揃えにするためにflexを指定 */
+	 align-items: center;
+	 justify-content: center;
+ }
+  #feas-ai-chat-fullscreen-toggle svg {
+	  width: 18px;
+	  height: 18px;
+	  fill: gray;
+  }
+
+  /* ==========================================================================
+	 Full Screen Mode
+	 ========================================================================== */
+
+  /* Initially, hide the minimize icon */
+  .icon-minimize {
+	  display: none;
+  }
+
+  /* When in full-screen mode... */
+  .is-fullscreen #feas-ai-chat-window {
+	  position: fixed;
+	  top: 0;
+	  left: 0;
+	  width: 100%;
+	  height: 100%;
+	  max-width: 100%;
+	  max-height: 100%;
+	  border-radius: 0;
+	  border: none;
+  }
+
+  .is-fullscreen #feas-ai-chat-header {
+	  border-radius: 0;
+  }
+
+  .is-fullscreen #feas-ai-chat-messages {
+	  height: calc(100% - 110px); /* Adjust based on your header/footer height */
+  }
+
+  /* In full-screen mode, hide the maximize icon and show the minimize icon */
+  .is-fullscreen .icon-maximize {
+	  display: none;
+  }
+
+  .is-fullscreen .icon-minimize {
+	  display: block;
+  }
+
+  /* In full-screen mode, the bubble and close button are not needed */
+  .is-fullscreen #feas-ai-chat-bubble,
+  .is-fullscreen #feas-ai-chat-close {
+	  display: none;
+  }

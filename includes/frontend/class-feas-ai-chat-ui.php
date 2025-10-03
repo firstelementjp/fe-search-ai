@@ -57,13 +57,31 @@ class FEAS_AI_Chat_UI {
 			return;
 		}
 
-		$options = get_option( 'feas_ai_display_options' );
-		$display_mode = $options['display_mode'] ?? 'float';
+		$options = get_option( 'feas_ai_display_options', [] );
+		// $display_mode = $options['display_mode'] ?? 'float';
+		$fullscreen_page_id = (int) ($options['fullscreen_page_id'] ?? 0);
+		$is_fullscreen_page = ( $fullscreen_page_id > 0 && is_page($fullscreen_page_id) );
 
-		if ( 'float' !== $display_mode ) {
+		// 1. まず、現在のページが「チャット専用ページ」かどうかを判定
+		if ( $is_fullscreen_page ) {
+			self::$is_rendered = true;
+			$this->assets_handler->enqueue_assets();
+			echo str_replace(
+				'class="feas-ai-mode-float"',
+				'class="feas-ai-mode-float is-fullscreen"',
+				$this->get_chat_ui_html('float')
+			);
+			// 専用ページではフローティングバブルは不要なので、ここで処理を終了
 			return;
 		}
 
+		// 2. 次に、「フローティングモードが有効か」どうかを判定
+		$is_floating_enabled = !empty($options['enable_floating_mode']);
+		if ( ! $is_floating_enabled ) {
+			return;
+		}
+
+		// 3. フローティングモードの表示ルールを判定
 		$rules = $options['display_rules'] ?? [];
 		$should_display = false;
 
@@ -107,23 +125,30 @@ class FEAS_AI_Chat_UI {
 
 	public function get_chat_ui_html( $mode = 'float' ) {
 		$options = get_option('feas_ai_display_options', []);
-		$window_title = $options['window_title'] ?? 'サイト内をAI検索';
-		$placeholder = $options['placeholder_text'] ?? '質問を入力してください...';
-		$greeting = $options['greeting_message'] ?? 'こんにちは！サイト内の情報について、何でも質問してください。';
-		$submit_text = $options['submit_button_text'] ?? '送信';
-		ob_start(); // Start output buffering
+		$window_title = $options['window_title'] ?? __( 'AI Search', 'fe-ai-search' );
+		$placeholder  = $options['placeholder_text'] ?? __( 'Please enter a question...', 'fe-ai-search' );
+		$greeting     = $options['greeting_message'] ?? __( 'Hello! Please ask me anything about the information on this site.', 'fe-ai-search' );
+		$submit_text  = $options['submit_button_text'] ?? __( 'Submit', 'fe-ai-search' );
+
+		ob_start();
 		?>
 		<div id="feas-ai-chat-container" class="feas-ai-mode-<?php echo esc_attr( $mode ); ?>">
 			<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
 			<div id="feas-ai-chat-bubble">
-				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="32" height="32">
-					<path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"></path>
-				</svg>
+				<svg xmlns="http://www.w.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="32" height="32"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"></path></svg>
 			</div>
+
 			<div id="feas-ai-chat-window" class="hidden">
 				<div id="feas-ai-chat-header">
 					<h3><?php echo esc_html( $window_title ); ?></h3>
-					<button id="feas-ai-chat-close">&times;</button>
+					<div class="feas-ai-header-buttons">
+						<button id="feas-ai-chat-fullscreen-toggle" class="feas-ai-header-icon">
+							<svg class="icon-maximize" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+							<svg class="icon-minimize" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>
+						</button>
+						<button id="feas-ai-chat-close" class="feas-ai-header-icon">&times;</button>
+					</div>
 				</div>
 				<div id="feas-ai-chat-messages">
 					<div class="feas-ai-message feas-ai-message-ai">
@@ -138,6 +163,11 @@ class FEAS_AI_Chat_UI {
 				</div>
 			</div>
 		</div>
+		<script>
+			if (typeof initFEAIChat === 'function') {
+				initFEAIChat();
+			}
+		</script>
 		<?php
 		return ob_get_clean(); // Retrieve the contents of the buffer, return it as a string, and close the buffer.
 	}
