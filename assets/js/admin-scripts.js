@@ -186,26 +186,59 @@ jQuery(document).ready(function($) {
 		manageLicense('deactivate', this);
 	});
 
+	// // --- 設定ページのタブ切り替え ---
+	// const $tabsWrapper = $('.nav-tab-wrapper');
+	// if ( $tabsWrapper.length ) {
+	// 	const $tabs = $tabsWrapper.find('.nav-tab');
+	// 	const $tabContents = $('.tab-content');
+//
+	// 	$tabs.on('click', function(e) {
+	// 		e.preventDefault();
+//
+	// 		const targetContent = $(this).attr('href');
+//
+	// 		// タブのアクティブ状態を更新
+	// 		$tabs.removeClass('nav-tab-active');
+	// 		$(this).addClass('nav-tab-active');
+//
+	// 		// コンテンツの表示を更新
+	// 		$tabContents.hide(); // すべてのコンテンツを非表示
+	// 		$(targetContent).show(); // ターゲットのみ表示
+//
+	// 		// URLのハッシュを更新して、リロードしてもタブが維持されるようにする
+	// 		if (history.pushState) {
+	// 			history.pushState(null, null, targetContent);
+	// 		} else {
+	// 			location.hash = targetContent;
+	// 		}
+	// 	});
+//
+	// 	// ページ読み込み時に、URLのハッシュに基づいてタブをアクティブにする
+	// 	let activeTab = window.location.hash;
+	// 	if ( ! activeTab || !$tabs.filter('[href="' + activeTab + '"]').length ) {
+	// 		activeTab = $tabs.first().attr('href');
+	// 	}
+//
+	// 	$tabs.filter('[href="' + activeTab + '"]').trigger('click');
+	// }
+
 	// --- 設定ページのタブ切り替え ---
 	const $tabsWrapper = $('.nav-tab-wrapper');
 	if ( $tabsWrapper.length ) {
 		const $tabs = $tabsWrapper.find('.nav-tab');
 		const $tabContents = $('.tab-content');
 
+		// タブがクリックされた時の動作
 		$tabs.on('click', function(e) {
 			e.preventDefault();
-
 			const targetContent = $(this).attr('href');
 
-			// タブのアクティブ状態を更新
 			$tabs.removeClass('nav-tab-active');
 			$(this).addClass('nav-tab-active');
 
-			// コンテンツの表示を更新
-			$tabContents.hide(); // すべてのコンテンツを非表示
-			$(targetContent).show(); // ターゲットのみ表示
+			$tabContents.hide();
+			$(targetContent).show();
 
-			// URLのハッシュを更新して、リロードしてもタブが維持されるようにする
 			if (history.pushState) {
 				history.pushState(null, null, targetContent);
 			} else {
@@ -213,13 +246,20 @@ jQuery(document).ready(function($) {
 			}
 		});
 
-		// ページ読み込み時に、URLのハッシュに基づいてタブをアクティブにする
-		let activeTab = window.location.hash;
-		if ( ! activeTab || !$tabs.filter('[href="' + activeTab + '"]').length ) {
-			activeTab = $tabs.first().attr('href');
+		// ▼▼▼ ページ読み込み時の処理を、より確実な方法に修正 ▼▼▼
+		function showTabFromHash() {
+			const hash = window.location.hash;
+			// ハッシュが存在し、かつ対応するタブがあれば、それを表示
+			if (hash && $tabs.filter('[href="' + hash + '"]').length) {
+				$tabs.filter('[href="' + hash + '"]').trigger('click');
+			} else {
+				// なければ最初のタブを表示
+				$tabs.first().trigger('click');
+			}
 		}
 
-		$tabs.filter('[href="' + activeTab + '"]').trigger('click');
+		// Pro版などがタブを追加するのを待ってから実行する
+		setTimeout(showTabFromHash, 100);
 	}
 
 	$('#feas-ai-delete-vectors-button').on('click', function() {

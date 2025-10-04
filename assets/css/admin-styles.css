@@ -57,6 +57,15 @@ hr {
 	font-weight: bold;
 	margin: 1rem 0 0.5rem;
 }
+a:has(.dashicons-warning) span {
+	color: #f59e0b;
+}
+.dashicon-warning {
+	color: #f59e0b;
+	font-size: 16px;
+	vertical-align: middle;
+	margin-left: 3px;
+}
 .spin {
 	animation: spin 1s infinite linear;
 }

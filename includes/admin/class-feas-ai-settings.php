@@ -27,7 +27,13 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  */
 class FEAS_AI_Settings {
 
+	private $is_license_active = '';
+	private $license_alert_icon = '';
+
 	public function __construct() {
+		$this->is_license_active = ( 'active' === get_option( 'feas_ai_pro_license_status', 'inactive' ) );
+		$this->license_alert_icon = '<a href="' . admin_url( 'admin.php' ) . '?page=fe-ai-search#tab-license">' . '<span class="dashicons dashicons-warning"></span></a>';
+
 		add_action( 'admin_init', array( $this, 'settings_init' ) );
 	}
 
@@ -41,8 +47,8 @@ class FEAS_AI_Settings {
 
 			<h2 class="nav-tab-wrapper">
 				<a href="#tab-api" class="nav-tab">API設定</a>
-				<a href="#tab-sync" class="nav-tab">同期設定</a>
-				<a href="#tab-display" class="nav-tab">表示設定</a>
+				<a href="#tab-sync" class="nav-tab">同期</a>
+				<a href="#tab-display" class="nav-tab">表示</a>
 				<a href="#tab-prompt" class="nav-tab">プロンプト</a>
 				<a href="#tab-data" class="nav-tab">データ管理</a>
 				<?php do_action( 'feas_ai_settings_tabs' ); ?>
@@ -278,9 +284,9 @@ class FEAS_AI_Settings {
 	 * Determine whether the Pro version add-on is enabled
 	 * @return bool
 	 */
-	private function is_pro_active() {
-		return class_exists('FEAS_AI_Pro_Analytics');
-	}
+	// private function is_pro_active() {
+	// 	return class_exists('FEAS_AI_Pro_Analytics');
+	// }
 
 	public function chat_provider_field_html() {
 		$provider = get_option( 'feas_ai_chat_provider', 'openai' );
@@ -338,7 +344,7 @@ class FEAS_AI_Settings {
 		$api_key = get_option( 'feas_ai_openai_api_key' );
 
 		$model_to_display = 'gpt-4o-mini';
-		if ( class_exists( 'FEAISearch\Pro\FEAS_AI_Pro' ) ) {
+		if ( class_exists( 'FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings' ) ) {
 			$model_to_display = get_option( 'feas_ai_openai_model', $model_to_display );
 		}
 		?>
@@ -360,8 +366,12 @@ class FEAS_AI_Settings {
 
 		<div style="margin-top: 10px;">
 			<p style="margin: 0;">
-				<strong>使用モデル:</strong> <?php echo esc_html( $model_to_display ); ?><br>
-				<span class="description">モデルの選択機能は<a href="#" target="_blank">Pro版</a>で利用可能です。</span>
+				<strong>使用モデル:</strong> <?php echo esc_html( $model_to_display ); ?>
+				<?php if ( class_exists( 'FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings' ) ) : ?>
+					<a href="<?php echo admin_url( 'admin.php' ); ?>?page=fe-ai-search#tab-pro-model">モデルを変更 &raquo;</a> <?php echo $this->license_alert_icon; ?>
+				<?php else: ?>
+					<span class="description">モデルの選択機能は<a href="#" target="_blank">Pro版</a>で利用可能です。</span>
+				<?php endif; ?>
 			</p>
 		</div>
 		<?php
@@ -371,7 +381,7 @@ class FEAS_AI_Settings {
 		$api_key = get_option( 'feas_ai_google_api_key' );
 
 		$model_to_display = 'gemini-2.5-flash';
-		if ( class_exists( 'FEAISearch\Pro\FEAS_AI_Pro' ) ) {
+		if ( class_exists( 'FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings' ) ) {
 			$model_to_display = get_option( 'feas_ai_google_model', $model_to_display );
 		}
 		?>
@@ -393,8 +403,12 @@ class FEAS_AI_Settings {
 
 		<div style="margin-top: 10px;">
 			<p style="margin: 0;">
-				<strong>使用モデル:</strong> <?php echo esc_html( $model_to_display ); ?><br>
-				<span class="description">モデルの選択機能は<a href="#" target="_blank">Pro版</a>で利用可能です。</span>
+				<strong>使用モデル:</strong> <?php echo esc_html( $model_to_display ); ?>
+				<?php if ( class_exists( 'FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings' ) ) : ?>
+					<a href="<?php echo admin_url( 'admin.php' ); ?>?page=fe-ai-search#tab-pro-model">モデルを変更 &raquo;</a> <?php echo $this->license_alert_icon; ?>
+				<?php else: ?>
+					<span class="description">モデルの選択機能は<a href="#" target="_blank">Pro版</a>で利用可能です。</span>
+				<?php endif; ?>
 			</p>
 		</div>
 		<?php
@@ -404,7 +418,7 @@ class FEAS_AI_Settings {
 		$api_key = get_option( 'feas_ai_anthropic_api_key' );
 
 		$model_to_display = 'claude-3-5-haiku';
-		if ( class_exists( 'FEAISearch\Pro\FEAS_AI_Pro' ) ) {
+		if ( class_exists( 'FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings' ) ) {
 			$model_to_display = get_option( 'feas_ai_anthropic_model', $model_to_display );
 		}
 		?>
@@ -426,8 +440,12 @@ class FEAS_AI_Settings {
 
 		<div style="margin-top: 10px;">
 			<p style="margin: 0;">
-				<strong>使用モデル:</strong> <?php echo esc_html( $model_to_display ); ?><br>
-				<span class="description">モデルの選択機能は<a href="#" target="_blank">Pro版</a>で利用可能です。</span>
+				<strong>使用モデル:</strong> <?php echo esc_html( $model_to_display ); ?>
+				<?php if ( class_exists( 'FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings' ) ) : ?>
+					<a href="<?php echo admin_url( 'admin.php' ); ?>?page=fe-ai-search#tab-pro-model">モデルを変更 &raquo;</a> <?php echo $this->license_alert_icon; ?>
+				<?php else: ?>
+					<span class="description">モデルの選択機能は<a href="#" target="_blank">Pro版</a>で利用可能です。</span>
+				<?php endif; ?>
 			</p>
 		</div>
 		<?php
@@ -488,7 +506,7 @@ class FEAS_AI_Settings {
 								value="1"
 								<?php checked( $pt_options['include_title'] ); ?>
 							>
-							<?php esc_html_e( 'Include Post Title', 'fe-ai-search' ); ?>
+							<?php esc_html_e( 'Post Title', 'fe-ai-search' ); ?>
 						</label><br>
 						<label>
 							<input
@@ -497,7 +515,7 @@ class FEAS_AI_Settings {
 								value="1"
 								<?php checked( $pt_options['include_content'] ); ?>
 							>
-							<?php esc_html_e( 'Include Post Content', 'fe-ai-search' ); ?>
+							<?php esc_html_e( 'Post Content', 'fe-ai-search' ); ?>
 						</label><br>
 						<label>
 							<input
@@ -506,7 +524,7 @@ class FEAS_AI_Settings {
 								value="1"
 								<?php checked( $pt_options['include_date'] ); ?>
 							>
-							<?php esc_html_e( 'Include Post Date', 'fe-ai-search' ); ?>
+							<?php esc_html_e( 'Post Date', 'fe-ai-search' ); ?>
 						</label><br>
 						<label>
 							<input
@@ -515,7 +533,7 @@ class FEAS_AI_Settings {
 								value="1"
 								<?php checked($pt_options['include_author']); ?>
 							>
-							<?php esc_html_e( 'Include Post Author', 'fe-ai-search' ); ?>
+							<?php esc_html_e( 'Post Author', 'fe-ai-search' ); ?>
 						</label><br>
 
 						<?php
@@ -537,7 +555,7 @@ class FEAS_AI_Settings {
 									<?php
 									printf(
 										// translators: %s: Taxonomy label (e.g., "Categories", "Tags")
-										esc_html__( 'Including %s', 'fe-ai-search' ),
+										esc_html__( '%s', 'fe-ai-search' ),
 										esc_html( $tax->label )
 									);
 									?>
@@ -549,7 +567,7 @@ class FEAS_AI_Settings {
 
 						<div style="margin-top: 10px;">
 							<label for="feas_ai_custom_fields_<?php echo esc_attr( $post_type->name ); ?>">
-								<strong><?php esc_html_e( 'Include Custom Fields (Pro Feature)', 'fe-ai-search' ); ?></strong>
+								<?php esc_html_e( 'Custom Fields', 'fe-ai-search' ); ?> <?php echo $this->license_alert_icon; ?></strong>
 							</label><br>
 							<input
 								type="text"
@@ -558,12 +576,12 @@ class FEAS_AI_Settings {
 								value="<?php echo esc_attr( $pt_options['custom_fields'] ?? '' ); ?>"
 								class="regular-text"
 								placeholder="field_name_1, field_name_2"
-								<?php disabled( ! $this->is_pro_active() ); ?>
+								<?php disabled( ! $this->is_license_active ); ?>
 							>
 							<p class="description">
 								<?php esc_html_e( 'Enter the keys of the custom fields you want to include, separated by commas.', 'fe-ai-search' ); ?>
 							</p>
-							<?php if ( ! $this->is_pro_active() ) : ?>
+							<?php if ( ! class_exists( 'FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings' ) ) : ?>
 								<p class="description">
 									<?php esc_html_e( 'This feature is available in the Pro version.', 'fe-ai-search' ); ?>
 									<a href="#" target="_blank"><?php esc_html_e( 'Upgrade to Pro', 'fe-ai-search' ); ?></a>
@@ -595,11 +613,11 @@ class FEAS_AI_Settings {
 			<label>
 				<input type="checkbox" name="feas_ai_enable_logging" value="1"
 					<?php checked( $option, '1' ); ?>
-					<?php disabled( ! $this->is_pro_active() ); // Proでなければdisabled ?>
+					<?php disabled( ! $this->is_license_active ); // Proでなければdisabled ?>
 				/>
 				<?php _e( 'Save conversation history with users', 'fe-ai-search' ); ?>
 			</label>
-			<?php if ( ! $this->is_pro_active() ) : // Display guidance unless Pro ?>
+			<?php if ( ! $this->is_license_active ) : // Display guidance unless Pro ?>
 				<p class="description">
 					<?php
 					printf(
@@ -626,13 +644,13 @@ class FEAS_AI_Settings {
 			name="feas_ai_log_retention_days"
 			value="<?php echo esc_attr( $days ); ?>"
 			class="small-text"
-			<?php disabled( ! $this->is_pro_active() ); ?>
+			<?php disabled( ! $this->is_license_active ); ?>
 		>
 		<?php esc_html_e( 'days', 'fe-ai-search' ); ?>
 		<p class="description">
 			<?php esc_html_e( 'Search logs older than this will be automatically deleted every day. Set this to 0 to never delete them.', 'fe-ai-search' ); ?>
 		</p>
-		<?php if ( ! $this->is_pro_active() ) : ?>
+		<?php if ( ! $this->is_license_active ) : ?>
 			<p class="description">
 				<?php
 				printf(
@@ -897,7 +915,6 @@ class FEAS_AI_Settings {
 
 		$enable_css = $options['enable_css'] ?? true;
 		?>
-		<h4><?php esc_html_e( 'Advanced Settings', 'fe-ai-search' ); ?></h4>
 		<fieldset>
 			<label>
 				<input
