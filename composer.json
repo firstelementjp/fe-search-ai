@@ -10,5 +10,7 @@
 			"vendor/TinySegmenter.php"
 		]
 	},
-	"require": {}
+	"require": {
+		"wamania/php-stemmer": "^4.0"
+	}
 }

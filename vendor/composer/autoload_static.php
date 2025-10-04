@@ -6,7 +6,24 @@ namespace Composer\Autoload;
 
 class ComposerStaticInit7a0ed12b8023e0a872476b26d2976243
 {
+    public static $files = array (
+        '6e3fae29631ef280660b3cdad06f25a8' => __DIR__ . '/..' . '/symfony/deprecation-contracts/function.php',
+        '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
+    );
+
     public static $prefixLengthsPsr4 = array (
+        'W' => 
+        array (
+            'Wamania\\Snowball\\' => 17,
+        ),
+        'S' => 
+        array (
+            'Symfony\\Polyfill\\Mbstring\\' => 26,
+        ),
+        'J' => 
+        array (
+            'Joomla\\String\\' => 14,
+        ),
         'F' => 
         array (
             'FEAISearch\\' => 11,
@@ -14,6 +31,18 @@ class ComposerStaticInit7a0ed12b8023e0a872476b26d2976243
     );
 
     public static $prefixDirsPsr4 = array (
+        'Wamania\\Snowball\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/wamania/php-stemmer/src',
+        ),
+        'Symfony\\Polyfill\\Mbstring\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-mbstring',
+        ),
+        'Joomla\\String\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/joomla/string/src',
+        ),
         'FEAISearch\\' => 
         array (
             0 => __DIR__ . '/../..' . '/includes',

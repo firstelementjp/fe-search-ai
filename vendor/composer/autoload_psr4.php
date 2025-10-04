@@ -6,5 +6,8 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
+    'Wamania\\Snowball\\' => array($vendorDir . '/wamania/php-stemmer/src'),
+    'Symfony\\Polyfill\\Mbstring\\' => array($vendorDir . '/symfony/polyfill-mbstring'),
+    'Joomla\\String\\' => array($vendorDir . '/joomla/string/src'),
     'FEAISearch\\' => array($baseDir . '/includes'),
 );

@@ -180,7 +180,7 @@ class FEAS_AI_Sync_Handler {
 					);
 					$vector_id = $wpdb->insert_id;
 					if ($vector_id) {
-						$keywords = $this->segmenter->segment($chunks_with_meta[$index]);
+						$keywords = $this->tokenize_text( $chunks_with_meta[$index] );
 						foreach ( array_unique( $keywords ) as $keyword ) {
 							if ( mb_strlen( $keyword ) > 1 ) {
 								$wpdb->insert(
@@ -228,7 +228,7 @@ class FEAS_AI_Sync_Handler {
 		$posts_table   = $wpdb->posts;
 
 		//$segmenter = new TinySegmenter();
-		$keywords = array_unique( $this->segmenter->segment($question) );
+		$keywords = array_unique( $this->tokenize_text( $question ) );
 		$valid_keywords = array_filter($keywords, function($kw){ return mb_strlen($kw) > 1; });
 
 		if ( empty( $valid_keywords ) ) return array();
@@ -490,6 +490,57 @@ class FEAS_AI_Sync_Handler {
 		}
 
 		return $formatted_response;
+	}
+
+	/**
+	 * テキストを言語に応じてキーワードに分割する
+	 * @param string $text 分割するテキスト.
+	 * @return array キーワードの配列.
+	 */
+	private function tokenize_text( $text ) {
+		$locale = get_locale();
+
+		if ( 'ja' === $locale ) {
+			// --- 日本語の場合 ---
+			$words = $this->segmenter->segment( $text );
+
+			// 日本語用のストップワードリストを定義（ひらがな1文字の助詞など）
+			$ja_stop_words = [
+				'の', 'に', 'は', 'を', 'た', 'が', 'で', 'て', 'と', 'し', 'れ', 'さ',
+				'ある', 'いる', 'する', 'です', 'ます', 'でした', 'ました',
+				'これ', 'それ', 'あれ', 'この', 'その', 'あの', 'ここ', 'そこ', 'あそこ',
+				'もの', 'こと', 'とき', 'ところ',
+			];
+
+			// ストップワードを除去
+			$words = array_diff($words, $ja_stop_words);
+
+			return array_values($words); // 配列のキーを振り直して返す
+
+		} else {
+			// --- その他の言語の場合 ---
+			$stop_words = [ 'a', 'an', 'the', 'is', 'in', 'it', 'of', 'for', 'on', 'with', 'to', 'and', 'or', 'but' ];
+			$words = preg_split('/[^\p{L}\p{N}]+/', strtolower($text), -1, PREG_SPLIT_NO_EMPTY);
+			$words = array_diff($words, $stop_words);
+
+			try {
+				$stemmerManager = new \Wamania\Snowball\StemmerManager();
+				$lang_code = substr($locale, 0, 2);
+				if ( in_array($lang_code, $stemmerManager->getAvailableLanguages()) ) {
+					$stemmer = $stemmerManager->create($lang_code);
+					$stemmed_words = [];
+					foreach ($words as $word) {
+						$stemmed_words[] = $stemmer->stem($word);
+					}
+					return $stemmed_words;
+				}
+			} catch (\Exception $e) {
+				error_log('Stemmer error: ' . $e->getMessage());
+				return array_values($words);
+			}
+
+			return array_values($words);
+		}
 	}
 
 }
