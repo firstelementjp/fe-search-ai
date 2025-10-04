@@ -39,7 +39,7 @@ class FEAS_AI_Chat_UI {
 	}
 
 	public function register_shortcode() {
-		add_shortcode( 'feas_ai_chat', array( $this, 'render_chat_shortcode' ) );
+		add_shortcode( 'fe_ai_search', array( $this, 'render_chat_shortcode' ) );
 	}
 
 	public function render_chat_shortcode() {
@@ -58,66 +58,56 @@ class FEAS_AI_Chat_UI {
 		}
 
 		$options = get_option( 'feas_ai_display_options', [] );
-		// $display_mode = $options['display_mode'] ?? 'float';
 		$fullscreen_page_id = (int) ($options['fullscreen_page_id'] ?? 0);
 		$is_fullscreen_page = ( $fullscreen_page_id > 0 && is_page($fullscreen_page_id) );
 
-		// 1. まず、現在のページが「チャット専用ページ」かどうかを判定
+		// 1. 全画面モード専用ページか？
 		if ( $is_fullscreen_page ) {
 			self::$is_rendered = true;
 			$this->assets_handler->enqueue_assets();
-			echo str_replace(
-				'class="feas-ai-mode-float"',
-				'class="feas-ai-mode-float is-fullscreen"',
-				$this->get_chat_ui_html('float')
-			);
-			// 専用ページではフローティングバブルは不要なので、ここで処理を終了
+			echo str_replace('class="feas-ai-mode-float"', 'class="feas-ai-mode-float is-fullscreen"', $this->get_chat_ui_html('float'));
 			return;
 		}
 
-		// 2. 次に、「フローティングモードが有効か」どうかを判定
-		$is_floating_enabled = !empty($options['enable_floating_mode']);
-		if ( ! $is_floating_enabled ) {
+		// 2. フローティングモードが有効か？
+		if ( empty($options['enable_floating_mode']) ) {
 			return;
 		}
 
-		// 3. フローティングモードの表示ルールを判定
+		// 3. デバイスの表示設定は？
+		$is_mobile = wp_is_mobile();
+		if ( ($is_mobile && empty($options['display_on_mobile'])) || (!$is_mobile && empty($options['display_on_pc'])) ) {
+			return;
+		}
+
+		// 4. 表示ルールを判定
 		$rules = $options['display_rules'] ?? [];
-		$should_display = false;
+		$should_display = false; // デフォルトは非表示
 
-		$include_ids_str = $rules['include_ids'] ?? '';
-		$exclude_ids_str = $rules['exclude_ids'] ?? '';
-
-		$include_ids = array_filter( array_map('intval', explode(',', $include_ids_str)) );
-		$exclude_ids = array_filter( array_map('intval', explode(',', $exclude_ids_str)) );
-
+		// ▼▼▼ このブロックにロジックを統一 ▼▼▼
+		$include_ids = array_filter( array_map('intval', explode(',', $rules['include_ids'] ?? '')) );
+		$exclude_ids = array_filter( array_map('intval', explode(',', $rules['exclude_ids'] ?? '')) );
 		$current_id = get_the_ID();
 
 		if ( ! empty( $include_ids ) ) {
-			if ( is_singular() && in_array( $current_id, $include_ids ) ) {
-				$should_display = true;
-			}
+			// Include IDが最優先
+			$should_display = ( is_singular() && in_array( $current_id, $include_ids ) );
 		} else {
-			if ( (is_front_page() && !empty($rules['show_on_front_page'])) ||
-				 (is_archive() && !empty($rules['show_on_archives'])) ) {
-				$should_display = true;
-			}
-
-			if ( is_singular() && !empty($rules['post_types']) ) {
-				$current_post_type = get_post_type();
-				if ( !empty($rules['post_types'][$current_post_type]) ) {
-					$should_display = true;
-				}
-			}
+			// 基本ルールと投稿タイプルールで判定
+			if ( is_front_page() && !empty($rules['show_on_front_page']) ) $should_display = true;
+			if ( is_archive() && !empty($rules['show_on_archives']) ) $should_display = true;
+			if ( is_search() && !empty($rules['show_on_search']) ) $should_display = true;
+			if ( is_singular() && !empty($rules['post_types'][get_post_type()]) ) $should_display = true;
 		}
 
+		// Exclude IDが最終決定権を持つ
 		if ( is_singular() && in_array( $current_id, $exclude_ids ) ) {
 			$should_display = false;
 		}
+		// ▲▲▲ ここまで ▲▲▲
 
 		if ( apply_filters( 'feas_ai_should_display_chat', $should_display ) ) {
 			self::$is_rendered = true;
-
 			$this->assets_handler->enqueue_assets();
 			echo $this->get_chat_ui_html('float');
 		}

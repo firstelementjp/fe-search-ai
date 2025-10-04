@@ -62,6 +62,10 @@ function feas_ai_run_plugin() {
     $assets_handler = new FEAISearch\Core\FEAS_AI_Assets();
     $sync_handler   = new FEAISearch\Ajax\FEAS_AI_Sync_Handler();
 
+    add_filter( 'feas_ai_get_sync_handler_instance', function() use ( $sync_handler ) {
+        return $sync_handler;
+    });
+
     new FEAISearch\Admin\FEAS_AI_Admin();
     new FEAISearch\Frontend\FEAS_AI_Chat_UI( $assets_handler );
     new FEAISearch\Ajax\FEAS_AI_Chat_Handler( $sync_handler );
@@ -75,6 +79,6 @@ register_deactivation_hook( FEAS_AI_PLUGIN_FILE, ['FEAISearch\Core\FEAS_AI_Activ
 /**
  * Template Tag
  */
-function feas_ai_render_chat() {
-    echo do_shortcode('[feas_ai_chat]');
+function fe_ai_search() {
+    echo do_shortcode('[fe_ai_search]');
 }

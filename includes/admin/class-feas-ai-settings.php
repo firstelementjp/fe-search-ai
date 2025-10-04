@@ -107,11 +107,8 @@ class FEAS_AI_Settings {
 		register_setting( $settings_group, 'feas_ai_chat_provider' );
 		register_setting( $settings_group, 'feas_ai_embedding_provider' );
 		register_setting( $settings_group, 'feas_ai_openai_api_key' );
-		// register_setting( $settings_group, 'feas_ai_openai_model' );
 		register_setting( $settings_group, 'feas_ai_google_api_key' );
-		// register_setting( $settings_group, 'feas_ai_google_model' );
 		register_setting( $settings_group, 'feas_ai_anthropic_api_key' );
-		// register_setting( $settings_group, 'feas_ai_anthropic_model' );
 
 		add_settings_field(
 			'feas_ai_chat_provider',
@@ -215,18 +212,18 @@ class FEAS_AI_Settings {
 			null,
 			$page_slug
 		);
-		add_settings_field(
-			'feas_ai_display_options',
-			__( 'Chat display settings', 'fe-ai-search' ),
-			[ $this, 'display_options_field_html' ],
-			$page_slug,
-			'feas_ai_display_section'
-		);
+
 		register_setting(
 			$settings_group,
 			'feas_ai_display_options',
 			[ 'sanitize_callback' => [ $this, 'sanitize_display_options' ] ]
 		);
+
+		add_settings_field( 'feas_ai_display_floating', 'フローティングチャット', array( $this, 'display_floating_field_html' ), $page_slug, 'feas_ai_display_section' );
+		add_settings_field( 'feas_ai_display_fullscreen', '全画面モード', array( $this, 'display_fullscreen_field_html' ), $page_slug, 'feas_ai_display_section' );
+		add_settings_field( 'feas_ai_display_embed', '埋め込みモード', array( $this, 'display_embed_field_html' ), $page_slug, 'feas_ai_display_section' );
+		add_settings_field( 'feas_ai_display_chat_text', __( 'Chat message settings', 'fe-ai-search' ), array( $this, 'display_chat_text_field_html' ), $page_slug, 'feas_ai_display_section' );
+		add_settings_field( 'feas_ai_display_advanced', __( 'Advanced Settings', 'fe-ai-search' ), array( $this, 'display_advanced_field_html' ), $page_slug, 'feas_ai_display_section' );
 
 		// Data Management Section
 		add_settings_section(
@@ -446,7 +443,7 @@ class FEAS_AI_Settings {
 
 			?>
 			<div class="post-type-accordion-item" style="border: 1px solid #c3c4c7; margin-bottom: -1px; background: #fff;">
-				<h4 class="accordion-title" style="margin: 0; padding: 10px; cursor: pointer; font-size: 14px; border-bottom: 1px solid #ddd;">
+				<h4 class="accordion-title" style="margin: 0; padding: 10px; cursor: pointer; font-size: 14px; >
 					<label>
 						<input
 							type="checkbox"
@@ -454,7 +451,7 @@ class FEAS_AI_Settings {
 							value="1"
 							<?php checked( $pt_options['enabled'] ); ?>
 						>
-						<?php echo esc_html( $post_type->label ); ?> (<code><?php echo esc_html( $post_type->name ); ?></code>)
+						<?php echo esc_html( $post_type->label ); ?> (<?php echo esc_html( $post_type->name ); ?>)
 					</label>
 				</h4>
 				<div class="accordion-content" style="<?php echo $pt_options['enabled'] ? '' : 'display: none;'; ?> padding: 15px; border-top: 1px solid #ddd;">
@@ -700,167 +697,117 @@ class FEAS_AI_Settings {
 		<?php
 	}
 
-	public function display_options_field_html() {
+	public function display_floating_field_html() {
 		$options = get_option( 'feas_ai_display_options', [] );
-
-		// デフォルト値を設定
 		$defaults = [
 			'enable_floating_mode' => '1',
-			'fullscreen_page'  => 0,
-			'window_title'     => __( 'AI search within the site', 'fe-ai-search' ),
-			'greeting_message' => __( 'Hello! Please feel free to ask any questions about the information on this site.', 'fe-ai-search' ),
-			'placeholder_text' => __( 'Enter your question...', 'fe-ai-search' ),
-			'submit_button_text' => __( 'Send', 'fe-ai-search' ),
-			'display_rules'    => [
+			'display_on_pc'        => '1',
+			'display_on_mobile'    => '1',
+			'fullscreen_page_id'   => 0,
+			'display_rules'        => [
 				'show_on_front_page' => '1',
 				'show_on_archives'   => '1',
-				'post_types'         => [],
-				'include_ids'        => '',
+				'show_on_search'     => '1',
+				'post_types'         => ['post' => '1', 'page' => '1'],
+				'include_ids'        => '', // ★ デフォルト値を追加
 				'exclude_ids'        => '',
 			],
-			'disable_css'      => false,
 		];
 		$options = wp_parse_args($options, $defaults);
-
 		?>
-
-		<h4><?php esc_html_e( 'Display Mode', 'fe-ai-search' ); ?></h4>
 		<fieldset>
-			<p>
-				<label>
-					<input type="checkbox" name="feas_ai_display_options[enable_floating_mode]" value="1" <?php checked( $options['enable_floating_mode'] ); ?>>
-					サイト全体でフローティングチャットを有効にする
-				</label>
-			</p>
-			<p>
-				<label for="feas_fullscreen_page_id">チャット専用ページを選択</label><br>
-				<?php
-				wp_dropdown_pages([
-					'name'              => 'feas_ai_display_options[fullscreen_page_id]',
-					'selected'          => $options['fullscreen_page_id'],
-					'show_option_none'  => '— 専用ページを使用しない —',
-					'option_none_value' => '0',
-				]);
-				?>
-				<p class="description">ここで選択した固定ページにアクセスすると、直接全画面のチャットUIが表示されます。</p>
-			</p>
-		</fieldset>
+			<p><label><input type="checkbox" name="feas_ai_display_options[enable_floating_mode]" value="1" <?php checked( $options['enable_floating_mode'] ); ?>> <strong>フローティングチャットを有効にする</strong></label></p>
 
-		<?php // 簡単なJSで、全画面モード選択時のみ設定項目を表示 ?>
-		<script>
-			document.addEventListener('DOMContentLoaded', function() {
-				const displayModeRadios = document.querySelectorAll('input[name="feas_ai_display_options[display_mode]"]');
-				const fullscreenOptions = document.getElementById('fullscreen-options');
-
-				function toggleFullscreenOptions() {
-					if (document.querySelector('input[name="feas_ai_display_options[display_mode]"]:checked').value === 'fullscreen') {
-						fullscreenOptions.style.display = 'block';
-					} else {
-						fullscreenOptions.style.display = 'none';
-					}
-				}
-
-				displayModeRadios.forEach(radio => radio.addEventListener('change', toggleFullscreenOptions));
-			});
-		</script>
-
-		<hr>
-
-		<h4><?php esc_html_e( 'Floating Display Rules', 'fe-ai-search' ); ?></h4>
-		<p class="description">
-			<?php esc_html_e( 'When floating mode is enabled, limit the pages on which the chat UI is displayed.', 'fe-ai-search' ); ?>
-		</p>
-		<fieldset>
-			<p>
-				<label>
-					<input
-						type="checkbox"
-						name="feas_ai_display_options[display_rules][show_on_front_page]"
-						value="1"
-						<?php checked( $options['display_rules']['show_on_front_page'] ?? '1' ); ?>
-					>
-					<?php esc_html_e( 'Display on the top page', 'fe-ai-search' ); ?>
-				</label>
-			</p>
-			<p>
-				<label>
-					<input
-						type="checkbox"
-						name="feas_ai_display_options[display_rules][show_on_archives]"
-						value="1"
-						<?php checked( $options['display_rules']['show_on_archives'] ?? '1' ); ?>
-					>
-					<?php esc_html_e( 'Display on archive page (list page)', 'fe-ai-search' ); ?>
-				</label>
-			</p>
-
-			<h5 style="margin-bottom: 0.5em;"><?php esc_html_e( 'Post Type Rules', 'fe-ai-search' ); ?></h5>
-			<div style="padding-left: 25px;">
-				<?php
-				$all_post_types  = get_post_types( [ 'public' => true ], 'objects' );
-				$rule_post_types = $options['display_rules']['post_types'] ?? [];
-				foreach ( $all_post_types as $pt ) {
-					if ( 'attachment' === $pt->name ) {
-						continue;
-					}
-					$is_checked = ! empty( $rule_post_types[ $pt->name ] );
-					?>
-					<label>
-						<input
-							type="checkbox"
-							name="feas_ai_display_options[display_rules][post_types][<?php echo esc_attr( $pt->name ); ?>]"
-							value="1"
-							<?php checked( $is_checked ); ?>
-						>
-						<?php
-						printf(
-							/* translators: %s: Post type label (e.g., "Posts", "Pages") */
-							esc_html__( 'Display on individual pages of %s', 'fe-ai-search' ),
-							esc_html( $pt->label )
-						);
-						?>
-					</label><br>
-					<?php
-				}
-				?>
-			</div>
-
-			<h5 style="margin-top: 1.5em; margin-bottom: 0.5em;"><?php esc_html_e( 'Individual rules by post ID', 'fe-ai-search' ); ?></h5>
-			<p>
-				<label for="feas_ai_include_ids">
-					<?php esc_html_e( 'Show only with these post IDs:', 'fe-ai-search' ); ?>
-				</label><br>
-				<input
-					type="text"
-					id="feas_ai_include_ids"
-					name="feas_ai_display_options[display_rules][include_ids]"
-					value="<?php echo esc_attr( $options['display_rules']['include_ids'] ?? '' ); ?>"
-					class="regular-text"
-					placeholder="<?php esc_attr_e( 'e.g. 10, 25, 103', 'fe-ai-search' ); ?>"
-				>
-				<p class="description">
-					<?php esc_html_e( 'If you enter an ID here, other rules will be ignored.', 'fe-ai-search' ); ?>
+			<div>
+				<p>
+					<div class="option-header">表示デバイス:</div>
+					<label><input type="checkbox" name="feas_ai_display_options[display_on_pc]" value="1" <?php checked( $options['display_on_pc'] ); ?>> PC</label>
+					<label><input type="checkbox" name="feas_ai_display_options[display_on_mobile]" value="1" <?php checked( $options['display_on_mobile'] ); ?>> モバイル</label>
 				</p>
-			</p>
-			<p>
-				<label for="feas_ai_exclude_ids">
-					<?php esc_html_e( "Don't show these post IDs:", 'fe-ai-search' ); ?>
-				</label><br>
-				<input
-					type="text"
-					id="feas_ai_exclude_ids"
-					name="feas_ai_display_options[display_rules][exclude_ids]"
-					value="<?php echo esc_attr( $options['display_rules']['exclude_ids'] ?? '' ); ?>"
-					class="regular-text"
-					placeholder="<?php esc_attr_e( 'e.g. 15, 30', 'fe-ai-search' ); ?>"
-				>
-			</p>
+
+				<p>
+					<div class="option-header">表示するページの条件:</div>
+					<label><input type="checkbox" name="feas_ai_display_options[display_rules][show_on_front_page]" value="1" <?php checked( $options['display_rules']['show_on_front_page'] ); ?>> トップページ</label>
+					<label><input type="checkbox" name="feas_ai_display_options[display_rules][show_on_archives]" value="1" <?php checked( $options['display_rules']['show_on_archives'] ); ?>> アーカイブページ (一覧)</label>
+					<label><input type="checkbox" name="feas_ai_display_options[display_rules][show_on_search]" value="1" <?php checked( $options['display_rules']['show_on_search'] ); ?>> 検索結果ページ</label>
+				</p>
+
+				<p>
+					<div class="option-header">以下の投稿タイプの個別ページに表示:</div>
+					<?php
+					$all_post_types = get_post_types( ['public' => true], 'objects' );
+					foreach ($all_post_types as $pt) {
+						if ('attachment' === $pt->name) continue;
+						echo '<label style="margin-right: 15px;"><input type="checkbox" name="feas_ai_display_options[display_rules][post_types]['.esc_attr($pt->name).']" value="1" '.checked(!empty($options['display_rules']['post_types'][$pt->name]), true, false).'> '.esc_html($pt->label).'</label>';
+					}
+					?>
+				</p>
+
+				<div>
+				<p>
+					<div class="option-header">個別のIDによる上書きルール:</div>
+					<label for="feas_ai_include_ids">これらの投稿IDでのみ表示する:</label>
+					<input
+						type="text"
+						id="feas_ai_include_ids"
+						name="feas_ai_display_options[display_rules][include_ids]"
+						value="<?php echo esc_attr( $options['display_rules']['include_ids'] ); ?>"
+						class="regular-text"
+						placeholder="例: 10, 25, 103"
+					>
+					<p class="description">ここにIDを入力すると、他の表示ルールは無視されます。</p>
+				</p>
+				<p>
+					<label for="feas_ai_exclude_ids">これらの投稿IDでは表示しない:</label>
+					<input
+						type="text"
+						id="feas_ai_exclude_ids"
+						name="feas_ai_display_options[display_rules][exclude_ids]"
+						value="<?php echo esc_attr( $options['display_rules']['exclude_ids'] ); ?>"
+						class="regular-text"
+						placeholder="例: 15, 30"
+					>
+				</p>
+				</div>
+			</div>
+		</fieldset>
+		<?php
+	}
+
+	// 2. 全画面モード設定
+	public function display_fullscreen_field_html() {
+		$options = get_option( 'feas_ai_display_options', [] );
+		?>
+		<fieldset>
+			<label for="feas_fullscreen_page_id">チャット専用ページを選択</label>
+			<?php
+			wp_dropdown_pages([
+				'name'              => 'feas_ai_display_options[fullscreen_page_id]',
+				'selected'          => $options['fullscreen_page_id'],
+				'show_option_none'  => '— 専用ページを使用しない —',
+				'option_none_value' => '0',
+			]);
+			?>
+			<p class="description">ここで選択した固定ページにアクセスすると、直接全画面のチャットUIが表示されます。</p>
 		</fieldset>
 
-		<hr>
-		<h4><?php esc_html_e( 'Chat message settings', 'fe-ai-search' ); ?></h4>
+		<?php
+	}
+
+	// 3. 埋め込みモード設定
+	public function display_embed_field_html() {
+		?>
+		<p class="description">以下のショートコードを、チャットを表示したいページのコンテンツ内に貼り付けてください。</p>
+		<code>[fe-ai-search]</code>
+		<?php
+	}
+
+	// 4. チャット文言設定
+	public function display_chat_text_field_html() {
+		$options = get_option( 'feas_ai_display_options', [] );
+		?>
 		<p>
-			<label for="feas_window_title"><?php esc_html_e( 'Window title', 'fe-ai-search' ); ?></label><br>
+			<label for="feas_window_title"><?php esc_html_e( 'Window title', 'fe-ai-search' ); ?></label>
 			<input
 				type="text"
 				id="feas_window_title"
@@ -870,7 +817,7 @@ class FEAS_AI_Settings {
 			>
 		</p>
 		<p>
-			<label for="feas_greeting_message"><?php esc_html_e( 'First greeting', 'fe-ai-search' ); ?></label><br>
+			<label for="feas_greeting_message"><?php esc_html_e( 'First greeting', 'fe-ai-search' ); ?></label>
 			<textarea
 				id="feas_greeting_message"
 				name="feas_ai_display_options[greeting_message]"
@@ -879,7 +826,7 @@ class FEAS_AI_Settings {
 			><?php echo esc_textarea( $options['greeting_message'] ); ?></textarea>
 		</p>
 		<p>
-			<label for="feas_placeholder_text"><?php esc_html_e( 'Input field placeholders', 'fe-ai-search' ); ?></label><br>
+			<label for="feas_placeholder_text"><?php esc_html_e( 'Input field placeholders', 'fe-ai-search' ); ?></label>
 			<input
 				type="text"
 				id="feas_placeholder_text"
@@ -889,7 +836,7 @@ class FEAS_AI_Settings {
 			>
 		</p>
 		<p>
-			<label for="feas_submit_button_text"><?php esc_html_e( 'Submit button text', 'fe-ai-search' ); ?></label><br>
+			<label for="feas_submit_button_text"><?php esc_html_e( 'Submit button text', 'fe-ai-search' ); ?></label>
 			<input
 				type="text"
 				id="feas_submit_button_text"
@@ -898,16 +845,22 @@ class FEAS_AI_Settings {
 				class="regular-text"
 			>
 		</p>
+		<?php
+	}
 
-		<hr>
-		<h4><?php esc_html_e( 'Advanced Settings', 'fe-ai-search' ); ?></h4>
+	// 5. 上級者向け設定
+	public function display_advanced_field_html() {
+		$options = get_option( 'feas_ai_display_options', [] );
+		// ▼▼▼ `?? false` を追加 ▼▼▼
+		$disable_css = $options['disable_css'] ?? false;
+		?>
 		<fieldset>
 			<label>
 				<input
 					type="checkbox"
 					name="feas_ai_display_options[disable_css]"
 					value="1"
-					<?php checked( $options['disable_css'], '1' ); ?>
+					<?php checked( $disable_css, '1' ); ?>
 				/>
 				<?php esc_html_e( 'Do not load CSS included in plugins', 'fe-ai-search' ); ?>
 			</label>

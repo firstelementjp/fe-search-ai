@@ -1,15 +1,45 @@
-/* .wrap h2 {
-	background: #d4d6dc;
+.wp-list-table th {
+	padding: 0.5rem 1rem;
+}
+.form-table td p {
+	margin: 0 0 1rem;
+}
+.form-table td label,
+.form-table td fieldset label {
+	margin: 0 0 0.3rem !important;
+	display: block;
+}
+h4 {
+	margin: 1rem 0 0.5rem;
+	font-size: 1.1rem;
+}
+h5 {
+	margin: 1rem 0 0.5rem;
+	font-size: 1rem;
+}
+strong {
+	margin: 1rem 0 0.5rem;
+}
+p {
+	margin: 0.5rem 0 1rem;
+}
+pre {
+	margin: 0.5rem 0;
+}
+code {
+	display: block;
+	margin: 0.5rem 0;
 	padding: 1rem;
 	border-radius: 5px;
-} */
-
+	background-color: #d4dbe6;
+}
+hr {
+	margin: 2rem 0 1rem;
+}
 .feas-ai-tabs-wrapper .tab-content {
 	display: none;
 	margin-top: 1em;
 }
-
-/* タブコンテンツの基本スタイル */
 .tab-content {
 	display: none;
 	padding-top: 1.5em;
@@ -17,7 +47,10 @@
 .tab-content.active {
 	display: block;
 }
-
+.option-header {
+	font-weight: bold;
+	margin: 1rem 0 0.5rem;
+}
 .spin {
 	animation: spin 1s infinite linear;
 }
