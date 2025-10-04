@@ -35,6 +35,7 @@ class FEAS_AI_Chat_UI {
 		$this->assets_handler = $assets_handler;
 
 		add_action( 'init', array( $this, 'register_shortcode' ) );
+		add_action( 'wp_head', [ $this, 'output_dynamic_styles' ] );
 		add_action( 'wp_footer', array( $this, 'maybe_render_floating_chat' ) );
 	}
 
@@ -165,5 +166,17 @@ class FEAS_AI_Chat_UI {
 		</script>
 		<?php
 		return ob_get_clean(); // Retrieve the contents of the buffer, return it as a string, and close the buffer.
+	}
+
+	public function output_dynamic_styles() {
+		$options = get_option( 'feas_ai_display_options', [] );
+		$key_color = $options['key_color'] ?? '#0073aa';
+		?>
+		<style>
+			:root {
+				--feas-ai-key-color: <?php echo esc_attr( $key_color ); ?>;
+			}
+		</style>
+		<?php
 	}
 }

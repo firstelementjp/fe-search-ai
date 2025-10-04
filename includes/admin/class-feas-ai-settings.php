@@ -43,6 +43,7 @@ class FEAS_AI_Settings {
 				<a href="#tab-api" class="nav-tab">API設定</a>
 				<a href="#tab-sync" class="nav-tab">同期設定</a>
 				<a href="#tab-display" class="nav-tab">表示設定</a>
+				<a href="#tab-prompt" class="nav-tab">プロンプト</a>
 				<a href="#tab-data" class="nav-tab">データ管理</a>
 				<?php do_action( 'feas_ai_settings_tabs' ); ?>
 			</h2>
@@ -71,6 +72,14 @@ class FEAS_AI_Settings {
 						<?php do_settings_fields( 'fe-ai-search', 'feas_ai_display_section' ); ?>
 					</table>
 					<?php do_action( 'feas_ai_after_display_settings_fields' ); ?>
+				</div>
+
+				<div id="tab-prompt" class="tab-content">
+					<?php do_settings_sections( 'feas_ai_prompt_section' ); ?>
+					<table class="form-table">
+						<?php do_settings_fields( 'fe-ai-search', 'feas_ai_prompt_section' ); ?>
+					</table>
+					<?php do_action( 'feas_ai_after_prompt_settings_fields' ); ?>
 				</div>
 
 				<div id="tab-data" class="tab-content">
@@ -205,6 +214,22 @@ class FEAS_AI_Settings {
 			'feas_ai_sync_section'
 		);
 
+		// Prompt Settings Section
+		add_settings_section(
+			'feas_ai_prompt_section',
+			__( 'System Prompt', 'fe-ai-search' ),
+			null,
+			$page_slug
+		);
+		register_setting( $settings_group, 'feas_ai_system_prompt' );
+		add_settings_field(
+			'feas_ai_system_prompt',
+			__( 'Base System Prompt', 'fe-ai-search' ),
+			[ $this, 'system_prompt_field_html' ],
+			$page_slug,
+			'feas_ai_prompt_section'
+		);
+
 		// Display Settings Section
 		add_settings_section(
 			'feas_ai_display_section',
@@ -261,7 +286,7 @@ class FEAS_AI_Settings {
 		$provider = get_option( 'feas_ai_chat_provider', 'openai' );
 
 		$providers = [
-			'openai'    => __( 'OpenAI', 'fe-ai-search' ),
+			'openai'    => __( 'OpenAI（GPT）', 'fe-ai-search' ),
 			'google'    => __( 'Google (Gemini)', 'fe-ai-search' ),
 			'anthropic' => __( 'Anthropic (Claude)', 'fe-ai-search' ),
 		];
@@ -335,7 +360,7 @@ class FEAS_AI_Settings {
 
 		<div style="margin-top: 10px;">
 			<p style="margin: 0;">
-				<strong>使用モデル:</strong> <code><?php echo esc_html( $model_to_display ); ?></code><br>
+				<strong>使用モデル:</strong> <?php echo esc_html( $model_to_display ); ?><br>
 				<span class="description">モデルの選択機能は<a href="#" target="_blank">Pro版</a>で利用可能です。</span>
 			</p>
 		</div>
@@ -368,7 +393,7 @@ class FEAS_AI_Settings {
 
 		<div style="margin-top: 10px;">
 			<p style="margin: 0;">
-				<strong>使用モデル:</strong> <code><?php echo esc_html( $model_to_display ); ?></code><br>
+				<strong>使用モデル:</strong> <?php echo esc_html( $model_to_display ); ?><br>
 				<span class="description">モデルの選択機能は<a href="#" target="_blank">Pro版</a>で利用可能です。</span>
 			</p>
 		</div>
@@ -401,7 +426,7 @@ class FEAS_AI_Settings {
 
 		<div style="margin-top: 10px;">
 			<p style="margin: 0;">
-				<strong>使用モデル:</strong> <code><?php echo esc_html( $model_to_display ); ?></code><br>
+				<strong>使用モデル:</strong> <?php echo esc_html( $model_to_display ); ?><br>
 				<span class="description">モデルの選択機能は<a href="#" target="_blank">Pro版</a>で利用可能です。</span>
 			</p>
 		</div>
@@ -442,7 +467,7 @@ class FEAS_AI_Settings {
 			$pt_options = wp_parse_args( $options['post_types'][ $post_type->name ] ?? [], $defaults );
 
 			?>
-			<div class="post-type-accordion-item" style="border: 1px solid #c3c4c7; margin-bottom: -1px; background: #fff;">
+			<div class="post-type-accordion-item" class="feas-ai-accordion-wrapper" style="border: 1px solid #c3c4c7; margin-bottom: -1px; background: #fff;">
 				<h4 class="accordion-title" style="margin: 0; padding: 10px; cursor: pointer; font-size: 14px; >
 					<label>
 						<input
@@ -845,25 +870,47 @@ class FEAS_AI_Settings {
 				class="regular-text"
 			>
 		</p>
+		<p>
+			<label for="feas_key_color"><?php esc_html_e( 'Key Color', 'fe-ai-search' ); ?></label>
+			<input
+				type="text"
+				id="feas_key_color"
+				name="feas_ai_display_options[key_color]"
+				value="<?php echo esc_attr( $options['key_color'] ?? '#0073aa' ); ?>"
+				class="feas-ai-color-picker"
+			>
+			<p class="description">チャットバブルやユーザーの吹き出しなどの基本色を選択します。</p>
+		</p>
+
+		<script>
+			// カラーピッカーを初期化
+			jQuery(document).ready(function($){
+				$('.feas-ai-color-picker').wpColorPicker();
+			});
+		</script>
 		<?php
 	}
 
 	// 5. 上級者向け設定
 	public function display_advanced_field_html() {
 		$options = get_option( 'feas_ai_display_options', [] );
-		// ▼▼▼ `?? false` を追加 ▼▼▼
-		$disable_css = $options['disable_css'] ?? false;
+
+		$enable_css = $options['enable_css'] ?? true;
 		?>
+		<h4><?php esc_html_e( 'Advanced Settings', 'fe-ai-search' ); ?></h4>
 		<fieldset>
 			<label>
 				<input
 					type="checkbox"
-					name="feas_ai_display_options[disable_css]"
+					name="feas_ai_display_options[enable_css]"
 					value="1"
-					<?php checked( $disable_css, '1' ); ?>
+					<?php checked( $enable_css ); ?>
 				/>
-				<?php esc_html_e( 'Do not load CSS included in plugins', 'fe-ai-search' ); ?>
+				<?php esc_html_e( 'Load CSS included with the plugin', 'fe-ai-search' ); ?>
 			</label>
+			<p class="description">
+				<?php esc_html_e( 'If you want to design the chat UI with your own theme\'s CSS, uncheck this.', 'fe-ai-search' ); ?>
+			</p>
 		</fieldset>
 		<?php
 	}
@@ -1034,6 +1081,25 @@ class FEAS_AI_Settings {
 		}
 
 		return $new_input;
+	}
+
+	public function system_prompt_field_html() {
+		$default_prompt = \FEAISearch\Ajax\FEAS_AI_Chat_Handler::get_default_system_prompt();
+		$prompt = get_option( 'feas_ai_system_prompt', $default_prompt );
+		?>
+		<textarea
+			name="feas_ai_system_prompt"
+			rows="100"
+			class="feas-ai-prompt-editor large-text"
+		><?php echo esc_textarea( $prompt ); ?></textarea>
+		<p class="description">
+			<?php esc_html_e( 'Customize the instructions (system prompts) for the AI assistant. If left blank, the standard prompt will be used.', 'fe-ai-search' ); ?>
+		</p>
+		<p class="description">
+			<strong><?php esc_html_e( 'Note:', 'fe-ai-search' ); ?></strong>
+			<?php esc_html_e( 'Model-specific prompts can be set in the Pro version, which will override this basic setting.', 'fe-ai-search' ); ?>
+		</p>
+		<?php
 	}
 
 }

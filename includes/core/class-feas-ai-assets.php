@@ -35,11 +35,14 @@ class FEAS_AI_Assets {
 	 * Load scripts and styles for the front end.
 	 */
 	public static function enqueue_assets() {
-		if ( ! get_option( 'feas_ai_disable_css' ) ) {
+		$options = get_option( 'feas_ai_display_options', [] );
+		$enable_css = $options['enable_css'] ?? true;
+
+		if ( $enable_css ) {
 			wp_enqueue_style(
-				'feas-ai-chat-style',
+				'feas-ai-frontend-styles',
 				plugin_dir_url( FEAS_AI_PLUGIN_FILE ) . 'assets/css/frontend-styles.css',
-				array(),
+				[],
 				FEAS_AI_VERSION
 			);
 		}

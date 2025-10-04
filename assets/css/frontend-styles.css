@@ -46,6 +46,7 @@
 	border-radius: 50%;
 	box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 	cursor: pointer;
+	background-color: var(--feas-ai-key-color);
 }
 
 .feas-ai-mode-float #feas-ai-chat-bubble.hidden {
@@ -230,6 +231,7 @@
 	background: #007cba;
 	color: white;
 	border-top-right-radius: 4px;
+	background: var(--feas-ai-key-color);
 }
 
 /* Styling for Markdown elements */
@@ -274,6 +276,7 @@
 	border-radius: 18px;
 	white-space: nowrap;
 	cursor: pointer;
+	background: var(--feas-ai-key-color);
 }
 #feas-ai-chat-form button:disabled {
 	background: #ccc;

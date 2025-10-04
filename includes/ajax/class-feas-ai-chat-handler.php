@@ -417,51 +417,54 @@ class FEAS_AI_Chat_Handler {
 	 */
 	private function build_prompt_messages( $question, $context_chunks, $history, $for_claude = false ) {
 		$context_str = '';
-
-		// プロバイダーとカスタムプロンプト設定を取得
 		$provider = get_option( 'feas_ai_chat_provider', 'openai' );
-		$custom_prompts = get_option( 'feas_ai_custom_prompts', [] );
-		$is_pro = class_exists('FEAS_AI_Pro');
-		$custom_prompt_for_provider = $custom_prompts[$provider] ?? '';
 
-		// Pro版が有効で、プロバイダー別のカスタムプロンプトがあればそれを使用。なければデフォルト。
-		if ( $is_pro && ! empty( $custom_prompt_for_provider ) ) {
-			$system_prompt = $custom_prompt_for_provider;
-		} else {
-			$system_prompt = self::get_default_system_prompt();
+		// --- 1. プロンプトを階層的に読み込む ---
+		// a. まず、デフォルトのプロンプトを取得
+		$system_prompt = self::get_default_system_prompt();
+
+		// b. Free版の設定（基本プロンプト）があれば、それで上書き
+		$free_prompt = get_option( 'feas_ai_system_prompt' );
+		if ( ! empty( $free_prompt ) ) {
+			$system_prompt = $free_prompt;
 		}
 
-		$system_prompt = apply_filters( 'feas_ai_system_prompt', $system_prompt, $provider );
-
-		// 2. コンテキスト文字列を組み立て
-		if ( ! empty( $context_chunks ) ) {
-			$grouped_chunks = array();
-			foreach ( $context_chunks as $chunk ) { $grouped_chunks[ $chunk['permalink'] ][] = $chunk['content_chunk']; }
-			foreach ( $grouped_chunks as $permalink => $chunks ) {
-				$context_str .= "--- 記事ここから ---\n情報元URL: " . $permalink . "\n内容:\n" . implode( "\n", $chunks ) . "\n--- 記事ここまで ---\n\n";
+		// c. Pro版が有効で、モデル別設定があれば、さらにそれで上書き
+		if ( class_exists('FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings') ) {
+			$custom_prompts = get_option( 'feas_ai_custom_prompts', [] );
+			if ( ! empty( $custom_prompts[$provider] ) ) {
+				$system_prompt = $custom_prompts[$provider];
 			}
 		}
 
-		// 3. 履歴をフィルタリング
+		// d. 最後に、外部からのフィルターを適用
+		$system_prompt = apply_filters( 'feas_ai_system_prompt', $system_prompt, $provider );
+
+		// --- 2. コンテキスト文字列を組み立てる ---
+		if ( ! empty( $context_chunks ) ) {
+			$context_str = "サイト内情報:\n";
+			foreach ( $context_chunks as $chunk ) {
+				$context_str .= "--- 記事ここから ---\n情報元URL: " . $chunk['permalink'] . "\n内容:\n" . $chunk['content_chunk'] . "\n--- 記事ここまで ---\n\n";
+			}
+		}
+
+		// --- 3. 履歴をフィルタリングし、最後の質問にコンテキストを付加 ---
 		$messages = array_filter($history, function($msg){
 			return !(isset($msg['role']) && $msg['role'] === 'assistant' && empty(trim($msg['content'])));
 		});
 
-		// 4. 最後のユーザーメッセージにコンテキストを付加
-		$last_message = array_pop( $messages );
-		if ( $last_message && $last_message['role'] === 'user' ) {
-			$last_message['content'] = "サイト内情報:\n" . $context_str . "\n\n上記の情報を元に、次の質問に答えてください:\n" . $last_message['content'];
-			$messages[] = $last_message;
-		} else {
-			if ($last_message) { $messages[] = $last_message; } // 予期せぬ場合は元に戻す
-			$messages[] = array('role' => 'user', 'content' => "サイト内情報:\n" . $context_str . "\n\n上記の情報を元に、次の質問に答えてください:\n" . $question);
-		}
+		$user_question_with_context = $context_str . "\n\n上記の情報を元に、次の質問に答えてください:\n" . $question;
 
-		// 5. プロバイダーの形式に合わせて最終的なデータを返す
+		$messages[] = [
+			'role'    => 'user',
+			'content' => $user_question_with_context,
+		];
+
+		// --- 4. プロバイダーの形式に合わせて最終的なデータを返す ---
 		if ( $for_claude ) {
 			return ['messages' => array_values($messages), 'system' => $system_prompt];
-		} else { // for OpenAI
-			array_unshift( $messages, array('role' => 'system', 'content' => $system_prompt) );
+		} else { // for OpenAI & Gemini
+			array_unshift( $messages, ['role' => 'system', 'content' => $system_prompt] );
 			return $messages;
 		}
 	}
@@ -471,26 +474,20 @@ class FEAS_AI_Chat_Handler {
 	 * @return string
 	 */
 	public static function get_default_system_prompt() {
-		return "あなたは、提供された「サイト内情報」と「会話履歴」を元に、ユーザーの質問に回答する、求人情報アシスタントです。あなたの回答は、必ず以下の思考プロセスと厳守すべきルールに従ってください。
+		return "あなたは、このウェブサイトに関する質問に答える、親切で優秀なAIアシスタントです。提供された「サイト内情報」と「会話履歴」を元に、以下のルールを厳守して回答してください。
 
-		## 思考プロセス
-		1.  まず「会話履歴」を読み、ユーザーの最新の質問の**真の意図**を理解する。
-		2.  次に「サイト内情報」を読む。もし空なら、ユーザーは挨拶や雑談をしていると判断する。
-		3.  ユーザーの意図に**関連する情報だけ**を「サイト内情報」から選び出す。無関係な情報は完全に無視する。
-		4.  選び出した情報だけを根拠として、回答を生成する。
+## 思考プロセス
+1. ユーザーの最新の質問の意図を正確に理解します。
+2. 「サイト内情報」を読み、質問に最も関連する部分を特定します。
+3. もし関連する情報が「サイト内情報」になければ、正直に「サイト内の情報からは、ご質問に関する回答を見つけられませんでした。」と答えます。
+4. 関連情報がある場合、その情報だけを根拠として、分かりやすく要約して回答を生成します。
 
-		## 厳守すべきルール
-		- **役割**: あなたの役割は、情報を抽出し、指定されたフォーマットでリストアップすることです。リスト以外の、自由な文章による解説や補足は最小限にしてください。
-		- **書式**: 回答は必ず**標準的なMarkdown形式**を使用し、段落の間には空行を1行だけ入れてください。`nn`のような不自然な改行は絶対に使用しないでください。
-		- **必須項目**: サイト内情報から求人情報を要約する場合、必ず以下の4項目を出力してください。情報が見つからない場合は、必ず「不明」と記載してください。
-			- 【仕事内容】
-			- 【雇用形態】
-			- 【勤務地】
-			- 【給与】
-		- **見出し**: 各求人のタイトルは`###`（H3見出し）で示してください。
-		- **URL**: 各求人の要約の直後に、情報元となるURL自体を記載してください。
-		- **会話**: 回答の冒頭には「〜に関するお仕事がX件見つかりました。」のような導入文を、末尾には「他に何かお探しですか？」という定型文を**必ず**加えてください。
-		- **禁止事項**: サイト内情報に記載のない情報の創作や、事実に基づかない推測は絶対に禁止です。";
+## 厳守すべきルール
+- **情報源の明記**: 回答に「サイト内情報」を利用した場合、必ず関連する情報元のURLを回答の末尾に記載してください。
+- **事実に基づく回答**: 「サイト内情報」に書かれていないこと、あなたの一般的な知識、推測を回答に含めてはなりません。
+- **誠実な態度**: 情報を創作したり、知っているふりをしてはいけません。
+- **会話**: 「サイト内情報」が空で、ユーザーが挨拶や一般的な会話をしている場合は、サイトのアシスタントとして自然に応対してください。
+- **書式**: 回答は、見出しやリストなど、標準的なMarkdown形式を適切に使用して、読みやすく整形してください。";
 	}
 
 	public function ajax_log_query() {

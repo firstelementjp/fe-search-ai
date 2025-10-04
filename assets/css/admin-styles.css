@@ -36,6 +36,12 @@ code {
 hr {
 	margin: 2rem 0 1rem;
 }
+.CodeMirror {
+	height: 500px;
+}
+.form-table .wp-picker-input-wrap label {
+	display: inline;
+}
 .feas-ai-tabs-wrapper .tab-content {
 	display: none;
 	margin-top: 1em;

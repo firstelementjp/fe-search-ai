@@ -49,6 +49,7 @@ class FEAS_AI_Admin {
 			return;
 		}
 
+		wp_enqueue_style( 'wp-color-picker' );
 		wp_enqueue_style(
 			'codemirror-css',
 			'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.css'
@@ -81,6 +82,7 @@ class FEAS_AI_Admin {
 			FEAS_AI_VERSION,
 			true
 		);
+		wp_enqueue_script( 'wp-color-picker' );
 
 		wp_localize_script(
 			'feas-ai-admin-sync',

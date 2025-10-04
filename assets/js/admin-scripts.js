@@ -157,43 +157,6 @@ jQuery(document).ready(function($) {
 	// 	$('.feas-ai-tabs-wrapper .nav-tab').first().trigger('click');
 	// }
 
-	// プロンプト設定のアコーディオン
-	// in fe-ai-search/assets/js/admin-sync.js
-
-	// --- プロンプト設定のアコーディオン（最終版） ---
-	$('#feas-ai-prompt-accordion .accordion-title').on('click', function() {
-		const $content = $(this).next('.accordion-content');
-		const $textarea = $content.find('.feas-ai-prompt-editor');
-
-		// まだ初期化されていなければCodeMirrorを生成
-		if ($textarea.length && !$textarea.data('codemirror-initialized')) {
-			const editor = CodeMirror.fromTextArea($textarea[0], {
-				lineNumbers: true,
-				mode: 'markdown',
-				lineWrapping: true
-			});
-			$textarea.data('codemirror-instance', editor);
-			$textarea.data('codemirror-initialized', true);
-		}
-
-		// ★ アニメーションなしで、単純に表示/非表示を切り替える
-		$content.toggle();
-
-		// ★ 表示された後に、再描画をかける
-		if ($content.is(':visible') && $textarea.data('codemirror-initialized')) {
-			const editor = $textarea.data('codemirror-instance');
-			editor.refresh();
-		}
-	});
-
-	$('.feas-ai-prompt-editor').each(function() {
-		CodeMirror.fromTextArea(this, {
-			lineNumbers: true,
-			mode: 'markdown',
-			lineWrapping: true
-		});
-	});
-
 	function manageLicense(action, button) {
 		const $button = $(button);
 		const $spinner = $button.siblings('.spinner');
@@ -293,5 +256,78 @@ jQuery(document).ready(function($) {
 			$spinner.css('visibility', 'hidden');
 		});
 	});
+
+	// --- プロンプト設定のアコーディオン（最終版） ---
+	// $('#feas-ai-prompt-accordion .accordion-title').on('click', function() {
+	// 	const $content = $(this).next('.accordion-content');
+	// 	const $textarea = $content.find('.feas-ai-prompt-editor');
+//
+	// 	// まだ初期化されていなければCodeMirrorを生成
+	// 	if ($textarea.length && !$textarea.data('codemirror-initialized')) {
+	// 		const editor = CodeMirror.fromTextArea($textarea[0], {
+	// 			lineNumbers: true,
+	// 			mode: 'markdown',
+	// 			lineWrapping: true
+	// 		});
+	// 		$textarea.data('codemirror-instance', editor);
+	// 		$textarea.data('codemirror-initialized', true);
+	// 	}
+//
+	// 	// ★ アニメーションなしで、単純に表示/非表示を切り替える
+	// 	$content.toggle();
+//
+	// 	// ★ 表示された後に、再描画をかける
+	// 	if ($content.is(':visible') && $textarea.data('codemirror-initialized')) {
+	// 		const editor = $textarea.data('codemirror-instance');
+	// 		editor.refresh();
+	// 	}
+	// });
+
+	// ページ内のすべてのアコーディオンラッパーを対象にする
+	$('.feas-ai-accordion-wrapper').each(function() {
+		const $accordion = $(this);
+		$accordion.find('.accordion-title').on('click', function(e) {
+			// チェックボックス自体をクリックした場合は、アコーディオンを開閉しない
+			if (e.target.tagName === 'INPUT' && e.target.type === 'checkbox') {
+				return;
+			}
+			e.preventDefault();
+			$(this).next('.accordion-content').slideToggle();
+		});
+	});
+
+	// --- CodeMirrorの初期化 ---
+	$('.feas-ai-prompt-editor').each(function() {
+		const textarea = this;
+		// 親要素が表示されていることを確認してから初期化
+		if ($(textarea).is(':visible')) {
+			initializeCodeMirror(textarea);
+		} else {
+			// タブがクリックされた時に初期化されるようにイベントを設定
+			const tabContent = $(textarea).closest('.tab-content');
+			if (tabContent.length) {
+				const tabId = tabContent.attr('id');
+				$('a[href="#' + tabId + '"]').one('click', function() {
+					initializeCodeMirror(textarea);
+				});
+			}
+		}
+	});
+
+	function initializeCodeMirror(textarea) {
+		if ($(textarea).data('codemirror-initialized')) return;
+
+		const editor = CodeMirror.fromTextArea(textarea, {
+			lineNumbers: true,
+			mode: 'markdown',
+			lineWrapping: true
+		});
+		$(textarea).data('codemirror-initialized', true);
+
+		// CodeMirrorが表示された直後にリフレッシュ
+		setTimeout(function() {
+			editor.refresh();
+		}, 1);
+	}
 
 });
