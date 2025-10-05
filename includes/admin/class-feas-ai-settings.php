@@ -32,7 +32,9 @@ class FEAS_AI_Settings {
 
 	public function __construct() {
 		$this->is_license_active = ( 'active' === get_option( 'feas_ai_pro_license_status', 'inactive' ) );
-		$this->license_alert_icon = '<a href="' . admin_url( 'admin.php' ) . '?page=fe-ai-search#tab-license">' . '<span class="dashicons dashicons-warning"></span></a>';
+		if ( class_exists( 'FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings' ) ) {
+			$this->license_alert_icon = '<a href="' . admin_url( 'admin.php' ) . '?page=fe-ai-search#tab-license">' . '<span class="dashicons dashicons-warning"></span></a>';
+		}
 
 		add_action( 'admin_init', array( $this, 'settings_init' ) );
 	}
@@ -380,7 +382,7 @@ class FEAS_AI_Settings {
 	public function google_api_key_field_html() {
 		$api_key = get_option( 'feas_ai_google_api_key' );
 
-		$model_to_display = 'gemini-2.5-flash';
+		$model_to_display = 'gemini-2.5-flash-lite';
 		if ( class_exists( 'FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings' ) ) {
 			$model_to_display = get_option( 'feas_ai_google_model', $model_to_display );
 		}
@@ -906,6 +908,33 @@ class FEAS_AI_Settings {
 				$('.feas-ai-color-picker').wpColorPicker();
 			});
 		</script>
+
+		<p>
+			<label for="feas_terms_page_id"><?php esc_html_e( 'Terms of Service Page', 'fe-ai-search' ); ?></label><br>
+			<?php
+			wp_dropdown_pages([
+				'name'              => 'feas_ai_display_options[terms_page_id]',
+				'selected'          => $options['terms_page_id'] ?? 0,
+				'show_option_none'  => '— ' . __( 'Not selected', 'fe-ai-search' ) . ' —',
+				'option_none_value' => '0',
+			]);
+			?>
+		</p>
+
+		<p>
+			<label for="feas_privacy_page_id"><?php esc_html_e( 'Privacy Policy Page', 'fe-ai-search' ); ?></label><br>
+			<?php
+			wp_dropdown_pages([
+				'name'              => 'feas_ai_display_options[privacy_page_id]',
+				'selected'          => $options['privacy_page_id'] ?? 0,
+				'show_option_none'  => '— ' . __( 'Not selected', 'fe-ai-search' ) . ' —',
+				'option_none_value' => '0',
+			]);
+			?>
+			<p class="description">
+				<?php esc_html_e( 'If not selected, the page set in WordPress\'s standard privacy settings will be used.', 'fe-ai-search' ); ?>
+			</p>
+		</p>
 		<?php
 	}
 

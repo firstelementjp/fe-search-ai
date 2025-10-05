@@ -115,7 +115,7 @@ class FEAS_AI_Chat_UI {
 	}
 
 	public function get_chat_ui_html( $mode = 'float' ) {
-		$options = get_option('feas_ai_display_options', []);
+		$options      = get_option( 'feas_ai_display_options', [] );
 		$window_title = $options['window_title'] ?? __( 'AI Search', 'fe-ai-search' );
 		$placeholder  = $options['placeholder_text'] ?? __( 'Please enter a question...', 'fe-ai-search' );
 		$greeting     = $options['greeting_message'] ?? __( 'Hello! Please ask me anything about the information on this site.', 'fe-ai-search' );
@@ -127,7 +127,7 @@ class FEAS_AI_Chat_UI {
 			<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
 			<div id="feas-ai-chat-bubble">
-				<svg xmlns="http://www.w.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="32" height="32"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"></path></svg>
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="32" height="32"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"></path></svg>
 			</div>
 
 			<div id="feas-ai-chat-window" class="hidden">
@@ -139,7 +139,7 @@ class FEAS_AI_Chat_UI {
 					<div class="feas-ai-header-buttons">
 						<button id="feas-ai-chat-fullscreen-toggle" class="feas-ai-header-icon">
 							<svg class="icon-maximize" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
-							<svg class="icon-minimize" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>
+							<svg class="icon-minimize" style="display:none;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>
 						</button>
 						<button id="feas-ai-chat-close" class="feas-ai-header-icon">
 							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path></svg>
@@ -156,6 +156,29 @@ class FEAS_AI_Chat_UI {
 						<input type="text" id="feas-ai-chat-input" placeholder="<?php echo esc_attr( $placeholder ); ?>" autocomplete="off">
 						<button type="submit"><?php echo esc_html( $submit_text ); ?></button>
 					</form>
+					<div class="feas-ai-privacy-notice" style="font-size: 11px; text-align: center; color: #777; margin-top: 8px;">
+						<?php
+						$terms_page_id   = $options['terms_page_id'] ?? 0;
+						$privacy_page_id = $options['privacy_page_id'] ?? 0;
+						$terms_url       = $terms_page_id ? get_permalink( $terms_page_id ) : '';
+						$privacy_url     = $privacy_page_id ? get_permalink( $privacy_page_id ) : get_privacy_policy_url();
+
+						$links = [];
+						if ( $terms_url ) {
+							$links[] = sprintf( '<a href="%s" target="_blank">%s</a>', esc_url( $terms_url ), esc_html__( 'Terms of Service', 'fe-ai-search' ) );
+						}
+						if ( $privacy_url ) {
+							$links[] = sprintf( '<a href="%s" target="_blank">%s</a>', esc_url( $privacy_url ), esc_html__( 'Privacy Policy', 'fe-ai-search' ) );
+						}
+
+						if ( ! empty( $links ) ) {
+							printf(
+								esc_html__( 'By using this chat, you agree to our %s.', 'fe-ai-search' ),
+								implode( ' and ', $links )
+							);
+						}
+						?>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -165,7 +188,7 @@ class FEAS_AI_Chat_UI {
 			}
 		</script>
 		<?php
-		return ob_get_clean(); // Retrieve the contents of the buffer, return it as a string, and close the buffer.
+		return ob_get_clean();
 	}
 
 	public function output_dynamic_styles() {
