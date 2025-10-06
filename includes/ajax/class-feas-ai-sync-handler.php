@@ -88,9 +88,14 @@ class FEAS_AI_Sync_Handler {
 		}
 
 		/**
-		 * 同期対象の投稿を取得するクエリ引数をフィルターする。
+		 * Filters the query arguments used to fetch posts for synchronization.
 		 *
-		 * @param array $args WP_Query / get_posts に渡される引数の配列。
+		 * This hook allows developers to add custom query parameters (e.g., meta_query,
+		 * category__in) to modify which posts are selected for indexing by the AI.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $args The array of query arguments passed to `get_posts()`.
 		 */
 		$args = apply_filters( 'feas_ai_sync_query_args', $args );
 
@@ -103,7 +108,7 @@ class FEAS_AI_Sync_Handler {
 		wp_send_json_success( [
 			'total_pages' => $total_pages,
 			'total_posts' => $total_posts,
-			'post_ids'    => $all_post_ids, // ★★★ 処理対象のIDリストをJSに渡す
+			'post_ids'    => $all_post_ids, // Pass the list of IDs to be processed to JS
 		] );
 	}
 
@@ -116,7 +121,7 @@ class FEAS_AI_Sync_Handler {
 
 		$batch_size = 10;
 
-		// ★ JSから渡されたIDリストを元に、このバッチの担当分を切り出す
+		// Extract the part of this batch based on the ID list passed from JS
 		$offset = ($page - 1) * $batch_size;
 		$batch_ids = array_slice($post_ids, $offset, $batch_size);
 
@@ -124,13 +129,6 @@ class FEAS_AI_Sync_Handler {
 			wp_send_json_success( ['message' => 'No more posts to process.'] );
 			return;
 		}
-
-		// $sql_query_catcher = function( $request ) {
-		// 	error_log( '--- GENERATED SQL QUERY for get_posts ---' );
-		// 	error_log( $request );
-		// 	return $request;
-		// };
-		// add_filter( 'posts_request', $sql_query_catcher, 10, 1 );
 
 		$posts_batch = get_posts([
 			'post__in'            => $batch_ids,
@@ -140,17 +138,9 @@ class FEAS_AI_Sync_Handler {
 			'ignore_sticky_posts' => 1,
 		]);
 
-		// remove_filter( 'posts_request', $sql_query_catcher, 10 );
-
-		// デバッグログを出力
-		// error_log('--- FE AI Batch Debug ---');
-		// error_log('Page: ' . $page);
-		// error_log('Batch IDs Count: ' . count($batch_ids));
-		// error_log('Fetched Posts Count: ' . count($posts_batch));
-
 		$sync_options = get_option('feas_ai_sync_options', []);
 
-		// --- 3. 投稿をループ処理し、設定に応じてチャンクを作成・保存 ---
+		// Loop through the posts and create and save chunks according to your preferences
 		// $segmenter = new TinySegmenter();
 		global $wpdb;
 		$vectors_table = $wpdb->prefix . 'feas_ai_vectors';
@@ -215,11 +205,11 @@ class FEAS_AI_Sync_Handler {
 
 		delete_option( 'feas_ai_last_sync_timestamp' );
 
-		wp_send_json_success('すべての同期データを削除しました。');
+		wp_send_json_success( __( 'All sync data has been deleted.', 'fe-ai-search' ) );
 	}
 
 	/**
-	 * タイムアウトしない、ローカル完結の高速検索メソッド
+	 * A fast, local search method that doesn't time out
 	 */
 	public function find_similar_chunks( $question ) {
 		global $wpdb;
@@ -256,7 +246,7 @@ class FEAS_AI_Sync_Handler {
 		$question_vector = $question_vector_response['data'][0]['embedding'];
 
 		$similarities = array();
-		$similarity_threshold = 0.35; // 類似度の足切りスコア
+		$similarity_threshold = 0.35; // Similarity cutoff score
 
 		foreach ( $candidate_rows as $row ) {
 			$db_vector = json_decode( $row->vector_data, true );
@@ -340,11 +330,11 @@ class FEAS_AI_Sync_Handler {
 		$provider = get_option( 'feas_ai_embedding_provider', 'openai' );
 
 		/**
-		 * 独自のEmbeddingプロバイダー処理を割り込ませるためのフィルターフック。
-		 * フック名: feas_ai_embedding_result_for_{プロバイダーのスラッグ}
+		 * A filter hook for interposing your own embedding provider processing.
+		 * Hook name: feas_ai_embedding_result_for_{provider slug}
 		 *
-		 * @param WP_Error|array|null $result   結果。nullの場合、デフォルト処理が実行される.
-		 * @param array               $texts    ベクトル化するテキストの配列.
+		 * @param WP_Error|array|null $result Result. If null, the default processing will be performed.
+		 * @param array               $texts  Array of text to vectorize.
 		 */
 		$result = apply_filters( "feas_ai_embedding_result_for_{$provider}", null, $texts );
 
@@ -383,13 +373,13 @@ class FEAS_AI_Sync_Handler {
 	public function fetch_embeddings_for_openai( $texts ) {
 		$api_key = get_option( 'feas_ai_openai_api_key' );
 		if ( empty( $api_key ) ) {
-			return new WP_Error( 'api_key_missing', 'OpenAI APIキーが設定されていません。' );
+			return new WP_Error( 'api_key_missing', __( 'The OpenAI API key is not configured.', 'fe-ai-search' ) );
 		}
 
 		$api_url = 'https://api.openai.com/v1/embeddings';
 
 		$body = array(
-			'model' => 'text-embedding-3-small', // 最新の安価で高性能なモデル
+			'model' => 'text-embedding-3-small',
 			'input' => $texts,
 		);
 
@@ -412,36 +402,22 @@ class FEAS_AI_Sync_Handler {
 		if ( $response_code !== 200 ) {
 			$error_message = isset( $response_body['error']['message'] )
 				? $response_body['error']['message']
-				: '不明なAPIエラー';
-			return new WP_Error( 'api_error', 'APIエラー: ' . $error_message );
+				: __( 'Unknown API Error', 'fe-ai-search' );
+			return new WP_Error( 'api_error', __( 'API Error', 'fe-ai-search' ) . ': ' . $error_message );
 		}
 
 		return $response_body;
 	}
 
-	public function get_claude_embeddings( $texts ) {
-		$api_key = get_option( 'feas_ai_anthropic_api_key' );
-		if ( empty( $api_key ) ) {
-			return new WP_Error( 'api_key_missing', 'Anthropic APIキーが設定されていません。' );
-		}
-
-		$api_url = 'https://api.anthropic.com/v1/embeddings'; // (注: 2025年9月時点ではClaudeに専用Embedding APIはありません。これは将来的な実装を見越したダミーです)
-
-		// 現状ClaudeにはEmbedding APIがないため、ダミーのエラーを返す
-		return new WP_Error('not_implemented', 'ClaudeのEmbedding機能は現在サポートされていません。OpenAIまたはGeminiを選択してください。');
-
-		// TODO
-	}
-
 	public function fetch_embeddings_for_gemini( $texts ) {
-		$api_key = get_option( 'feas_ai_google_api_key' ); // Google用のAPIキーを取得
+		$api_key = get_option( 'feas_ai_google_api_key' );
 		if ( empty( $api_key ) ) {
-			return new WP_Error( 'api_key_missing', 'Google Cloud APIキーが設定されていません。' );
+			return new WP_Error( 'api_key_missing', __( 'The Google Cloud API key is not configured.', 'fe-ai-search' ) );
 		}
 
 		$api_url = 'https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:batchEmbedContents?key=' . $api_key;
 
-		// リクエストボディの構造が異なる
+		// The request body structure is different
 		$requests = array();
 		foreach ( $texts as $text ) {
 			$requests[] = array(
@@ -456,7 +432,7 @@ class FEAS_AI_Sync_Handler {
 		$body = array( 'requests' => $requests );
 
 		$response = wp_remote_post( $api_url, array(
-			'headers' => array( 'Content-Type'  => 'application/json' ), // ヘッダーの形式が異なる
+			'headers' => array( 'Content-Type'  => 'application/json' ),
 			'body'    => json_encode( $body ),
 			'timeout' => 60,
 		) );
@@ -471,11 +447,11 @@ class FEAS_AI_Sync_Handler {
 		if ( $response_code !== 200 ) {
 			$error_message = isset( $response_body['error']['message'] )
 				? $response_body['error']['message']
-				: '不明なAPIエラー';
-			return new WP_Error( 'api_error', 'APIエラー: ' . $error_message );
+				: __( 'Unknown API Error', 'fe-ai-search' );
+			return new WP_Error( 'api_error', __( 'API Error', 'fe-ai-search' ) . ': ' . $error_message );
 		}
 
-		// レスポンスからベクトルデータを取り出す構造が異なる
+		// The structure for extracting vector data from the response is different
 		$vectors = array();
 		if ( isset( $response_body['embeddings'] ) ) {
 			foreach ( $response_body['embeddings'] as $embedding_data ) {
@@ -483,7 +459,7 @@ class FEAS_AI_Sync_Handler {
 			}
 		}
 
-		// OpenAI版とレスポンスの形を揃えるため、独自に整形して返す
+		// To align the response format with the OpenAI version, we format it ourselves and return it.
 		$formatted_response = array();
 		foreach( $vectors as $i => $vector ) {
 			$formatted_response['data'][$i]['embedding'] = $vector;
@@ -492,55 +468,116 @@ class FEAS_AI_Sync_Handler {
 		return $formatted_response;
 	}
 
+	public function get_claude_embeddings( $texts ) {
+		$api_key = get_option( 'feas_ai_anthropic_api_key' );
+		if ( empty( $api_key ) ) {
+			return new WP_Error( 'api_key_missing', __( 'Anthropic API key is not set.', 'fe-ai-search' ) );
+		}
+
+		$api_url = 'https://api.anthropic.com/v1/embeddings';
+
+		// 現状ClaudeにはEmbedding APIがないため、ダミーのエラーを返す
+		return new WP_Error('not_implemented', __( "Claude's embedding feature is currently not supported. Please choose OpenAI or Gemini.", 'fe-ai-search' ));
+
+		// TODO
+	}
+
 	/**
-	 * テキストを言語に応じてキーワードに分割する
-	 * @param string $text 分割するテキスト.
-	 * @return array キーワードの配列.
+	 * Split text into keywords according to language.
+	 * @param  string $text The text to split.
+	 * @return array  An array of keywords.
 	 */
 	private function tokenize_text( $text ) {
 		$locale = get_locale();
+		$lang_code = strstr( $locale, '_', true ) ?: $locale; // 'ja', 'en' etc.
+		$stop_words = [];
 
-		if ( 'ja' === $locale ) {
-			// --- 日本語の場合 ---
+		// Find the language file and load the stop words
+		$lang_file = FEAS_AI_PLUGIN_DIR . "includes/i18n/{$locale}.php";
+		if ( ! file_exists( $lang_file ) ) {
+			$lang_file = FEAS_AI_PLUGIN_DIR . "includes/i18n/{$lang_code}.php";
+		}
+		if ( file_exists( $lang_file ) ) {
+			$stop_words = include( $lang_file );
+		}
+
+		/**
+		 * Filters the array of stop words used during keyword extraction.
+		 *
+		 * This hook allows developers to add or remove stop words for a specific
+		 * language, or to replace the default list entirely.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array  $stop_words The array of stop words to be filtered.
+		 * @param string $locale     The current site locale (e.g., 'en_US', 'ja').
+		 */
+		$stop_words = apply_filters( 'feas_ai_stop_words', $stop_words, $locale );
+
+		if ( 'ja' !== $lang_code && 'en' !== $lang_code ) {
+			if ( ! get_transient( 'feas_ai_i18n_notice_dismissed' ) ) {
+				add_action( 'admin_notices', [ $this, 'render_i18n_notice' ] );
+			}
+		}
+
+		// Split text into words
+		if ( 'ja' === $lang_code ) {
 			$words = $this->segmenter->segment( $text );
-
-			// 日本語用のストップワードリストを定義（ひらがな1文字の助詞など）
-			$ja_stop_words = [
-				'の', 'に', 'は', 'を', 'た', 'が', 'で', 'て', 'と', 'し', 'れ', 'さ',
-				'ある', 'いる', 'する', 'です', 'ます', 'でした', 'ました',
-				'これ', 'それ', 'あれ', 'この', 'その', 'あの', 'ここ', 'そこ', 'あそこ',
-				'もの', 'こと', 'とき', 'ところ',
-			];
-
-			// ストップワードを除去
-			$words = array_diff($words, $ja_stop_words);
-
-			return array_values($words); // 配列のキーを振り直して返す
-
 		} else {
-			// --- その他の言語の場合 ---
-			$stop_words = [ 'a', 'an', 'the', 'is', 'in', 'it', 'of', 'for', 'on', 'with', 'to', 'and', 'or', 'but' ];
 			$words = preg_split('/[^\p{L}\p{N}]+/', strtolower($text), -1, PREG_SPLIT_NO_EMPTY);
-			$words = array_diff($words, $stop_words);
+		}
 
+		// Remove stop words
+		$words = array_diff($words, $stop_words);
+
+		// Stemming (only in supported languages, such as English)
+		if ( 'ja' !== $lang_code ) {
 			try {
 				$stemmerManager = new \Wamania\Snowball\StemmerManager();
-				$lang_code = substr($locale, 0, 2);
 				if ( in_array($lang_code, $stemmerManager->getAvailableLanguages()) ) {
 					$stemmer = $stemmerManager->create($lang_code);
 					$stemmed_words = [];
 					foreach ($words as $word) {
 						$stemmed_words[] = $stemmer->stem($word);
 					}
-					return $stemmed_words;
+					$words = $stemmed_words;
 				}
 			} catch (\Exception $e) {
 				error_log('Stemmer error: ' . $e->getMessage());
-				return array_values($words);
 			}
-
-			return array_values($words);
 		}
+
+		return array_values($words);
+	}
+
+	/**
+	 * Renders an administrator notification about internationalization
+	 */
+	public function render_i18n_notice() {
+		// What happens when a user clicks on a "hidden" link?
+		if ( isset( $_GET['feas-ai-dismiss-i18n-notice'] ) ) {
+			// Flag to hide this notification for one week
+			set_transient( 'feas_ai_i18n_notice_dismissed', true, WEEK_IN_SECONDS );
+			return;
+		}
+		?>
+		<div class="notice notice-info is-dismissible" data-dismiss-url="<?php echo esc_url( add_query_arg( 'feas-ai-dismiss-i18n-notice', '1' ) ); ?>">
+			<p>
+				<b>FE AI Search:</b> <?php esc_html_e( 'Your site language is not fully optimized for keyword search. We welcome contributions for new languages!', 'fe-ai-search' ); ?>
+				<a href="https://github.com/firstelementjp/fe-ai-search" target="_blank" style="margin-left: 10px;"><?php esc_html_e( 'Contribute on GitHub', 'fe-ai-search' ); ?></a>
+			</p>
+		</div>
+		<script>
+			// Added the ability to flag hidden links without reloading the page
+			jQuery(function($){
+				$('div[data-dismiss-url]').on('click', '.notice-dismiss', function(e){
+					e.preventDefault();
+					$.post(ajaxurl, { action: 'dismiss-wp-pointer', pointer: 'feas_ai_i18n_notice_dismissed' });
+					$(this).closest('.notice').fadeOut();
+				});
+			});
+		</script>
+		<?php
 	}
 
 }

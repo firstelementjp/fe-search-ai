@@ -31,9 +31,13 @@ class FEAS_AI_Settings {
 	private $license_alert_icon = '';
 
 	public function __construct() {
+
 		$this->is_license_active = ( 'active' === get_option( 'feas_ai_pro_license_status', 'inactive' ) );
+
 		if ( class_exists( 'FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings' ) ) {
-			$this->license_alert_icon = '<a href="' . admin_url( 'admin.php' ) . '?page=fe-ai-search#tab-license">' . '<span class="dashicons dashicons-warning"></span></a>';
+			$this->license_alert_icon = '<a href="' . admin_url( 'admin.php' )
+			. '?page=fe-ai-search#tab-license">'
+			. '<span class="dashicons dashicons-warning"></span></a>';
 		}
 
 		add_action( 'admin_init', array( $this, 'settings_init' ) );
@@ -48,12 +52,22 @@ class FEAS_AI_Settings {
 			<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
 
 			<h2 class="nav-tab-wrapper">
-				<a href="#tab-api" class="nav-tab">API設定</a>
-				<a href="#tab-sync" class="nav-tab">同期</a>
-				<a href="#tab-display" class="nav-tab">表示</a>
-				<a href="#tab-prompt" class="nav-tab">プロンプト</a>
-				<a href="#tab-data" class="nav-tab">データ管理</a>
-				<?php do_action( 'feas_ai_settings_tabs' ); ?>
+				<a href="#tab-api" class="nav-tab"><?php esc_html_e( 'API Settings', 'fe-ai-search' ); ?></a>
+				<a href="#tab-sync" class="nav-tab"><?php esc_html_e( 'Sync', 'fe-ai-search' ); ?></a>
+				<a href="#tab-display" class="nav-tab"><?php esc_html_e( 'Display', 'fe-ai-search' ); ?></a>
+				<a href="#tab-prompt" class="nav-tab"><?php esc_html_e( 'Prompt', 'fe-ai-search' ); ?></a>
+				<a href="#tab-data" class="nav-tab"><?php esc_html_e( 'Data', 'fe-ai-search' ); ?></a>
+				<?php
+				/**
+				 * Fires within the settings page's tab wrapper to add custom navigation tabs.
+				 *
+				 * This action allows other plugins or themes (like the Pro add-on) to
+				 * add new tabs to the main settings page navigation.
+				 *
+				 * @since 1.0.0
+				 */
+				do_action( 'feas_ai_settings_tabs' );
+				?>
 			</h2>
 
 			<form action="options.php" method="post">
@@ -98,9 +112,20 @@ class FEAS_AI_Settings {
 					<?php do_action( 'feas_ai_after_data_settings_fields' ); ?>
 				</div>
 
-				<?php do_action( 'feas_ai_settings_tabs_content' ); ?>
+				<?php
+				/**
+				 * Fires within the main settings form to add custom tab content panels.
+				 *
+				 * This action is intended to be used in conjunction with the
+				 * 'feas_ai_settings_tabs' action. It allows other plugins to render the
+				 * content (the <div id="tab-...">) for the custom tabs they have added.
+				 *
+				 * @since 1.0.0
+				 */
+				do_action( 'feas_ai_settings_tabs_content' );
+				?>
 
-				<?php submit_button( '設定を保存' ); ?>
+				<?php submit_button( __( 'Save Settings', 'fe-ai-search' ) ); ?>
 			</form>
 		</div>
 		<?php
@@ -163,13 +188,18 @@ class FEAS_AI_Settings {
 			'feas_ai_api_section'
 		);
 
-		// Synchronization Settings Section
+		/**
+		 *
+		 *  Synchronization Settings Section
+		 *
+		 */
 		add_settings_section(
 			'feas_ai_sync_section',
 			__( 'Sync Settings', 'fe-ai-search' ),
 			null,
 			$page_slug
 		);
+
 		register_setting( $settings_group, 'feas_ai_sync_options' );
 		register_setting(
 			$settings_group,
@@ -193,6 +223,7 @@ class FEAS_AI_Settings {
 			$page_slug,
 			'feas_ai_sync_section'
 		);
+
 		add_settings_field(
 			'feas_ai_include_post_ids',
 			__( 'Post IDs to include', 'fe-ai-search' ),
@@ -222,14 +253,20 @@ class FEAS_AI_Settings {
 			'feas_ai_sync_section'
 		);
 
-		// Prompt Settings Section
+		/**
+		 *
+		 *  Prompt Settings Section
+		 *
+		 */
 		add_settings_section(
 			'feas_ai_prompt_section',
 			__( 'System Prompt', 'fe-ai-search' ),
 			null,
 			$page_slug
 		);
+
 		register_setting( $settings_group, 'feas_ai_system_prompt' );
+
 		add_settings_field(
 			'feas_ai_system_prompt',
 			__( 'Base System Prompt', 'fe-ai-search' ),
@@ -238,7 +275,11 @@ class FEAS_AI_Settings {
 			'feas_ai_prompt_section'
 		);
 
-		// Display Settings Section
+		/**
+		 *
+		 *  Display Settings Section
+		 *
+		 */
 		add_settings_section(
 			'feas_ai_display_section',
 			__( 'Display settings', 'fe-ai-search' ),
@@ -252,20 +293,56 @@ class FEAS_AI_Settings {
 			[ 'sanitize_callback' => [ $this, 'sanitize_display_options' ] ]
 		);
 
-		add_settings_field( 'feas_ai_display_floating', 'フローティングチャット', array( $this, 'display_floating_field_html' ), $page_slug, 'feas_ai_display_section' );
-		add_settings_field( 'feas_ai_display_fullscreen', '全画面モード', array( $this, 'display_fullscreen_field_html' ), $page_slug, 'feas_ai_display_section' );
-		add_settings_field( 'feas_ai_display_embed', '埋め込みモード', array( $this, 'display_embed_field_html' ), $page_slug, 'feas_ai_display_section' );
-		add_settings_field( 'feas_ai_display_chat_text', __( 'Chat message settings', 'fe-ai-search' ), array( $this, 'display_chat_text_field_html' ), $page_slug, 'feas_ai_display_section' );
-		add_settings_field( 'feas_ai_display_advanced', __( 'Advanced Settings', 'fe-ai-search' ), array( $this, 'display_advanced_field_html' ), $page_slug, 'feas_ai_display_section' );
+		add_settings_field(
+			'feas_ai_display_floating',
+			__( 'Floating Chat Window', 'fe-ai-search' ),
+			array( $this, 'display_floating_field_html' ),
+			$page_slug,
+			'feas_ai_display_section'
+		);
+		add_settings_field(
+			'feas_ai_display_fullscreen',
+			__( 'Full Screen Mode', 'fe-ai-search' ),
+			array( $this, 'display_fullscreen_field_html' ),
+			$page_slug,
+			'feas_ai_display_section'
+		);
+		add_settings_field(
+			'feas_ai_display_embed',
+			__( 'Embedding Mode', 'fe-ai-search' ),
+			array( $this, 'display_embed_field_html' ),
+			$page_slug,
+			'feas_ai_display_section'
+		);
+		add_settings_field(
+			'feas_ai_display_chat_text',
+			 __( 'Chat Message Settings', 'fe-ai-search' ),
+			 array( $this, 'display_chat_text_field_html' ),
+			 $page_slug,
+			 'feas_ai_display_section'
+		 );
+		add_settings_field(
+			'feas_ai_display_advanced',
+			__( 'Advanced Settings', 'fe-ai-search' ),
+			array( $this, 'display_advanced_field_html' ),
+			$page_slug,
+			'feas_ai_display_section'
+		);
 
-		// Data Management Section
+		/**
+		 *
+		 *  Data Management Section
+		 *
+		 */
 		add_settings_section(
 			'feas_ai_data_section',
 			__( 'Data Management', 'fe-ai-search' ),
 			null,
 			$page_slug
 		);
+
 		register_setting( $settings_group, 'feas_ai_delete_on_uninstall' );
+
 		add_settings_field(
 			'feas_ai_delete_vectors_ui',
 			__( 'Deleting Synced Data', 'fe-ai-search' ),
@@ -286,10 +363,6 @@ class FEAS_AI_Settings {
 	 * Determine whether the Pro version add-on is enabled
 	 * @return bool
 	 */
-	// private function is_pro_active() {
-	// 	return class_exists('FEAS_AI_Pro_Analytics');
-	// }
-
 	public function chat_provider_field_html() {
 		$provider = get_option( 'feas_ai_chat_provider', 'openai' );
 
@@ -299,6 +372,18 @@ class FEAS_AI_Settings {
 			'anthropic' => __( 'Anthropic (Claude)', 'fe-ai-search' ),
 		];
 
+		/**
+		 * Filters the array of available AI chat providers.
+		 *
+		 * This hook allows other plugins or themes to add, remove, or modify
+		 * the AI models available for selection in the settings.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $providers An associative array of AI providers,
+		 * where the key is the provider slug (e.g., 'openai')
+		 * and the value is the display name (e.g., 'OpenAI (GPT-4o)').
+		 */
 		$providers = apply_filters( 'feas_ai_chat_providers', $providers );
 
 		?>
@@ -319,11 +404,23 @@ class FEAS_AI_Settings {
 		$provider = get_option( 'feas_ai_embedding_provider', 'openai' );
 
 		$providers = [
-			'openai'    => __( 'OpenAI (text-embedding-3)', 'fe-ai-search' ),
-			'google'    => __( 'Google (text-embedding-004)', 'fe-ai-search' ),
-			'anthropic' => __( 'Anthropic (Claude) - (Not available)', 'fe-ai-search' ),
+			'openai'    => 'OpenAI (text-embedding-3)',
+			'google'    => 'Google (text-embedding-004)',
+			'anthropic' => 'Anthropic (Claude) - (Not available)',
 		];
 
+		/**
+		 * Filters the array of available AI embedding providers.
+		 *
+		 * This hook allows other plugins or themes to add, remove, or modify
+		 * the AI models available for selection for the vectorization process.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $providers An associative array of AI embedding providers,
+		 * where the key is the provider slug (e.g., 'google')
+		 * and the value is the display name (e.g., 'Google (text-embedding-004)').
+		 */
 		$providers = apply_filters( 'feas_ai_embedding_providers', $providers );
 
 		?>
@@ -337,7 +434,9 @@ class FEAS_AI_Settings {
 			<?php endforeach; ?>
 		</select>
 		<p class="description">
-			<?php esc_html_e( 'Select an AI that will vectorize (convert) your site content into a format that AI can understand.', 'fe-ai-search' ); ?>
+			<?php esc_html_e( 'Select an AI that will vectorize (convert) your site content'
+			. ' into a format that AI can understand.', 'fe-ai-search' );
+			?>
 		</p>
 		<?php
 	}
@@ -368,11 +467,27 @@ class FEAS_AI_Settings {
 
 		<div style="margin-top: 10px;">
 			<p style="margin: 0;">
-				<strong>使用モデル:</strong> <?php echo esc_html( $model_to_display ); ?>
+				<strong><?php esc_html_e( 'Model', 'fe-ai-search' ); ?>:</strong> <?php echo esc_html( $model_to_display ); ?>
 				<?php if ( class_exists( 'FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings' ) ) : ?>
-					<a href="<?php echo admin_url( 'admin.php' ); ?>?page=fe-ai-search#tab-pro-model">モデルを変更 &raquo;</a> <?php echo $this->license_alert_icon; ?>
+					<div>
+						<a href="<?php echo admin_url( 'admin.php' ); ?>?page=fe-ai-search#tab-pro-model">
+							<?php esc_html_e( 'Change Model', 'fe-ai-search' ); ?> &raquo;
+						</a> <?php echo $this->license_alert_icon; ?>
+					</div>
 				<?php else: ?>
-					<span class="description">モデルの選択機能は<a href="#" target="_blank">Pro版</a>で利用可能です。</span>
+					<span class="description">
+						<?php
+						printf(
+							/* translators: %s: Link to the Pro version. */
+							wp_kses_post( __( 'Model selection is available in the %s version.', 'fe-ai-search' ) ),
+							sprintf(
+								'<a href="%s" target="_blank">%s</a>',
+								esc_url( FEAS_AI_PRO_URL ),
+								esc_html__( 'Pro', 'fe-ai-search' )
+							)
+						);
+						?>
+					</span>
 				<?php endif; ?>
 			</p>
 		</div>
@@ -405,11 +520,27 @@ class FEAS_AI_Settings {
 
 		<div style="margin-top: 10px;">
 			<p style="margin: 0;">
-				<strong>使用モデル:</strong> <?php echo esc_html( $model_to_display ); ?>
+				<strong><?php esc_html_e( 'Model', 'fe-ai-search' ); ?>:</strong> <?php echo esc_html( $model_to_display ); ?>
 				<?php if ( class_exists( 'FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings' ) ) : ?>
-					<a href="<?php echo admin_url( 'admin.php' ); ?>?page=fe-ai-search#tab-pro-model">モデルを変更 &raquo;</a> <?php echo $this->license_alert_icon; ?>
+					<div>
+						<a href="<?php echo admin_url( 'admin.php' ); ?>?page=fe-ai-search#tab-pro-model">
+							<?php esc_html_e( 'Change Model', 'fe-ai-search' ); ?> &raquo;
+						</a> <?php echo $this->license_alert_icon; ?>
+					</div>
 				<?php else: ?>
-					<span class="description">モデルの選択機能は<a href="#" target="_blank">Pro版</a>で利用可能です。</span>
+					<span class="description">
+						<?php
+						printf(
+							/* translators: %s: Link to the Pro version. */
+							wp_kses_post( __( 'Model selection is available in the %s version.', 'fe-ai-search' ) ),
+							sprintf(
+								'<a href="%s" target="_blank">%s</a>',
+								esc_url( FEAS_AI_PRO_URL ),
+								esc_html__( 'Pro', 'fe-ai-search' )
+							)
+						);
+						?>
+					</span>
 				<?php endif; ?>
 			</p>
 		</div>
@@ -442,11 +573,27 @@ class FEAS_AI_Settings {
 
 		<div style="margin-top: 10px;">
 			<p style="margin: 0;">
-				<strong>使用モデル:</strong> <?php echo esc_html( $model_to_display ); ?>
+				<strong><?php esc_html_e( 'Model', 'fe-ai-search' ); ?>:</strong> <?php echo esc_html( $model_to_display ); ?>
 				<?php if ( class_exists( 'FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings' ) ) : ?>
-					<a href="<?php echo admin_url( 'admin.php' ); ?>?page=fe-ai-search#tab-pro-model">モデルを変更 &raquo;</a> <?php echo $this->license_alert_icon; ?>
+					<div>
+						<a href="<?php echo admin_url( 'admin.php' ); ?>?page=fe-ai-search#tab-pro-model">
+							<?php esc_html_e( 'Change Model', 'fe-ai-search' ); ?> &raquo;
+						</a> <?php echo $this->license_alert_icon; ?>
+					</div>
 				<?php else: ?>
-					<span class="description">モデルの選択機能は<a href="#" target="_blank">Pro版</a>で利用可能です。</span>
+					<span class="description">
+						<?php
+						printf(
+							/* translators: %s: Link to the Pro version. */
+							wp_kses_post( __( 'Model selection is available in the %s version.', 'fe-ai-search' ) ),
+							sprintf(
+								'<a href="%s" target="_blank">%s</a>',
+								esc_url( FEAS_AI_PRO_URL ),
+								esc_html__( 'Pro', 'fe-ai-search' )
+							)
+						);
+						?>
+					</span>
 				<?php endif; ?>
 			</p>
 		</div>
@@ -487,7 +634,10 @@ class FEAS_AI_Settings {
 			$pt_options = wp_parse_args( $options['post_types'][ $post_type->name ] ?? [], $defaults );
 
 			?>
-			<div class="post-type-accordion-item" class="feas-ai-accordion-wrapper" style="border: 1px solid #c3c4c7; margin-bottom: -1px; background: #fff;">
+			<div
+				class="feas-ai-accordion-wrapper post-type-accordion-item"
+				style="border: 1px solid #c3c4c7; margin-bottom: -1px; background: #fff;"
+			>
 				<h4 class="accordion-title" style="margin: 0; padding: 10px; cursor: pointer; font-size: 14px; >
 					<label>
 						<input
@@ -499,7 +649,10 @@ class FEAS_AI_Settings {
 						<?php echo esc_html( $post_type->label ); ?> (<?php echo esc_html( $post_type->name ); ?>)
 					</label>
 				</h4>
-				<div class="accordion-content" style="<?php echo $pt_options['enabled'] ? '' : 'display: none;'; ?> padding: 15px; border-top: 1px solid #ddd;">
+				<div
+					class="accordion-content"
+					style="<?php echo $pt_options['enabled'] ? '' : 'display: none;'; ?> padding: 15px; border-top: 1px solid #ddd;"
+				>
 					<fieldset>
 						<label>
 							<input
@@ -509,7 +662,7 @@ class FEAS_AI_Settings {
 								<?php checked( $pt_options['include_title'] ); ?>
 							>
 							<?php esc_html_e( 'Post Title', 'fe-ai-search' ); ?>
-						</label><br>
+						</label>
 						<label>
 							<input
 								type="checkbox"
@@ -518,7 +671,7 @@ class FEAS_AI_Settings {
 								<?php checked( $pt_options['include_content'] ); ?>
 							>
 							<?php esc_html_e( 'Post Content', 'fe-ai-search' ); ?>
-						</label><br>
+						</label>
 						<label>
 							<input
 								type="checkbox"
@@ -527,7 +680,7 @@ class FEAS_AI_Settings {
 								<?php checked( $pt_options['include_date'] ); ?>
 							>
 							<?php esc_html_e( 'Post Date', 'fe-ai-search' ); ?>
-						</label><br>
+						</label>
 						<label>
 							<input
 								type="checkbox"
@@ -536,7 +689,7 @@ class FEAS_AI_Settings {
 								<?php checked($pt_options['include_author']); ?>
 							>
 							<?php esc_html_e( 'Post Author', 'fe-ai-search' ); ?>
-						</label><br>
+						</label>
 
 						<?php
 						$taxonomies = get_object_taxonomies( $post_type->name, 'objects' );
@@ -561,7 +714,7 @@ class FEAS_AI_Settings {
 										esc_html( $tax->label )
 									);
 									?>
-								</label><br>
+								</label>
 								<?php
 							}
 						}
@@ -570,7 +723,7 @@ class FEAS_AI_Settings {
 						<div style="margin-top: 10px;">
 							<label for="feas_ai_custom_fields_<?php echo esc_attr( $post_type->name ); ?>">
 								<?php esc_html_e( 'Custom Fields', 'fe-ai-search' ); ?> <?php echo $this->license_alert_icon; ?></strong>
-							</label><br>
+							</label>
 							<input
 								type="text"
 								id="feas_ai_custom_fields_<?php echo esc_attr( $post_type->name ); ?>"
@@ -605,79 +758,6 @@ class FEAS_AI_Settings {
 			});
 		});
 		</script>
-		<?php
-	}
-
-	public function enable_logging_field_html() {
-		$option = get_option( 'feas_ai_enable_logging' );
-		?>
-		<fieldset>
-			<label>
-				<input type="checkbox" name="feas_ai_enable_logging" value="1"
-					<?php checked( $option, '1' ); ?>
-					<?php disabled( ! $this->is_license_active ); // Proでなければdisabled ?>
-				/>
-				<?php _e( 'Save conversation history with users', 'fe-ai-search' ); ?>
-			</label>
-			<?php if ( ! $this->is_license_active ) : // Display guidance unless Pro ?>
-				<p class="description">
-					<?php
-					printf(
-						/* translators: %s: URL to the Pro version upgrade page. */
-						wp_kses_post( __( 'This feature is available in the Pro version. <a href="%s" target="_blank">Upgrade to Pro</a>', 'fe-ai-search' ) ),
-						'https://example.com/pro-upgrade'
-					);
-					?>
-				</p>
-			<?php else : ?>
-				<p class="description">
-					<?php esc_html_e( 'Once you enable this feature, you can analyze conversations on the Analytics page of your admin panel.', 'fe-ai-search' ); ?>
-				</p>
-			<?php endif; ?>
-		</fieldset>
-		<?php
-	}
-
-	public function log_retention_field_html() {
-		$days = get_option( 'feas_ai_log_retention_days', 30 );
-		?>
-		<input
-			type="number"
-			name="feas_ai_log_retention_days"
-			value="<?php echo esc_attr( $days ); ?>"
-			class="small-text"
-			<?php disabled( ! $this->is_license_active ); ?>
-		>
-		<?php esc_html_e( 'days', 'fe-ai-search' ); ?>
-		<p class="description">
-			<?php esc_html_e( 'Search logs older than this will be automatically deleted every day. Set this to 0 to never delete them.', 'fe-ai-search' ); ?>
-		</p>
-		<?php if ( ! $this->is_license_active ) : ?>
-			<p class="description">
-				<?php
-				printf(
-					/* translators: %s: URL to the Pro version upgrade page. */
-					wp_kses_post( __( 'This feature is available in the Pro version. <a href="%s" target="_blank">Upgrade to Pro</a>', 'fe-ai-search' ) ),
-					'https://example.com/pro-upgrade'
-				);
-				?>
-			</p>
-		<?php endif; ?>
-		<?php
-	}
-
-	public function custom_prompt_field_html() {
-		$default_prompt = FEAS_AI_Ajax::get_default_system_prompt();
-		$custom_prompt  = get_option( 'feas_ai_custom_system_prompt', $default_prompt );
-		?>
-		<textarea
-			name="feas_ai_custom_system_prompt"
-			rows="20"
-			class="large-text feas-ai-prompt-editor"
-		><?php echo esc_textarea( $custom_prompt ); ?></textarea>
-		<p class="description">
-			<?php esc_html_e( "Customize the instructions (system prompts) for the AI assistant. If left blank, the plugin's standard prompts will be used.", 'fe-ai-search' ); ?>
-		</p>
 		<?php
 	}
 
@@ -732,10 +812,11 @@ class FEAS_AI_Settings {
 	public function delete_vectors_ui_field_html() {
 		?>
 		<p class="description" style="margin-top:0;">
-			<?php _e( 'This will delete all synced vector data and keyword indexes. AI search will no longer work until you sync again.', 'fe-ai-search' ); ?>
+			<?php esc_html_e( 'This will delete all synced vector data and keyword indexes. '
+			. 'AI search will no longer work until you sync again.', 'fe-ai-search' ); ?>
 		</p>
 		<button type="button" id="feas-ai-delete-vectors-button" class="button button-secondary">
-			<?php _e( 'Delete all synced data', 'fe-ai-search' ); ?>
+			<?php esc_html_e( 'Delete all synced data', 'fe-ai-search' ); ?>
 		</button>
 		<span class="spinner" style="float: none; vertical-align: middle;"></span>
 		<p id="feas-ai-delete-status" style="display: inline-block; margin-left: 10px;"></p>
@@ -754,63 +835,113 @@ class FEAS_AI_Settings {
 				'show_on_archives'   => '1',
 				'show_on_search'     => '1',
 				'post_types'         => ['post' => '1', 'page' => '1'],
-				'include_ids'        => '', // ★ デフォルト値を追加
+				'include_ids'        => '',
 				'exclude_ids'        => '',
 			],
 		];
 		$options = wp_parse_args($options, $defaults);
 		?>
 		<fieldset>
-			<p><label><input type="checkbox" name="feas_ai_display_options[enable_floating_mode]" value="1" <?php checked( $options['enable_floating_mode'] ); ?>> <strong>フローティングチャットを有効にする</strong></label></p>
+			<p>
+				<label>
+					<input
+						type="checkbox"
+						name="feas_ai_display_options[enable_floating_mode]"
+						value="1" <?php checked( $options['enable_floating_mode'] ); ?>
+					>
+					<strong><?php esc_html_e( 'Enable floating chat', 'fe-ai-search' ); ?></strong>
+				</label>
+			</p>
 
 			<div>
 				<p>
-					<div class="option-header">表示デバイス:</div>
-					<label><input type="checkbox" name="feas_ai_display_options[display_on_pc]" value="1" <?php checked( $options['display_on_pc'] ); ?>> PC</label>
-					<label><input type="checkbox" name="feas_ai_display_options[display_on_mobile]" value="1" <?php checked( $options['display_on_mobile'] ); ?>> モバイル</label>
+					<div class="option-header"><?php esc_html_e( 'Display device', 'fe-ai-search' ); ?>:</div>
+					<label>
+						<input
+							type="checkbox"
+							name="feas_ai_display_options[display_on_pc]"
+							value="1" <?php checked( $options['display_on_pc'] ); ?>
+						> <?php esc_html_e( 'PC', 'fe-ai-search' ); ?>
+					</label>
+					<label>
+						<input
+							type="checkbox"
+							name="feas_ai_display_options[display_on_mobile]"
+							value="1" <?php checked( $options['display_on_mobile'] ); ?>
+						> <?php esc_html_e( 'Mobile', 'fe-ai-search' ); ?>
+					</label>
 				</p>
 
 				<p>
-					<div class="option-header">表示するページの条件:</div>
-					<label><input type="checkbox" name="feas_ai_display_options[display_rules][show_on_front_page]" value="1" <?php checked( $options['display_rules']['show_on_front_page'] ); ?>> トップページ</label>
-					<label><input type="checkbox" name="feas_ai_display_options[display_rules][show_on_archives]" value="1" <?php checked( $options['display_rules']['show_on_archives'] ); ?>> アーカイブページ (一覧)</label>
-					<label><input type="checkbox" name="feas_ai_display_options[display_rules][show_on_search]" value="1" <?php checked( $options['display_rules']['show_on_search'] ); ?>> 検索結果ページ</label>
+					<div class="option-header">
+						<?php esc_html_e( 'Conditions for Displaying the Page', 'fe-ai-search' ); ?>:
+					</div>
+					<label>
+						<input
+							type="checkbox"
+							name="feas_ai_display_options[display_rules][show_on_front_page]"
+							value="1" <?php checked( $options['display_rules']['show_on_front_page'] ); ?>
+						> <?php esc_html_e( 'Home', 'fe-ai-search' ); ?>
+					</label>
+					<label>
+						<input
+							type="checkbox"
+							name="feas_ai_display_options[display_rules][show_on_archives]"
+							value="1" <?php checked( $options['display_rules']['show_on_archives'] ); ?>
+						> <?php esc_html_e( 'Archive', 'fe-ai-search' ); ?>
+					</label>
+					<label>
+						<input
+							type="checkbox"
+							name="feas_ai_display_options[display_rules][show_on_search]"
+							value="1" <?php checked( $options['display_rules']['show_on_search'] ); ?>
+						> <?php esc_html_e( 'Search Results', 'fe-ai-search' ); ?>
+					</label>
 				</p>
 
 				<p>
-					<div class="option-header">以下の投稿タイプの個別ページに表示:</div>
+					<div class="option-header">
+						<?php esc_html_e( 'Display on individual pages of the following post types', 'fe-ai-search' ); ?>:
+					</div>
 					<?php
 					$all_post_types = get_post_types( ['public' => true], 'objects' );
 					foreach ($all_post_types as $pt) {
 						if ('attachment' === $pt->name) continue;
-						echo '<label style="margin-right: 15px;"><input type="checkbox" name="feas_ai_display_options[display_rules][post_types]['.esc_attr($pt->name).']" value="1" '.checked(!empty($options['display_rules']['post_types'][$pt->name]), true, false).'> '.esc_html($pt->label).'</label>';
+						echo '<label style="margin-right: 15px;">
+								<input
+								type="checkbox"
+								name="feas_ai_display_options[display_rules][post_types]['.esc_attr($pt->name).']"
+								value="1" '
+								.checked(!empty($options['display_rules']['post_types'][$pt->name]), true, false)
+								.'> '.esc_html($pt->label)
+								.'</label>';
 					}
 					?>
 				</p>
 
 				<div>
 				<p>
-					<div class="option-header">個別のIDによる上書きルール:</div>
-					<label for="feas_ai_include_ids">これらの投稿IDでのみ表示する:</label>
+					<div class="option-header"><?php esc_html_e( 'Overwrite rules by individual ID', 'fe-ai-search' ); ?>:</div>
+					<label for="feas_ai_include_ids"><?php esc_html_e( 'Display only with these post IDs', 'fe-ai-search' ); ?>:</label>
 					<input
 						type="text"
 						id="feas_ai_include_ids"
 						name="feas_ai_display_options[display_rules][include_ids]"
 						value="<?php echo esc_attr( $options['display_rules']['include_ids'] ); ?>"
 						class="regular-text"
-						placeholder="例: 10, 25, 103"
+						placeholder="<?php esc_attr_e( 'e.g.', 'fe-ai-search' ); ?> 10, 25, 103"
 					>
-					<p class="description">ここにIDを入力すると、他の表示ルールは無視されます。</p>
+					<p class="description"><?php esc_html_e( 'If you enter the ID here, other display rules will be ignored.', 'fe-ai-search' ); ?></p>
 				</p>
 				<p>
-					<label for="feas_ai_exclude_ids">これらの投稿IDでは表示しない:</label>
+					<label for="feas_ai_exclude_ids"><?php esc_html_e( 'Do not display with these post IDs.', 'fe-ai-search' ); ?>:</label>
 					<input
 						type="text"
 						id="feas_ai_exclude_ids"
 						name="feas_ai_display_options[display_rules][exclude_ids]"
 						value="<?php echo esc_attr( $options['display_rules']['exclude_ids'] ); ?>"
 						class="regular-text"
-						placeholder="例: 15, 30"
+						placeholder="<?php esc_attr_e( 'e.g.', 'fe-ai-search' ); ?> 15, 30"
 					>
 				</p>
 				</div>
@@ -824,7 +955,7 @@ class FEAS_AI_Settings {
 		$options = get_option( 'feas_ai_display_options', [] );
 		?>
 		<fieldset>
-			<label for="feas_fullscreen_page_id">チャット専用ページを選択</label>
+			<label for="feas_fullscreen_page_id"><?php esc_html_e( 'Select Chat-Only Page', 'fe-ai-search' ); ?></label>
 			<?php
 			wp_dropdown_pages([
 				'name'              => 'feas_ai_display_options[fullscreen_page_id]',
@@ -833,7 +964,9 @@ class FEAS_AI_Settings {
 				'option_none_value' => '0',
 			]);
 			?>
-			<p class="description">ここで選択した固定ページにアクセスすると、直接全画面のチャットUIが表示されます。</p>
+			<p class="description">
+				<?php esc_html_e( 'When you access the selected static page here, the full-screen chat UI will be displayed directly.', 'fe-ai-search' ); ?>
+			</p>
 		</fieldset>
 
 		<?php
@@ -842,7 +975,9 @@ class FEAS_AI_Settings {
 	// 3. 埋め込みモード設定
 	public function display_embed_field_html() {
 		?>
-		<p class="description">以下のショートコードを、チャットを表示したいページのコンテンツ内に貼り付けてください。</p>
+		<p class="description">
+			<?php esc_html_e( 'Please paste the following shortcode into the content of the page where you want to display the chat.', 'fe-ai-search' ); ?>
+		</p>
 		<code>[fe-ai-search]</code>
 		<?php
 	}
@@ -899,11 +1034,10 @@ class FEAS_AI_Settings {
 				value="<?php echo esc_attr( $options['key_color'] ?? '#0073aa' ); ?>"
 				class="feas-ai-color-picker"
 			>
-			<p class="description">チャットバブルやユーザーの吹き出しなどの基本色を選択します。</p>
+			<p class="description"><?php esc_html_e( 'Select the basic colors for chat bubbles and user speech balloons.', 'fe-ai-search' ); ?></p>
 		</p>
 
 		<script>
-			// カラーピッカーを初期化
 			jQuery(document).ready(function($){
 				$('.feas-ai-color-picker').wpColorPicker();
 			});
@@ -938,7 +1072,7 @@ class FEAS_AI_Settings {
 		<?php
 	}
 
-	// 5. 上級者向け設定
+	// Advanced Settings
 	public function display_advanced_field_html() {
 		$options = get_option( 'feas_ai_display_options', [] );
 
@@ -1062,13 +1196,9 @@ class FEAS_AI_Settings {
 	}
 
 	public function sync_post_types_field_html() {
-		// サイトに登録されている、検索に適した投稿タイプを取得
 		$post_types = get_post_types( array('public' => true), 'objects' );
-
-		// 不要な投稿タイプを除外
 		$excluded_post_types = array('attachment');
 
-		// DBに保存されている設定値を取得（デフォルトは投稿と固定ページ）
 		$saved_post_types = get_option( 'feas_ai_sync_post_types', array('post', 'page') );
 		if ( ! is_array($saved_post_types) ) {
 			$saved_post_types = array('post', 'page');
@@ -1096,12 +1226,12 @@ class FEAS_AI_Settings {
 	}
 
 	/**
-	 * 入力値に含まれる全角数字などを半角に変換し、不要な文字を削除する
-	 * @param string $input 保存される前の値
-	 * @return string サニタイズ後の値
+	 * Convert full-width numbers and other characters in the input value to half-width, and remove unnecessary characters.
+	 * @param string $input Value before being saved
+	 * @return string Value after sanitization
 	 */
 	public function sanitize_numeric_string( $input ) {
-		// 全角の数字・スペース・カンマを半角に変換
+		// Convert full-width numbers, spaces, and commas to half-width.
 		$sanitized_input = mb_convert_kana( $input, 'ns' );
 		$sanitized_input = str_replace( '，', ',', $sanitized_input );
 		$sanitized_input = preg_replace( '/[^0-9,]/', '', $sanitized_input );
@@ -1110,16 +1240,16 @@ class FEAS_AI_Settings {
 	}
 
 	/**
-	 * 表示設定オプションを保存する前にサニタイズする
-	 * @param array $input 保存される前のオプション配列
-	 * @return array サニタイズ後のオプション配列
+	 * Sanitize before saving display settings options
+	 * @param array $input Option array before being saved
+	 * @return array Option array after sanitization
 	 */
 	public function sanitize_display_options( $input ) {
 		$new_input = $input;
 
-		// --- Include/Exclude IDの全角数字を半角に変換 ---
+		// Convert full-width numbers to half-width.
 		if ( isset( $new_input['display_rules']['include_ids'] ) ) {
-			// 'n' オプションは数字を半角に変換
+			// 'n' option converts numbers to half-width.
 			$new_input['display_rules']['include_ids'] = mb_convert_kana( $new_input['display_rules']['include_ids'], 'n' );
 		}
 		if ( isset( $new_input['display_rules']['exclude_ids'] ) ) {

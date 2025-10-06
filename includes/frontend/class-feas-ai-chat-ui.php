@@ -62,7 +62,6 @@ class FEAS_AI_Chat_UI {
 		$fullscreen_page_id = (int) ($options['fullscreen_page_id'] ?? 0);
 		$is_fullscreen_page = ( $fullscreen_page_id > 0 && is_page($fullscreen_page_id) );
 
-		// 1. 全画面モード専用ページか？
 		if ( $is_fullscreen_page ) {
 			self::$is_rendered = true;
 			$this->assets_handler->enqueue_assets();
@@ -70,43 +69,53 @@ class FEAS_AI_Chat_UI {
 			return;
 		}
 
-		// 2. フローティングモードが有効か？
 		if ( empty($options['enable_floating_mode']) ) {
 			return;
 		}
 
-		// 3. デバイスの表示設定は？
+		if ( ! empty( $options['require_login'] ) && ! is_user_logged_in() ) {
+			return;
+		}
+
 		$is_mobile = wp_is_mobile();
 		if ( ($is_mobile && empty($options['display_on_mobile'])) || (!$is_mobile && empty($options['display_on_pc'])) ) {
 			return;
 		}
 
-		// 4. 表示ルールを判定
 		$rules = $options['display_rules'] ?? [];
-		$should_display = false; // デフォルトは非表示
+		$should_display = false;
 
-		// ▼▼▼ このブロックにロジックを統一 ▼▼▼
 		$include_ids = array_filter( array_map('intval', explode(',', $rules['include_ids'] ?? '')) );
 		$exclude_ids = array_filter( array_map('intval', explode(',', $rules['exclude_ids'] ?? '')) );
 		$current_id = get_the_ID();
 
 		if ( ! empty( $include_ids ) ) {
-			// Include IDが最優先
+			// Include ID takes priority
 			$should_display = ( is_singular() && in_array( $current_id, $include_ids ) );
 		} else {
-			// 基本ルールと投稿タイプルールで判定
+			// Determined by basic rules and post type rules
 			if ( is_front_page() && !empty($rules['show_on_front_page']) ) $should_display = true;
 			if ( is_archive() && !empty($rules['show_on_archives']) ) $should_display = true;
 			if ( is_search() && !empty($rules['show_on_search']) ) $should_display = true;
 			if ( is_singular() && !empty($rules['post_types'][get_post_type()]) ) $should_display = true;
 		}
 
-		// Exclude IDが最終決定権を持つ
+		// Exclude ID has the final say
 		if ( is_singular() && in_array( $current_id, $exclude_ids ) ) {
 			$should_display = false;
 		}
-		// ▲▲▲ ここまで ▲▲▲
 
+		/**
+		 * Filters the final boolean decision on whether to display the floating chat UI.
+		 *
+		 * This hook acts as a final override, allowing developers to implement complex
+		 * display logic that cannot be configured through the settings UI, such as
+		 * showing the chat only to logged-in users.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param bool $should_display Whether the chat UI should be displayed.
+		 */
 		if ( apply_filters( 'feas_ai_should_display_chat', $should_display ) ) {
 			self::$is_rendered = true;
 			$this->assets_handler->enqueue_assets();

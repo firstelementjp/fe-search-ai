@@ -10,11 +10,15 @@
  * Domain Path: /languages/
  */
 
+ini_set('display_errors', 1); // ▼▼▼ この2行を追加 ▼▼▼
+ error_reporting(E_ALL);
+
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 define( 'FEAS_AI_VERSION', '1.0.0' );
 define( 'FEAS_AI_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FEAS_AI_PLUGIN_FILE', __FILE__ );
+define( 'FEAS_AI_PRO_URL', 'https://fe-ai-search.com/pricing' );
 
 if ( file_exists( FEAS_AI_PLUGIN_DIR . 'vendor/autoload.php' ) ) {
     require_once FEAS_AI_PLUGIN_DIR . 'vendor/autoload.php';

@@ -61,6 +61,7 @@ class FEAS_AI_Admin {
 			FEAS_AI_VERSION
 		);
 
+		wp_enqueue_script( 'wp-color-picker' );
 		wp_enqueue_script(
 			'codemirror-js',
 			'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.js',
@@ -78,11 +79,10 @@ class FEAS_AI_Admin {
 		wp_enqueue_script(
 			'feas-ai-admin-sync',
 			plugin_dir_url( FEAS_AI_PLUGIN_FILE ) . 'assets/js/admin-scripts.js',
-			array('jquery'),
+			[ 'wp-i18n', 'codemirror-js', 'wp-color-picker' ],
 			FEAS_AI_VERSION,
 			true
 		);
-		wp_enqueue_script( 'wp-color-picker' );
 
 		wp_localize_script(
 			'feas-ai-admin-sync',
