@@ -1,7 +1,22 @@
-document.addEventListener('DOMContentLoaded', () => {
-	const { __, _x, _n, _nx } = wp.i18n;
+/**
+ * FE AI Search Admin Scripts
+ *
+ * This file handles all the JavaScript functionality for the plugin's admin
+ * settings page, including AJAX-based synchronization, API tests, and UI interactions
+ * like tab navigation and CodeMirror initialization.
+ *
+ * @package    fe-ai-search
+ * @since      1.0.0
+ */
 
-	// --- DOM Elements ---
+document.addEventListener('DOMContentLoaded', () => {
+	// Initialize WordPress internationalization functions.
+	const { __ } = window.wp.i18n;
+
+	// ==========================================================================
+	// DOM Element Caching
+	// ==========================================================================
+
 	const startBtn = document.querySelector('#feas-ai-start-sync');
 	const progressContainer = document.querySelector('#feas-ai-progress-container');
 	const progressBar = document.querySelector('#feas-ai-progress-bar');
@@ -10,10 +25,24 @@ document.addEventListener('DOMContentLoaded', () => {
 	const statusText = statusDiv?.querySelector('.status-text');
 	const deleteButton = document.querySelector('#feas-ai-delete-vectors-button');
 	const deleteStatus = document.querySelector('#feas-ai-delete-status');
+	const tabsWrapper = document.querySelector('.nav-tab-wrapper');
 
-	let postIDsToSync = [];
+	// ==========================================================================
+	// Variables
+	// ==========================================================================
 
-	// --- Helper: Ajax wrapper using fetch ---
+	let postIDsToSync = []; // Holds the list of post IDs for the batch sync process.
+
+	// ==========================================================================
+	// Helper Functions
+	// ==========================================================================
+
+	/**
+	 * A simple wrapper for WordPress AJAX calls using the Fetch API.
+	 * @param {string} action - The wp_ajax_{action} hook to target.
+	 * @param {object} data - Additional data to send in the request body.
+	 * @returns {Promise<object>} - A promise that resolves to the JSON response.
+	 */
 	async function wpPost(action, data = {}) {
 		const formData = new URLSearchParams({ action, ...data });
 		const response = await fetch(ajaxurl, {
@@ -24,7 +53,11 @@ document.addEventListener('DOMContentLoaded', () => {
 		return response.json();
 	}
 
-	// --- Sync Start Button Handler ---
+	// ==========================================================================
+	// Manual Synchronization
+	// ==========================================================================
+
+	// Handles the initial click of the "Start Syncing" button.
 	startBtn?.addEventListener('click', async e => {
 		e.preventDefault();
 		if (!confirm(__('Are you sure you want to delete all existing indexes and rebuild them?', 'fe-ai-search'))) return;
@@ -37,29 +70,36 @@ document.addEventListener('DOMContentLoaded', () => {
 		progressBar.textContent = '0%';
 
 		try {
+			// Get the list of post IDs to sync.
 			const response = await wpPost('feas_ai_start_sync', { nonce: feas_ai_sync_obj.nonce });
-			if (!response.success) throw new Error();
+			if (!response.success) throw new Error('Failed to start sync.');
 
-			const { total_pages, total_posts, post_ids } = response.data;
+			const { total_pages, total_posts, post_ids, batch_size } = response.data;
 			postIDsToSync = post_ids;
 
 			if (total_pages > 0) {
-				processBatch(1, total_pages, total_posts);
+				// Start the recursive batch processing.
+				processBatch(1, total_pages, total_posts, batch_size);
 			} else {
 				statusText.textContent = __('There are no posts to sync.', 'fe-ai-search');
 				statusSpinner.style.display = 'none';
 				startBtn.disabled = false;
 			}
-		} catch {
+		} catch (error) {
 			statusText.innerHTML = `<span style="color:red;">${__('Error: Failed to communicate with the server.', 'fe-ai-search')}</span>`;
 			statusSpinner.style.display = 'none';
 			startBtn.disabled = false;
 		}
 	});
 
-	// --- Batch Processing Function ---
-	async function processBatch(currentPage, totalPages, totalPosts) {
-		const batchSize = 100;
+	/**
+	 * Recursively processes one batch of posts at a time.
+	 * @param {number} currentPage - The current batch number to process.
+	 * @param {number} totalPages - The total number of batches.
+	 * @param {number} totalPosts - The total number of posts to sync.
+	 */
+	async function processBatch(currentPage, totalPages, totalPosts, batch_size) {
+		// const batchSize = 100; // This should match the PHP setting.
 		const processed = Math.min((currentPage - 1) * batchSize, totalPosts);
 		const progress = totalPosts ? Math.round((processed / totalPosts) * 100) : 0;
 
@@ -79,6 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				if (currentPage < totalPages) {
 					await processBatch(currentPage + 1, totalPages, totalPosts);
 				} else {
+					// Final batch is complete.
 					progressBar.style.width = '100%';
 					progressBar.textContent = '100%';
 					statusText.innerHTML = `<strong style="color:green;">${__('Synchronization complete!', 'fe-ai-search')} (${totalPosts} ${__('items', 'fe-ai-search')})</strong>`;
@@ -87,16 +128,20 @@ document.addEventListener('DOMContentLoaded', () => {
 					wpPost('feas_ai_update_sync_timestamp', { nonce: feas_ai_sync_obj.nonce });
 				}
 			} else {
-				throw new Error();
+				throw new Error(response.data.message || 'Batch processing failed.');
 			}
-		} catch {
+		} catch (error) {
 			statusText.innerHTML = `<span style="color:red;">${__('Error: A problem occurred while processing batch', 'fe-ai-search')} ${currentPage}.</span>`;
 			statusSpinner.style.display = 'none';
 			startBtn.disabled = false;
 		}
 	}
 
-	// --- API Key Test Buttons ---
+	// ==========================================================================
+	// UI Interactions
+	// ==========================================================================
+
+	// API Key Test Buttons
 	document.querySelectorAll('.feas-ai-test-api').forEach(button => {
 		button.addEventListener('click', async () => {
 			const provider = button.dataset.provider;
@@ -128,16 +173,12 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	});
 
-	// --- Tab Navigation ---
-	const tabsWrapper = document.querySelector('.nav-tab-wrapper');
+	// Tab Navigation
 	if (tabsWrapper) {
 		const tabContents = document.querySelectorAll('.tab-content');
-
-		// 初期状態では、すべてのコンテンツを非表示
 		tabContents.forEach(content => content.style.display = 'none');
 
 		const activateTab = (targetId) => {
-			// targetIdが不正な場合は何もしない
 			if (!targetId || !document.querySelector(targetId)) return;
 
 			const targetTab = tabsWrapper.querySelector(`a[href="${targetId}"]`);
@@ -149,29 +190,25 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (targetTab && targetContent) {
 				targetTab.classList.add('nav-tab-active');
 				targetContent.style.display = 'block';
-
-				// 表示されたタブ内のCodeMirrorを初期化・リフレッシュ
 				targetContent.querySelectorAll('.feas-ai-prompt-editor').forEach(initializeCodeMirror);
 			}
 
 			if (history.pushState) {
-				history.pushState(null, null, targetId);
+				history.pushState(null, '', targetId);
 			} else {
 				location.hash = targetId;
 			}
 		};
 
-		// ▼▼▼ イベント委譲を使って、親要素でクリックを監視する ▼▼▼
+		// Use event delegation to handle clicks on tab links.
 		tabsWrapper.addEventListener('click', e => {
-			// クリックされたのが .nav-tab クラスを持つ要素か確認
 			if (e.target.classList.contains('nav-tab')) {
 				e.preventDefault();
 				activateTab(e.target.getAttribute('href'));
 			}
 		});
 
-		// ページ読み込み時の初期タブ表示
-		// DOMの準備が完全に整った後に実行するため、少し遅延させる
+		// Activate the correct tab on page load (based on URL hash).
 		setTimeout(() => {
 			const hash = window.location.hash;
 			if (hash && tabsWrapper.querySelector(`a[href="${hash}"]`)) {
@@ -183,11 +220,9 @@ document.addEventListener('DOMContentLoaded', () => {
 				}
 			}
 		}, 0);
-	} else {
-		console.error('Tab wrapper (.nav-tab-wrapper) not found!');
 	}
 
-	// --- Delete Synced Data Button ---
+	// Delete Synced Data Button
 	deleteButton?.addEventListener('click', async () => {
 		if (!confirm(__('Are you sure you want to delete all synced data? This action cannot be undone.', 'fe-ai-search'))) return;
 
@@ -203,10 +238,9 @@ document.addEventListener('DOMContentLoaded', () => {
 				deleteStatus.textContent = response.data;
 				setTimeout(() => location.reload(), 1000);
 			} else {
-				deleteStatus.style.color = 'red';
-				deleteStatus.textContent = __('An error occurred.', 'fe-ai-search');
+				throw new Error(response.data.message || 'Deletion failed.');
 			}
-		} catch {
+		} catch (error) {
 			deleteStatus.style.color = 'red';
 			deleteStatus.textContent = __('A communication error has occurred.', 'fe-ai-search');
 		} finally {
@@ -215,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 	});
 
-	// --- Accordion UI Logic ---
+	// Accordion UI Logic
 	document.querySelectorAll('.feas-ai-accordion-wrapper').forEach(wrapper => {
 		wrapper.querySelectorAll('.accordion-title').forEach(title => {
 			title.addEventListener('click', e => {
@@ -235,26 +269,33 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	});
 
-	// --- CodeMirror Initialization ---
+	// "Change Model" Link Handler
+	document.querySelectorAll('.feas-ai-change-model-link').forEach(link => {
+		link.addEventListener('click', e => {
+			e.preventDefault();
+			const targetTabId = link.getAttribute('href');
+			const targetTab = document.querySelector(`.nav-tab-wrapper a.nav-tab[href="${targetTabId}"]`);
+			if (targetTab) {
+				targetTab.click();
+			}
+		});
+	});
+
+	// CodeMirror Initialization
 	function initializeCodeMirror(textarea) {
-		if (textarea.dataset.codemirrorInitialized) return;
+		if (!textarea || textarea.dataset.codemirrorInitialized) return;
+
+		const isDisabled = textarea.dataset.disabled === 'true';
 		const editor = CodeMirror.fromTextArea(textarea, {
 			lineNumbers: true,
 			mode: 'markdown',
-			lineWrapping: true
+			lineWrapping: true,
+			readOnly: isDisabled
 		});
-		textarea.dataset.codemirrorInitialized = true;
-		setTimeout(() => editor.refresh(), 1);
-	}
 
-	document.querySelectorAll('.feas-ai-prompt-editor').forEach(textarea => {
-		const tabContent = textarea.closest('.tab-content');
-		if (textarea.offsetParent !== null) {
-			initializeCodeMirror(textarea);
-		} else if (tabContent) {
-			const tabId = tabContent.id;
-			const tab = document.querySelector(`a[href="#${tabId}"]`);
-			tab?.addEventListener('click', () => initializeCodeMirror(textarea), { once: true });
+		if (isDisabled) {
+			editor.getWrapperElement().style.backgroundColor = '#f0f0f0';
 		}
-	});
+		textarea.dataset.codemirrorInitialized = 'true';
+	}
 });

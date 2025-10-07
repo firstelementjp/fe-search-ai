@@ -1,77 +1,130 @@
-.wp-list-table th {
-	padding: 0.5rem 1rem;
-}
-.form-table td p {
-	margin: 0 0 1rem;
-}
-.form-table td label,
-.form-table td fieldset label {
-	margin: 0 0 0.3rem !important;
-	display: block;
-}
+/**
+ * FE AI Search - Admin Styles
+ *
+ * This file contains all the custom styles for the plugin's admin settings page.
+ *
+ * @package    fe-ai-search
+ * @since      1.0.0
+ */
+
+/* ==========================================================================
+   General Typography & Layout
+   ========================================================================== */
+
 h4 {
 	margin: 1rem 0 0.5rem;
 	font-size: 1.1rem;
 }
+
 h5 {
 	margin: 1rem 0 0.5rem;
 	font-size: 1rem;
 }
+
 strong {
 	margin: 1rem 0 0.5rem;
 }
+
 p {
 	margin: 0.5rem 0 1rem;
 }
+
 pre {
 	margin: 0.5rem 0;
 }
+
 code {
 	display: block;
 	margin: 0.5rem 0;
-	padding: 1rem;
-	border-radius: 5px;
+	padding: 0.5rem;
 	background-color: #d4dbe6;
+	border-radius: 5px;
 }
+
 hr {
 	margin: 2rem 0 1rem;
 }
-textarea {
-	padding: 8px;
+
+/* ==========================================================================
+   Form & Table Styles
+   ========================================================================== */
+
+.wp-list-table th {
+	padding: 0.5rem 1rem;
 }
-.CodeMirror {
-	height: 500px;
+
+.form-table td p {
+	margin: 0 0 1rem;
 }
+
+.form-table td label,
+.form-table td fieldset label {
+	display: block;
+	margin: 0 0 0.3rem !important;
+}
+
 .form-table .wp-picker-input-wrap label {
 	display: inline;
 }
+
+textarea {
+	padding: 8px;
+}
+
+/* ==========================================================================
+   Specific Components
+   ========================================================================== */
+
+/* CodeMirror Editor */
+.CodeMirror {
+	height: 500px;
+}
+
+/* Tab Navigation */
 .feas-ai-tabs-wrapper .tab-content {
 	display: none;
 	margin-top: 1em;
 }
+
 .tab-content {
 	display: none;
 	padding-top: 1.5em;
 }
+
 .tab-content.active {
 	display: block;
 }
+
+/* Option Headers within fieldsets */
 .option-header {
-	font-weight: bold;
 	margin: 1rem 0 0.5rem;
+	font-weight: bold;
 }
+
+/* ==========================================================================
+   Icons & Utilities
+   ========================================================================== */
+
+/* License Warning Icon */
 a:has(.dashicons-warning) span {
 	color: #f59e0b;
 }
+
 .dashicon-warning {
+	margin-left: 3px;
 	color: #f59e0b;
 	font-size: 16px;
 	vertical-align: middle;
-	margin-left: 3px;
 }
+
+/* Spinner Animation Class */
 .spin {
 	animation: spin 1s infinite linear;
 }
+
+/* ==========================================================================
+   Keyframe Animations
+   ========================================================================== */
 
 @keyframes spin {
 	from {

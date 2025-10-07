@@ -112,11 +112,12 @@ class FEAS_AI_Chat_Handler {
 	public function stream_chat_completion( $question, $context_chunks, $history = array(), $provider ) {
 
 		/**
-		 * An action hook for inserting custom AI provider processing.
-		 * Hook Name: feas_ai_stream_for_{provider_slug}
+		 * Fires before the default stream completion handlers.
+		 * Allows Pro add-on or other plugins to implement their own handlers.
+		 * The hooked function should call exit() to prevent default execution.
 		 *
 		 * @param string $question       User's question.
-		 * @param array  $context_chunks Chunk of related information.
+		 * @param array  $context_chunks Relevant context chunks.
 		 * @param array  $history        Conversation history.
 		 */
 		do_action( "feas_ai_stream_for_{$provider}", $question, $context_chunks, $history );
@@ -129,6 +130,7 @@ class FEAS_AI_Chat_Handler {
 				$this->stream_completion_for_claude( $question, $context_chunks, $history );
 				break;
 			case 'openai':
+			default:
 				$this->stream_completion_for_openai( $question, $context_chunks, $history );
 				break;
 		}
@@ -138,8 +140,15 @@ class FEAS_AI_Chat_Handler {
 	 * Streaming processing dedicated to OpenAI
 	 */
 	private function stream_completion_for_openai( $question, $context_chunks, $history ) {
-		$api_key = get_option( 'feas_ai_openai_api_key' );
-		if ( empty( $api_key ) ) {
+		if ( 'openai_compatible' === $provider ) {
+			$api_url = get_option( 'feas_ai_openai_compatible_endpoint' );
+			$api_key = get_option( 'feas_ai_openai_api_key' );
+		} else {
+			$api_url = 'https://api.openai.com/v1/chat/completions';
+			$api_key = get_option( 'feas_ai_openai_api_key' );
+		}
+
+		if ( empty( $api_key ) || empty($api_url) ) {
 			echo "data: " . json_encode(['text' => __( 'Error: OpenAI API key not set.', 'fe-ai-search' )]) . "\n\n";
 			echo "data: [DONE]\n\n";
 			flush();
@@ -160,7 +169,7 @@ class FEAS_AI_Chat_Handler {
 		];
 		$ch = curl_init();
 
-		curl_setopt( $ch, CURLOPT_URL, 'https://api.openai.com/v1/chat/completions' );
+		curl_setopt( $ch, CURLOPT_URL, $api_url );
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
 		curl_setopt( $ch, CURLOPT_POST, true );
 		curl_setopt( $ch, CURLOPT_POSTFIELDS, json_encode( $body ) );
@@ -427,7 +436,7 @@ class FEAS_AI_Chat_Handler {
 	/**
 	 * A common function to assemble prompts and messages array
 	 */
-	private function build_prompt_messages( $question, $context_chunks, $history, $for_claude = false ) {
+	public static function build_prompt_messages( $question, $context_chunks, $history, $for_claude = false ) {
 		$context_str = '';
 		$provider = get_option( 'feas_ai_chat_provider', 'openai' );
 
@@ -563,63 +572,90 @@ class FEAS_AI_Chat_Handler {
 			wp_send_json_error( __( 'Provider or API key missing.', 'fe-ai-search' ) );
 		}
 
-		$is_valid = false;
-		$error_message = '';
+		$result = null;
 
-		switch ($provider) {
-			case 'openai':
-				$response = wp_remote_get('https://api.openai.com/v1/models', [
-					'headers' => ['Authorization' => 'Bearer ' . $api_key]
-				]);
-				if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
-					$is_valid = true;
-				} else {
-					$error_message = is_wp_error($response) ? $response->get_error_message() : __( 'Authentication failed.', 'fe-ai-search' );
-				}
-				break;
+		/**
+		 * Allows add-ons to handle API key tests for custom providers.
+		 * The hooked function should return an array ['is_valid' => bool, 'message' => string]
+		 * or null to proceed to default handlers.
+		 *
+		 * @param array|null $result   The result array or null.
+		 * @param string     $provider The provider slug being tested.
+		 * @param string     $api_key  The API key being tested.
+		 */
+		$result = apply_filters( 'feas_ai_handle_custom_api_test', $result, $provider, $api_key );
 
-			case 'anthropic':
-				$response = wp_remote_post('https://api.anthropic.com/v1/messages', [
-					'headers' => [
-						'x-api-key' => $api_key,
-						'anthropic-version' => '2023-06-01',
-						'Content-Type' => 'application/json'
-					],
-					'body' => json_encode([
-						'model' => 'claude-3-haiku-20240307',
-						'max_tokens' => 1,
-						'messages' => [['role' => 'user', 'content' => 'Hello']]
-					])
-				]);
-				// Claude may return 200 even for invalid keys, so we determine this by the error type in the body.
-				if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 401) {
-					 $error_message = __( '401 Unauthorized', 'fe-ai-search' );
-				} else {
-					 $is_valid = true; // Any response other than 401 is likely to mean the key is valid
-				}
-				break;
+		if ( null === $result ) {
+			$is_valid = false;
+			$error_message = '';
 
-			case 'google':
-			// Call a free API to get a list of models
-			$api_url = 'https://generativelanguage.googleapis.com/v1beta/models?key=' . $api_key;
-			$response = wp_remote_get($api_url);
+			switch ($provider) {
+				case 'openai':
+					$response = wp_remote_get('https://api.openai.com/v1/models', [
+						'headers' => ['Authorization' => 'Bearer ' . $api_key]
+					]);
+					if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
+						$is_valid = true;
+					} else {
+						$error_message = is_wp_error($response) ? $response->get_error_message() : __( 'Authentication failed.', 'fe-ai-search' );
+					}
+					break;
 
-			if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
-				$is_valid = true;
-			} else {
-				$error_message =  __( 'Authentication failed.', 'fe-ai-search' );
-				if (!is_wp_error($response)) {
-					$body = json_decode(wp_remote_retrieve_body($response), true);
-					$error_message = $body['error']['message'] ?? $error_message;
-				}
+				case 'anthropic':
+					$response = wp_remote_post('https://api.anthropic.com/v1/messages', [
+						'headers' => [
+							'x-api-key' => $api_key,
+							'anthropic-version' => '2023-06-01',
+							'Content-Type' => 'application/json'
+						],
+						'body' => json_encode([
+							'model' => 'claude-3-haiku-20240307',
+							'max_tokens' => 1,
+							'messages' => [['role' => 'user', 'content' => 'Hello']]
+						])
+					]);
+					// Claude may return 200 even for invalid keys, so we determine this by the error type in the body.
+					if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 401) {
+						$error_message = __( '401 Unauthorized', 'fe-ai-search' );
+					} else {
+						$is_valid = true; // Any response other than 401 is likely to mean the key is valid
+					}
+					break;
+
+				case 'google':
+					// Call a free API to get a list of models
+					$api_url = 'https://generativelanguage.googleapis.com/v1beta/models?key=' . $api_key;
+					$response = wp_remote_get($api_url);
+
+					if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
+						$is_valid = true;
+					} else {
+						$error_message =  __( 'Authentication failed.', 'fe-ai-search' );
+						if (!is_wp_error($response)) {
+							$body = json_decode(wp_remote_retrieve_body($response), true);
+							$error_message = $body['error']['message'] ?? $error_message;
+						}
+					}
+					break;
+
+				case 'deepseek':
+					$response = wp_remote_get('https://api.deepseek.com/models', [
+						'headers' => ['Authorization' => 'Bearer ' . $api_key]
+					]);
+					if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
+						$is_valid = true;
+					} else {
+						$error_message = is_wp_error($response) ? $response->get_error_message() : __( 'Authentication failed.', 'fe-ai-search' );
+					}
+					break;
 			}
-			break;
+			$result = ['is_valid' => $is_valid, 'message' => $error_message];
 		}
 
-		if ($is_valid) {
+		if ( $result['is_valid'] ) {
 			wp_send_json_success('<span style="color: green;">✔ ' . __( 'Connection successful', 'fe-ai-search' ) . '</span>' );
 		} else {
-			wp_send_json_error('<span style="color: red;">✖ ' . __( 'Connection failed', 'fe-ai-search' ) . ': ' . $error_message . '</span>');
+			wp_send_json_error('<span style="color: red;">✖ ' . __( 'Connection failed', 'fe-ai-search' ) . ': ' . $result['message'] . '</span>');
 		}
 	}
 

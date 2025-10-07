@@ -32,6 +32,7 @@ use WP_Error;
 class FEAS_AI_Sync_Handler {
 
 	private $segmenter;
+	private const BATCH_SIZE = 10;
 
 	public function __construct() {
 
@@ -102,13 +103,13 @@ class FEAS_AI_Sync_Handler {
 		$all_post_ids = get_posts( $args );
 		$total_posts = count($all_post_ids);
 
-		$batch_size = 10;
-		$total_pages = ceil( $total_posts / $batch_size );
+		$total_pages = ceil( $total_posts / self::BATCH_SIZE );
 
 		wp_send_json_success( [
 			'total_pages' => $total_pages,
 			'total_posts' => $total_posts,
 			'post_ids'    => $all_post_ids, // Pass the list of IDs to be processed to JS
+			'batch_size'  => self::BATCH_SIZE,
 		] );
 	}
 
@@ -119,7 +120,8 @@ class FEAS_AI_Sync_Handler {
 		$post_ids_json = isset($_POST['post_ids']) ? stripslashes($_POST['post_ids']) : '[]';
 		$post_ids = json_decode($post_ids_json, true);
 
-		$batch_size = 10;
+		$offset = ($page - 1) * self::BATCH_SIZE;
+		$batch_ids = array_slice($post_ids, $offset, self::BATCH_SIZE);
 
 		// Extract the part of this batch based on the ID list passed from JS
 		$offset = ($page - 1) * $batch_size;
@@ -223,9 +225,12 @@ class FEAS_AI_Sync_Handler {
 
 		if ( empty( $valid_keywords ) ) return array();
 
+		// Polylangの場合: pll_current_language() で現在の言語コードを取得
+		$current_lang = function_exists('pll_current_language') ? pll_current_language() : get_locale();
+
 		$placeholders = implode( ', ', array_fill( 0, count( $valid_keywords ), '%s' ) );
-		$sql = "SELECT DISTINCT `vector_id` FROM `{$index_table}` WHERE `keyword` IN ( {$placeholders} ) LIMIT 500";
-		$vector_ids = $wpdb->get_col( $wpdb->prepare( $sql, $valid_keywords ) );
+		$sql = "SELECT DISTINCT `vector_id` FROM `{$index_table}` WHERE `lang` = %s AND `keyword` IN ( {$placeholders} ) LIMIT 500";
+		$vector_ids = $wpdb->get_col( $wpdb->prepare( $sql, $current_lang, $valid_keywords ) );
 
 		if ( empty( $vector_ids ) ) return array();
 

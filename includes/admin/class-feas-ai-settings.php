@@ -470,12 +470,12 @@ class FEAS_AI_Settings {
 				<strong><?php esc_html_e( 'Model', 'fe-ai-search' ); ?>:</strong> <?php echo esc_html( $model_to_display ); ?>
 				<?php if ( class_exists( 'FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings' ) ) : ?>
 					<div>
-						<a href="<?php echo admin_url( 'admin.php' ); ?>?page=fe-ai-search#tab-pro-model">
+						<a href="#tab-pro-models" class="feas-ai-change-model-link">
 							<?php esc_html_e( 'Change Model', 'fe-ai-search' ); ?> &raquo;
 						</a> <?php echo $this->license_alert_icon; ?>
 					</div>
 				<?php else: ?>
-					<span class="description">
+					<div class="description">
 						<?php
 						printf(
 							/* translators: %s: Link to the Pro version. */
@@ -487,7 +487,7 @@ class FEAS_AI_Settings {
 							)
 						);
 						?>
-					</span>
+					</div>
 				<?php endif; ?>
 			</p>
 		</div>
@@ -523,12 +523,12 @@ class FEAS_AI_Settings {
 				<strong><?php esc_html_e( 'Model', 'fe-ai-search' ); ?>:</strong> <?php echo esc_html( $model_to_display ); ?>
 				<?php if ( class_exists( 'FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings' ) ) : ?>
 					<div>
-						<a href="<?php echo admin_url( 'admin.php' ); ?>?page=fe-ai-search#tab-pro-model">
+						<a href="#tab-pro-models" class="feas-ai-change-model-link">
 							<?php esc_html_e( 'Change Model', 'fe-ai-search' ); ?> &raquo;
 						</a> <?php echo $this->license_alert_icon; ?>
 					</div>
 				<?php else: ?>
-					<span class="description">
+					<div class="description">
 						<?php
 						printf(
 							/* translators: %s: Link to the Pro version. */
@@ -540,7 +540,7 @@ class FEAS_AI_Settings {
 							)
 						);
 						?>
-					</span>
+					</div>
 				<?php endif; ?>
 			</p>
 		</div>
@@ -576,12 +576,12 @@ class FEAS_AI_Settings {
 				<strong><?php esc_html_e( 'Model', 'fe-ai-search' ); ?>:</strong> <?php echo esc_html( $model_to_display ); ?>
 				<?php if ( class_exists( 'FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings' ) ) : ?>
 					<div>
-						<a href="<?php echo admin_url( 'admin.php' ); ?>?page=fe-ai-search#tab-pro-model">
+						<a href="#tab-pro-models" class="feas-ai-change-model-link">
 							<?php esc_html_e( 'Change Model', 'fe-ai-search' ); ?> &raquo;
 						</a> <?php echo $this->license_alert_icon; ?>
 					</div>
 				<?php else: ?>
-					<span class="description">
+					<div class="description">
 						<?php
 						printf(
 							/* translators: %s: Link to the Pro version. */
@@ -593,7 +593,7 @@ class FEAS_AI_Settings {
 							)
 						);
 						?>
-					</span>
+					</div>
 				<?php endif; ?>
 			</p>
 		</div>
@@ -960,7 +960,7 @@ class FEAS_AI_Settings {
 			wp_dropdown_pages([
 				'name'              => 'feas_ai_display_options[fullscreen_page_id]',
 				'selected'          => $options['fullscreen_page_id'],
-				'show_option_none'  => '— 専用ページを使用しない —',
+				'show_option_none'  => __( '— Don\'t use a dedicated page —', 'fe-ai-search' ),
 				'option_none_value' => '0',
 			]);
 			?>
@@ -1044,7 +1044,7 @@ class FEAS_AI_Settings {
 		</script>
 
 		<p>
-			<label for="feas_terms_page_id"><?php esc_html_e( 'Terms of Service Page', 'fe-ai-search' ); ?></label><br>
+			<label for="feas_terms_page_id"><?php esc_html_e( 'Terms of Service Page', 'fe-ai-search' ); ?></label>
 			<?php
 			wp_dropdown_pages([
 				'name'              => 'feas_ai_display_options[terms_page_id]',
@@ -1056,7 +1056,7 @@ class FEAS_AI_Settings {
 		</p>
 
 		<p>
-			<label for="feas_privacy_page_id"><?php esc_html_e( 'Privacy Policy Page', 'fe-ai-search' ); ?></label><br>
+			<label for="feas_privacy_page_id"><?php esc_html_e( 'Privacy Policy Page', 'fe-ai-search' ); ?></label>
 			<?php
 			wp_dropdown_pages([
 				'name'              => 'feas_ai_display_options[privacy_page_id]',

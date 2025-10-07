@@ -45,10 +45,14 @@ class FEAS_AI_Sync_Hooks {
 			foreach ( $vectors_data as $index => $vector_item ) {
 				if (empty($vector_item['embedding'])) continue;
 
+				// Polylang
+				$lang_code = function_exists('pll_get_post_language') ? pll_get_post_language($post->ID) : get_locale();
+
 				$wpdb->insert(
 					$vectors_table,
 					[
 						'post_id'       => $post->ID,
+						'lang'          => $lang_code,
 						'chunk_index'   => $index,
 						'content_chunk' => $chunks_with_meta[$index],
 						'vector_data'   => json_encode( $vector_item['embedding'] ),
