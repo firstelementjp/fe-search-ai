@@ -295,7 +295,7 @@ class FEAS_AI_Settings {
 
 		add_settings_field(
 			'feas_ai_display_floating',
-			__( 'Floating Chat Window', 'fe-ai-search' ),
+			__( 'Floating Window', 'fe-ai-search' ),
 			array( $this, 'display_floating_field_html' ),
 			$page_slug,
 			'feas_ai_display_section'
@@ -434,8 +434,7 @@ class FEAS_AI_Settings {
 			<?php endforeach; ?>
 		</select>
 		<p class="description">
-			<?php esc_html_e( 'Select an AI that will vectorize (convert) your site content'
-			. ' into a format that AI can understand.', 'fe-ai-search' );
+			<?php esc_html_e( 'Select an AI that will vectorize (convert) your site content into a format that AI can understand.', 'fe-ai-search' );
 			?>
 		</p>
 		<?php
@@ -603,15 +602,8 @@ class FEAS_AI_Settings {
 	public function sync_options_field_html() {
 		$options = get_option( 'feas_ai_sync_options', [] );
 
-		echo wp_kses_post(
-			__(
-				'<p class="description">' .
-				'Select the post types you want to include in your AI search ' .
-				'and the metadata you want to include in chunks for each post type.' .
-				'</p>',
-				'fe-ai-search'
-			)
-		);
+		$string = __( 'Select the post types you want to include in your AI search and the metadata you want to include in chunks for each post type.', 'fe-ai-search' );
+		echo '<p class="description">' . wp_kses_post( $string ) . '</p>';
 		echo '<div id="feas-ai-sync-options-accordion">';
 
 		// Synchronization Target
@@ -812,8 +804,7 @@ class FEAS_AI_Settings {
 	public function delete_vectors_ui_field_html() {
 		?>
 		<p class="description" style="margin-top:0;">
-			<?php esc_html_e( 'This will delete all synced vector data and keyword indexes. '
-			. 'AI search will no longer work until you sync again.', 'fe-ai-search' ); ?>
+			<?php esc_html_e( 'This will delete all synced vector data and keyword indexes. AI search will no longer work until you sync again.', 'fe-ai-search' ); ?>
 		</p>
 		<button type="button" id="feas-ai-delete-vectors-button" class="button button-secondary">
 			<?php esc_html_e( 'Delete all synced data', 'fe-ai-search' ); ?>
@@ -1105,16 +1096,7 @@ class FEAS_AI_Settings {
 			class="regular-text"
 		>
 		<p class="description">
-			<?php
-			echo wp_kses_post(
-				__(
-					'If you want to sync only certain posts, enter the post IDs separated by commas (e.g. 10, 25, 103).<br>' .
-					'<strong>Note:</strong> If you enter any here, the "Post types to sync" setting will be ignored ' .
-					'and only the posts with those IDs will be synced.',
-					'fe-ai-search'
-				)
-			);
-			?>
+			<?php echo wp_kses_post( __( 'If you want to sync only certain posts, enter the post IDs separated by commas (e.g. 10, 25, 103).<br><strong>Note:</strong> If you enter any here, the "Post types to sync" setting will be ignored and only the posts with those IDs will be synced.', 'fe-ai-search' ) ); ?>
 		</p>
 		<?php
 	}
@@ -1130,10 +1112,7 @@ class FEAS_AI_Settings {
 		>
 		<p class="description">
 			<?php
-			esc_html_e(
-				'If you want to exclude posts from synchronization, enter the post IDs separated by commas (e.g., 15, 30).',
-				'fe-ai-search'
-			);
+			esc_html_e( 'If you want to exclude posts from synchronization, enter the post IDs separated by commas (e.g., 15, 30).', 'fe-ai-search' );
 			?>
 		</p>
 		<?php
@@ -1151,14 +1130,9 @@ class FEAS_AI_Settings {
 		<?php esc_html_e( 'posts', 'fe-ai-search' ); ?>
 		<p class="description">
 			<?php
-			echo wp_kses_post(
-				__(
-					'Limits the number of posts to be synchronized to the specified number, starting from the most recent. ' .
-					'Set this if you are trying to synchronize on a trial basis or want to reduce API costs.<br>' .
-					'<strong>0</strong> will synchronize all eligible posts.',
-					'fe-ai-search'
-				)
-			);
+			$string1 = __( 'Limits the number of posts to be synchronized to the specified number, starting from the most recent.', 'fe-ai-search' );
+			$string2 = __( 'Set this if you are trying to synchronize on a trial basis or want to reduce API costs.<br><strong>0</strong> will synchronize all eligible posts.', 'fe-ai-search' );
+			echo wp_kses_post( $string1 . $string2 );
 			?>
 		</p>
 		<?php
@@ -1182,13 +1156,9 @@ class FEAS_AI_Settings {
 			</label>
 			<p class="description">
 				<?php
-				echo wp_kses_post(
-					__(
-						'Check this box if you want to stop using this plugin completely, rather than just temporarily disabling it.<br>' .
-						'If you leave this box unchecked, your previous settings and sync data will be restored when you reinstall the plugin.',
-						'fe-ai-search'
-					)
-				);
+				$string1 = __( 'Check this box if you want to stop using this plugin completely, rather than just temporarily disabling it.', 'fe-ai-search' );
+				$string2 = __( 'If you leave this box unchecked, your previous settings and sync data will be restored when you reinstall the plugin.', 'fe-ai-search' );
+				echo wp_kses_post( $string1 . '<br>' . $string2 );
 				?>
 			</p>
 		</fieldset>

@@ -1,0 +1,603 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: FE AI Search\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-10-07 13:37+0000\n"
+"PO-Revision-Date: 2025-10-08 05:53+0000\n"
+"Last-Translator: \n"
+"Language-Team: 日本語\n"
+"Language: ja\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Loco https://localise.biz/\n"
+"X-Loco-Version: 2.8.0; wp-6.8.1; php-8.3.8\n"
+"X-Domain: fe-ai-search"
+
+#. %s: Taxonomy label (e.g., "Categories", "Tags")
+#: includes/admin/class-feas-ai-settings.php:705
+#, php-format
+msgid "%s"
+msgstr "%s"
+
+#: includes/ajax/class-feas-ai-chat-handler.php:619
+msgid "401 Unauthorized"
+msgstr "401 認証エラー"
+
+#: includes/admin/class-feas-ai-settings.php:1195
+msgid ""
+"<p class=\"description\">Select the post types you want to include in AI "
+"search.</p>"
+msgstr "<p class=\"description\">AI検索に含めたい投稿タイプを選択してください。</p>"
+
+#: includes/ajax/class-feas-ai-chat-handler.php:689
+msgid "[REDACTED]"
+msgstr "[編集済み]"
+
+#: includes/admin/class-feas-ai-settings.php:326
+msgid "Advanced Settings"
+msgstr "上級者向け設定"
+
+#: includes/frontend/class-feas-ai-chat-ui.php:128
+msgid "AI Search"
+msgstr "AI Search"
+
+#. Description of the plugin
+msgid "AI-powered search for WordPress."
+msgstr "WordPress向けのAI搭載検索。"
+
+#: includes/ajax/class-feas-ai-sync-handler.php:210
+msgid "All sync data has been deleted."
+msgstr "すべての同期データが削除されました。"
+
+#: includes/admin/class-feas-ai-settings.php:157
+msgid "Answer generation model"
+msgstr "回答生成モデル"
+
+#: includes/admin/class-feas-ai-settings.php:372
+msgid "Anthropic (Claude)"
+msgstr "Anthropic (Claude)"
+
+#: includes/admin/class-feas-ai-settings.php:185
+msgid "Anthropic (Claude) API Key"
+msgstr "Anthropic (Claude) APIキー"
+
+#: includes/ajax/class-feas-ai-sync-handler.php:479
+msgid "Anthropic API key is not set."
+msgstr "Anthropic APIキーが設定されていません。"
+
+#: includes/ajax/class-feas-ai-sync-handler.php:411
+#: includes/ajax/class-feas-ai-sync-handler.php:456
+msgid "API Error"
+msgstr "APIエラー"
+
+#: includes/admin/class-feas-ai-settings.php:55
+#: includes/admin/class-feas-ai-settings.php:144
+msgid "API Settings"
+msgstr "API設定"
+
+#: includes/admin/class-feas-ai-settings.php:882
+msgid "Archive"
+msgstr "アーカイブ"
+
+#: includes/ajax/class-feas-ai-chat-handler.php:600
+#: includes/ajax/class-feas-ai-chat-handler.php:633
+#: includes/ajax/class-feas-ai-chat-handler.php:648
+msgid "Authentication failed."
+msgstr "認証に失敗しました。"
+
+#: includes/admin/class-feas-ai-settings.php:272
+msgid "Base System Prompt"
+msgstr "基本システムプロンプト"
+
+#: includes/frontend/class-feas-ai-chat-ui.php:185
+#, php-format
+msgid "By using this chat, you agree to our %s."
+msgstr "このチャットを利用することにより、当社の%sに同意したことになります。"
+
+#: includes/admin/class-feas-ai-settings.php:473
+#: includes/admin/class-feas-ai-settings.php:526
+#: includes/admin/class-feas-ai-settings.php:579
+msgid "Change Model"
+msgstr "モデルを変更"
+
+#: includes/admin/class-feas-ai-settings.php:319
+msgid "Chat Message Settings"
+msgstr "チャット文言設定"
+
+#: includes/admin/class-feas-ai-settings.php:1159
+msgid ""
+"Check this box if you want to stop using this plugin completely, rather than "
+"just temporarily disabling it."
+msgstr "このプラグインを一時的に無効にするのではなく、完全に使用を停止する場合は、このボックスをオンにします。"
+
+#: includes/ajax/class-feas-ai-sync-handler.php:485
+msgid ""
+"Claude's embedding feature is currently not supported. Please choose OpenAI "
+"or Gemini."
+msgstr " 現在、ClaudeのEmbedding機能はサポートされていません。OpenAIまたはGeminiを選択してください。"
+
+#: includes/admin/class-feas-ai-settings.php:1155
+msgid ""
+"Completely remove all database tables and settings when removing "
+"(uninstalling) a plugin."
+msgstr "プラグインを削除（アンインストール）する際に、すべてのデータベーステーブルと設定を完全に削除する。"
+
+#: includes/admin/class-feas-ai-settings.php:868
+msgid "Conditions for Displaying the Page"
+msgstr "ページを表示する条件"
+
+#: includes/ajax/class-feas-ai-chat-handler.php:658
+msgid "Connection failed"
+msgstr "接続に失敗しました"
+
+#: includes/ajax/class-feas-ai-chat-handler.php:656
+msgid "Connection successful"
+msgstr "接続に成功しました"
+
+#: includes/admin/class-feas-ai-settings.php:459
+#: includes/admin/class-feas-ai-settings.php:512
+#: includes/admin/class-feas-ai-settings.php:565
+msgid "Connection Test"
+msgstr "接続テスト"
+
+#: includes/ajax/class-feas-ai-sync-handler.php:572
+msgid "Contribute on GitHub"
+msgstr "GitHubで貢献する"
+
+#: includes/admin/class-feas-ai-settings.php:717
+msgid "Custom Fields"
+msgstr "カスタムフィールド"
+
+#: includes/admin/class-feas-ai-settings.php:1242
+msgid ""
+"Customize the instructions (system prompts) for the AI assistant. If left "
+"blank, the standard prompt will be used."
+msgstr "AIアシスタントへの指示（システムプロンプト）をカスタマイズします。空にすると、標準のプロンプトが使用されます。"
+
+#: includes/admin/class-feas-ai-settings.php:59
+msgid "Data"
+msgstr "データ"
+
+#: includes/admin/class-feas-ai-settings.php:339
+msgid "Data Management"
+msgstr "データ管理"
+
+#: includes/admin/class-feas-ai-settings.php:810
+msgid "Delete all synced data"
+msgstr "同期データをすべて削除"
+
+#: includes/admin/class-feas-ai-settings.php:348
+msgid "Deleting Synced Data"
+msgstr "同期データの削除"
+
+#: includes/admin/class-feas-ai-settings.php:57
+msgid "Display"
+msgstr "表示"
+
+#: includes/admin/class-feas-ai-settings.php:849
+msgid "Display device"
+msgstr "表示デバイス"
+
+#: includes/admin/class-feas-ai-settings.php:895
+msgid "Display on individual pages of the following post types"
+msgstr "以下の投稿タイプの個別ページに表示"
+
+#: includes/admin/class-feas-ai-settings.php:916
+msgid "Display only with these post IDs"
+msgstr "これらの投稿IDでのみ表示"
+
+#: includes/admin/class-feas-ai-settings.php:285
+msgid "Display settings"
+msgstr "表示設定"
+
+#: includes/admin/class-feas-ai-settings.php:928
+msgid "Do not display with these post IDs."
+msgstr "これらの投稿IDでは表示しない"
+
+#: includes/admin/class-feas-ai-settings.php:923
+#: includes/admin/class-feas-ai-settings.php:935
+msgid "e.g."
+msgstr "例："
+
+#: includes/admin/class-feas-ai-settings.php:312
+msgid "Embedding Mode"
+msgstr "埋め込みモード"
+
+#: includes/admin/class-feas-ai-settings.php:843
+msgid "Enable floating chat"
+msgstr "フローティングチャットを有効にする"
+
+#: includes/admin/class-feas-ai-settings.php:729
+msgid ""
+"Enter the keys of the custom fields you want to include, separated by commas."
+msgstr "含めたいカスタムフィールドのキーをカンマ区切りで入力します。"
+
+#: includes/admin/class-feas-ai-settings.php:570
+msgid "Enter your Anthropic (Claude) API key."
+msgstr "Anthropic (Claude) のAPIキーを入力してください。"
+
+#: includes/admin/class-feas-ai-settings.php:517
+msgid "Enter your Google Cloud API key."
+msgstr "Google CloudのAPIキーを入力してください。"
+
+#: includes/admin/class-feas-ai-settings.php:464
+msgid "Enter your OpenAI API key."
+msgstr "OpenAIのAPIキーを入力してください。"
+
+#: includes/ajax/class-feas-ai-chat-handler.php:316
+msgid "Error: Anthropic API key not set."
+msgstr "エラー: AnthropicのAPIキーが設定されていません。"
+
+#: includes/ajax/class-feas-ai-chat-handler.php:220
+msgid "Error: Google API key is not set."
+msgstr "エラー: GoogleのAPIキーが設定されていません。"
+
+#: includes/ajax/class-feas-ai-chat-handler.php:152
+msgid "Error: OpenAI API key not set."
+msgstr "エラー: OpenAIのAPIキーが設定されていません。"
+
+#. Name of the plugin
+msgid "FE AI Search"
+msgstr "FE AI Search"
+
+#: includes/admin/class-feas-ai-settings.php:991
+msgid "First greeting"
+msgstr "最初の挨拶文"
+
+#. Author of the plugin
+msgid "FirstElement, Inc."
+msgstr "FirstElement, Inc."
+
+#: includes/admin/class-feas-ai-settings.php:298
+#| msgid "Floating Chat Window"
+msgid "Floating Window"
+msgstr "フローティングウィンドウ"
+
+#: includes/admin/class-feas-ai-settings.php:305
+msgid "Full Screen Mode"
+msgstr "全画面モード"
+
+#: includes/admin/class-feas-ai-settings.php:371
+msgid "Google (Gemini)"
+msgstr "Google (Gemini)"
+
+#: includes/admin/class-feas-ai-settings.php:178
+msgid "Google Cloud API Key"
+msgstr "Google Cloud APIキー"
+
+#: includes/frontend/class-feas-ai-chat-ui.php:130
+msgid "Hello! Please ask me anything about the information on this site."
+msgstr "こんにちは！このサイトの情報について、何でも質問してください。"
+
+#: includes/admin/class-feas-ai-settings.php:875
+msgid "Home"
+msgstr "ホーム"
+
+#. URI of the plugin
+msgid "https://fe-advanced-search.com/"
+msgstr "https://fe-advanced-search.com/"
+
+#. Author URI of the plugin
+msgid "https://www.firstelement.co.jp/"
+msgstr "https://www.firstelement.co.jp/"
+
+#: includes/admin/class-feas-ai-settings.php:1060
+msgid ""
+"If not selected, the page set in WordPress's standard privacy settings will "
+"be used."
+msgstr "選択されていない場合、WordPressの標準プライバシー設定で指定されたページが使用されます。"
+
+#: includes/admin/class-feas-ai-settings.php:925
+msgid "If you enter the ID here, other display rules will be ignored."
+msgstr "ここにIDを入力すると、他の表示ルールは無視されます。"
+
+#: includes/admin/class-feas-ai-settings.php:1160
+msgid ""
+"If you leave this box unchecked, your previous settings and sync data will "
+"be restored when you reinstall the plugin."
+msgstr "このボックスのチェックを外しておくと、プラグインを再インストールした際に、以前の設定と同期データが復元されます。"
+
+#: includes/admin/class-feas-ai-settings.php:1083
+msgid ""
+"If you want to design the chat UI with your own theme's CSS, uncheck this."
+msgstr "独自のテーマCSSでチャットUIをデザインしたい場合は、このチェックを外してください。"
+
+#: includes/admin/class-feas-ai-settings.php:1115
+msgid ""
+"If you want to exclude posts from synchronization, enter the post IDs "
+"separated by commas (e.g., 15, 30)."
+msgstr "同期から除外したい投稿がある場合は、投稿IDをカンマ区切りで入力します（例: 15, 30）。"
+
+#: includes/admin/class-feas-ai-settings.php:1099
+msgid ""
+"If you want to sync only certain posts, enter the post IDs separated by "
+"commas (e.g. 10, 25, 103).<br><strong>Note:</strong> If you enter any here, "
+"the \"Post types to sync\" setting will be ignored and only the posts with "
+"those IDs will be synced."
+msgstr ""
+"特定の投稿のみを同期する場合は、投稿 ID をカンマで区切って入力します (例: 10, 25, 103)。<br><strong>注:</strong>"
+" ここで入力すると、「同期する投稿タイプ」設定は無視され、その ID を持つ投稿のみが同期されます。"
+
+#: includes/admin/class-feas-ai-settings.php:1000
+msgid "Input field placeholders"
+msgstr "入力欄のプレースホルダー"
+
+#: includes/admin/class-feas-ai-settings.php:1020
+msgid "Key Color"
+msgstr "キーカラー"
+
+#: includes/admin/class-feas-ai-settings.php:768
+msgid "Last Sync Date and Time"
+msgstr "最終同期日時"
+
+#: includes/admin/class-feas-ai-settings.php:1133
+msgid ""
+"Limits the number of posts to be synchronized to the specified number, "
+"starting from the most recent."
+msgstr "同期する投稿の数を、最新のものから指定された数に制限します。"
+
+#: includes/admin/class-feas-ai-settings.php:1080
+msgid "Load CSS included with the plugin"
+msgstr "プラグインに同梱のCSSを読み込む"
+
+#: includes/admin/class-feas-ai-settings.php:250
+msgid "Manual Sync"
+msgstr "手動同期"
+
+#: includes/admin/class-feas-ai-settings.php:243
+msgid "Maximum number of posts to sync"
+msgstr "同期する最大記事数"
+
+#: includes/admin/class-feas-ai-settings.php:862
+msgid "Mobile"
+msgstr "モバイル"
+
+#: includes/admin/class-feas-ai-settings.php:469
+#: includes/admin/class-feas-ai-settings.php:522
+#: includes/admin/class-feas-ai-settings.php:575
+msgid "Model"
+msgstr "モデル"
+
+#. %s: Link to the Pro version.
+#: includes/admin/class-feas-ai-settings.php:481
+#: includes/admin/class-feas-ai-settings.php:534
+#: includes/admin/class-feas-ai-settings.php:587
+#, php-format
+msgid "Model selection is available in the %s version."
+msgstr "モデルの選択は %s 版で利用可能です。"
+
+#: includes/admin/class-feas-ai-settings.php:1246
+msgid ""
+"Model-specific prompts can be set in the Pro version, which will override "
+"this basic setting."
+msgstr "モデル別のプロンプトはPro版で設定でき、この基本設定を上書きします。"
+
+#: includes/admin/class-feas-ai-settings.php:1043
+#: includes/admin/class-feas-ai-settings.php:1055
+msgid "Not selected"
+msgstr "選択されていません"
+
+#: includes/admin/class-feas-ai-settings.php:1245
+msgid "Note:"
+msgstr "注意："
+
+#: includes/admin/class-feas-ai-settings.php:774
+msgid "Number of indexed articles"
+msgstr "インデックス登録済み記事数"
+
+#: includes/admin/class-feas-ai-settings.php:171
+msgid "OpenAI API Key"
+msgstr "OpenAI APIキー"
+
+#: includes/admin/class-feas-ai-settings.php:370
+msgid "OpenAI（GPT）"
+msgstr "OpenAI (GPT)"
+
+#: includes/admin/class-feas-ai-settings.php:915
+msgid "Overwrite rules by individual ID"
+msgstr "個別のIDによる上書きルール"
+
+#: includes/admin/class-feas-ai-settings.php:855
+msgid "PC"
+msgstr "PC"
+
+#: includes/frontend/class-feas-ai-chat-ui.php:129
+msgid "Please enter a question..."
+msgstr "質問を入力してください..."
+
+#: includes/admin/class-feas-ai-settings.php:970
+msgid ""
+"Please paste the following shortcode into the content of the page where you "
+"want to display the chat."
+msgstr "チャットを表示したいページのコンテンツに、以下のショートコードを貼り付けてください。"
+
+#: includes/admin/class-feas-ai-settings.php:683
+msgid "Post Author"
+msgstr "投稿者"
+
+#: includes/admin/class-feas-ai-settings.php:665
+msgid "Post Content"
+msgstr "投稿の本文"
+
+#: includes/admin/class-feas-ai-settings.php:674
+msgid "Post Date"
+msgstr "投稿日"
+
+#: includes/admin/class-feas-ai-settings.php:236
+msgid "Post IDs to exclude"
+msgstr "除外する記事ID"
+
+#: includes/admin/class-feas-ai-settings.php:229
+msgid "Post IDs to include"
+msgstr "含める記事ID"
+
+#: includes/admin/class-feas-ai-settings.php:656
+msgid "Post Title"
+msgstr "投稿のタイトル"
+
+#: includes/admin/class-feas-ai-settings.php:776
+#: includes/admin/class-feas-ai-settings.php:1130
+msgid "posts"
+msgstr "件"
+
+#: includes/admin/class-feas-ai-settings.php:798
+msgid ""
+"Prepare and index your data so that your posts and pages can be searched by "
+"AI."
+msgstr "AIが投稿やページを検索できるように、データを準備・索引化します。"
+
+#: includes/frontend/class-feas-ai-chat-ui.php:180
+msgid "Privacy Policy"
+msgstr "プライバシーポリシー"
+
+#: includes/admin/class-feas-ai-settings.php:1050
+msgid "Privacy Policy Page"
+msgstr "プライバシーポリシーのページ"
+
+#: includes/admin/class-feas-ai-settings.php:485
+#: includes/admin/class-feas-ai-settings.php:538
+#: includes/admin/class-feas-ai-settings.php:591
+msgid "Pro"
+msgstr "Pro"
+
+#: includes/admin/class-feas-ai-settings.php:58
+msgid "Prompt"
+msgstr "プロンプト"
+
+#: includes/ajax/class-feas-ai-chat-handler.php:572
+msgid "Provider or API key missing."
+msgstr "プロバイダーまたはAPIキーがありません。"
+
+#: includes/admin/class-feas-ai-settings.php:128
+msgid "Save Settings"
+msgstr "設定を保存"
+
+#: includes/admin/class-feas-ai-settings.php:889
+msgid "Search Results"
+msgstr "検索結果"
+
+#: includes/admin/class-feas-ai-settings.php:437
+msgid ""
+"Select an AI that will vectorize (convert) your site content into a format "
+"that AI can understand."
+msgstr "サイトのコンテンツを、AIが理解できる形式にベクトル化（変換）するAIを選択します。"
+
+#: includes/admin/class-feas-ai-settings.php:949
+msgid "Select Chat-Only Page"
+msgstr "チャット専用ページを選択"
+
+#: includes/admin/class-feas-ai-settings.php:398
+msgid "Select the AI that generates answers for the user."
+msgstr "ユーザーへの回答を生成するAIを選択します。"
+
+#: includes/admin/class-feas-ai-settings.php:1028
+msgid "Select the basic colors for chat bubbles and user speech balloons."
+msgstr "チャットバブルやユーザーの吹き出しの基本色を選択します。"
+
+#: includes/admin/class-feas-ai-settings.php:605
+msgid ""
+"Select the post types you want to include in your AI search and the metadata "
+"you want to include in chunks for each post type."
+msgstr "AI検索に含める投稿タイプと、各投稿タイプのチャンクに含めるメタデータを選択します。"
+
+#: includes/admin/class-feas-ai-settings.php:1134
+msgid ""
+"Set this if you are trying to synchronize on a trial basis or want to reduce "
+"API costs.<br><strong>0</strong> will synchronize all eligible posts."
+msgstr ""
+"試験的に同期しようとしている場合、または API コストを削減したい場合はこれを設定します。<br><strong>0</strong> "
+"にすると、対象となるすべての投稿を同期します。"
+
+#: includes/admin/class-feas-ai-settings.php:782
+msgid "Start syncing"
+msgstr "同期を開始"
+
+#: includes/frontend/class-feas-ai-chat-ui.php:131
+msgid "Submit"
+msgstr "送信"
+
+#: includes/admin/class-feas-ai-settings.php:1010
+msgid "Submit button text"
+msgstr "送信ボタンのテキスト"
+
+#: includes/admin/class-feas-ai-settings.php:56
+msgid "Sync"
+msgstr "同期"
+
+#: includes/admin/class-feas-ai-settings.php:198
+msgid "Sync Settings"
+msgstr "同期設定"
+
+#: includes/admin/class-feas-ai-settings.php:263
+msgid "System Prompt"
+msgstr "システムプロンプト"
+
+#: includes/frontend/class-feas-ai-chat-ui.php:177
+msgid "Terms of Service"
+msgstr "利用規約"
+
+#: includes/admin/class-feas-ai-settings.php:1038
+msgid "Terms of Service Page"
+msgstr "利用規約のページ"
+
+#: includes/ajax/class-feas-ai-sync-handler.php:420
+msgid "The Google Cloud API key is not configured."
+msgstr "Google CloudのAPIキーが設定されていません。"
+
+#: includes/ajax/class-feas-ai-sync-handler.php:381
+msgid "The OpenAI API key is not configured."
+msgstr "OpenAIのAPIキーが設定されていません。"
+
+#: includes/admin/class-feas-ai-settings.php:733
+msgid "This feature is available in the Pro version."
+msgstr "この機能はPro版で利用可能です。"
+
+#: includes/admin/class-feas-ai-settings.php:807
+msgid ""
+"This will delete all synced vector data and keyword indexes. AI search will "
+"no longer work until you sync again."
+msgstr "これにより、同期されたすべてのベクトルデータとキーワードインデックスが削除されます。再度同期するまで、AI検索は機能しなくなります。"
+
+#: includes/admin/class-feas-ai-settings.php:355
+#: includes/admin/class-feas-ai-settings.php:1146
+msgid "Uninstallation settings"
+msgstr "アンインストール設定"
+
+#: includes/ajax/class-feas-ai-sync-handler.php:410
+#: includes/ajax/class-feas-ai-sync-handler.php:455
+msgid "Unknown API Error"
+msgstr "不明なAPIエラー"
+
+#: includes/admin/class-feas-ai-settings.php:734
+msgid "Upgrade to Pro"
+msgstr "Proにアップグレード"
+
+#: includes/admin/class-feas-ai-settings.php:164
+msgid "Vectorization Model"
+msgstr "ベクトル化モデル"
+
+#: includes/admin/class-feas-ai-settings.php:221
+msgid "What is synchronized and what is included?"
+msgstr "同期対象と内容"
+
+#: includes/admin/class-feas-ai-settings.php:959
+msgid ""
+"When you access the selected static page here, the full-screen chat UI will "
+"be displayed directly."
+msgstr "ここで選択した固定ページにアクセスすると、全画面のチャットUIが直接表示されます。"
+
+#: includes/admin/class-feas-ai-settings.php:981
+msgid "Window title"
+msgstr "ウィンドウのタイトル"
+
+#: includes/ajax/class-feas-ai-sync-handler.php:571
+msgid ""
+"Your site language is not fully optimized for keyword search. We welcome "
+"contributions for new languages!"
+msgstr "あなたのサイトの言語は、キーワード検索に完全には最適化されていません。新しい言語への貢献を歓迎します！"
+
+#: includes/admin/class-feas-ai-settings.php:954
+msgid "— Don't use a dedicated page —"
+msgstr "-- 専用ページを使用しない --"

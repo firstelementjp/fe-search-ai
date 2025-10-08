@@ -31,8 +31,8 @@ use WP_Error;
  */
 class FEAS_AI_Sync_Handler {
 
-	private $segmenter;
 	private const BATCH_SIZE = 10;
+	private $segmenter;
 
 	public function __construct() {
 
