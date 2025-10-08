@@ -216,6 +216,8 @@ class FEAS_AI_Settings {
 			'feas_ai_sync_limit',
 			[ 'sanitize_callback' => [ $this, 'sanitize_numeric_string' ] ]
 		);
+		register_setting( $settings_group, 'feas_ai_batch_size' );
+
 		add_settings_field(
 			'feas_ai_sync_options',
 			__( 'What is synchronized and what is included?', 'fe-ai-search' ),
@@ -242,6 +244,13 @@ class FEAS_AI_Settings {
 			'feas_ai_sync_limit',
 			__( 'Maximum number of posts to sync', 'fe-ai-search' ),
 			[ $this, 'sync_limit_field_html' ],
+			$page_slug,
+			'feas_ai_sync_section'
+		);
+		add_settings_field(
+			'feas_ai_batch_size',
+			'同期バッチサイズ',
+			[ $this, 'batch_size_field_html' ],
 			$page_slug,
 			'feas_ai_sync_section'
 		);
@@ -976,6 +985,9 @@ class FEAS_AI_Settings {
 	// 4. チャット文言設定
 	public function display_chat_text_field_html() {
 		$options = get_option( 'feas_ai_display_options', [] );
+
+		// Animation Speed Settings
+		$animation_speed = $options['animation_speed'] ?? 3;
 		?>
 		<p>
 			<label for="feas_window_title"><?php esc_html_e( 'Window title', 'fe-ai-search' ); ?></label>
@@ -1034,6 +1046,26 @@ class FEAS_AI_Settings {
 			});
 		</script>
 
+		<div style="display: flex; align-items: center; gap: 1em;">
+			<span><?php esc_html_e( 'Smooth', 'fe-ai-search' ); ?></span>
+			<input
+				type="range"
+				id="feas_ai_animation_speed_slider"
+				name="feas_ai_display_options[animation_speed]"
+				min="1"
+				max="10"
+				step="1"
+				value="<?php echo esc_attr( $animation_speed ); ?>"
+			>
+			<span><?php esc_html_e( 'Fast', 'fe-ai-search' ); ?></span>
+			<span id="feas_ai_animation_speed_value" style="font-weight: bold; min-width: 20px; text-align: right;">
+				<?php echo esc_html( $animation_speed ); ?>
+			</span>
+		</div>
+		<p class="description">
+			<?php esc_html_e( 'Adjust the typing animation speed of the AI\'s response. This value represents the number of characters processed at once.', 'fe-ai-search' ); ?>
+		</p>
+
 		<p>
 			<label for="feas_terms_page_id"><?php esc_html_e( 'Terms of Service Page', 'fe-ai-search' ); ?></label>
 			<?php
@@ -1067,6 +1099,7 @@ class FEAS_AI_Settings {
 	public function display_advanced_field_html() {
 		$options = get_option( 'feas_ai_display_options', [] );
 
+		// CSS設定
 		$enable_css = $options['enable_css'] ?? true;
 		?>
 		<fieldset>
@@ -1192,7 +1225,7 @@ class FEAS_AI_Settings {
 			<?php
 		}
 		echo '</fieldset>';
-		echo wp_kses_post( __( '<p class="description">Select the post types you want to include in AI search.</p>', 'fe-ai-search' ) );
+		echo '<p class="description">' . __( 'Select the post types you want to include in AI search.', 'fe-ai-search' ) . '</p>';
 	}
 
 	/**
@@ -1244,6 +1277,24 @@ class FEAS_AI_Settings {
 		<p class="description">
 			<strong><?php esc_html_e( 'Note:', 'fe-ai-search' ); ?></strong>
 			<?php esc_html_e( 'Model-specific prompts can be set in the Pro version, which will override this basic setting.', 'fe-ai-search' ); ?>
+		</p>
+		<?php
+	}
+
+	public function batch_size_field_html() {
+		$batch_size = get_option( 'feas_ai_batch_size', 10 );
+		?>
+		<input
+			type="number"
+			name="feas_ai_batch_size"
+			value="<?php echo esc_attr( $batch_size ); ?>"
+			class="small-text"
+			min="1"
+			max="100"
+		>
+		<?php esc_html_e( 'posts', 'fe-ai-search' ); ?>
+		<p class="description">
+			<?php esc_html_e( 'Enter the number of posts to process in one batch during synchronization. A smaller number is less likely to cause timeouts on shared servers. (Default: 10, Recommended: 10-100)', 'fe-ai-search' ); ?>
 		</p>
 		<?php
 	}

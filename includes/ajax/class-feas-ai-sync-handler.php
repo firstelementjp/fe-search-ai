@@ -103,13 +103,14 @@ class FEAS_AI_Sync_Handler {
 		$all_post_ids = get_posts( $args );
 		$total_posts = count($all_post_ids);
 
-		$total_pages = ceil( $total_posts / self::BATCH_SIZE );
+		$batch_size = (int) get_option( 'feas_ai_batch_size', 10 );
+		$total_pages = ceil( $total_posts / $batch_size );
 
 		wp_send_json_success( [
 			'total_pages' => $total_pages,
 			'total_posts' => $total_posts,
 			'post_ids'    => $all_post_ids, // Pass the list of IDs to be processed to JS
-			'batch_size'  => self::BATCH_SIZE,
+			'batch_size'  => $batch_size,
 		] );
 	}
 
@@ -124,6 +125,7 @@ class FEAS_AI_Sync_Handler {
 		$batch_ids = array_slice($post_ids, $offset, self::BATCH_SIZE);
 
 		// Extract the part of this batch based on the ID list passed from JS
+		$batch_size = (int) get_option( 'feas_ai_batch_size', 10 );
 		$offset = ($page - 1) * $batch_size;
 		$batch_ids = array_slice($post_ids, $offset, $batch_size);
 

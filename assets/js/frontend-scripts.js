@@ -155,7 +155,7 @@ function initFEAIChat() {
 			}
 			if (charQueue.length === 0) return;
 
-			const charsToRender = charQueue.splice(0, 10).join(''); // Render every 10 characters
+			const charsToRender = charQueue.splice(0, feas_ai_ajax_obj.animation_speed || 3).join('');
 
 			fullResponse += charsToRender;
 

@@ -298,4 +298,14 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 		textarea.dataset.codemirrorInitialized = 'true';
 	}
+
+	// --- Animation Speed Slider UI ---
+	const animationSpeedSlider = document.querySelector('#feas_ai_animation_speed_slider');
+	if (animationSpeedSlider) {
+		const animationSpeedValue = document.querySelector('#feas_ai_animation_speed_value');
+
+		animationSpeedSlider.addEventListener('input', () => {
+			animationSpeedValue.textContent = animationSpeedSlider.value;
+		});
+	}
 });

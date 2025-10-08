@@ -37,6 +37,7 @@ class FEAS_AI_Assets {
 	public static function enqueue_assets() {
 		$options = get_option( 'feas_ai_display_options', [] );
 		$enable_css = $options['enable_css'] ?? true;
+		$animation_speed = $display_options['animation_speed'] ?? 3;
 
 		if ( $enable_css ) {
 			wp_enqueue_style(
@@ -69,6 +70,7 @@ class FEAS_AI_Assets {
 				'rest_url'   => rest_url( 'feas-ai/v1/stream' ), // For streaming
 				'rest_nonce' => wp_create_nonce( 'wp_rest' ), // Nonce for REST API
 				'nonce'      => wp_create_nonce( 'feas_ai_ajax_nonce' ),
+				'animation_speed' => (int) $animation_speed,
 			)
 		);
 	}
