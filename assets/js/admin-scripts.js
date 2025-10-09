@@ -99,8 +99,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	 * @param {number} totalPosts - The total number of posts to sync.
 	 */
 	async function processBatch(currentPage, totalPages, totalPosts, batch_size) {
-		// const batchSize = 100; // This should match the PHP setting.
-		const processed = Math.min((currentPage - 1) * batchSize, totalPosts);
+		// const batch_size = 100; // This should match the PHP setting.
+		const processed = Math.min((currentPage - 1) * batch_size, totalPosts);
 		const progress = totalPosts ? Math.round((processed / totalPosts) * 100) : 0;
 
 		progressBar.style.width = `${progress}%`;
@@ -268,6 +268,59 @@ document.addEventListener('DOMContentLoaded', () => {
 			});
 		});
 	});
+	// document.querySelectorAll('.feas-ai-accordion-wrapper').forEach(wrapper => {
+	// 	wrapper.querySelectorAll('.accordion-title').forEach(title => {
+	// 		title.addEventListener('click', e => {
+	// 			if (e.target.closest('input[type="checkbox"]')) {
+	// 				return;
+	// 			}
+	// 			e.preventDefault();
+//
+	// 			const content = title.nextElementSibling;
+	// 			if (!content) return;
+//
+	// 			title.classList.toggle('active');
+//
+	// 			if (content.style.maxHeight) {
+	// 				// Close the accordion
+	// 				content.style.maxHeight = null;
+	// 			} else {
+	// 				// Open the accordion
+	// 				content.style.maxHeight = content.scrollHeight + "px";
+//
+	// 				// Refresh CodeMirror if it exists inside
+	// 				const cmElement = content.querySelector('.CodeMirror');
+	// 				if (cmElement && cmElement.CodeMirror) {
+	// 					setTimeout(() => cmElement.CodeMirror.refresh(), 300); // After animation
+	// 				}
+	// 			}
+	// 		});
+	// 	});
+	// });
+
+
+	// document.querySelectorAll('.feas-ai-accordion-wrapper').forEach(wrapper => {
+	// 	wrapper.querySelectorAll('.accordion-title').forEach(title => {
+	// 		title.addEventListener('click', e => {
+	// 			if (e.target.tagName === 'INPUT' && e.target.type === 'checkbox') return;
+	// 			e.preventDefault();
+	// 			const content = title.nextElementSibling;
+	// 			if (content) {
+	// 				content.classList.toggle('open');
+//
+	// 				if (content.style.maxHeight) {
+	// 					content.style.maxHeight = null;
+	// 				} else {
+	// 					content.style.maxHeight = content.scrollHeight + "px";
+	// 					const cmElement = content.querySelector('.CodeMirror');
+	// 					if (cmElement && cmElement.CodeMirror) {
+	// 						setTimeout(() => cmElement.CodeMirror.refresh(), 300);
+	// 					}
+	// 				}
+	// 			}
+	// 		});
+	// 	});
+	// });
 
 	// "Change Model" Link Handler
 	document.querySelectorAll('.feas-ai-change-model-link').forEach(link => {

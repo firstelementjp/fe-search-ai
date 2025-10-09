@@ -36,6 +36,7 @@ class FEAS_AI_Chat_Handler {
 		add_action( 'wp_ajax_nopriv_feas_ai_log_query', array( $this, 'ajax_log_query' ) );
 		add_action( 'wp_ajax_feas_ai_log_query', array( $this, 'ajax_log_query' ) );
 		add_action( 'wp_ajax_feas_ai_test_api_key', array( $this, 'ajax_test_api_key' ) );
+		add_action( 'wp_ajax_feas_ai_manage_license', [ $this, 'ajax_manage_license' ] );
 		add_filter( 'feas_ai_filter_user_question', [ $this, 'filter_basic_injection_phrases' ], 20 );
 		add_filter( 'feas_ai_filter_model_response', [ $this, 'filter_basic_injection_phrases' ], 20 );
 	}
@@ -167,6 +168,10 @@ class FEAS_AI_Chat_Handler {
 			'messages' => $messages,
 			'stream'   => true,
 		];
+
+		error_log( '--- Sending to OpenAI ---' );
+		error_log( print_r( $body, true ) );
+
 		$ch = curl_init();
 
 		curl_setopt( $ch, CURLOPT_URL, $api_url );
@@ -260,6 +265,9 @@ class FEAS_AI_Chat_Handler {
 			],
 		];
 
+		error_log( '--- Sending to Gemini ---' );
+		error_log( print_r( $body, true ) );
+
 		$ch = curl_init();
 		curl_setopt( $ch, CURLOPT_URL, $api_url );
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
@@ -333,6 +341,9 @@ class FEAS_AI_Chat_Handler {
 			'system'     => $messages_data['system'],
 			'stream'     => true,
 		];
+
+		error_log( '--- Sending to Claude ---' );
+		error_log( print_r( $body, true ) );
 
 		$ch = curl_init();
 		curl_setopt( $ch, CURLOPT_URL, 'https://api.anthropic.com/v1/messages' );
@@ -689,4 +700,29 @@ class FEAS_AI_Chat_Handler {
 		return str_ireplace( $injection_phrases,  __( '[REDACTED]', 'fe-ai-search' ), $text );
 	}
 
+	/**
+	 * AJAX handler for activating and deactivating licenses
+	 */
+	public function ajax_manage_license() {
+		if ( ! check_ajax_referer( 'feas_ai_ajax_nonce', 'security', false ) ) {
+			wp_send_json_error( 'Nonce verification failed.' );
+		}
+
+		$license_key = sanitize_text_field( $_POST['license_key'] );
+		$action = sanitize_key( $_POST['license_action'] );
+
+		$handler = new FEAS_AI_License_Handler();
+		$result = ( $action === 'activate' ) ? $handler->activate( $license_key ) : $handler->deactivate( $license_key );
+
+		if ( $result['success'] ) {
+			update_option( 'feas_ai_pro_license_key', $license_key );
+			update_option( 'feas_ai_pro_license_status', $result['status'] );
+			delete_transient('feas_ai_license_error');
+			wp_send_json_success( ['message' => $result['message']] );
+		} else {
+			set_transient('feas_ai_license_error', $result['message'], 60);
+			update_option( 'feas_ai_pro_license_status', 'inactive' );
+			wp_send_json_error( ['message' => $result['message']] );
+		}
+	}
 }

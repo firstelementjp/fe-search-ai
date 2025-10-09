@@ -494,67 +494,131 @@ class FEAS_AI_Sync_Handler {
 	 * @param  string $text The text to split.
 	 * @return array  An array of keywords.
 	 */
+	// private function tokenize_text( $text ) {
+	// 	$text = strtolower( $text );
+	// 	$text = mb_convert_kana( $text, 'as' );
+//
+	// 	$locale = get_locale();
+	// 	$lang_code = strstr( $locale, '_', true ) ?: $locale; // 'ja', 'en' etc.
+	// 	$stop_words = [];
+//
+	// 	// Find the language file and load the stop words
+	// 	$lang_file = FEAS_AI_PLUGIN_DIR . "includes/i18n/{$locale}.php";
+	// 	if ( ! file_exists( $lang_file ) ) {
+	// 		$lang_file = FEAS_AI_PLUGIN_DIR . "includes/i18n/{$lang_code}.php";
+	// 	}
+	// 	if ( file_exists( $lang_file ) ) {
+	// 		$stop_words = include( $lang_file );
+	// 	}
+//
+	// 	/**
+	// 	 * Filters the array of stop words used during keyword extraction.
+	// 	 *
+	// 	 * This hook allows developers to add or remove stop words for a specific
+	// 	 * language, or to replace the default list entirely.
+	// 	 *
+	// 	 * @since 1.0.0
+	// 	 *
+	// 	 * @param array  $stop_words The array of stop words to be filtered.
+	// 	 * @param string $locale     The current site locale (e.g., 'en_US', 'ja').
+	// 	 */
+	// 	$stop_words = apply_filters( 'feas_ai_stop_words', $stop_words, $locale );
+//
+	// 	if ( 'ja' !== $lang_code && 'en' !== $lang_code ) {
+	// 		if ( ! get_transient( 'feas_ai_i18n_notice_dismissed' ) ) {
+	// 			add_action( 'admin_notices', [ $this, 'render_i18n_notice' ] );
+	// 		}
+	// 	}
+//
+	// 	// Split text into words
+	// 	if ( 'ja' === $lang_code ) {
+	// 		$words = $this->segmenter->segment( $text );
+	// 		$words = array_map('strtolower', $words);
+	// 	} else {
+	// 		$words = preg_split('/[^\p{L}\p{N}]+/', strtolower($text), -1, PREG_SPLIT_NO_EMPTY);
+	// 	}
+//
+	// 	// Remove stop words
+	// 	$words = array_diff($words, $stop_words);
+//
+	// 	// Stemming (only in supported languages, such as English)
+	// 	if ( 'ja' !== $lang_code ) {
+	// 		try {
+	// 			$stemmerManager = new \Wamania\Snowball\StemmerManager();
+	// 			if ( in_array($lang_code, $stemmerManager->getAvailableLanguages()) ) {
+	// 				$stemmer = $stemmerManager->create($lang_code);
+	// 				$stemmed_words = [];
+	// 				foreach ($words as $word) {
+	// 					$stemmed_words[] = $stemmer->stem($word);
+	// 				}
+	// 				$words = $stemmed_words;
+	// 			}
+	// 		} catch (\Exception $e) {
+	// 			error_log('Stemmer error: ' . $e->getMessage());
+	// 		}
+	// 	}
+//
+	// 	return array_values($words);
+	// }
 	private function tokenize_text( $text ) {
+		error_log('--- tokenize_text: START ---');
+		error_log('1. Input text type: ' . gettype($text));
+		error_log('1. Input text value: ' . print_r($text, true));
+
+		// Normalization
+		// $text_normalized = strtolower( (string) $text );
+		// $text_normalized = mb_convert_kana( $text_normalized, 'as' );
+		error_log('2. Normalized text: ' . $text);
+
 		$locale = get_locale();
-		$lang_code = strstr( $locale, '_', true ) ?: $locale; // 'ja', 'en' etc.
+		$lang_code = strstr( $locale, '_', true ) ?: $locale;
 		$stop_words = [];
 
-		// Find the language file and load the stop words
+		// Load stop words
 		$lang_file = FEAS_AI_PLUGIN_DIR . "includes/i18n/{$locale}.php";
 		if ( ! file_exists( $lang_file ) ) {
 			$lang_file = FEAS_AI_PLUGIN_DIR . "includes/i18n/{$lang_code}.php";
 		}
 		if ( file_exists( $lang_file ) ) {
-			$stop_words = include( $lang_file );
+			$lang_data = include( $lang_file );
+			$stop_words = $lang_data['stop_words'] ?? [];
 		}
+		error_log('3. Stop words type: ' . gettype($stop_words));
 
-		/**
-		 * Filters the array of stop words used during keyword extraction.
-		 *
-		 * This hook allows developers to add or remove stop words for a specific
-		 * language, or to replace the default list entirely.
-		 *
-		 * @since 1.0.0
-		 *
-		 * @param array  $stop_words The array of stop words to be filtered.
-		 * @param string $locale     The current site locale (e.g., 'en_US', 'ja').
-		 */
-		$stop_words = apply_filters( 'feas_ai_stop_words', $stop_words, $locale );
-
-		if ( 'ja' !== $lang_code && 'en' !== $lang_code ) {
-			if ( ! get_transient( 'feas_ai_i18n_notice_dismissed' ) ) {
-				add_action( 'admin_notices', [ $this, 'render_i18n_notice' ] );
-			}
-		}
-
-		// Split text into words
+		// Tokenize
 		if ( 'ja' === $lang_code ) {
 			$words = $this->segmenter->segment( $text );
+			// $words = array_map('strtolower', $words);
 		} else {
-			$words = preg_split('/[^\p{L}\p{N}]+/', strtolower($text), -1, PREG_SPLIT_NO_EMPTY);
+			$words = preg_split('/[^\p{L}\p{N}]+/', $text, -1, PREG_SPLIT_NO_EMPTY);
 		}
+		error_log('4. Words after tokenization type: ' . gettype($words));
+		error_log('4. Words after tokenization value: ' . print_r($words, true));
 
-		// Remove stop words
-		$words = array_diff($words, $stop_words);
+		// The problematic line
+		$words_after_diff = array_diff( (array) $words, (array) $stop_words );
+		error_log('5. Words after array_diff: ' . print_r($words_after_diff, true));
 
-		// Stemming (only in supported languages, such as English)
+		// Stemming
 		if ( 'ja' !== $lang_code ) {
 			try {
 				$stemmerManager = new \Wamania\Snowball\StemmerManager();
 				if ( in_array($lang_code, $stemmerManager->getAvailableLanguages()) ) {
 					$stemmer = $stemmerManager->create($lang_code);
 					$stemmed_words = [];
-					foreach ($words as $word) {
+					foreach ($words_after_diff as $word) {
 						$stemmed_words[] = $stemmer->stem($word);
 					}
-					$words = $stemmed_words;
+					$words_after_diff = $stemmed_words;
+					error_log('6. Words after stemming: ' . print_r($words_after_diff, true));
 				}
 			} catch (\Exception $e) {
 				error_log('Stemmer error: ' . $e->getMessage());
 			}
 		}
 
-		return array_values($words);
+		error_log('--- tokenize_text: END ---');
+		return array_values($words_after_diff);
 	}
 
 	/**

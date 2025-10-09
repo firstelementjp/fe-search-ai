@@ -200,7 +200,11 @@ class FEAS_AI_Settings {
 			$page_slug
 		);
 
-		register_setting( $settings_group, 'feas_ai_sync_options' );
+		register_setting(
+			$settings_group,
+			'feas_ai_sync_options',
+			[ 'sanitize_callback' => [ $this, 'sanitize_sync_options' ] ]
+		);
 		register_setting(
 			$settings_group,
 			'feas_ai_include_post_ids',
@@ -608,88 +612,58 @@ class FEAS_AI_Settings {
 		<?php
 	}
 
+
 	public function sync_options_field_html() {
-		$options = get_option( 'feas_ai_sync_options', [] );
+		$options    = get_option( 'feas_ai_sync_options', [] );
+		$post_types = get_post_types( [ 'public' => true ], 'objects' );
+		$excluded_post_types = ['attachment'];
 
 		$string = __( 'Select the post types you want to include in your AI search and the metadata you want to include in chunks for each post type.', 'fe-ai-search' );
 		echo '<p class="description">' . wp_kses_post( $string ) . '</p>';
-		echo '<div id="feas-ai-sync-options-accordion">';
-
-		// Synchronization Target
-		$post_types = get_post_types( ['public' => true], 'objects' );
-		$excluded_post_types = ['attachment'];
+		echo '<div id="feas-ai-sync-options-accordion" class="feas-ai-accordion-wrapper">';
 
 		foreach ( $post_types as $post_type ) {
-			if ( in_array( $post_type->name, $excluded_post_types ) ) {
+			if ( in_array( $post_type->name, $excluded_post_types, true ) ) {
 				continue;
 			}
 
-			$defaults = [
-				'enabled'         => ($post_type->name === 'post' || $post_type->name === 'page'),
-				'include_title'   => true,
-				'include_content' => true,
-				'include_date'    => true,
-				'include_author'  => true,
-			];
-
-			$pt_options = wp_parse_args( $options['post_types'][ $post_type->name ] ?? [], $defaults );
-
+			// Get saved options for this post type, using '??' to provide safe defaults.
+			$pt_options      = $options['post_types'][ $post_type->name ] ?? [];
+			$is_enabled      = $pt_options['enabled'] ?? in_array( $post_type->name, [ 'post', 'page' ], true );
+			$include_title   = $pt_options['include_title'] ?? true;
+			$include_content = $pt_options['include_content'] ?? true;
+			$include_date    = $pt_options['include_date'] ?? true;
+			$include_author  = $pt_options['include_author'] ?? true;
 			?>
-			<div
-				class="feas-ai-accordion-wrapper post-type-accordion-item"
-				style="border: 1px solid #c3c4c7; margin-bottom: -1px; background: #fff;"
-			>
-				<h4 class="accordion-title" style="margin: 0; padding: 10px; cursor: pointer; font-size: 14px; >
+			<div class="post-type-accordion-item">
+				<h4 class="accordion-title">
 					<label>
 						<input
 							type="checkbox"
 							name="feas_ai_sync_options[post_types][<?php echo esc_attr( $post_type->name ); ?>][enabled]"
 							value="1"
-							<?php checked( $pt_options['enabled'] ); ?>
+							<?php checked( $is_enabled ); ?>
 						>
 						<?php echo esc_html( $post_type->label ); ?> (<?php echo esc_html( $post_type->name ); ?>)
 					</label>
 				</h4>
-				<div
-					class="accordion-content"
-					style="<?php echo $pt_options['enabled'] ? '' : 'display: none;'; ?> padding: 15px; border-top: 1px solid #ddd;"
-				>
+				<div class="accordion-content" style="<?php echo $is_enabled ? 'display: block;' : 'display: none;'; ?>">
 					<fieldset>
 						<label>
-							<input
-								type="checkbox"
-								name="feas_ai_sync_options[post_types][<?php echo esc_attr( $post_type->name ); ?>][include_title]"
-								value="1"
-								<?php checked( $pt_options['include_title'] ); ?>
-							>
-							<?php esc_html_e( 'Post Title', 'fe-ai-search' ); ?>
+							<input type="checkbox" name="feas_ai_sync_options[post_types][<?php echo esc_attr( $post_type->name ); ?>][include_title]" value="1" <?php checked( $include_title ); ?>>
+							<?php esc_html_e( 'Include Post Title', 'fe-ai-search' ); ?>
 						</label>
 						<label>
-							<input
-								type="checkbox"
-								name="feas_ai_sync_options[post_types][<?php echo esc_attr( $post_type->name ); ?>][include_content]"
-								value="1"
-								<?php checked( $pt_options['include_content'] ); ?>
-							>
-							<?php esc_html_e( 'Post Content', 'fe-ai-search' ); ?>
+							<input type="checkbox" name="feas_ai_sync_options[post_types][<?php echo esc_attr( $post_type->name ); ?>][include_content]" value="1" <?php checked( $include_content ); ?>>
+							<?php esc_html_e( 'Include Post Content', 'fe-ai-search' ); ?>
 						</label>
 						<label>
-							<input
-								type="checkbox"
-								name="feas_ai_sync_options[post_types][<?php echo esc_attr( $post_type->name ); ?>][include_date]"
-								value="1"
-								<?php checked( $pt_options['include_date'] ); ?>
-							>
-							<?php esc_html_e( 'Post Date', 'fe-ai-search' ); ?>
+							<input type="checkbox" name="feas_ai_sync_options[post_types][<?php echo esc_attr( $post_type->name ); ?>][include_date]" value="1" <?php checked( $include_date ); ?>>
+							<?php esc_html_e( 'Include Post Date', 'fe-ai-search' ); ?>
 						</label>
 						<label>
-							<input
-								type="checkbox"
-								name="feas_ai_sync_options[post_types][<?php echo esc_attr($post_type->name); ?>][include_author]"
-								value="1"
-								<?php checked($pt_options['include_author']); ?>
-							>
-							<?php esc_html_e( 'Post Author', 'fe-ai-search' ); ?>
+							<input type="checkbox" name="feas_ai_sync_options[post_types][<?php echo esc_attr( $post_type->name ); ?>][include_author]" value="1" <?php checked( $include_author ); ?>>
+							<?php esc_html_e( 'Include Post Author', 'fe-ai-search' ); ?>
 						</label>
 
 						<?php
@@ -699,31 +673,20 @@ class FEAS_AI_Settings {
 								if ( ! $tax->public ) {
 									continue;
 								}
-								$is_checked = ! empty( $pt_options['taxonomies'] ) && in_array( $tax->name, $pt_options['taxonomies'] );
+								$is_checked = ! empty( $pt_options['taxonomies'] ) && in_array( $tax->name, $pt_options['taxonomies'], true );
 								?>
 								<label>
-									<input
-										type="checkbox"
-										name="feas_ai_sync_options[post_types][<?php echo esc_attr( $post_type->name ); ?>][taxonomies][]"
-										value="<?php echo esc_attr( $tax->name ); ?>"
-										<?php checked( $is_checked ); ?>
-									>
-									<?php
-									printf(
-										// translators: %s: Taxonomy label (e.g., "Categories", "Tags")
-										esc_html__( '%s', 'fe-ai-search' ),
-										esc_html( $tax->label )
-									);
-									?>
+									<input type="checkbox" name="feas_ai_sync_options[post_types][<?php echo esc_attr( $post_type->name ); ?>][taxonomies][]" value="<?php echo esc_attr( $tax->name ); ?>" <?php checked( $is_checked ); ?>>
+									<?php printf( esc_html__( 'Include %s', 'fe-ai-search' ), esc_html( $tax->label ) ); ?>
 								</label>
 								<?php
 							}
 						}
 						?>
 
-						<div style="margin-top: 10px;">
+						<div>
 							<label for="feas_ai_custom_fields_<?php echo esc_attr( $post_type->name ); ?>">
-								<?php esc_html_e( 'Custom Fields', 'fe-ai-search' ); ?> <?php echo $this->license_alert_icon; ?></strong>
+								<strong><?php esc_html_e( 'Include Custom Fields', 'fe-ai-search' ); ?></strong> <?php echo $this->is_license_active ? '' : $this->license_alert_icon; ?>
 							</label>
 							<input
 								type="text"
@@ -739,8 +702,12 @@ class FEAS_AI_Settings {
 							</p>
 							<?php if ( ! class_exists( 'FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings' ) ) : ?>
 								<p class="description">
-									<?php esc_html_e( 'This feature is available in the Pro version.', 'fe-ai-search' ); ?>
-									<a href="#" target="_blank"><?php esc_html_e( 'Upgrade to Pro', 'fe-ai-search' ); ?></a>
+									<?php
+									printf(
+										wp_kses_post( __( 'This is a Pro feature. <a href="%s" target="_blank">Upgrade to Pro</a>', 'fe-ai-search' ) ),
+										esc_url( FEAS_AI_PRO_URL )
+									);
+									?>
 								</p>
 							<?php endif; ?>
 						</div>
@@ -750,17 +717,8 @@ class FEAS_AI_Settings {
 			<?php
 		}
 		echo '</div>';
-		?>
-		<script>
-		jQuery(document).ready(function($) {
-			$('#feas-ai-sync-options-accordion .accordion-title').on('click', function(e){
-				if (e.target.tagName === 'INPUT') return;
-				$(this).next('.accordion-content').slideToggle();
-			});
-		});
-		</script>
-		<?php
 	}
+
 
 	public function sync_ui_field_html() {
 		global $wpdb;
@@ -1226,6 +1184,41 @@ class FEAS_AI_Settings {
 		}
 		echo '</fieldset>';
 		echo '<p class="description">' . __( 'Select the post types you want to include in AI search.', 'fe-ai-search' ) . '</p>';
+	}
+
+	/**
+	 * Sanitizes the sync options before saving to the database.
+	 *
+	 * @param array $input The raw input from the settings form.
+	 * @return array The sanitized array.
+	 */
+	public function sanitize_sync_options( $input ) {
+		$new_input = [];
+		$post_types = get_post_types( ['public' => true], 'objects' );
+
+		foreach ( $post_types as $post_type ) {
+			$pt_name = $post_type->name;
+			if ( 'attachment' === $pt_name ) continue;
+
+			// --- 'enabled' checkbox ---
+			$new_input['post_types'][$pt_name]['enabled'] = ! empty( $input['post_types'][$pt_name]['enabled'] ) ? 1 : 0;
+
+			// --- Other checkboxes ---
+			$checkboxes = ['include_title', 'include_content', 'include_date', 'include_author'];
+			foreach($checkboxes as $key) {
+				$new_input['post_types'][$pt_name][$key] = ! empty( $input['post_types'][$pt_name][$key] ) ? 1 : 0;
+			}
+
+			// --- Taxonomies ---
+			$new_input['post_types'][$pt_name]['taxonomies'] = $input['post_types'][$pt_name]['taxonomies'] ?? [];
+
+			// --- Custom Fields (Pro) ---
+			if ( isset( $input['post_types'][$pt_name]['custom_fields'] ) ) {
+				$new_input['post_types'][$pt_name]['custom_fields'] = sanitize_text_field( $input['post_types'][$pt_name]['custom_fields'] );
+			}
+		}
+
+		return $new_input;
 	}
 
 	/**

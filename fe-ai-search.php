@@ -71,6 +71,7 @@ function feas_ai_run_plugin() {
     });
 
     new FEAISearch\Admin\FEAS_AI_Admin();
+    new FEAISearch\Admin\FEAS_AI_License_Settings();
     new FEAISearch\Frontend\FEAS_AI_Chat_UI( $assets_handler );
     new FEAISearch\Ajax\FEAS_AI_Chat_Handler( $sync_handler );
     new FEAISearch\Core\FEAS_AI_Sync_Hooks( $sync_handler );

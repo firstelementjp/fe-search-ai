@@ -60,7 +60,7 @@ hr {
 .form-table td label,
 .form-table td fieldset label {
 	display: block;
-	margin: 0 0 0.3rem !important;
+	margin: 0 0 0.3rem;
 }
 
 .form-table .wp-picker-input-wrap label {
@@ -100,7 +100,42 @@ textarea {
 	margin: 1rem 0 0.5rem;
 	font-weight: bold;
 }
-
+.accordion-title {
+	padding: 10px;
+	margin: 0;
+	border: 1px solid #c3c4c7;
+	margin-bottom: 0;
+	background: #fff;
+	margin-top: -2px;
+}
+/* .accordion-content {
+	border-top: 1px solid #ddd;
+	max-height: 0;
+	overflow: hidden;
+	transition: max-height 0.3s ease-out, padding-top 0.3s ease-out, padding-bottom 0.3s ease-out;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-top: none;
+} */
+/* --- Accordion UI --- */
+.accordion-content {
+	display: none; /* 初期状態では非表示 */
+	padding: 15px;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-top: none;
+}
+.accordion-content.open {
+	padding-top: 15px;
+	padding-bottom: 15px;
+	border-top: 1px solid #ddd;
+}
+.accordion-content > fieldset {
+	padding: 15px;
+}
+.form-table td .accordion-title label {
+	margin: 0;
+}
 /* ==========================================================================
    Icons & Utilities
    ========================================================================== */
