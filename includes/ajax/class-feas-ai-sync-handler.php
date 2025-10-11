@@ -811,55 +811,136 @@ class FEAS_AI_Sync_Handler {
 //
 	// 	return array_values($words);
 	// }
+	// private function tokenize_text( $text ) {
+	// 	error_log('--- tokenize_text: START ---');
+	// 	error_log('1. Input text type: ' . gettype($text));
+	// 	// error_log('1. Input text value: ' . print_r($text, true)); // This can be very long, so commented out for now.
+//
+	// 	// Normalization
+	// 	$text_normalized = mb_strtolower( (string) $text, 'UTF-8' );
+	//
+	// 	// 2. 全角の英数字・スペースを半角に、半角カタカナを全角カタカナに変換
+	// 	// 'a': 全角英数を半角に
+	// 	// 's': 全角スペースを半角に
+	// 	// 'K': 半角カタカナを全角カタカナに
+	// 	// 'V': 濁点・半濁点を結合
+	// 	$text = mb_convert_kana( $text, 'asKV', 'UTF-8' );
+//
+	// 	// 3. すべての全角カタカナを、全角ひらがなに統一
+	// 	// 'C': 全角カタカナを全角ひらがなに
+	// 	$text = mb_convert_kana( $text, 'C', 'UTF-8' );
+	// 	// 3. 記号や句読点をスペースに置換
+	// 	$text_normalized = preg_replace('/[^\p{L}\p{N}\s]/u', ' ', $text);
+//
+	// 	error_log('2. Normalized text: ' . $text_normalized);
+//
+	// 	$locale = get_locale();
+	// 	$lang_code = strstr( $locale, '_', true ) ?: $locale;
+	// 	$stop_words = [];
+//
+	// 	// ★ 2. Load stop words
+	// 	$lang_file = FEAS_AI_PLUGIN_DIR . "includes/i18n/{$locale}.php";
+	// 	if ( ! file_exists( $lang_file ) ) {
+	// 		$lang_file = FEAS_AI_PLUGIN_DIR . "includes/i18n/{$lang_code}.php";
+	// 	}
+	// 	if ( file_exists( $lang_file ) ) {
+	// 		$lang_data = include( $lang_file );
+	// 		$stop_words = $lang_data['stop_words'] ?? [];
+	// 	}
+	// 	error_log('3. Stop words type: ' . gettype($stop_words));
+//
+	// 	// ★ 3. Tokenize the cleaned text
+	// 	if ( 'ja' === $lang_code ) {
+	// 		$words = $this->segmenter->segment( $text_normalized );
+	// 	} else {
+	// 		$words = preg_split('/\s+/', $text_normalized, -1, PREG_SPLIT_NO_EMPTY);
+	// 	}
+	// 	error_log('4. Words after tokenization type: ' . gettype($words));
+	// 	error_log('4. Words after tokenization value: ' . print_r($words, true));
+//
+	// 	// ★ 4. Remove stop words
+	// 	$words_after_diff = array_diff( (array) $words, (array) $stop_words );
+	// 	error_log('5. Words after array_diff: ' . print_r($words_after_diff, true));
+//
+	// 	// ★ 5. Stemming for non-Japanese languages
+	// 	if ( 'ja' !== $lang_code ) {
+	// 		try {
+	// 			$stemmerManager = new \Wamania\Snowball\StemmerManager();
+	// 			if ( in_array($lang_code, $stemmerManager->getAvailableLanguages()) ) {
+	// 				$stemmer = $stemmerManager->create($lang_code);
+	// 				$stemmed_words = [];
+	// 				foreach ($words_after_diff as $word) {
+	// 					$stemmed_words[] = $stemmer->stem($word);
+	// 				}
+	// 				$words_after_diff = $stemmed_words;
+	// 				error_log('6. Words after stemming: ' . print_r($words_after_diff, true));
+	// 			}
+	// 		} catch (\Exception $e) {
+	// 			error_log('Stemmer error: ' . $e->getMessage());
+	// 		}
+	// 	}
+//
+	// 	error_log('--- tokenize_text: END ---');
+	// 	return array_values($words_after_diff);
+	// }
 	private function tokenize_text( $text ) {
 		error_log('--- tokenize_text: START ---');
 		error_log('1. Input text type: ' . gettype($text));
-		// error_log('1. Input text value: ' . print_r($text, true)); // This can be very long, so commented out for now.
+		// error_log('1. Input text value: ' . print_r($text, true)); // This can be very long.
 
-		// 2. 全角の英数字・スペースを半角に、半角カタカナを全角カタカナに変換
-		// 'a': 全角英数を半角に
-		// 's': 全角スペースを半角に
-		// 'K': 半角カタカナを全角カタカナに
-		// 'V': 濁点・半濁点を結合
-		$text = mb_convert_kana( $text, 'asKV', 'UTF-8' );
+		// Normalization
+		// --- Step 1: Basic Normalization ---
+		// First, convert the entire text to lowercase.
+		$text_normalized = mb_strtolower( (string) $text, 'UTF-8' );
 
-		// 3. すべての全角カタカナを、全角ひらがなに統一
-		// 'C': 全角カタカナを全角ひらがなに
-		$text = mb_convert_kana( $text, 'C', 'UTF-8' );
-		// 3. 記号や句読点をスペースに置換
-		$text_normalized = preg_replace('/[^\p{L}\p{N}\s]/u', ' ', $text);
+		// --- Step 3: Normalize Alphanumeric Characters and Spaces ---
+		// 'a': Converts full-width alphanumeric characters to half-width.
+		// 's': Converts full-width spaces to half-width.
+		$text_normalized = mb_convert_kana( $text_normalized, 'Hca', 'UTF-8' );
 
+		// --- Step 2: Unify Japanese Kana to HIRAGANA ---
+		// This is a two-step process to handle all variations.
+		// 'K': Converts half-width katakana to full-width katakana.
+		// 'V': Combines voiced sound marks (dakuten/handakuten).
+		// $text_normalized = mb_convert_kana( $text_normalized, 'KV', 'UTF-8' );
+		// 'C': Converts the now-unified full-width katakana to full-width hiragana.
+		// $text_normalized = mb_convert_kana( $text_normalized, 'C', 'UTF-8' );
+
+
+		$text_normalized = preg_replace('/[^\p{L}\p{N}\s]/u', ' ', $text_normalized);
 		error_log('2. Normalized text: ' . $text_normalized);
 
-		$locale = get_locale();
-		$lang_code = strstr( $locale, '_', true ) ?: $locale;
+		$locale     = get_locale();
+		$lang_code  = strstr( $locale, '_', true ) ?: $locale;
 		$stop_words = [];
 
-		// ★ 2. Load stop words
+		// Load stop words
 		$lang_file = FEAS_AI_PLUGIN_DIR . "includes/i18n/{$locale}.php";
 		if ( ! file_exists( $lang_file ) ) {
 			$lang_file = FEAS_AI_PLUGIN_DIR . "includes/i18n/{$lang_code}.php";
 		}
 		if ( file_exists( $lang_file ) ) {
-			$lang_data = include( $lang_file );
+			$lang_data  = include( $lang_file );
 			$stop_words = $lang_data['stop_words'] ?? [];
 		}
+		// Add filter for stop words
+		$stop_words = apply_filters( 'feas_ai_stop_words', $stop_words, $locale );
 		error_log('3. Stop words type: ' . gettype($stop_words));
 
-		// ★ 3. Tokenize the cleaned text
+		// Tokenize
 		if ( 'ja' === $lang_code ) {
 			$words = $this->segmenter->segment( $text_normalized );
 		} else {
 			$words = preg_split('/\s+/', $text_normalized, -1, PREG_SPLIT_NO_EMPTY);
 		}
 		error_log('4. Words after tokenization type: ' . gettype($words));
-		error_log('4. Words after tokenization value: ' . print_r($words, true));
+		// error_log('4. Words after tokenization value: ' . print_r($words, true));
 
-		// ★ 4. Remove stop words
+		// Remove stop words
 		$words_after_diff = array_diff( (array) $words, (array) $stop_words );
-		error_log('5. Words after array_diff: ' . print_r($words_after_diff, true));
+		// error_log('5. Words after array_diff: ' . print_r($words_after_diff, true));
 
-		// ★ 5. Stemming for non-Japanese languages
+		// Stemming
 		if ( 'ja' !== $lang_code ) {
 			try {
 				$stemmerManager = new \Wamania\Snowball\StemmerManager();
@@ -870,15 +951,37 @@ class FEAS_AI_Sync_Handler {
 						$stemmed_words[] = $stemmer->stem($word);
 					}
 					$words_after_diff = $stemmed_words;
-					error_log('6. Words after stemming: ' . print_r($words_after_diff, true));
+					// error_log('6. Words after stemming: ' . print_r($words_after_diff, true));
 				}
-			} catch (\Exception $e) {
-				error_log('Stemmer error: ' . $e->getMessage());
+			} catch (\Throwable $t) {
+				error_log('Stemmer error: ' . $t->getMessage());
 			}
 		}
 
+		if ( ! empty( $words_after_diff ) ) {
+			$words_after_diff = array_filter( $words_after_diff, function( $words_after_diff ) {
+				return ! empty( trim( $words_after_diff ) );
+			} );
+		}
+
+		$final_words = array_values($words_after_diff);
+
+		/**
+		 * Filters the array of keywords extracted from a text.
+		 *
+		 * This allows developers to implement their own language support or
+		 * replace the default tokenizer entirely.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param array  $words  The array of processed keywords.
+		 * @param string $text   The original, unmodified text.
+		 * @param string $locale The current site locale.
+		 */
+		$final_words = apply_filters( 'feas_ai_tokenize_text', $final_words, $text, $locale );
+
 		error_log('--- tokenize_text: END ---');
-		return array_values($words_after_diff);
+		return $final_words;
 	}
 
 	/**
