@@ -98,8 +98,45 @@ document.addEventListener('DOMContentLoaded', () => {
 	 * @param {number} totalPages - The total number of batches.
 	 * @param {number} totalPosts - The total number of posts to sync.
 	 */
+	// async function processBatch(currentPage, totalPages, totalPosts, batch_size) {
+	// 	// const batch_size = 100; // This should match the PHP setting.
+	// 	const processed = Math.min((currentPage - 1) * batch_size, totalPosts);
+	// 	const progress = totalPosts ? Math.round((processed / totalPosts) * 100) : 0;
+//
+	// 	progressBar.style.width = `${progress}%`;
+	// 	progressBar.textContent = `${progress}%`;
+	// 	statusText.textContent = `${__('Processing posts...', 'fe-ai-search')} (${processed} / ${totalPosts})`;
+	// 	statusSpinner.style.display = 'inline-block';
+//
+	// 	try {
+	// 		const response = await wpPost('feas_ai_process_batch', {
+	// 			nonce: feas_ai_sync_obj.nonce,
+	// 			page: currentPage,
+	// 			post_ids: JSON.stringify(postIDsToSync)
+	// 		});
+//
+	// 		if (response.success) {
+	// 			if (currentPage < totalPages) {
+	// 				await processBatch(currentPage + 1, totalPages, totalPosts);
+	// 			} else {
+	// 				// Final batch is complete.
+	// 				progressBar.style.width = '100%';
+	// 				progressBar.textContent = '100%';
+	// 				statusText.innerHTML = `<strong style="color:green;">${__('Synchronization complete!', 'fe-ai-search')} (${totalPosts} ${__('items', 'fe-ai-search')})</strong>`;
+	// 				startBtn.disabled = false;
+	// 				statusSpinner.style.display = 'none';
+	// 				wpPost('feas_ai_update_sync_timestamp', { nonce: feas_ai_sync_obj.nonce });
+	// 			}
+	// 		} else {
+	// 			throw new Error(response.data.message || 'Batch processing failed.');
+	// 		}
+	// 	} catch (error) {
+	// 		statusText.innerHTML = `<span style="color:red;">${__('Error: A problem occurred while processing batch', 'fe-ai-search')} ${currentPage}.</span>`;
+	// 		statusSpinner.style.display = 'none';
+	// 		startBtn.disabled = false;
+	// 	}
+	// }
 	async function processBatch(currentPage, totalPages, totalPosts, batch_size) {
-		// const batch_size = 100; // This should match the PHP setting.
 		const processed = Math.min((currentPage - 1) * batch_size, totalPosts);
 		const progress = totalPosts ? Math.round((processed / totalPosts) * 100) : 0;
 
@@ -108,16 +145,33 @@ document.addEventListener('DOMContentLoaded', () => {
 		statusText.textContent = `${__('Processing posts...', 'fe-ai-search')} (${processed} / ${totalPosts})`;
 		statusSpinner.style.display = 'inline-block';
 
+		let responseText = ''; // サーバーからの生テキストを保持する変数
+
 		try {
-			const response = await wpPost('feas_ai_process_batch', {
+			const formData = new URLSearchParams({
+				action: 'feas_ai_process_batch',
 				nonce: feas_ai_sync_obj.nonce,
 				page: currentPage,
 				post_ids: JSON.stringify(postIDsToSync)
 			});
 
+			// 1. fetchを直接使い、応答をまずテキストとして受け取る
+			const rawResponse = await fetch(ajaxurl, {
+				method: 'POST',
+				body: formData
+			});
+			responseText = await rawResponse.text();
+
+			// ★ コンソールに、サーバーからの生の応答を出力
+			console.log(`Raw server response for batch ${currentPage}:`, responseText);
+
+			// 2. 受け取ったテキストをJSONとして解析してみる
+			const response = JSON.parse(responseText);
+
 			if (response.success) {
 				if (currentPage < totalPages) {
-					await processBatch(currentPage + 1, totalPages, totalPosts);
+					// ★ batch_sizeを次の再帰呼び出しに渡す
+					await processBatch(currentPage + 1, totalPages, totalPosts, batch_size);
 				} else {
 					// Final batch is complete.
 					progressBar.style.width = '100%';
@@ -131,6 +185,10 @@ document.addEventListener('DOMContentLoaded', () => {
 				throw new Error(response.data.message || 'Batch processing failed.');
 			}
 		} catch (error) {
+			// JSONの解析に失敗した場合、コンソールにエラーを出力
+			if (error instanceof SyntaxError) {
+				console.error('Failed to parse JSON. See the raw response above for details.');
+			}
 			statusText.innerHTML = `<span style="color:red;">${__('Error: A problem occurred while processing batch', 'fe-ai-search')} ${currentPage}.</span>`;
 			statusSpinner.style.display = 'none';
 			startBtn.disabled = false;

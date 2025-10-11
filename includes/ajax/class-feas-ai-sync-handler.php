@@ -115,81 +115,193 @@ class FEAS_AI_Sync_Handler {
 	}
 
 	public function ajax_process_batch() {
-		check_ajax_referer( 'feas_ai_ajax_nonce', 'nonce' );
+		// PHPの実行が、どんなエラーでも中断されないようにする
+		try {
+			set_time_limit(0);
+			ob_start(); // これ以降の予期せぬ出力をすべてバッファに溜める
 
-		$page = isset( $_POST['page'] ) ? absint( $_POST['page'] ) : 1;
-		$post_ids_json = isset($_POST['post_ids']) ? stripslashes($_POST['post_ids']) : '[]';
-		$post_ids = json_decode($post_ids_json, true);
+			error_log('--- ajax_process_batch: START ---');
+			check_ajax_referer( 'feas_ai_ajax_nonce', 'nonce' );
 
-		$offset = ($page - 1) * self::BATCH_SIZE;
-		$batch_ids = array_slice($post_ids, $offset, self::BATCH_SIZE);
+			// --- 1. 入力データを処理 ---
+			$page          = isset( $_POST['page'] ) ? absint( $_POST['page'] ) : 1;
+			$post_ids_json = isset( $_POST['post_ids'] ) ? stripslashes( $_POST['post_ids'] ) : '[]';
+			$post_ids      = json_decode( $post_ids_json, true );
+			$batch_size    = (int) get_option( 'feas_ai_batch_size', 10 );
+			$offset        = ( $page - 1 ) * $batch_size;
+			$batch_ids     = array_slice( $post_ids, $offset, $batch_size );
+			error_log("1. Processing Batch {$page}. Batch IDs (" . count($batch_ids) . " items): " . print_r($batch_ids, true));
 
-		// Extract the part of this batch based on the ID list passed from JS
-		$batch_size = (int) get_option( 'feas_ai_batch_size', 10 );
-		$offset = ($page - 1) * $batch_size;
-		$batch_ids = array_slice($post_ids, $offset, $batch_size);
+			if ( empty( $batch_ids ) ) {
+				ob_end_clean();
+				wp_send_json_success( [ 'message' => 'No more posts to process.' ] );
+				return;
+			}
 
-		if ( empty($batch_ids) ) {
-			wp_send_json_success( ['message' => 'No more posts to process.'] );
-			return;
-		}
+			// --- 2. 投稿データを取得 ---
+			$posts_batch = get_posts([
+				'post__in'            => $batch_ids,
+				'post_type'           => 'any',
+				'orderby'             => 'post__in',
+				'posts_per_page'      => count( $batch_ids ),
+				'ignore_sticky_posts' => 1,
+				'post_status'         => 'publish',
+			]);
+			error_log("2. get_posts() found " . count($posts_batch) . " posts for this batch.");
 
-		$posts_batch = get_posts([
-			'post__in'            => $batch_ids,
-			'post_type'           => 'any',
-			'orderby'             => 'post__in',
-			'posts_per_page'      => count($batch_ids),
-			'ignore_sticky_posts' => 1,
-		]);
+			// --- 3. 各投稿を処理 ---
+			foreach ( $posts_batch as $post ) {
+				error_log("  - Processing Post ID: {$post->ID}");
 
-		$sync_options = get_option('feas_ai_sync_options', []);
+				$chunks_with_meta = $this->create_chunks_from_post( $post );
+				if ( empty( $chunks_with_meta ) ) {
+					error_log("    - No chunks created. Skipping.");
+					continue;
+				}
+				error_log("    - Created " . count($chunks_with_meta) . " chunks.");
 
-		// Loop through the posts and create and save chunks according to your preferences
-		// $segmenter = new TinySegmenter();
-		global $wpdb;
-		$vectors_table = $wpdb->prefix . 'feas_ai_vectors';
-		$index_table   = $wpdb->prefix . 'feas_ai_keyword_index';
+				$chunks_for_embedding = wp_list_pluck( $chunks_with_meta, 'content_chunk' );
+				$embedding_response   = $this->get_embeddings_via_selected_provider( $chunks_for_embedding );
+				error_log("    - Embedding API Response: " . print_r($embedding_response, true));
 
-		foreach ( $posts_batch as $post ) {
+				if ( ! is_wp_error( $embedding_response ) && ! empty( $embedding_response['data'] ) ) {
+					error_log("    - Embedding successful. Starting DB insert...");
+					global $wpdb;
+					$vectors_table = $wpdb->prefix . 'feas_ai_vectors';
+					$index_table   = $wpdb->prefix . 'feas_ai_keyword_index';
+					$vectors_data  = $embedding_response['data'];
 
-			$chunks_with_meta = $this->create_chunks_from_post( $post );
+					foreach ( $vectors_data as $index => $vector_item ) {
+						if ( empty( $vector_item['embedding'] ) ) continue;
 
-			if ( empty($chunks_with_meta) ) { continue; }
+						$chunk_item = $chunks_with_meta[ $index ];
 
-			$embedding_response = $this->get_embeddings_via_selected_provider( $chunks_with_meta );
+						$wpdb->insert(
+							$vectors_table,
+							[
+								'post_id'       => $post->ID,
+								'content_chunk' => $chunk_item['content_chunk'],
+								'vector_data'   => wp_json_encode( $vector_item['embedding'] ),
+								'created_at'    => current_time( 'mysql' ),
+							]
+						);
+						$vector_id = $wpdb->insert_id;
+						error_log("      - Inserted vector. New vector_id: " . $vector_id);
 
-			if ( ! is_wp_error( $embedding_response ) && !empty($embedding_response['data']) ) {
-				$vectors_data = $embedding_response['data'];
-				foreach ( $vectors_data as $index => $vector_item ) {
-					$wpdb->insert(
-						$vectors_table,
-						[
-							'post_id'       => $post->ID,
-							'chunk_index'   => $index,
-							'content_chunk' => $chunks_with_meta[$index],
-							'vector_data'   => json_encode( $vector_item['embedding'] ),
-							'created_at'    => current_time( 'mysql' ),
-						],
-						[ '%d', '%d', '%s', '%s', '%s' ]
-					);
-					$vector_id = $wpdb->insert_id;
-					if ($vector_id) {
-						$keywords = $this->tokenize_text( $chunks_with_meta[$index] );
-						foreach ( array_unique( $keywords ) as $keyword ) {
-							if ( mb_strlen( $keyword ) > 1 ) {
-								$wpdb->insert(
-									$index_table,
-									[ 'keyword' => $keyword, 'vector_id' => $vector_id ],
-									[ '%s', '%d' ]
-								);
+						if ($vector_id) {
+							$keywords = $this->tokenize_text( $chunk_item['content_chunk'] );
+							$unique_keywords = array_unique( $keywords );
+							error_log("      - Tokenized to " . count($unique_keywords) . " unique keywords.");
+
+							foreach ( $unique_keywords as $keyword ) {
+								if ( mb_strlen( $keyword ) > 1 ) {
+									$wpdb->insert(
+										$index_table,
+										[ 'keyword' => $keyword, 'vector_id' => $vector_id ],
+										[ '%s', '%d' ]
+									);
+								}
 							}
 						}
 					}
+				} else {
+					error_log("    - Embedding FAILED or returned empty data. Skipping DB insert.");
 				}
 			}
+
+			ob_end_clean(); // 成功時も、意図しない出力をすべて破棄
+			wp_send_json_success( [ 'message' => 'Batch ' . $page . ' processed.' ] );
+
+		} catch ( \Throwable $t ) {
+			error_log( '--- FATAL ERROR in ajax_process_batch ---' );
+			error_log( 'Error Message: ' . $t->getMessage() );
+			error_log( 'File: ' . $t->getFile() . ' on line ' . $t->getLine() );
+
+			if ( ob_get_level() > 0 ) {
+				ob_end_clean();
+			}
+			if ( ! headers_sent() ) {
+				wp_send_json_error( [ 'message' => 'A fatal error occurred on the server: ' . $t->getMessage() ] );
+			}
 		}
-		wp_send_json_success( ['message' => 'Batch ' . $page . ' processed.'] );
 	}
+
+	// public function ajax_process_batch() {
+	// 	check_ajax_referer( 'feas_ai_ajax_nonce', 'nonce' );
+//
+	// 	$page = isset( $_POST['page'] ) ? absint( $_POST['page'] ) : 1;
+	// 	$post_ids_json = isset($_POST['post_ids']) ? stripslashes($_POST['post_ids']) : '[]';
+	// 	$post_ids = json_decode($post_ids_json, true);
+//
+	// 	$offset = ($page - 1) * self::BATCH_SIZE;
+	// 	$batch_ids = array_slice($post_ids, $offset, self::BATCH_SIZE);
+//
+	// 	// Extract the part of this batch based on the ID list passed from JS
+	// 	$batch_size = (int) get_option( 'feas_ai_batch_size', 10 );
+	// 	$offset = ($page - 1) * $batch_size;
+	// 	$batch_ids = array_slice($post_ids, $offset, $batch_size);
+//
+	// 	if ( empty($batch_ids) ) {
+	// 		wp_send_json_success( ['message' => 'No more posts to process.'] );
+	// 		return;
+	// 	}
+//
+	// 	$posts_batch = get_posts([
+	// 		'post__in'            => $batch_ids,
+	// 		'post_type'           => 'any',
+	// 		'orderby'             => 'post__in',
+	// 		'posts_per_page'      => count($batch_ids),
+	// 		'ignore_sticky_posts' => 1,
+	// 	]);
+//
+	// 	$sync_options = get_option('feas_ai_sync_options', []);
+//
+	// 	// Loop through the posts and create and save chunks according to your preferences
+	// 	// $segmenter = new TinySegmenter();
+	// 	global $wpdb;
+	// 	$vectors_table = $wpdb->prefix . 'feas_ai_vectors';
+	// 	$index_table   = $wpdb->prefix . 'feas_ai_keyword_index';
+//
+	// 	foreach ( $posts_batch as $post ) {
+//
+	// 		$chunks_with_meta = $this->create_chunks_from_post( $post );
+//
+	// 		if ( empty($chunks_with_meta) ) { continue; }
+//
+	// 		$embedding_response = $this->get_embeddings_via_selected_provider( $chunks_with_meta );
+//
+	// 		if ( ! is_wp_error( $embedding_response ) && !empty($embedding_response['data']) ) {
+	// 			$vectors_data = $embedding_response['data'];
+	// 			foreach ( $vectors_data as $index => $vector_item ) {
+	// 				$wpdb->insert(
+	// 					$vectors_table,
+	// 					[
+	// 						'post_id'       => $post->ID,
+	// 						'chunk_index'   => $index,
+	// 						'content_chunk' => $chunks_with_meta[$index],
+	// 						'vector_data'   => json_encode( $vector_item['embedding'] ),
+	// 						'created_at'    => current_time( 'mysql' ),
+	// 					],
+	// 					[ '%d', '%d', '%s', '%s', '%s' ]
+	// 				);
+	// 				$vector_id = $wpdb->insert_id;
+	// 				if ($vector_id) {
+	// 					$keywords = $this->tokenize_text( $chunks_with_meta[$index] );
+	// 					foreach ( array_unique( $keywords ) as $keyword ) {
+	// 						if ( mb_strlen( $keyword ) > 1 ) {
+	// 							$wpdb->insert(
+	// 								$index_table,
+	// 								[ 'keyword' => $keyword, 'vector_id' => $vector_id ],
+	// 								[ '%s', '%d' ]
+	// 							);
+	// 						}
+	// 					}
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// 	wp_send_json_success( ['message' => 'Batch ' . $page . ' processed.'] );
+	// }
 
 	public function ajax_update_sync_timestamp() {
 		check_ajax_referer( 'feas_ai_ajax_nonce', 'nonce' );
@@ -215,123 +327,262 @@ class FEAS_AI_Sync_Handler {
 	/**
 	 * A fast, local search method that doesn't time out
 	 */
+	/**
+	 * Finds text chunks similar to the user's question based on keyword matching.
+	 *
+	 * @param string $question The user's question.
+	 * @return array An array of the most relevant text chunks.
+	 */
 	public function find_similar_chunks( $question ) {
 		global $wpdb;
-		$index_table   = $wpdb->prefix . 'feas_ai_keyword_index';
 		$vectors_table = $wpdb->prefix . 'feas_ai_vectors';
-		$posts_table   = $wpdb->posts;
+		$index_table   = $wpdb->prefix . 'feas_ai_keyword_index';
 
-		//$segmenter = new TinySegmenter();
+		// 1. Use the finalized tokenize_text method to extract keywords from the question.
 		$keywords = array_unique( $this->tokenize_text( $question ) );
-		$valid_keywords = array_filter($keywords, function($kw){ return mb_strlen($kw) > 1; });
 
-		if ( empty( $valid_keywords ) ) return array();
+		if ( empty( $keywords ) ) {
+			return [];
+		}
 
-		// Polylangの場合: pll_current_language() で現在の言語コードを取得
-		$current_lang = function_exists('pll_current_language') ? pll_current_language() : get_locale();
+		// Remove keywords that are too short to be meaningful.
+		$valid_keywords = array_filter($keywords, function($kw) {
+			return mb_strlen($kw) > 1;
+		});
 
+		if ( empty( $valid_keywords ) ) {
+			return [];
+		}
+
+		// 2. Find vector IDs that match the keywords.
 		$placeholders = implode( ', ', array_fill( 0, count( $valid_keywords ), '%s' ) );
-		$sql = "SELECT DISTINCT `vector_id` FROM `{$index_table}` WHERE `lang` = %s AND `keyword` IN ( {$placeholders} ) LIMIT 500";
-		$vector_ids = $wpdb->get_col( $wpdb->prepare( $sql, $current_lang, $valid_keywords ) );
+		$sql          = "SELECT DISTINCT `vector_id` FROM `{$index_table}` WHERE `keyword` IN ( {$placeholders} ) LIMIT 500";
+		$vector_ids   = $wpdb->get_col( $wpdb->prepare( $sql, $valid_keywords ) );
 
-		if ( empty( $vector_ids ) ) return array();
-
-		$placeholders_ids = implode( ', ', array_fill( 0, count( $vector_ids ), '%d' ) );
-		$sql_candidates   = "
-			SELECT `post_id`, `content_chunk`, `vector_data`, p.post_date
-			FROM `{$vectors_table}` AS v
-			JOIN `{$posts_table}` AS p ON v.post_id = p.ID
-			WHERE v.id IN ( {$placeholders_ids} )";
-		$candidate_rows   = $wpdb->get_results( $wpdb->prepare( $sql_candidates, $vector_ids ) );
-
-		if( empty($candidate_rows) ) return array();
-
-		$question_vector_response = $this->get_embeddings_via_selected_provider( array( $question ) );
-		if( is_wp_error($question_vector_response) || empty($question_vector_response['data'][0]['embedding']) ){
-			return array();
-		}
-		$question_vector = $question_vector_response['data'][0]['embedding'];
-
-		$similarities = array();
-		$similarity_threshold = 0.35; // Similarity cutoff score
-
-		foreach ( $candidate_rows as $row ) {
-			$db_vector = json_decode( $row->vector_data, true );
-			if ( ! is_array( $db_vector ) || empty( $db_vector ) ) continue;
-
-			$similarity = $this->calculate_cosine_similarity_php( $question_vector, $db_vector );
-
-			if ( $similarity >= $similarity_threshold ) {
-				$similarities[] = array(
-					'post_id'       => $row->post_id,
-					'content_chunk' => $row->content_chunk,
-					'similarity'    => $similarity,
-					'permalink'     => get_permalink( $row->post_id ),
-					'post_date'     => $row->post_date,
-				);
-			}
+		if ( empty( $vector_ids ) ) {
+			return [];
 		}
 
-		if ( empty($similarities) ) {
-			return array();
+		// 3. Retrieve the full content chunks for the found vector IDs.
+		$placeholders   = implode( ', ', array_fill( 0, count( $vector_ids ), '%d' ) );
+		$sql            = "SELECT `content_chunk`, `post_id` FROM `{$vectors_table}` WHERE `id` IN ( {$placeholders} )";
+		$chunks_data    = $wpdb->get_results( $wpdb->prepare( $sql, $vector_ids ), ARRAY_A );
+
+		// 4. Add permalink to the results.
+		$results = [];
+		foreach($chunks_data as $row){
+			$results[] = [
+				'content_chunk' => $row['content_chunk'],
+				'permalink'     => get_permalink($row['post_id']),
+			];
 		}
 
-		usort( $similarities, function( $a, $b ) {
-			return $b['similarity'] <=> $a['similarity'];
-		} );
-
-		return array_slice( $similarities, 0, 7 );
+		return $results;
 	}
+	// public function find_similar_chunks( $question ) {
+	// 	global $wpdb;
+	// 	$index_table   = $wpdb->prefix . 'feas_ai_keyword_index';
+	// 	$vectors_table = $wpdb->prefix . 'feas_ai_vectors';
+	// 	$posts_table   = $wpdb->posts;
+//
+	// 	//$segmenter = new TinySegmenter();
+	// 	$keywords = array_unique( $this->tokenize_text( $question ) );
+	// 	$valid_keywords = array_filter($keywords, function($kw){ return mb_strlen($kw) > 1; });
+//
+	// 	if ( empty( $valid_keywords ) ) return array();
+//
+	// 	// Polylangの場合: pll_current_language() で現在の言語コードを取得
+	// 	$current_lang = function_exists('pll_current_language') ? pll_current_language() : get_locale();
+//
+	// 	$placeholders = implode( ', ', array_fill( 0, count( $valid_keywords ), '%s' ) );
+	// 	$sql = "SELECT DISTINCT `vector_id` FROM `{$index_table}` WHERE `lang` = %s AND `keyword` IN ( {$placeholders} ) LIMIT 500";
+	// 	$vector_ids = $wpdb->get_col( $wpdb->prepare( $sql, $current_lang, $valid_keywords ) );
+//
+	// 	if ( empty( $vector_ids ) ) return array();
+//
+	// 	$placeholders_ids = implode( ', ', array_fill( 0, count( $vector_ids ), '%d' ) );
+	// 	$sql_candidates   = "
+	// 		SELECT `post_id`, `content_chunk`, `vector_data`, p.post_date
+	// 		FROM `{$vectors_table}` AS v
+	// 		JOIN `{$posts_table}` AS p ON v.post_id = p.ID
+	// 		WHERE v.id IN ( {$placeholders_ids} )";
+	// 	$candidate_rows   = $wpdb->get_results( $wpdb->prepare( $sql_candidates, $vector_ids ) );
+//
+	// 	if( empty($candidate_rows) ) return array();
+//
+	// 	$question_vector_response = $this->get_embeddings_via_selected_provider( array( $question ) );
+	// 	if( is_wp_error($question_vector_response) || empty($question_vector_response['data'][0]['embedding']) ){
+	// 		return array();
+	// 	}
+	// 	$question_vector = $question_vector_response['data'][0]['embedding'];
+//
+	// 	$similarities = array();
+	// 	$similarity_threshold = 0.35; // Similarity cutoff score
+//
+	// 	foreach ( $candidate_rows as $row ) {
+	// 		$db_vector = json_decode( $row->vector_data, true );
+	// 		if ( ! is_array( $db_vector ) || empty( $db_vector ) ) continue;
+//
+	// 		$similarity = $this->calculate_cosine_similarity_php( $question_vector, $db_vector );
+//
+	// 		if ( $similarity >= $similarity_threshold ) {
+	// 			$similarities[] = array(
+	// 				'post_id'       => $row->post_id,
+	// 				'content_chunk' => $row->content_chunk,
+	// 				'similarity'    => $similarity,
+	// 				'permalink'     => get_permalink( $row->post_id ),
+	// 				'post_date'     => $row->post_date,
+	// 			);
+	// 		}
+	// 	}
+//
+	// 	if ( empty($similarities) ) {
+	// 		return array();
+	// 	}
+//
+	// 	usort( $similarities, function( $a, $b ) {
+	// 		return $b['similarity'] <=> $a['similarity'];
+	// 	} );
+//
+	// 	return array_slice( $similarities, 0, 7 );
+	// }
 
+	// public function create_chunks_from_post( $post ) {
+	// 	$sync_options = get_option('feas_ai_sync_options', []);
+	// 	$pt_options = $sync_options['post_types'][ $post->post_type ] ?? [];
+//
+	// 	$metadata_header = '';
+	// 	if ( !empty($pt_options['include_title']) ) { $metadata_header .= "タイトル: " . $post->post_title . "\n"; }
+	// 	if ( !empty($pt_options['include_date']) ) { $metadata_header .= "投稿日: " . $post->post_date . "\n"; }
+//
+	// 	if ( !empty($pt_options['taxonomies']) && is_array($pt_options['taxonomies']) ) {
+	// 		foreach($pt_options['taxonomies'] as $tax_slug) {
+	// 			$terms = get_the_terms($post->ID, $tax_slug);
+	// 			if ( !is_wp_error($terms) && !empty($terms) ) {
+	// 				$term_names = wp_list_pluck($terms, 'name');
+	// 				$taxonomy_obj = get_taxonomy($tax_slug);
+	// 				if ($taxonomy_obj) {
+	// 					$metadata_header .= $taxonomy_obj->label . ": " . implode(', ', $term_names) . "\n";
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+//
+	// 	if ( class_exists('FEAS_AI_Pro') && !empty($pt_options['custom_fields']) ) {
+	// 		$custom_field_keys = array_map('trim', explode(',', $pt_options['custom_fields']));
+	// 		foreach ($custom_field_keys as $key) {
+	// 			$value = get_post_meta($post->ID, $key, true);
+	// 			if ($value) { $metadata_header .= "{$key}: {$value}\n"; }
+	// 		}
+	// 	}
+//
+	// 	$content = '';
+	// 	if ( !empty($pt_options['include_content']) ) {
+	// 		$content = strip_shortcodes( $post->post_content );
+	// 		$content = wp_strip_all_tags( $content );
+	// 	}
+//
+	// 	$raw_chunks = empty(trim($content)) ? [''] : explode( "\n\n", $content );
+	// 	$valid_chunks = array_values( array_filter( array_map( 'trim', $raw_chunks ) ) );
+	// 	if ( empty($valid_chunks) && !empty(trim($metadata_header)) ) {
+	// 		$valid_chunks = [''];
+	// 	}
+	// 	if ( empty( $valid_chunks ) ) { return []; }
+//
+	// 	$chunks_with_meta = [];
+	// 	foreach($valid_chunks as $chunk) {
+	// 		$chunks_with_meta[] = trim($metadata_header) . "\n---\n" . $chunk;
+	// 	}
+//
+	// 	return $chunks_with_meta;
+	// }
+
+
+	/**
+	 * Creates text chunks from a post object, combining metadata into prose.
+	 *
+	 * @param \WP_Post $post The post object to process.
+	 * @return array An array of text chunks.
+	 */
 	public function create_chunks_from_post( $post ) {
-		$sync_options = get_option('feas_ai_sync_options', []);
-		$pt_options = $sync_options['post_types'][ $post->post_type ] ?? [];
+		$options    = get_option( 'feas_ai_sync_options', [] );
+		$pt_options = $options['post_types'][ $post->post_type ] ?? [];
 
-		$metadata_header = '';
-		if ( !empty($pt_options['include_title']) ) { $metadata_header .= "タイトル: " . $post->post_title . "\n"; }
-		if ( !empty($pt_options['include_date']) ) { $metadata_header .= "投稿日: " . $post->post_date . "\n"; }
+		$text_parts = [];
 
-		if ( !empty($pt_options['taxonomies']) && is_array($pt_options['taxonomies']) ) {
-			foreach($pt_options['taxonomies'] as $tax_slug) {
-				$terms = get_the_terms($post->ID, $tax_slug);
-				if ( !is_wp_error($terms) && !empty($terms) ) {
-					$term_names = wp_list_pluck($terms, 'name');
-					$taxonomy_obj = get_taxonomy($tax_slug);
-					if ($taxonomy_obj) {
-						$metadata_header .= $taxonomy_obj->label . ": " . implode(', ', $term_names) . "\n";
-					}
+		// 1. Build an array of sentences from metadata.
+		if ( ! empty( $pt_options['include_title'] ) ) {
+			$text_parts[] = sprintf( 'この記事のタイトルは「%s」です。', $post->post_title );
+		}
+		if ( ! empty( $pt_options['include_date'] ) ) {
+			$text_parts[] = sprintf( 'この記事は%sに公開されました。', date_i18n( get_option( 'date_format' ), strtotime( $post->post_date ) ) );
+		}
+		if ( ! empty( $pt_options['include_author'] ) ) {
+			$author_name  = get_the_author_meta( 'display_name', $post->post_author );
+			$text_parts[] = sprintf( '著者は%sです。', $author_name );
+		}
+
+		// Add taxonomies as keywords.
+		if ( ! empty( $pt_options['taxonomies'] ) ) {
+			$term_list = [];
+			foreach ( $pt_options['taxonomies'] as $tax_slug ) {
+				$terms = get_the_terms( $post->ID, $tax_slug );
+				if ( ! is_wp_error( $terms ) && ! empty( $terms ) ) {
+					$term_list = array_merge( $term_list, wp_list_pluck( $terms, 'name' ) );
 				}
 			}
-		}
-
-		if ( class_exists('FEAS_AI_Pro') && !empty($pt_options['custom_fields']) ) {
-			$custom_field_keys = array_map('trim', explode(',', $pt_options['custom_fields']));
-			foreach ($custom_field_keys as $key) {
-				$value = get_post_meta($post->ID, $key, true);
-				if ($value) { $metadata_header .= "{$key}: {$value}\n"; }
+			if ( ! empty( $term_list ) ) {
+				$text_parts[] = sprintf( '関連キーワードは「%s」です。', implode( '、', $term_list ) );
 			}
 		}
 
-		$content = '';
-		if ( !empty($pt_options['include_content']) ) {
+		// 2. Add the main content.
+		if ( ! empty( $pt_options['include_content'] ) ) {
 			$content = strip_shortcodes( $post->post_content );
 			$content = wp_strip_all_tags( $content );
+			$text_parts[] = "以下は記事の本文です。\n" . $content;
 		}
 
-		$raw_chunks = empty(trim($content)) ? [''] : explode( "\n\n", $content );
-		$valid_chunks = array_values( array_filter( array_map( 'trim', $raw_chunks ) ) );
-		if ( empty($valid_chunks) && !empty(trim($metadata_header)) ) {
-			$valid_chunks = [''];
+		if ( empty( $text_parts ) ) {
+			return [];
 		}
-		if ( empty( $valid_chunks ) ) { return []; }
 
+		// 3. Join all parts into a single block of text.
+		$full_text = implode( "\n", $text_parts );
+
+		// 4. Split the full text into chunks.
+		$chunk_size = 1000; // characters
+		$chunks     = [];
+		if ( mb_strlen( $full_text ) > $chunk_size ) {
+			$sentences = preg_split('/(?<=[。．！？\n])\s*/u', $full_text, -1, PREG_SPLIT_NO_EMPTY);
+			$current_chunk = '';
+			foreach ( $sentences as $sentence ) {
+				if ( mb_strlen( $current_chunk . $sentence ) > $chunk_size ) {
+					$chunks[] = trim( $current_chunk );
+					$current_chunk = $sentence;
+				} else {
+					$current_chunk .= $sentence;
+				}
+			}
+			if ( ! empty( $current_chunk ) ) {
+				$chunks[] = trim( $current_chunk );
+			}
+		} else {
+			$chunks[] = trim( $full_text );
+		}
+
+		$permalink = get_permalink( $post );
 		$chunks_with_meta = [];
-		foreach($valid_chunks as $chunk) {
-			$chunks_with_meta[] = trim($metadata_header) . "\n---\n" . $chunk;
+		foreach( $chunks as $chunk_content ){
+			$chunks_with_meta[] = [
+				'content_chunk' => $chunk_content,
+				'permalink'     => $permalink,
+			];
 		}
 
 		return $chunks_with_meta;
 	}
+
 
 	public function get_embeddings_via_selected_provider( $texts ) {
 		$provider = get_option( 'feas_ai_embedding_provider', 'openai' );
@@ -563,18 +814,28 @@ class FEAS_AI_Sync_Handler {
 	private function tokenize_text( $text ) {
 		error_log('--- tokenize_text: START ---');
 		error_log('1. Input text type: ' . gettype($text));
-		error_log('1. Input text value: ' . print_r($text, true));
+		// error_log('1. Input text value: ' . print_r($text, true)); // This can be very long, so commented out for now.
 
-		// Normalization
-		// $text_normalized = strtolower( (string) $text );
-		// $text_normalized = mb_convert_kana( $text_normalized, 'as' );
-		error_log('2. Normalized text: ' . $text);
+		// 2. 全角の英数字・スペースを半角に、半角カタカナを全角カタカナに変換
+		// 'a': 全角英数を半角に
+		// 's': 全角スペースを半角に
+		// 'K': 半角カタカナを全角カタカナに
+		// 'V': 濁点・半濁点を結合
+		$text = mb_convert_kana( $text, 'asKV', 'UTF-8' );
+
+		// 3. すべての全角カタカナを、全角ひらがなに統一
+		// 'C': 全角カタカナを全角ひらがなに
+		$text = mb_convert_kana( $text, 'C', 'UTF-8' );
+		// 3. 記号や句読点をスペースに置換
+		$text_normalized = preg_replace('/[^\p{L}\p{N}\s]/u', ' ', $text);
+
+		error_log('2. Normalized text: ' . $text_normalized);
 
 		$locale = get_locale();
 		$lang_code = strstr( $locale, '_', true ) ?: $locale;
 		$stop_words = [];
 
-		// Load stop words
+		// ★ 2. Load stop words
 		$lang_file = FEAS_AI_PLUGIN_DIR . "includes/i18n/{$locale}.php";
 		if ( ! file_exists( $lang_file ) ) {
 			$lang_file = FEAS_AI_PLUGIN_DIR . "includes/i18n/{$lang_code}.php";
@@ -585,21 +846,20 @@ class FEAS_AI_Sync_Handler {
 		}
 		error_log('3. Stop words type: ' . gettype($stop_words));
 
-		// Tokenize
+		// ★ 3. Tokenize the cleaned text
 		if ( 'ja' === $lang_code ) {
-			$words = $this->segmenter->segment( $text );
-			// $words = array_map('strtolower', $words);
+			$words = $this->segmenter->segment( $text_normalized );
 		} else {
-			$words = preg_split('/[^\p{L}\p{N}]+/', $text, -1, PREG_SPLIT_NO_EMPTY);
+			$words = preg_split('/\s+/', $text_normalized, -1, PREG_SPLIT_NO_EMPTY);
 		}
 		error_log('4. Words after tokenization type: ' . gettype($words));
 		error_log('4. Words after tokenization value: ' . print_r($words, true));
 
-		// The problematic line
+		// ★ 4. Remove stop words
 		$words_after_diff = array_diff( (array) $words, (array) $stop_words );
 		error_log('5. Words after array_diff: ' . print_r($words_after_diff, true));
 
-		// Stemming
+		// ★ 5. Stemming for non-Japanese languages
 		if ( 'ja' !== $lang_code ) {
 			try {
 				$stemmerManager = new \Wamania\Snowball\StemmerManager();
