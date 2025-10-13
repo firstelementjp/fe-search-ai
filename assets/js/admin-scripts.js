@@ -57,12 +57,20 @@ document.addEventListener('DOMContentLoaded', () => {
 	// Manual Synchronization
 	// ==========================================================================
 
-	// Handles the initial click of the "Start Syncing" button.
-	startBtn?.addEventListener('click', async e => {
-		e.preventDefault();
-		if (!confirm(__('Are you sure you want to delete all existing indexes and rebuild them?', 'fe-ai-search'))) return;
+	const rebuildBtn = document.querySelector('#feas-ai-start-sync');
+	const smartSyncBtn = document.querySelector('#feas-ai-smart-sync');
 
-		startBtn.disabled = true;
+	/**
+	 * Initiates a sync process (either full rebuild or smart sync).
+	 * @param {string} action - The AJAX action to call ('feas_ai_start_sync' or 'feas_ai_start_smart_sync').
+	 * @param {string} confirmationMessage - The message to display in the confirm() dialog.
+	 */
+	async function startSyncProcess(action, confirmationMessage) {
+		if (!confirm(confirmationMessage)) return;
+
+		// Disable both buttons to prevent multiple clicks
+		rebuildBtn.disabled = true;
+		smartSyncBtn.disabled = true;
 		statusSpinner.style.display = 'inline-block';
 		statusText.textContent = __('Preparing for synchronization...', 'fe-ai-search');
 		progressContainer.style.display = 'block';
@@ -70,27 +78,81 @@ document.addEventListener('DOMContentLoaded', () => {
 		progressBar.textContent = '0%';
 
 		try {
-			// Get the list of post IDs to sync.
-			const response = await wpPost('feas_ai_start_sync', { nonce: feas_ai_sync_obj.nonce });
-			if (!response.success) throw new Error('Failed to start sync.');
+			const response = await wpPost(action, { nonce: feas_ai_sync_obj.nonce });
+			if (!response.success) {
+				// If the backend sends an error (like settings changed), display it.
+				throw new Error(response.data.message || 'Failed to start sync.');
+			}
 
 			const { total_pages, total_posts, post_ids, batch_size } = response.data;
 			postIDsToSync = post_ids;
 
 			if (total_pages > 0) {
-				// Start the recursive batch processing.
 				processBatch(1, total_pages, total_posts, batch_size);
 			} else {
 				statusText.textContent = __('There are no posts to sync.', 'fe-ai-search');
 				statusSpinner.style.display = 'none';
-				startBtn.disabled = false;
+				rebuildBtn.disabled = false;
+				smartSyncBtn.disabled = false;
 			}
 		} catch (error) {
-			statusText.innerHTML = `<span style="color:red;">${__('Error: Failed to communicate with the server.', 'fe-ai-search')}</span>`;
+			statusText.innerHTML = `<span style="color:red;">${__('Error:', 'fe-ai-search')} ${error.message}</span>`;
 			statusSpinner.style.display = 'none';
-			startBtn.disabled = false;
+			rebuildBtn.disabled = false;
+			smartSyncBtn.disabled = false;
 		}
+	}
+
+	// --- Event Listeners for Sync Buttons ---
+
+	// Handler for the "Rebuild Index" button
+	rebuildBtn?.addEventListener('click', e => {
+		e.preventDefault();
+		const message = __('Are you sure you want to delete all existing indexes and rebuild them? This is a resource-intensive process.', 'fe-ai-search');
+		startSyncProcess('feas_ai_start_sync', message);
 	});
+
+	// ★ Handler for the "Sync Changes" button
+	smartSyncBtn?.addEventListener('click', e => {
+		e.preventDefault();
+		const message = __('Are you sure you want to sync recent changes? This will process new, updated, and deleted posts.', 'fe-ai-search');
+		startSyncProcess('feas_ai_start_smart_sync', message);
+	});
+
+	// Handles the initial click of the "Start Syncing" button.
+	// startBtn?.addEventListener('click', async e => {
+	// 	e.preventDefault();
+	// 	if (!confirm(__('Are you sure you want to delete all existing indexes and rebuild them?', 'fe-ai-search'))) return;
+//
+	// 	startBtn.disabled = true;
+	// 	statusSpinner.style.display = 'inline-block';
+	// 	statusText.textContent = __('Preparing for synchronization...', 'fe-ai-search');
+	// 	progressContainer.style.display = 'block';
+	// 	progressBar.style.width = '0%';
+	// 	progressBar.textContent = '0%';
+//
+	// 	try {
+	// 		// Get the list of post IDs to sync.
+	// 		const response = await wpPost('feas_ai_start_sync', { nonce: feas_ai_sync_obj.nonce });
+	// 		if (!response.success) throw new Error('Failed to start sync.');
+//
+	// 		const { total_pages, total_posts, post_ids, batch_size } = response.data;
+	// 		postIDsToSync = post_ids;
+//
+	// 		if (total_pages > 0) {
+	// 			// Start the recursive batch processing.
+	// 			processBatch(1, total_pages, total_posts, batch_size);
+	// 		} else {
+	// 			statusText.textContent = __('There are no posts to sync.', 'fe-ai-search');
+	// 			statusSpinner.style.display = 'none';
+	// 			startBtn.disabled = false;
+	// 		}
+	// 	} catch (error) {
+	// 		statusText.innerHTML = `<span style="color:red;">${__('Error: Failed to communicate with the server.', 'fe-ai-search')}</span>`;
+	// 		statusSpinner.style.display = 'none';
+	// 		startBtn.disabled = false;
+	// 	}
+	// });
 
 	/**
 	 * Recursively processes one batch of posts at a time.
@@ -170,7 +232,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			if (response.success) {
 				if (currentPage < totalPages) {
-					// ★ batch_sizeを次の再帰呼び出しに渡す
 					await processBatch(currentPage + 1, totalPages, totalPosts, batch_size);
 				} else {
 					// Final batch is complete.
@@ -180,6 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					startBtn.disabled = false;
 					statusSpinner.style.display = 'none';
 					wpPost('feas_ai_update_sync_timestamp', { nonce: feas_ai_sync_obj.nonce });
+					wpPost('feas_ai_update_settings_hash', { nonce: feas_ai_sync_obj.nonce });
 				}
 			} else {
 				throw new Error(response.data.message || 'Batch processing failed.');

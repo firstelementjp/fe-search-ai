@@ -42,6 +42,9 @@ class FEAS_AI_Sync_Handler {
 		add_action( 'wp_ajax_feas_ai_process_batch', array( $this, 'ajax_process_batch' ) );
 		add_action( 'wp_ajax_feas_ai_update_sync_timestamp', array( $this, 'ajax_update_sync_timestamp' ) );
 		add_action( 'wp_ajax_feas_ai_delete_vectors', array( $this, 'ajax_delete_vectors' ) );
+		add_action( 'wp_ajax_feas_ai_start_smart_sync', [ $this, 'ajax_start_smart_sync' ] );
+		add_action( 'wp_ajax_feas_ai_update_settings_hash', [ $this, 'ajax_update_settings_hash' ] );
+
 	}
 
 	public function ajax_start_sync() {
@@ -112,6 +115,96 @@ class FEAS_AI_Sync_Handler {
 			'post_ids'    => $all_post_ids, // Pass the list of IDs to be processed to JS
 			'batch_size'  => $batch_size,
 		] );
+	}
+
+	public function ajax_start_smart_sync() {
+		check_ajax_referer( 'feas_ai_ajax_nonce', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+		}
+
+		// --- 1. Get enabled post types from settings ---
+		$sync_options         = get_option( 'feas_ai_sync_options', [] );
+		$post_types_to_sync = [];
+		if ( ! empty( $sync_options['post_types'] ) ) {
+			foreach ( $sync_options['post_types'] as $pt => $options ) {
+				if ( ! empty( $options['enabled'] ) ) {
+					$post_types_to_sync[] = $pt;
+				}
+			}
+		}
+		if ( empty( $post_types_to_sync ) ) {
+			wp_send_json_success( [ 'total_pages' => 0, 'total_posts' => 0, 'post_ids' => [] ] );
+			return;
+		}
+
+		// --- 2. Check if sync settings have changed ---
+		$current_settings_hash = md5( serialize( $sync_options ) );
+		$last_settings_hash    = get_option( 'feas_ai_last_settings_hash' );
+
+		error_log( '--- Smart Sync Hash Comparison ---' );
+		error_log( 'Current Settings Hash: ' . $current_settings_hash );
+		error_log( 'Last Saved Hash:       ' . $last_settings_hash );
+		error_log( 'Data for Current Hash: ' . print_r( $sync_options, true ) );
+
+		if ( get_option( 'feas_ai_last_sync_timestamp' ) && $current_settings_hash !== $last_settings_hash ) {
+			wp_send_json_error( [ 'message' => __( 'Sync settings have changed. Please use "Rebuild All" to apply the new settings.', 'fe-ai-search' ) ] );
+		}
+
+		// --- 3. Find deleted posts ---
+		global $wpdb;
+		$vectors_table         = $wpdb->prefix . 'feas_ai_vectors';
+		$indexed_post_ids      = array_map( 'intval', $wpdb->get_col( "SELECT DISTINCT post_id FROM {$vectors_table}" ) );
+		$all_existing_post_ids = array_map( 'intval', get_posts( [ 'post_type' => $post_types_to_sync, 'posts_per_page' => -1, 'fields' => 'ids', 'post_status' => 'publish' ] ) );
+		$deleted_post_ids      = array_diff( $indexed_post_ids, $all_existing_post_ids );
+
+		if ( ! empty( $deleted_post_ids ) ) {
+			foreach ( $deleted_post_ids as $post_id ) {
+				$GLOBALS['feas_ai_sync_hooks']->delete_post_from_index( $post_id );
+			}
+		}
+
+		// --- 4. Find new and updated posts ---
+		$last_sync        = get_option( 'feas_ai_last_sync_timestamp', 0 );
+		$updated_post_ids = get_posts( [
+			'post_type'      => $post_types_to_sync,
+			'posts_per_page' => -1,
+			'fields'         => 'ids',
+			'date_query'     => [
+				[
+					'column' => 'post_modified_gmt',
+					'after'  => date( 'Y-m-d H:i:s', $last_sync ),
+				],
+			],
+		] );
+
+		// --- 5. Return the list of IDs to process to JavaScript ---
+		$post_ids_to_process = array_values( array_unique( $updated_post_ids ) );
+		$total_posts         = count( $post_ids_to_process );
+		$batch_size          = (int) get_option( 'feas_ai_batch_size', 10 );
+		$total_pages         = ( $total_posts > 0 ) ? ceil( $total_posts / $batch_size ) : 0;
+
+		// After a successful sync, the settings hash should be updated.
+		// We do this here, assuming the JS process will complete.
+		// update_option( 'feas_ai_last_settings_hash', $current_settings_hash );
+
+		wp_send_json_success( [
+			'total_pages' => $total_pages,
+			'total_posts' => $total_posts,
+			'post_ids'    => $post_ids_to_process,
+			'batch_size'  => $batch_size,
+		] );
+	}
+
+	/**
+	 * Updates the saved hash of the sync settings.
+	 * This is called after a successful sync process.
+	 */
+	public function ajax_update_settings_hash() {
+		check_ajax_referer( 'feas_ai_ajax_nonce', 'nonce' );
+		$current_settings_hash = md5( serialize( get_option('feas_ai_sync_options') ) );
+		update_option( 'feas_ai_last_settings_hash', $current_settings_hash );
+		wp_send_json_success();
 	}
 
 	public function ajax_process_batch() {
@@ -907,7 +1000,7 @@ class FEAS_AI_Sync_Handler {
 		// $text_normalized = mb_convert_kana( $text_normalized, 'C', 'UTF-8' );
 
 
-		$text_normalized = preg_replace('/[^\p{L}\p{N}\s]/u', ' ', $text_normalized);
+		$text_normalized = preg_replace('/[^\p{L}\p{N}\s*]/u', ' ', $text_normalized);
 		error_log('2. Normalized text: ' . $text_normalized);
 
 		$locale     = get_locale();

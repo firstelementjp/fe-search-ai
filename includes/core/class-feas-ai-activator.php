@@ -30,8 +30,68 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  */
 class FEAS_AI_Activator {
 
+	/**
+	 * The current database version.
+	 *
+	 * This constant is used to track the version of the database schema.
+	 * It should be incremented whenever the schema in create_tables() is changed.
+	 *
+	 * @since 1.0.0
+	 */
+	const DB_VERSION = '1.0';
+
+	/**
+	 * Fired when the plugin is activated.
+	 *
+	 * Creates the custom tables and sets the initial database version.
+	 *
+	 * @since 1.0.0
+	 */
 	public static function activate() {
+		self::create_tables();
+		self::schedule_cron_jobs();
+		update_option( 'feas_ai_db_version', self::DB_VERSION );
+	}
+
+	/**
+	 * Fired when the plugin is deactivated.
+	 *
+	 * Clears any scheduled cron jobs.
+	 *
+	 * @since 1.0.0
+	 */
+	public static function deactivate() {
+		// Canceling Cron Job
+		wp_clear_scheduled_hook( 'feas_ai_daily_log_rotation_event' );
+	}
+
+	/**
+	 * Checks the database version and runs schema updates if needed.
+	 *
+	 * This method compares the saved DB version with the current DB_VERSION constant
+	 * and triggers the create_tables() method if an update is required.
+	 * It is hooked to 'plugins_loaded' to run on every page load.
+	 *
+	 * @since 1.0.0
+	 */
+	public static function check_db_version() {
+		$installed_version = get_option( 'feas_ai_db_version' );
+
+		if ( version_compare( $installed_version, self::DB_VERSION, '<' ) ) {
+			self::create_tables();
+			update_option( 'feas_ai_db_version', self::DB_VERSION );
+		}
+	}
+
+	/**
+	 * Creates or updates the custom database tables using dbDelta.
+	 *
+	 * @since 1.0.0
+	 * @global \wpdb $wpdb WordPress database abstraction object.
+	 */
+	public static function create_tables() {
 		global $wpdb;
+		$charset_collate = $wpdb->get_charset_collate();
 		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
 
 		$charset_collate = $wpdb->get_charset_collate();
@@ -41,6 +101,7 @@ class FEAS_AI_Activator {
 		$sql_vectors = "CREATE TABLE `{$table_name_vectors}` (
 			`id` mediumint(9) NOT NULL AUTO_INCREMENT,
 			`post_id` bigint(20) UNSIGNED NOT NULL,
+			`lang` varchar(10) NOT NULL DEFAULT '',
 			`chunk_index` smallint(5) NOT NULL,
 			`content_chunk` mediumtext NOT NULL,
 			`vector_data` longtext NOT NULL,
@@ -50,40 +111,28 @@ class FEAS_AI_Activator {
 		) {$charset_collate};";
 		dbDelta( $sql_vectors );
 
-		// Table for Log Storage
-		$table_name_logs = $wpdb->prefix . 'feas_ai_logs';
-		$sql_logs = "CREATE TABLE `{$table_name_logs}` (
-			`id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-			`session_id` varchar(32) NOT NULL,
-			`question` text NOT NULL,
-			`answer` longtext,
-			`sources` text,
-			`context_found` tinyint(1) NOT NULL DEFAULT 0,
-			`created_at` datetime NOT NULL,
-			PRIMARY KEY (`id`),
-			KEY `created_at` (`created_at`)
-		) {$charset_collate};";
-		dbDelta( $sql_logs );
-
 		// Keyword Index Table
 		$table_name_index = $wpdb->prefix . 'feas_ai_keyword_index';
 		$sql_index = "CREATE TABLE `{$table_name_index}` (
 			`keyword` varchar(100) NOT NULL,
 			`vector_id` mediumint(9) NOT NULL,
+			`lang` varchar(10) NOT NULL DEFAULT '',
 			PRIMARY KEY (`keyword`, `vector_id`),
 			KEY `keyword` (`keyword`),
 			KEY `vector_id` (`vector_id`)
 		) {$charset_collate};";
 		dbDelta( $sql_index );
+	}
 
+	/**
+	 * Schedules the daily cron job for log rotation.
+	 *
+	 * @since 1.0.0
+	 */
+	public static function schedule_cron_jobs() {
 		// Registering Cron Job
 		if ( ! wp_next_scheduled( 'feas_ai_daily_log_rotation_event' ) ) {
 			wp_schedule_event( time(), 'daily', 'feas_ai_daily_log_rotation_event' );
 		}
-	}
-
-	public static function deactivate() {
-		// Canceling Cron Job
-		wp_clear_scheduled_hook( 'feas_ai_daily_log_rotation_event' );
 	}
 }

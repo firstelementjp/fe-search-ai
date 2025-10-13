@@ -745,8 +745,11 @@ class FEAS_AI_Settings {
 				?>
 			</div>
 			<div id="feas-ai-sync-wrapper">
+				<button id="feas-ai-smart-sync" class="button button-primary" style="margin-left: 10px;">
+					<?php esc_html_e( 'Sync Changes (Recommended)', 'fe-ai-search' ); // 更新を同期 (推奨) ?>
+				</button>
 				<button id="feas-ai-start-sync" class="button button-secondary">
-					<?php esc_html_e( 'Start syncing', 'fe-ai-search' ); ?>
+					<?php esc_html_e( 'Rebuild Index', 'fe-ai-search' ); // インデックスを再構築 ?>
 				</button>
 				<div id="feas-ai-progress-container" style="display: none; margin-top: 10px;">
 					<div id="feas-ai-progress-bar-wrapper" style="width: 100%; background-color: #ddd; border: 1px solid #ccc;">

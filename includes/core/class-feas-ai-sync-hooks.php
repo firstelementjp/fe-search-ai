@@ -83,8 +83,11 @@ class FEAS_AI_Sync_Hooks {
 			return;
 		}
 
+		// Extract just the 'content_chunk' strings for the API.
+		$chunks_for_embedding = wp_list_pluck( $chunks_with_meta, 'content_chunk' );
+
 		// Get vector embeddings for the chunks using the helper method.
-		$embedding_response = $this->sync_handler->get_embeddings_via_selected_provider( $chunks_with_meta );
+		$embedding_response = $this->sync_handler->get_embeddings_via_selected_provider( $chunks_for_embedding );
 
 		if ( ! is_wp_error( $embedding_response ) && ! empty( $embedding_response['data'] ) ) {
 			global $wpdb;

@@ -671,33 +671,40 @@ class FEAS_AI_Chat_Handler {
 	}
 
 	/**
-	 * Filter basic prompt injection attack phrases
+	 * Filters text for basic prompt injection phrases from all available languages.
+	 *
+	 * This function loads injection phrases from all files in the i18n directory
+	 * to provide a robust, multilingual security filter regardless of the site's locale.
 	 *
 	 * @param string $text The text to filter.
 	 * @return string The filtered text.
 	 */
 	public function filter_basic_injection_phrases( $text ) {
-		$locale = get_locale();
-		$lang_code = strstr( $locale, '_', true ) ?: $locale;
-		$injection_phrases = [];
+		$all_injection_phrases = [];
+		$i18n_dir = FEAS_AI_PLUGIN_DIR . 'includes/i18n/';
 
-		// Find the language file and load the anti-injection phrases
-		$lang_file = FEAS_AI_PLUGIN_DIR . "includes/i18n/{$locale}.php";
-		if ( ! file_exists( $lang_file ) ) {
-			$lang_file = FEAS_AI_PLUGIN_DIR . "includes/i18n/{$lang_code}.php";
-		}
-		if ( file_exists( $lang_file ) ) {
-			$lang_data = include( $lang_file );
-			if ( ! empty( $lang_data['injection_phrases'] ) ) {
-				$injection_phrases = $lang_data['injection_phrases'];
+		// Find all language files in the i18n directory.
+		$lang_files = glob( $i18n_dir . '*.php' );
+
+		if ( ! empty( $lang_files ) ) {
+			foreach ( $lang_files as $file ) {
+				$lang_data = include( $file );
+				if ( ! empty( $lang_data['injection_phrases'] ) && is_array( $lang_data['injection_phrases'] ) ) {
+					// Merge phrases from all language files into one master list.
+					$all_injection_phrases = array_merge( $all_injection_phrases, $lang_data['injection_phrases'] );
+				}
 			}
 		}
 
-		if ( empty( $injection_phrases ) ) {
+		// Remove any potential duplicates.
+		$all_injection_phrases = array_unique( $all_injection_phrases );
+
+		if ( empty( $all_injection_phrases ) ) {
 			return $text;
 		}
 
-		return str_ireplace( $injection_phrases,  __( '[REDACTED]', 'fe-ai-search' ), $text );
+		// Filter the text against the comprehensive list of phrases.
+		return str_ireplace( $all_injection_phrases, __( '[REDACTED]', 'fe-ai-search' ), $text );
 	}
 
 	/**

@@ -62,7 +62,12 @@ spl_autoload_register(function ($class) {
     }
 });
 
+register_activation_hook( FEAS_AI_PLUGIN_FILE, ['FEAISearch\Core\FEAS_AI_Activator', 'activate'] );
+register_deactivation_hook( FEAS_AI_PLUGIN_FILE, ['FEAISearch\Core\FEAS_AI_Activator', 'deactivate'] );
+
 function feas_ai_run_plugin() {
+
+    \FEAISearch\Core\FEAS_AI_Activator::check_db_version();
     $assets_handler = new FEAISearch\Core\FEAS_AI_Assets();
     $sync_handler   = new FEAISearch\Ajax\FEAS_AI_Sync_Handler();
 
@@ -74,12 +79,12 @@ function feas_ai_run_plugin() {
     new FEAISearch\Admin\FEAS_AI_License_Settings();
     new FEAISearch\Frontend\FEAS_AI_Chat_UI( $assets_handler );
     new FEAISearch\Ajax\FEAS_AI_Chat_Handler( $sync_handler );
-    new FEAISearch\Core\FEAS_AI_Sync_Hooks( $sync_handler );
+    // new FEAISearch\Core\FEAS_AI_Sync_Hooks( $sync_handler );
+
+    // To integrate real-time synchronization with batch synchronization
+    $GLOBALS['feas_ai_sync_hooks'] = new FEAISearch\Core\FEAS_AI_Sync_Hooks( $sync_handler );
 }
 add_action( 'plugins_loaded', 'feas_ai_run_plugin' );
-
-register_activation_hook( FEAS_AI_PLUGIN_FILE, ['FEAISearch\Core\FEAS_AI_Activator', 'activate'] );
-register_deactivation_hook( FEAS_AI_PLUGIN_FILE, ['FEAISearch\Core\FEAS_AI_Activator', 'deactivate'] );
 
 /**
  * Template Tag
