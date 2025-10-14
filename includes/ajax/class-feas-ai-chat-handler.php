@@ -112,6 +112,9 @@ class FEAS_AI_Chat_Handler {
 	 */
 	public function stream_chat_completion( $question, $context_chunks, $history = array(), $provider ) {
 
+		error_log('--- stream_chat_completion: START ---');
+		error_log("Provider received: {$provider}");
+
 		/**
 		 * Fires before the default stream completion handlers.
 		 * Allows Pro add-on or other plugins to implement their own handlers.
@@ -121,26 +124,35 @@ class FEAS_AI_Chat_Handler {
 		 * @param array  $context_chunks Relevant context chunks.
 		 * @param array  $history        Conversation history.
 		 */
-		do_action( "feas_ai_stream_for_{$provider}", $question, $context_chunks, $history );
+		error_log('About to fire the stream action hook...');
+		do_action( "feas_ai_stream_for_{$provider}", $question, $context_chunks, $history, $provider );
+		error_log('Stream action hook has fired. Proceeding to switch statement...');
 
 		switch ($provider) {
 			case 'google':
-				$this->stream_completion_for_gemini( $question, $context_chunks, $history );
+				error_log('Entering Gemini handler...');
+				$this->stream_completion_for_gemini( $question, $context_chunks, $history, $provider );
 				break;
 			case 'anthropic':
-				$this->stream_completion_for_claude( $question, $context_chunks, $history );
+				error_log('Entering Claude handler...');
+				$this->stream_completion_for_claude( $question, $context_chunks, $history, $provider );
 				break;
 			case 'openai':
 			default:
-				$this->stream_completion_for_openai( $question, $context_chunks, $history );
+				error_log('Entering OpenAI / Compatible handler...');
+				$this->stream_completion_for_openai( $question, $context_chunks, $history, $provider );
 				break;
 		}
+		error_log('--- stream_chat_completion: END ---');
 	}
 
 	/**
 	 * Streaming processing dedicated to OpenAI
 	 */
-	private function stream_completion_for_openai( $question, $context_chunks, $history ) {
+	private function stream_completion_for_openai( $question, $context_chunks, $history, $provider ) {
+		// Start the timer.
+		$start_time = microtime( true );
+
 		if ( 'openai_compatible' === $provider ) {
 			$api_url = get_option( 'feas_ai_openai_compatible_endpoint' );
 			$api_key = get_option( 'feas_ai_openai_api_key' );
@@ -150,6 +162,9 @@ class FEAS_AI_Chat_Handler {
 		}
 
 		if ( empty( $api_key ) || empty($api_url) ) {
+			// Log the error.
+			\FEAISearch\Core\FEAS_AI_Logger::log( 'ERROR', 'Chat completion failed: API Key or Endpoint URL is not set.', [ 'provider' => $provider ] );
+
 			echo "data: " . json_encode(['text' => __( 'Error: OpenAI API key not set.', 'fe-ai-search' )]) . "\n\n";
 			echo "data: [DONE]\n\n";
 			flush();
@@ -158,10 +173,30 @@ class FEAS_AI_Chat_Handler {
 
 		$model = 'gpt-4o-mini'; // Default
 		if ( class_exists('FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings') ) {
-			$model = get_option( 'feas_ai_openai_model', 'gpt-4o-mini' );
+			if ( 'openai_compatible' === $provider ) {
+				$model = get_option( 'feas_ai_openai_compatible_model', 'local-model' );
+			} else {
+				$options = get_option( 'feas_ai_openai_model_options', ['type' => 'gpt-4o-mini'] );
+				$model = ( 'custom' === $options['type'] ) ? $options['custom'] : $options['type'];
+			}
 		}
 
-		$messages = $this->build_prompt_messages( $question, $context_chunks, $history, false );
+		// Log the start of the API call.
+		\FEAISearch\Core\FEAS_AI_Logger::log(
+			'INFO',
+			'Chat completion stream started.',
+			[
+				'provider' => $provider,
+				'model'    => $model,
+			]
+		);
+
+		$messages = \FEAISearch\Ajax\FEAS_AI_Chat_Handler::build_prompt_messages(
+			$question,
+			$context_chunks,
+			$history,
+			false
+		);
 
 		$body = [
 			'model'    => $model,
@@ -169,26 +204,27 @@ class FEAS_AI_Chat_Handler {
 			'stream'   => true,
 		];
 
-		error_log( '--- Sending to OpenAI ---' );
-		error_log( print_r( $body, true ) );
-
 		$ch = curl_init();
-
 		curl_setopt( $ch, CURLOPT_URL, $api_url );
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
 		curl_setopt( $ch, CURLOPT_POST, true );
 		curl_setopt( $ch, CURLOPT_POSTFIELDS, json_encode( $body ) );
 		curl_setopt( $ch, CURLOPT_HTTPHEADER, [ 'Content-Type: application/json', 'Authorization: Bearer ' . $api_key ] );
 
+		// The WRITEFUNCTION callback processes the stream chunks as they arrive.
 		curl_setopt( $ch, CURLOPT_WRITEFUNCTION, function( $curl, $data ) {
+
 			$lines = explode("\n", $data);
+
 			foreach ($lines as $line) {
 				if (strpos($line, 'data: ') === 0) {
+
 					$json_data = substr($line, 6);
 					if (trim($json_data) === '[DONE]') {
 						continue;
 					}
 					$chunk = json_decode($json_data, true);
+
 					if (isset($chunk['choices'][0]['delta']['content'])) {
 
 						/**
@@ -211,30 +247,89 @@ class FEAS_AI_Chat_Handler {
 			}
 			return strlen($data);
 		});
+
+		// Execute the request.
 		curl_exec( $ch );
+
+		// Calculate the total duration.
+		$duration = round( ( microtime( true ) - $start_time ) * 1000 );
+
+		// Check for cURL errors after execution.
+		if ( curl_errno( $ch ) ) {
+			// ERROR: Log the cURL (connection) failure.
+			\FEAISearch\Core\FEAS_AI_Logger::log(
+				'ERROR',
+				'Chat completion stream failed (cURL Error).',
+				[
+					'provider'      => $provider,
+					'model'         => $model,
+					'error_message' => curl_error( $ch ),
+					'duration_ms'   => $duration,
+				]
+			);
+		} else {
+			// SUCCESS: Log the successful completion of the stream.
+			\FEAISearch\Core\FEAS_AI_Logger::log(
+				'SUCCESS',
+				'Chat completion stream finished successfully.',
+				[
+					'provider'    => $provider,
+					'model'       => $model,
+					'duration_ms' => $duration,
+				]
+			);
+		}
+
 		curl_close( $ch );
 	}
 
 	/**
 	 * Streaming processing dedicated to Gemini
 	 */
-	private function stream_completion_for_gemini( $question, $context_chunks, $history ) {
+	private function stream_completion_for_gemini( $question, $context_chunks, $history, $provider ) {
+		// Start the timer.
+		$start_time = microtime( true );
+
 		$api_key = get_option( 'feas_ai_google_api_key' );
 		if ( empty( $api_key ) ) {
-			error_log('Error: Google API key is missing.');
+			// Log the error.
+			\FEAISearch\Core\FEAS_AI_Logger::log( 'ERROR', 'Chat completion failed: API Key or Endpoint URL is not set.', [ 'provider' => $provider ] );
+
 			echo "data: " . json_encode(['text' => __( 'Error: Google API key is not set.', 'fe-ai-search' )]) . "\n\n";
 			echo "data: [DONE]\n\n";
 			flush();
 			return;
 		}
 
-		$messages_data = $this->build_prompt_messages( $question, $context_chunks, $history, false );
+		$model = 'gemini-2.5-flash-lite'; // Default
+		if ( class_exists('FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings') ) {
+			$options = get_option( 'feas_ai_google_model_options', ['type' => $model] );
+			$model = ( 'custom' === ( $options['type'] ?? '' )
+				&& ! empty( $options['custom'] ) ) ? $options['custom'] : ( $options['type'] ?? $model );
+		}
 
-		$system_prompt_data = array_shift($messages_data);
+		// INFO: Log the start of the API call.
+		\FEAISearch\Core\FEAS_AI_Logger::log(
+			'INFO',
+			'Chat completion stream started.',
+			[
+				'provider' => $provider,
+				'model'    => $model,
+			]
+		);
+
+		$messages = \FEAISearch\Ajax\FEAS_AI_Chat_Handler::build_prompt_messages(
+			$question,
+			$context_chunks,
+			$history,
+			false
+		);
+
+		$system_prompt_data = array_shift( $messages );
 		$system_prompt_text = $system_prompt_data['content'];
 
 		$gemini_contents = [];
-		foreach ($messages_data as $message) {
+		foreach ($messages as $message) {
 			$role = ($message['role'] === 'assistant') ? 'model' : 'user';
 			if (!empty($gemini_contents) && end($gemini_contents)['role'] === $role) continue;
 			$gemini_contents[] = [
@@ -243,11 +338,6 @@ class FEAS_AI_Chat_Handler {
 						['text' => $message['content']]
 				]
 			];
-		}
-
-		$model = 'gemini-2.5-flash-lite'; // Default
-		if ( class_exists('FEAS_AI_Pro') ) {
-			$model = get_option( 'feas_ai_google_model', 'gemini-2.5-flash-lite' );
 		}
 
 		$api_url = sprintf(
@@ -264,9 +354,6 @@ class FEAS_AI_Chat_Handler {
 				]
 			],
 		];
-
-		error_log( '--- Sending to Gemini ---' );
-		error_log( print_r( $body, true ) );
 
 		$ch = curl_init();
 		curl_setopt( $ch, CURLOPT_URL, $api_url );
@@ -309,41 +396,97 @@ class FEAS_AI_Chat_Handler {
 			return strlen($data);
 		});
 
+		// Execute the request.
 		curl_exec( $ch );
 		echo "data: [DONE]\n\n";
 		flush();
+
+		// Calculate the total duration.
+		$duration = round( ( microtime( true ) - $start_time ) * 1000 );
+
+		// Check for cURL errors after execution.
+		if ( curl_errno( $ch ) ) {
+			// ERROR: Log the cURL (connection) failure.
+			\FEAISearch\Core\FEAS_AI_Logger::log(
+				'ERROR',
+				'Chat completion stream failed (cURL Error).',
+				[
+					'provider'      => $provider,
+					'model'         => $model,
+					'error_message' => curl_error( $ch ),
+					'duration_ms'   => $duration,
+				]
+			);
+		} else {
+			// SUCCESS: Log the successful completion of the stream.
+			\FEAISearch\Core\FEAS_AI_Logger::log(
+				'SUCCESS',
+				'Chat completion stream finished successfully.',
+				[
+					'provider'    => $provider,
+					'model'       => $model,
+					'duration_ms' => $duration,
+				]
+			);
+		}
+
 		curl_close( $ch );
 	}
 
 	/**
 	 * Streaming processing dedicated to Claude
 	 */
-	private function stream_completion_for_claude( $question, $context_chunks, $history ) {
+	private function stream_completion_for_claude( $question, $context_chunks, $history, $provider ) {
+		// Start the timer.
+		$start_time = microtime( true );
+
 		$api_key = get_option( 'feas_ai_anthropic_api_key' );
 		if ( empty( $api_key ) ) {
-			echo "data: " . json_encode(['text' => __( 'Error: Anthropic API key not set.', 'fe-ai-search' )]) . "\n\n";
+			// Log the error.
+			\FEAISearch\Core\FEAS_AI_Logger::log(
+				'ERROR',
+				'Chat completion failed: API Key or Endpoint URL is not set.',
+				[ 'provider' => $provider ]
+			);
+
+			echo "data: " . json_encode(
+				['text' => __( 'Error: Anthropic API key not set.', 'fe-ai-search' )]
+			) . "\n\n";
 			echo "data: [DONE]\n\n";
 			flush();
 			return;
 		}
 
 		$model = 'claude-3-5-haiku-20241022'; // Default
-		if ( class_exists('FEAS_AI_Pro') ) {
-			$model = get_option( 'feas_ai_anthropic_model', 'claude-3-5-haiku-20241022' );
+		if ( class_exists('FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings') ) {
+			$options = get_option( 'feas_ai_anthropic_model_options', ['type' => $model] );
+			$model = ( 'custom' === ( $options['type'] ?? '' ) && ! empty( $options['custom'] ) ) ? $options['custom'] : ( $options['type'] ?? $model );
 		}
 
-		$messages_data = $this->build_prompt_messages( $question, $context_chunks, $history, true );
+		// INFO: Log the start of the API call.
+		\FEAISearch\Core\FEAS_AI_Logger::log(
+			'INFO',
+			'Chat completion stream started.',
+			[
+				'provider' => $provider,
+				'model'    => $model,
+			]
+		);
+
+		$messages = \FEAISearch\Ajax\FEAS_AI_Chat_Handler::build_prompt_messages(
+			$question,
+			$context_chunks,
+			$history,
+			true  // This separates the system prompt for Claude.
+		);
 
 		$body = [
 			'model'      => $model,
 			'max_tokens' => 4096,
-			'messages'   => $messages_data['messages'],
-			'system'     => $messages_data['system'],
+			'messages'   => $messages['messages'],
+			'system'     => $messages['system'],
 			'stream'     => true,
 		];
-
-		error_log( '--- Sending to Claude ---' );
-		error_log( print_r( $body, true ) );
 
 		$ch = curl_init();
 		curl_setopt( $ch, CURLOPT_URL, 'https://api.anthropic.com/v1/messages' );
@@ -356,6 +499,7 @@ class FEAS_AI_Chat_Handler {
 			'anthropic-version: 2023-06-01'
 		] );
 		curl_setopt( $ch, CURLOPT_WRITEFUNCTION, function( $curl, $data ) {
+
 			$lines = explode("\n", $data);
 
 			foreach ($lines as $line) {
@@ -397,52 +541,38 @@ class FEAS_AI_Chat_Handler {
 		curl_exec( $ch );
 		echo "data: [DONE]\n\n";
 		flush();
+
+		// Calculate the total duration.
+		$duration = round( ( microtime( true ) - $start_time ) * 1000 );
+
+		// Check for cURL errors after execution.
+		if ( curl_errno( $ch ) ) {
+			// ERROR: Log the cURL (connection) failure.
+			\FEAISearch\Core\FEAS_AI_Logger::log(
+				'ERROR',
+				'Chat completion stream failed (cURL Error).',
+				[
+					'provider'      => $provider,
+					'model'         => $model,
+					'error_message' => curl_error( $ch ),
+					'duration_ms'   => $duration,
+				]
+			);
+		} else {
+			// SUCCESS: Log the successful completion of the stream.
+			\FEAISearch\Core\FEAS_AI_Logger::log(
+				'SUCCESS',
+				'Chat completion stream finished successfully.',
+				[
+					'provider'    => $provider,
+					'model'       => $model,
+					'duration_ms' => $duration,
+				]
+			);
+		}
+
 		curl_close( $ch );
 	}
-
-	/**
-	 * Common function to execute cURL stream and transfer the results to the client.
-	 */
-	// private function execute_stream_and_forward( $ch, $provider ) {
-	// 	curl_setopt( $ch, CURLOPT_WRITEFUNCTION, function( $curl, $data ) use ( $provider ) {
-	// 		// Split raw data from AI by rows
-	// 		$lines = explode("\n", $data);
-//
-	// 		foreach ($lines as $line) {
-	// 			if (strpos($line, 'data: ') === 0) {
-	// 				$json_data = substr($line, 6);
-	// 				if (trim($json_data) === '[DONE]') {
-	// 					continue;
-	// 				}
-//
-	// 				$chunk = json_decode($json_data, true);
-	// 				$content = '';
-//
-	// 				// Extract text according to the format of each provider.
-	// 				if ('openai' === $provider && isset($chunk['choices'][0]['delta']['content'])) {
-	// 					$content = $chunk['choices'][0]['delta']['content'];
-	// 				} elseif ('anthropic' === $provider && isset($chunk['delta']['type']) && 'text_delta' === $chunk['delta']['type']) {
-	// 					$content = $chunk['delta']['text'];
-	// 				} elseif ('google' === $provider && isset($chunk['candidates'][0]['content']['parts'][0]['text'])) {
-	// 					$content = $chunk['candidates'][0]['content']['parts'][0]['text'];
-	// 				}
-//
-	// 				if ( ! empty( $content ) ) {
-	// 					$content = apply_filters( 'feas_ai_filter_model_response', $content );
-	// 					echo "data: " . json_encode(['text' => $content]) . "\n\n";
-	// 					if (ob_get_level() > 0) { ob_flush(); }
-	// 					flush();
-	// 				}
-	// 			}
-	// 		}
-	// 		return strlen( $data );
-	// 	});
-//
-	// 	curl_exec( $ch );
-	// 	echo "data: [DONE]\n\n";
-	// 	flush();
-	// 	curl_close( $ch );
-	// }
 
 	/**
 	 * A common function to assemble prompts and messages array
@@ -480,6 +610,28 @@ class FEAS_AI_Chat_Handler {
 		 * @param string $provider      The slug of the current AI provider (e.g., 'openai', 'google').
 		 */
 		$system_prompt = apply_filters( 'feas_ai_system_prompt', $system_prompt, $provider );
+
+		$options = get_option( 'feas_ai_display_options', [] );
+		$terms_page_id = $options['terms_page_id'] ?? 0;
+		$privacy_page_id = $options['privacy_page_id'] ?? 0;
+
+		// 法的文書をコンテキストの先頭に追加 ---
+		$legal_context = '';
+		if ( $terms_page_id ) {
+			$page = get_post( $terms_page_id );
+			if ( $page ) {
+				$legal_context .= "--- START: Terms of Service ---\n" . wp_strip_all_tags( $page->post_content ) . "\n--- END: Terms of Service ---\n\n";
+			}
+		}
+		if ( $privacy_page_id ) {
+			$page = get_post( $privacy_page_id );
+			if ( $page ) {
+				$legal_context .= "--- START: Privacy Policy ---\n" . wp_strip_all_tags( $page->post_content ) . "\n--- END: Privacy Policy ---\n\n";
+			}
+		}
+		if ( ! empty( $legal_context ) ) {
+			$context_str .= "Mandatory Compliance Documents:\n" . $legal_context;
+		}
 
 		// Construct a context string
 		if ( ! empty( $context_chunks ) ) {
@@ -535,6 +687,7 @@ class FEAS_AI_Chat_Handler {
 4. If relevant information is available, generate a clear and concise summary based solely on that information.
 
 ## Strict Rules
+- **Overriding Rule: Legal Compliance**: All of your responses must never contradict the content of the provided \"Mandatory Compliance Documents\" (the Terms of Service and Privacy Policy). These documents take precedence over all other instructions.
 - **Cite Sources**: If you use \"Site Information\" in your answer, you must include the source URL at the end of the response.
 - **Fact-Based Answers**: Do not include information that is not written in the \"Site Information,\" your general knowledge, or speculation in your answers.
 - **Honesty**: Do not invent information or pretend to know something you don't.
@@ -704,7 +857,18 @@ class FEAS_AI_Chat_Handler {
 		}
 
 		// Filter the text against the comprehensive list of phrases.
-		return str_ireplace( $all_injection_phrases, __( '[REDACTED]', 'fe-ai-search' ), $text );
+		$filtered_text = str_ireplace( $all_injection_phrases, __( '[REDACTED]', 'fe-ai-search' ), $text );
+
+		// SECURITY: Log if a basic security filter was triggered.
+		if ( $filtered_text !== $text ) {
+			\FEAISearch\Core\FEAS_AI_Logger::log(
+				'SECURITY',
+				'Basic prompt injection filter triggered.',
+				[ 'original_text' => mb_substr( $text, 0, 100 ) . '...' ] // Log a snippet for context
+			);
+		}
+
+		return $filtered_text;
 	}
 
 	/**

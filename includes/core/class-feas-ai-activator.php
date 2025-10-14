@@ -122,6 +122,19 @@ class FEAS_AI_Activator {
 			KEY `vector_id` (`vector_id`)
 		) {$charset_collate};";
 		dbDelta( $sql_index );
+
+		// System Logs Table
+		$table_name = $wpdb->prefix . 'feas_ai_system_logs';
+		$sql = "CREATE TABLE $table_name (
+			`id` bigint(20) NOT NULL AUTO_INCREMENT,
+			`level` varchar(20) NOT NULL DEFAULT 'INFO',
+			`message` text NOT NULL,
+			`extra_data` longtext,
+			`created_at` datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
+			PRIMARY KEY  (`id`),
+			KEY `level` (`level`)
+		) $charset_collate;";
+		dbDelta( $sql );
 	}
 
 	/**

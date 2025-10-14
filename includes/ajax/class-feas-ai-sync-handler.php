@@ -31,7 +31,7 @@ use WP_Error;
  */
 class FEAS_AI_Sync_Handler {
 
-	private const BATCH_SIZE = 10;
+	// private const BATCH_SIZE = 10;
 	private $segmenter;
 
 	public function __construct() {
@@ -319,83 +319,6 @@ class FEAS_AI_Sync_Handler {
 		}
 	}
 
-	// public function ajax_process_batch() {
-	// 	check_ajax_referer( 'feas_ai_ajax_nonce', 'nonce' );
-//
-	// 	$page = isset( $_POST['page'] ) ? absint( $_POST['page'] ) : 1;
-	// 	$post_ids_json = isset($_POST['post_ids']) ? stripslashes($_POST['post_ids']) : '[]';
-	// 	$post_ids = json_decode($post_ids_json, true);
-//
-	// 	$offset = ($page - 1) * self::BATCH_SIZE;
-	// 	$batch_ids = array_slice($post_ids, $offset, self::BATCH_SIZE);
-//
-	// 	// Extract the part of this batch based on the ID list passed from JS
-	// 	$batch_size = (int) get_option( 'feas_ai_batch_size', 10 );
-	// 	$offset = ($page - 1) * $batch_size;
-	// 	$batch_ids = array_slice($post_ids, $offset, $batch_size);
-//
-	// 	if ( empty($batch_ids) ) {
-	// 		wp_send_json_success( ['message' => 'No more posts to process.'] );
-	// 		return;
-	// 	}
-//
-	// 	$posts_batch = get_posts([
-	// 		'post__in'            => $batch_ids,
-	// 		'post_type'           => 'any',
-	// 		'orderby'             => 'post__in',
-	// 		'posts_per_page'      => count($batch_ids),
-	// 		'ignore_sticky_posts' => 1,
-	// 	]);
-//
-	// 	$sync_options = get_option('feas_ai_sync_options', []);
-//
-	// 	// Loop through the posts and create and save chunks according to your preferences
-	// 	// $segmenter = new TinySegmenter();
-	// 	global $wpdb;
-	// 	$vectors_table = $wpdb->prefix . 'feas_ai_vectors';
-	// 	$index_table   = $wpdb->prefix . 'feas_ai_keyword_index';
-//
-	// 	foreach ( $posts_batch as $post ) {
-//
-	// 		$chunks_with_meta = $this->create_chunks_from_post( $post );
-//
-	// 		if ( empty($chunks_with_meta) ) { continue; }
-//
-	// 		$embedding_response = $this->get_embeddings_via_selected_provider( $chunks_with_meta );
-//
-	// 		if ( ! is_wp_error( $embedding_response ) && !empty($embedding_response['data']) ) {
-	// 			$vectors_data = $embedding_response['data'];
-	// 			foreach ( $vectors_data as $index => $vector_item ) {
-	// 				$wpdb->insert(
-	// 					$vectors_table,
-	// 					[
-	// 						'post_id'       => $post->ID,
-	// 						'chunk_index'   => $index,
-	// 						'content_chunk' => $chunks_with_meta[$index],
-	// 						'vector_data'   => json_encode( $vector_item['embedding'] ),
-	// 						'created_at'    => current_time( 'mysql' ),
-	// 					],
-	// 					[ '%d', '%d', '%s', '%s', '%s' ]
-	// 				);
-	// 				$vector_id = $wpdb->insert_id;
-	// 				if ($vector_id) {
-	// 					$keywords = $this->tokenize_text( $chunks_with_meta[$index] );
-	// 					foreach ( array_unique( $keywords ) as $keyword ) {
-	// 						if ( mb_strlen( $keyword ) > 1 ) {
-	// 							$wpdb->insert(
-	// 								$index_table,
-	// 								[ 'keyword' => $keyword, 'vector_id' => $vector_id ],
-	// 								[ '%s', '%d' ]
-	// 							);
-	// 						}
-	// 					}
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// 	wp_send_json_success( ['message' => 'Batch ' . $page . ' processed.'] );
-	// }
-
 	public function ajax_update_sync_timestamp() {
 		check_ajax_referer( 'feas_ai_ajax_nonce', 'nonce' );
 		update_option( 'feas_ai_last_sync_timestamp', current_time( 'timestamp' ) );
@@ -443,6 +366,17 @@ class FEAS_AI_Sync_Handler {
 			return mb_strlen($kw) > 1;
 		});
 
+		// DEBUG: Log keyword extraction results.
+		\FEAISearch\Core\FEAS_AI_Logger::log(
+			'DEBUG',
+			'Keyword extraction from user question.',
+			[
+				'initial_keywords' => count($keywords),
+				'valid_keywords'   => count($valid_keywords),
+				'keywords_list'    => $valid_keywords, // Log the actual keywords
+			]
+		);
+
 		if ( empty( $valid_keywords ) ) {
 			return [];
 		}
@@ -451,6 +385,16 @@ class FEAS_AI_Sync_Handler {
 		$placeholders = implode( ', ', array_fill( 0, count( $valid_keywords ), '%s' ) );
 		$sql          = "SELECT DISTINCT `vector_id` FROM `{$index_table}` WHERE `keyword` IN ( {$placeholders} ) LIMIT 500";
 		$vector_ids   = $wpdb->get_col( $wpdb->prepare( $sql, $valid_keywords ) );
+
+		// DEBUG: Log index search results.
+		\FEAISearch\Core\FEAS_AI_Logger::log(
+			'DEBUG',
+			'Keyword index search completed.',
+			[
+				'keywords_searched' => $valid_keywords,
+				'matched_vector_ids' => count($vector_ids),
+			]
+		);
 
 		if ( empty( $vector_ids ) ) {
 			return [];
@@ -472,124 +416,6 @@ class FEAS_AI_Sync_Handler {
 
 		return $results;
 	}
-	// public function find_similar_chunks( $question ) {
-	// 	global $wpdb;
-	// 	$index_table   = $wpdb->prefix . 'feas_ai_keyword_index';
-	// 	$vectors_table = $wpdb->prefix . 'feas_ai_vectors';
-	// 	$posts_table   = $wpdb->posts;
-//
-	// 	//$segmenter = new TinySegmenter();
-	// 	$keywords = array_unique( $this->tokenize_text( $question ) );
-	// 	$valid_keywords = array_filter($keywords, function($kw){ return mb_strlen($kw) > 1; });
-//
-	// 	if ( empty( $valid_keywords ) ) return array();
-//
-	// 	// Polylangの場合: pll_current_language() で現在の言語コードを取得
-	// 	$current_lang = function_exists('pll_current_language') ? pll_current_language() : get_locale();
-//
-	// 	$placeholders = implode( ', ', array_fill( 0, count( $valid_keywords ), '%s' ) );
-	// 	$sql = "SELECT DISTINCT `vector_id` FROM `{$index_table}` WHERE `lang` = %s AND `keyword` IN ( {$placeholders} ) LIMIT 500";
-	// 	$vector_ids = $wpdb->get_col( $wpdb->prepare( $sql, $current_lang, $valid_keywords ) );
-//
-	// 	if ( empty( $vector_ids ) ) return array();
-//
-	// 	$placeholders_ids = implode( ', ', array_fill( 0, count( $vector_ids ), '%d' ) );
-	// 	$sql_candidates   = "
-	// 		SELECT `post_id`, `content_chunk`, `vector_data`, p.post_date
-	// 		FROM `{$vectors_table}` AS v
-	// 		JOIN `{$posts_table}` AS p ON v.post_id = p.ID
-	// 		WHERE v.id IN ( {$placeholders_ids} )";
-	// 	$candidate_rows   = $wpdb->get_results( $wpdb->prepare( $sql_candidates, $vector_ids ) );
-//
-	// 	if( empty($candidate_rows) ) return array();
-//
-	// 	$question_vector_response = $this->get_embeddings_via_selected_provider( array( $question ) );
-	// 	if( is_wp_error($question_vector_response) || empty($question_vector_response['data'][0]['embedding']) ){
-	// 		return array();
-	// 	}
-	// 	$question_vector = $question_vector_response['data'][0]['embedding'];
-//
-	// 	$similarities = array();
-	// 	$similarity_threshold = 0.35; // Similarity cutoff score
-//
-	// 	foreach ( $candidate_rows as $row ) {
-	// 		$db_vector = json_decode( $row->vector_data, true );
-	// 		if ( ! is_array( $db_vector ) || empty( $db_vector ) ) continue;
-//
-	// 		$similarity = $this->calculate_cosine_similarity_php( $question_vector, $db_vector );
-//
-	// 		if ( $similarity >= $similarity_threshold ) {
-	// 			$similarities[] = array(
-	// 				'post_id'       => $row->post_id,
-	// 				'content_chunk' => $row->content_chunk,
-	// 				'similarity'    => $similarity,
-	// 				'permalink'     => get_permalink( $row->post_id ),
-	// 				'post_date'     => $row->post_date,
-	// 			);
-	// 		}
-	// 	}
-//
-	// 	if ( empty($similarities) ) {
-	// 		return array();
-	// 	}
-//
-	// 	usort( $similarities, function( $a, $b ) {
-	// 		return $b['similarity'] <=> $a['similarity'];
-	// 	} );
-//
-	// 	return array_slice( $similarities, 0, 7 );
-	// }
-
-	// public function create_chunks_from_post( $post ) {
-	// 	$sync_options = get_option('feas_ai_sync_options', []);
-	// 	$pt_options = $sync_options['post_types'][ $post->post_type ] ?? [];
-//
-	// 	$metadata_header = '';
-	// 	if ( !empty($pt_options['include_title']) ) { $metadata_header .= "タイトル: " . $post->post_title . "\n"; }
-	// 	if ( !empty($pt_options['include_date']) ) { $metadata_header .= "投稿日: " . $post->post_date . "\n"; }
-//
-	// 	if ( !empty($pt_options['taxonomies']) && is_array($pt_options['taxonomies']) ) {
-	// 		foreach($pt_options['taxonomies'] as $tax_slug) {
-	// 			$terms = get_the_terms($post->ID, $tax_slug);
-	// 			if ( !is_wp_error($terms) && !empty($terms) ) {
-	// 				$term_names = wp_list_pluck($terms, 'name');
-	// 				$taxonomy_obj = get_taxonomy($tax_slug);
-	// 				if ($taxonomy_obj) {
-	// 					$metadata_header .= $taxonomy_obj->label . ": " . implode(', ', $term_names) . "\n";
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-//
-	// 	if ( class_exists('FEAS_AI_Pro') && !empty($pt_options['custom_fields']) ) {
-	// 		$custom_field_keys = array_map('trim', explode(',', $pt_options['custom_fields']));
-	// 		foreach ($custom_field_keys as $key) {
-	// 			$value = get_post_meta($post->ID, $key, true);
-	// 			if ($value) { $metadata_header .= "{$key}: {$value}\n"; }
-	// 		}
-	// 	}
-//
-	// 	$content = '';
-	// 	if ( !empty($pt_options['include_content']) ) {
-	// 		$content = strip_shortcodes( $post->post_content );
-	// 		$content = wp_strip_all_tags( $content );
-	// 	}
-//
-	// 	$raw_chunks = empty(trim($content)) ? [''] : explode( "\n\n", $content );
-	// 	$valid_chunks = array_values( array_filter( array_map( 'trim', $raw_chunks ) ) );
-	// 	if ( empty($valid_chunks) && !empty(trim($metadata_header)) ) {
-	// 		$valid_chunks = [''];
-	// 	}
-	// 	if ( empty( $valid_chunks ) ) { return []; }
-//
-	// 	$chunks_with_meta = [];
-	// 	foreach($valid_chunks as $chunk) {
-	// 		$chunks_with_meta[] = trim($metadata_header) . "\n---\n" . $chunk;
-	// 	}
-//
-	// 	return $chunks_with_meta;
-	// }
-
 
 	/**
 	 * Creates text chunks from a post object, combining metadata into prose.
@@ -611,8 +437,10 @@ class FEAS_AI_Sync_Handler {
 			$text_parts[] = sprintf( 'この記事は%sに公開されました。', date_i18n( get_option( 'date_format' ), strtotime( $post->post_date ) ) );
 		}
 		if ( ! empty( $pt_options['include_author'] ) ) {
-			$author_name  = get_the_author_meta( 'display_name', $post->post_author );
-			$text_parts[] = sprintf( '著者は%sです。', $author_name );
+			$nickname = get_the_author_meta( 'nickname', $post->post_author );
+			if ( ! empty( $nickname ) ) {
+				$text_parts[] = sprintf( '著者は%sです。', $nickname );
+			}
 		}
 
 		// Add taxonomies as keywords.
@@ -678,6 +506,16 @@ class FEAS_AI_Sync_Handler {
 
 
 	public function get_embeddings_via_selected_provider( $texts ) {
+
+		\FEAISearch\Core\FEAS_AI_Logger::log(
+			'INFO',
+			'Embedding process started.',
+			[
+				'provider' => get_option( 'feas_ai_embedding_provider', 'openai' ),
+				'chunks_count' => count( $texts ),
+			]
+		);
+
 		$provider = get_option( 'feas_ai_embedding_provider', 'openai' );
 
 		/**
@@ -722,13 +560,17 @@ class FEAS_AI_Sync_Handler {
 	}
 
 	public function fetch_embeddings_for_openai( $texts ) {
+		// Start the timer.
+		$start_time = microtime( true );
+
 		$api_key = get_option( 'feas_ai_openai_api_key' );
 		if ( empty( $api_key ) ) {
-			return new WP_Error( 'api_key_missing', __( 'The OpenAI API key is not configured.', 'fe-ai-search' ) );
+			// Log the error before returning.
+			\FEAISearch\Core\FEAS_AI_Logger::log( 'ERROR', 'OpenAI Embedding API call skipped: API Key is not set.' );
+			return new \WP_Error( 'api_key_missing', __( 'The OpenAI API key is not configured.', 'fe-ai-search' ) );
 		}
 
 		$api_url = 'https://api.openai.com/v1/embeddings';
-
 		$body = array(
 			'model' => 'text-embedding-3-small',
 			'input' => $texts,
@@ -743,27 +585,70 @@ class FEAS_AI_Sync_Handler {
 			'timeout'     => 60,
 		) );
 
+		// Calculate the duration in milliseconds.
+		$duration = round( ( microtime( true ) - $start_time ) * 1000 ); // ミリ秒に変換
+
 		if ( is_wp_error( $response ) ) {
+			// Log the connection failure.
+			\FEAISearch\Core\FEAS_AI_Logger::log(
+				'ERROR',
+				'OpenAI Embedding API call failed.',
+				[
+					'error_code'    => $response->get_error_code(),
+					'error_message' => $response->get_error_message(),
+					'duration_ms'   => $duration,
+				]
+			);
 			return $response;
 		}
 
-		$response_body = json_decode( wp_remote_retrieve_body( $response ), true );
 		$response_code = wp_remote_retrieve_response_code( $response );
+		$response_body = json_decode( wp_remote_retrieve_body( $response ), true );
 
 		if ( $response_code !== 200 ) {
 			$error_message = isset( $response_body['error']['message'] )
 				? $response_body['error']['message']
 				: __( 'Unknown API Error', 'fe-ai-search' );
+
+			// Log the API error.
+			\FEAISearch\Core\FEAS_AI_Logger::log(
+				'ERROR',
+				'OpenAI Embedding API call failed (API Error).',
+				[
+					'http_status'   => $response_code,
+					'error_message' => $error_message,
+					'duration_ms'   => $duration,
+				]
+			);
+
 			return new WP_Error( 'api_error', __( 'API Error', 'fe-ai-search' ) . ': ' . $error_message );
 		}
+
+		$usage = $response_body['usage'] ?? [];
+
+		// Log the successful call.
+		\FEAISearch\Core\FEAS_AI_Logger::log(
+			'SUCCESS',
+			'OpenAI Embedding API call succeeded.',
+			[
+				'http_status'  => wp_remote_retrieve_response_code( $response ),
+				'duration_ms'  => $duration,
+				'total_tokens' => $usage['total_tokens'] ?? 'N/A',
+			]
+		);
 
 		return $response_body;
 	}
 
 	public function fetch_embeddings_for_gemini( $texts ) {
+		// Start the timer.
+		$start_time = microtime( true );
+
 		$api_key = get_option( 'feas_ai_google_api_key' );
 		if ( empty( $api_key ) ) {
-			return new WP_Error( 'api_key_missing', __( 'The Google Cloud API key is not configured.', 'fe-ai-search' ) );
+			// Log the error before returning.
+			\FEAISearch\Core\FEAS_AI_Logger::log( 'ERROR', 'Gemini Embedding API call skipped: API Key is not set.' );
+			return new \WP_Error( 'api_key_missing', __( 'The Google Cloud API key is not configured.', 'fe-ai-search' ) );
 		}
 
 		$api_url = 'https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:batchEmbedContents?key=' . $api_key;
@@ -788,17 +673,42 @@ class FEAS_AI_Sync_Handler {
 			'timeout' => 60,
 		) );
 
+		// Calculate the duration in milliseconds.
+		$duration = round( ( microtime( true ) - $start_time ) * 1000 );
+
 		if ( is_wp_error( $response ) ) {
+			// Log the connection failure.
+			\FEAISearch\Core\FEAS_AI_Logger::log(
+				'ERROR',
+				'Gemini Embedding API call failed.',
+				[
+					'error_code'    => $response->get_error_code(),
+					'error_message' => $response->get_error_message(),
+					'duration_ms'   => $duration,
+				]
+			);
 			return $response;
 		}
 
-		$response_body = json_decode( wp_remote_retrieve_body( $response ), true );
 		$response_code = wp_remote_retrieve_response_code( $response );
+		$response_body = json_decode( wp_remote_retrieve_body( $response ), true );
 
 		if ( $response_code !== 200 ) {
 			$error_message = isset( $response_body['error']['message'] )
 				? $response_body['error']['message']
 				: __( 'Unknown API Error', 'fe-ai-search' );
+
+			// Log the API error.
+			\FEAISearch\Core\FEAS_AI_Logger::log(
+				'ERROR',
+				'Gemini Embedding API call failed (API Error).',
+				[
+					'http_status'   => $response_code,
+					'error_message' => $error_message,
+					'duration_ms'   => $duration,
+				]
+			);
+
 			return new WP_Error( 'api_error', __( 'API Error', 'fe-ai-search' ) . ': ' . $error_message );
 		}
 
@@ -816,21 +726,20 @@ class FEAS_AI_Sync_Handler {
 			$formatted_response['data'][$i]['embedding'] = $vector;
 		}
 
+		$usage = $response_body['usage'] ?? [];
+
+		// Log the successful call.
+		\FEAISearch\Core\FEAS_AI_Logger::log(
+			'SUCCESS',
+			'Gemini Embedding API call succeeded.',
+			[
+				'http_status'  => wp_remote_retrieve_response_code( $response ),
+				'duration_ms'  => $duration,
+				'total_tokens' => $usage['total_tokens'] ?? 'N/A',
+			]
+		);
+
 		return $formatted_response;
-	}
-
-	public function get_claude_embeddings( $texts ) {
-		$api_key = get_option( 'feas_ai_anthropic_api_key' );
-		if ( empty( $api_key ) ) {
-			return new WP_Error( 'api_key_missing', __( 'Anthropic API key is not set.', 'fe-ai-search' ) );
-		}
-
-		$api_url = 'https://api.anthropic.com/v1/embeddings';
-
-		// 現状ClaudeにはEmbedding APIがないため、ダミーのエラーを返す
-		return new WP_Error('not_implemented', __( "Claude's embedding feature is currently not supported. Please choose OpenAI or Gemini.", 'fe-ai-search' ));
-
-		// TODO
 	}
 
 	/**

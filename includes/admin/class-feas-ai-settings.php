@@ -110,6 +110,10 @@ class FEAS_AI_Settings {
 						<?php do_settings_fields( 'fe-ai-search', 'feas_ai_data_section' ); ?>
 					</table>
 					<?php do_action( 'feas_ai_after_data_settings_fields' ); ?>
+					<?php do_settings_sections( 'feas_ai_debug_section' ); ?>
+					<table class="form-table">
+						<?php do_settings_fields('fe-ai-search', 'feas_ai_debug_section'); ?>
+					</table>
 				</div>
 
 				<?php
@@ -369,6 +373,24 @@ class FEAS_AI_Settings {
 			[ $this, 'delete_on_uninstall_field_html' ],
 			$page_slug,
 			'feas_ai_data_section'
+		);
+
+		// --- Debugging Section ---
+		add_settings_section(
+			'feas_ai_debug_section',
+			__( 'Debugging', 'fe-ai-search' ),
+			null,
+			$page_slug
+		);
+
+		register_setting( $settings_group, 'feas_ai_debug_mode_enabled' );
+
+		add_settings_field(
+			'feas_ai_debug_mode_enabled',
+			__( 'Enable Debug Mode', 'fe-ai-search' ),
+			[ $this, 'debug_mode_field_html' ],
+			$page_slug,
+			'feas_ai_debug_section'
 		);
 	}
 
@@ -663,7 +685,7 @@ class FEAS_AI_Settings {
 						</label>
 						<label>
 							<input type="checkbox" name="feas_ai_sync_options[post_types][<?php echo esc_attr( $post_type->name ); ?>][include_author]" value="1" <?php checked( $include_author ); ?>>
-							<?php esc_html_e( 'Include Post Author', 'fe-ai-search' ); ?>
+							<?php esc_html_e( 'Include Post Author (nickname)', 'fe-ai-search' ); ?>
 						</label>
 
 						<?php
@@ -1292,6 +1314,31 @@ class FEAS_AI_Settings {
 		<p class="description">
 			<?php esc_html_e( 'Enter the number of posts to process in one batch during synchronization. A smaller number is less likely to cause timeouts on shared servers. (Default: 10, Recommended: 10-100)', 'fe-ai-search' ); ?>
 		</p>
+		<?php
+	}
+
+	/**
+	 * Renders the HTML for the Debug Mode checkbox.
+	 *
+	 * @since 1.2.0
+	 */
+	public function debug_mode_field_html() {
+		$is_enabled = get_option( 'feas_ai_debug_mode_enabled' );
+		?>
+		<fieldset>
+			<label>
+				<input
+					type="checkbox"
+					name="feas_ai_debug_mode_enabled"
+					value="1"
+					<?php checked( $is_enabled, 1 ); ?>
+				/>
+				<?php esc_html_e( 'Enable the recording of detailed system logs for debugging purposes.', 'fe-ai-search' ); ?>
+			</label>
+			<p class="description">
+				<?php esc_html_e( 'When enabled, detailed operational logs will be saved to the database (in the `wp_feas_ai_system_logs` table). Only enable this when troubleshooting issues, as it can impact performance.', 'fe-ai-search' ); ?>
+			</p>
+		</fieldset>
 		<?php
 	}
 

@@ -94,6 +94,15 @@ function initFEAIChat() {
 								logConversation(question, fullResponse, contextFound);
 								enableForm();
 							});
+							if (feas_ai_ajax_obj.is_pro_active) {
+								const feedbackWrapper = document.createElement('div');
+								feedbackWrapper.className = 'feas-ai-feedback';
+								feedbackWrapper.innerHTML = `
+									<button class="feedback-btn good" data-rating="1">👍</button>
+									<button class="feedback-btn bad" data-rating="-1">👎</button>
+								`;
+								aiMessageWrapper.appendChild(feedbackWrapper);
+							}
 							return;
 						}
 
