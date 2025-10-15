@@ -257,7 +257,7 @@ class FEAS_AI_Settings {
 		);
 		add_settings_field(
 			'feas_ai_batch_size',
-			'同期バッチサイズ',
+			__( 'Synchronous Batch Size', 'fe-ai-search' ),
 			[ $this, 'batch_size_field_html' ],
 			$page_slug,
 			'feas_ai_sync_section'
@@ -283,6 +283,22 @@ class FEAS_AI_Settings {
 		);
 
 		register_setting( $settings_group, 'feas_ai_system_prompt' );
+
+		add_settings_field(
+			'feas_ai_site_name',
+			__( 'AI Site Name', 'fe-ai-search' ),
+			[ $this, 'site_name_field_html' ],
+			$page_slug,
+			'feas_ai_prompt_section'
+		);
+
+		add_settings_field(
+			'feas_ai_site_purpose',
+			__( 'AI Site Purpose', 'fe-ai-search' ),
+			[ $this, 'site_purpose_field_html' ],
+			$page_slug,
+			'feas_ai_prompt_section'
+		);
 
 		add_settings_field(
 			'feas_ai_system_prompt',
@@ -1225,19 +1241,19 @@ class FEAS_AI_Settings {
 			$pt_name = $post_type->name;
 			if ( 'attachment' === $pt_name ) continue;
 
-			// --- 'enabled' checkbox ---
+			// 'enabled' checkbox
 			$new_input['post_types'][$pt_name]['enabled'] = ! empty( $input['post_types'][$pt_name]['enabled'] ) ? 1 : 0;
 
-			// --- Other checkboxes ---
+			// Other checkboxes
 			$checkboxes = ['include_title', 'include_content', 'include_date', 'include_author'];
 			foreach($checkboxes as $key) {
 				$new_input['post_types'][$pt_name][$key] = ! empty( $input['post_types'][$pt_name][$key] ) ? 1 : 0;
 			}
 
-			// --- Taxonomies ---
+			// Taxonomies
 			$new_input['post_types'][$pt_name]['taxonomies'] = $input['post_types'][$pt_name]['taxonomies'] ?? [];
 
-			// --- Custom Fields (Pro) ---
+			// Custom Fields (Pro)
 			if ( isset( $input['post_types'][$pt_name]['custom_fields'] ) ) {
 				$new_input['post_types'][$pt_name]['custom_fields'] = sanitize_text_field( $input['post_types'][$pt_name]['custom_fields'] );
 			}
@@ -1281,8 +1297,10 @@ class FEAS_AI_Settings {
 	}
 
 	public function system_prompt_field_html() {
-		$default_prompt = \FEAISearch\Ajax\FEAS_AI_Chat_Handler::get_default_system_prompt();
-		$prompt = get_option( 'feas_ai_system_prompt', $default_prompt );
+		$prompt = get_option( 'feas_ai_system_prompt' );
+		if ( empty( $prompt ) ) {
+			$prompt = \FEAISearch\Ajax\FEAS_AI_Chat_Handler::get_default_system_prompt();
+		}
 		?>
 		<textarea
 			name="feas_ai_system_prompt"
@@ -1339,6 +1357,22 @@ class FEAS_AI_Settings {
 				<?php esc_html_e( 'When enabled, detailed operational logs will be saved to the database (in the `wp_feas_ai_system_logs` table). Only enable this when troubleshooting issues, as it can impact performance.', 'fe-ai-search' ); ?>
 			</p>
 		</fieldset>
+		<?php
+	}
+
+	public function site_name_field_html() {
+		$site_name = get_option( 'feas_ai_site_name', get_bloginfo( 'name' ) );
+		?>
+		<input type="text" name="feas_ai_site_name" value="<?php echo esc_attr( $site_name ); ?>" class="regular-text">
+		<p class="description"><?php esc_html_e( 'The name of the site you want the AI to recognize. If left blank, the site title will be used.', 'fe-ai-search' ); ?></p>
+		<?php
+	}
+
+	public function site_purpose_field_html() {
+		$site_purpose = get_option( 'feas_ai_site_purpose', get_bloginfo( 'description' ) );
+		?>
+		<textarea name="feas_ai_site_purpose" rows="3" class="large-text"><?php echo esc_textarea( $site_purpose ); ?></textarea>
+		<p class="description"><?php esc_html_e( 'Briefly explain the purpose of this site to the AI. If left blank, the site\'s tagline will be used.', 'fe-ai-search' ); ?></p>
 		<?php
 	}
 

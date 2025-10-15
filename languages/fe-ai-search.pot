@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: FE AI Search\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-08 11:06+0000\n"
+"POT-Creation-Date: 2025-10-15 05:14+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: \n"
@@ -16,27 +16,21 @@ msgstr ""
 "X-Loco-Version: 2.8.0; wp-6.8.1; php-8.3.8\n"
 "X-Domain: fe-ai-search"
 
-#. %s: Taxonomy label (e.g., "Categories", "Tags")
-#: includes/admin/class-feas-ai-settings.php:714
-#, php-format
-msgid "%s"
-msgstr ""
-
-#: includes/ajax/class-feas-ai-chat-handler.php:619
+#: includes/ajax/class-feas-ai-chat-handler.php:783
 msgid "401 Unauthorized"
 msgstr ""
 
-#: includes/ajax/class-feas-ai-chat-handler.php:689
+#: includes/ajax/class-feas-ai-chat-handler.php:860
 msgid "[REDACTED]"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:1066
+#: includes/admin/class-feas-ai-settings.php:1049
 msgid ""
 "Adjust the typing animation speed of the AI's response. This value "
 "represents the number of characters processed at once."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:335
+#: includes/admin/class-feas-ai-settings.php:343
 msgid "Advanced Settings"
 msgstr ""
 
@@ -48,47 +42,43 @@ msgstr ""
 msgid "AI-powered search for WordPress."
 msgstr ""
 
-#: includes/ajax/class-feas-ai-sync-handler.php:212
+#: includes/ajax/class-feas-ai-sync-handler.php:340
 msgid "All sync data has been deleted."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:157
+#: includes/admin/class-feas-ai-settings.php:161
 msgid "Answer generation model"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:381
+#: includes/admin/class-feas-ai-settings.php:407
 msgid "Anthropic (Claude)"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:185
+#: includes/admin/class-feas-ai-settings.php:189
 msgid "Anthropic (Claude) API Key"
 msgstr ""
 
-#: includes/ajax/class-feas-ai-sync-handler.php:481
-msgid "Anthropic API key is not set."
-msgstr ""
-
-#: includes/ajax/class-feas-ai-sync-handler.php:413
-#: includes/ajax/class-feas-ai-sync-handler.php:458
+#: includes/ajax/class-feas-ai-sync-handler.php:624
+#: includes/ajax/class-feas-ai-sync-handler.php:712
 msgid "API Error"
 msgstr ""
 
 #: includes/admin/class-feas-ai-settings.php:55
-#: includes/admin/class-feas-ai-settings.php:144
+#: includes/admin/class-feas-ai-settings.php:148
 msgid "API Settings"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:891
+#: includes/admin/class-feas-ai-settings.php:874
 msgid "Archive"
 msgstr ""
 
-#: includes/ajax/class-feas-ai-chat-handler.php:600
-#: includes/ajax/class-feas-ai-chat-handler.php:633
-#: includes/ajax/class-feas-ai-chat-handler.php:648
+#: includes/ajax/class-feas-ai-chat-handler.php:764
+#: includes/ajax/class-feas-ai-chat-handler.php:797
+#: includes/ajax/class-feas-ai-chat-handler.php:812
 msgid "Authentication failed."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:281
+#: includes/admin/class-feas-ai-settings.php:289
 msgid "Base System Prompt"
 msgstr ""
 
@@ -97,61 +87,51 @@ msgstr ""
 msgid "By using this chat, you agree to our %s."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:482
-#: includes/admin/class-feas-ai-settings.php:535
-#: includes/admin/class-feas-ai-settings.php:588
+#: includes/admin/class-feas-ai-settings.php:508
+#: includes/admin/class-feas-ai-settings.php:561
+#: includes/admin/class-feas-ai-settings.php:614
 msgid "Change Model"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:328
+#: includes/admin/class-feas-ai-settings.php:336
 msgid "Chat Message Settings"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:1192
+#: includes/admin/class-feas-ai-settings.php:1175
 msgid ""
 "Check this box if you want to stop using this plugin completely, rather than "
 "just temporarily disabling it."
 msgstr ""
 
-#: includes/ajax/class-feas-ai-sync-handler.php:487
-msgid ""
-"Claude's embedding feature is currently not supported. Please choose OpenAI "
-"or Gemini."
-msgstr ""
-
-#: includes/admin/class-feas-ai-settings.php:1188
+#: includes/admin/class-feas-ai-settings.php:1171
 msgid ""
 "Completely remove all database tables and settings when removing "
 "(uninstalling) a plugin."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:877
+#: includes/admin/class-feas-ai-settings.php:860
 msgid "Conditions for Displaying the Page"
 msgstr ""
 
-#: includes/ajax/class-feas-ai-chat-handler.php:658
+#: includes/ajax/class-feas-ai-chat-handler.php:822
 msgid "Connection failed"
 msgstr ""
 
-#: includes/ajax/class-feas-ai-chat-handler.php:656
+#: includes/ajax/class-feas-ai-chat-handler.php:820
 msgid "Connection successful"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:468
-#: includes/admin/class-feas-ai-settings.php:521
-#: includes/admin/class-feas-ai-settings.php:574
+#: includes/admin/class-feas-ai-settings.php:494
+#: includes/admin/class-feas-ai-settings.php:547
+#: includes/admin/class-feas-ai-settings.php:600
 msgid "Connection Test"
 msgstr ""
 
-#: includes/ajax/class-feas-ai-sync-handler.php:574
+#: includes/ajax/class-feas-ai-sync-handler.php:1003
 msgid "Contribute on GitHub"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:726
-msgid "Custom Fields"
-msgstr ""
-
-#: includes/admin/class-feas-ai-settings.php:1275
+#: includes/admin/class-feas-ai-settings.php:1293
 msgid ""
 "Customize the instructions (system prompts) for the AI assistant. If left "
 "blank, the standard prompt will be used."
@@ -161,15 +141,19 @@ msgstr ""
 msgid "Data"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:348
+#: includes/admin/class-feas-ai-settings.php:356
 msgid "Data Management"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:819
+#: includes/admin/class-feas-ai-settings.php:381
+msgid "Debugging"
+msgstr ""
+
+#: includes/admin/class-feas-ai-settings.php:802
 msgid "Delete all synced data"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:357
+#: includes/admin/class-feas-ai-settings.php:365
 msgid "Deleting Synced Data"
 msgstr ""
 
@@ -177,76 +161,84 @@ msgstr ""
 msgid "Display"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:858
+#: includes/admin/class-feas-ai-settings.php:841
 msgid "Display device"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:904
+#: includes/admin/class-feas-ai-settings.php:887
 msgid "Display on individual pages of the following post types"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:925
+#: includes/admin/class-feas-ai-settings.php:908
 msgid "Display only with these post IDs"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:294
+#: includes/admin/class-feas-ai-settings.php:302
 msgid "Display settings"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:937
+#: includes/admin/class-feas-ai-settings.php:920
 msgid "Do not display with these post IDs."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:932
-#: includes/admin/class-feas-ai-settings.php:944
+#: includes/admin/class-feas-ai-settings.php:915
+#: includes/admin/class-feas-ai-settings.php:927
 msgid "e.g."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:321
+#: includes/admin/class-feas-ai-settings.php:329
 msgid "Embedding Mode"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:852
+#: includes/admin/class-feas-ai-settings.php:390
+msgid "Enable Debug Mode"
+msgstr ""
+
+#: includes/admin/class-feas-ai-settings.php:835
 msgid "Enable floating chat"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:738
+#: includes/admin/class-feas-ai-settings.php:1336
+msgid "Enable the recording of detailed system logs for debugging purposes."
+msgstr ""
+
+#: includes/admin/class-feas-ai-settings.php:723
 msgid ""
 "Enter the keys of the custom fields you want to include, separated by commas."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:1297
+#: includes/admin/class-feas-ai-settings.php:1315
 msgid ""
 "Enter the number of posts to process in one batch during synchronization. A "
 "smaller number is less likely to cause timeouts on shared servers. (Default: "
 "10, Recommended: 10-100)"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:579
+#: includes/admin/class-feas-ai-settings.php:605
 msgid "Enter your Anthropic (Claude) API key."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:526
+#: includes/admin/class-feas-ai-settings.php:552
 msgid "Enter your Google Cloud API key."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:473
+#: includes/admin/class-feas-ai-settings.php:499
 msgid "Enter your OpenAI API key."
 msgstr ""
 
-#: includes/ajax/class-feas-ai-chat-handler.php:316
+#: includes/ajax/class-feas-ai-chat-handler.php:453
 msgid "Error: Anthropic API key not set."
 msgstr ""
 
-#: includes/ajax/class-feas-ai-chat-handler.php:220
+#: includes/ajax/class-feas-ai-chat-handler.php:298
 msgid "Error: Google API key is not set."
 msgstr ""
 
-#: includes/ajax/class-feas-ai-chat-handler.php:152
+#: includes/ajax/class-feas-ai-chat-handler.php:168
 msgid "Error: OpenAI API key not set."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:1060
+#: includes/admin/class-feas-ai-settings.php:1043
 msgid "Fast"
 msgstr ""
 
@@ -254,7 +246,7 @@ msgstr ""
 msgid "FE AI Search"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:1003
+#: includes/admin/class-feas-ai-settings.php:986
 msgid "First greeting"
 msgstr ""
 
@@ -262,19 +254,19 @@ msgstr ""
 msgid "FirstElement, Inc."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:307
+#: includes/admin/class-feas-ai-settings.php:315
 msgid "Floating Window"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:314
+#: includes/admin/class-feas-ai-settings.php:322
 msgid "Full Screen Mode"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:380
+#: includes/admin/class-feas-ai-settings.php:406
 msgid "Google (Gemini)"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:178
+#: includes/admin/class-feas-ai-settings.php:182
 msgid "Google Cloud API Key"
 msgstr ""
 
@@ -282,7 +274,7 @@ msgstr ""
 msgid "Hello! Please ask me anything about the information on this site."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:884
+#: includes/admin/class-feas-ai-settings.php:867
 msgid "Home"
 msgstr ""
 
@@ -294,34 +286,34 @@ msgstr ""
 msgid "https://www.firstelement.co.jp/"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:1092
+#: includes/admin/class-feas-ai-settings.php:1075
 msgid ""
 "If not selected, the page set in WordPress's standard privacy settings will "
 "be used."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:934
+#: includes/admin/class-feas-ai-settings.php:917
 msgid "If you enter the ID here, other display rules will be ignored."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:1193
+#: includes/admin/class-feas-ai-settings.php:1176
 msgid ""
 "If you leave this box unchecked, your previous settings and sync data will "
 "be restored when you reinstall the plugin."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:1116
+#: includes/admin/class-feas-ai-settings.php:1099
 msgid ""
 "If you want to design the chat UI with your own theme's CSS, uncheck this."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:1148
+#: includes/admin/class-feas-ai-settings.php:1131
 msgid ""
 "If you want to exclude posts from synchronization, enter the post IDs "
 "separated by commas (e.g., 15, 30)."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:1132
+#: includes/admin/class-feas-ai-settings.php:1115
 msgid ""
 "If you want to sync only certain posts, enter the post IDs separated by "
 "commas (e.g. 10, 25, 103).<br><strong>Note:</strong> If you enter any here, "
@@ -329,86 +321,123 @@ msgid ""
 "those IDs will be synced."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:1012
+#: includes/admin/class-feas-ai-settings.php:702
+#, php-format
+msgid "Include %s"
+msgstr ""
+
+#: includes/admin/class-feas-ai-settings.php:711
+msgid "Include Custom Fields"
+msgstr ""
+
+#: includes/admin/class-feas-ai-settings.php:688
+msgid "Include Post Author (nickname)"
+msgstr ""
+
+#: includes/admin/class-feas-ai-settings.php:680
+msgid "Include Post Content"
+msgstr ""
+
+#: includes/admin/class-feas-ai-settings.php:684
+msgid "Include Post Date"
+msgstr ""
+
+#: includes/admin/class-feas-ai-settings.php:676
+msgid "Include Post Title"
+msgstr ""
+
+#: includes/admin/class-feas-ai-settings.php:995
 msgid "Input field placeholders"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:1032
+#: includes/admin/class-feas-ai-settings.php:1015
 msgid "Key Color"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:777
+#: includes/admin/class-feas-ai-settings.php:757
 msgid "Last Sync Date and Time"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:1166
+#: includes/admin/class-feas-ai-license-settings.php:16
+msgid "License"
+msgstr ""
+
+#: includes/admin/class-feas-ai-license-settings.php:30
+msgid "License Activation"
+msgstr ""
+
+#: includes/admin/class-feas-ai-license-settings.php:32
+msgid "License Key"
+msgstr ""
+
+#: includes/admin/class-feas-ai-settings.php:1149
 msgid ""
 "Limits the number of posts to be synchronized to the specified number, "
 "starting from the most recent."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:1113
+#: includes/admin/class-feas-ai-settings.php:1096
 msgid "Load CSS included with the plugin"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:259
+#: includes/admin/class-feas-ai-settings.php:267
 msgid "Manual Sync"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:245
+#: includes/admin/class-feas-ai-settings.php:253
 msgid "Maximum number of posts to sync"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:871
+#: includes/admin/class-feas-ai-settings.php:854
 msgid "Mobile"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:478
-#: includes/admin/class-feas-ai-settings.php:531
-#: includes/admin/class-feas-ai-settings.php:584
+#: includes/admin/class-feas-ai-settings.php:504
+#: includes/admin/class-feas-ai-settings.php:557
+#: includes/admin/class-feas-ai-settings.php:610
 msgid "Model"
 msgstr ""
 
 #. %s: Link to the Pro version.
-#: includes/admin/class-feas-ai-settings.php:490
-#: includes/admin/class-feas-ai-settings.php:543
-#: includes/admin/class-feas-ai-settings.php:596
+#: includes/admin/class-feas-ai-settings.php:516
+#: includes/admin/class-feas-ai-settings.php:569
+#: includes/admin/class-feas-ai-settings.php:622
 #, php-format
 msgid "Model selection is available in the %s version."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:1279
+#: includes/admin/class-feas-ai-settings.php:1297
 msgid ""
 "Model-specific prompts can be set in the Pro version, which will override "
 "this basic setting."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:1075
-#: includes/admin/class-feas-ai-settings.php:1087
+#: includes/admin/class-feas-ai-settings.php:1058
+#: includes/admin/class-feas-ai-settings.php:1070
 msgid "Not selected"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:1278
+#: includes/admin/class-feas-ai-settings.php:1296
 msgid "Note:"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:783
+#: includes/admin/class-feas-ai-settings.php:763
 msgid "Number of indexed articles"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:171
+#: includes/admin/class-feas-ai-settings.php:175
 msgid "OpenAI API Key"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:379
+#: includes/admin/class-feas-ai-settings.php:405
 msgid "OpenAI（GPT）"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:924
+#: includes/admin/class-feas-ai-settings.php:907
 msgid "Overwrite rules by individual ID"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:864
+#: includes/admin/class-feas-ai-settings.php:847
 msgid "PC"
 msgstr ""
 
@@ -416,43 +445,27 @@ msgstr ""
 msgid "Please enter a question..."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:979
+#: includes/admin/class-feas-ai-settings.php:962
 msgid ""
 "Please paste the following shortcode into the content of the page where you "
 "want to display the chat."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:692
-msgid "Post Author"
-msgstr ""
-
-#: includes/admin/class-feas-ai-settings.php:674
-msgid "Post Content"
-msgstr ""
-
-#: includes/admin/class-feas-ai-settings.php:683
-msgid "Post Date"
-msgstr ""
-
-#: includes/admin/class-feas-ai-settings.php:238
+#: includes/admin/class-feas-ai-settings.php:246
 msgid "Post IDs to exclude"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:231
+#: includes/admin/class-feas-ai-settings.php:239
 msgid "Post IDs to include"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:665
-msgid "Post Title"
-msgstr ""
-
-#: includes/admin/class-feas-ai-settings.php:785
-#: includes/admin/class-feas-ai-settings.php:1163
-#: includes/admin/class-feas-ai-settings.php:1295
+#: includes/admin/class-feas-ai-settings.php:765
+#: includes/admin/class-feas-ai-settings.php:1146
+#: includes/admin/class-feas-ai-settings.php:1313
 msgid "posts"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:807
+#: includes/admin/class-feas-ai-settings.php:790
 msgid ""
 "Prepare and index your data so that your posts and pages can be searched by "
 "AI."
@@ -462,13 +475,13 @@ msgstr ""
 msgid "Privacy Policy"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:1082
+#: includes/admin/class-feas-ai-settings.php:1065
 msgid "Privacy Policy Page"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:494
-#: includes/admin/class-feas-ai-settings.php:547
-#: includes/admin/class-feas-ai-settings.php:600
+#: includes/admin/class-feas-ai-settings.php:520
+#: includes/admin/class-feas-ai-settings.php:573
+#: includes/admin/class-feas-ai-settings.php:626
 msgid "Pro"
 msgstr ""
 
@@ -476,65 +489,65 @@ msgstr ""
 msgid "Prompt"
 msgstr ""
 
-#: includes/ajax/class-feas-ai-chat-handler.php:572
+#: includes/ajax/class-feas-ai-chat-handler.php:736
 msgid "Provider or API key missing."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:128
+#: includes/admin/class-feas-ai-settings.php:774
+msgid "Rebuild Index"
+msgstr ""
+
+#: includes/admin/class-feas-ai-settings.php:132
 msgid "Save Settings"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:898
+#: includes/admin/class-feas-ai-settings.php:881
 msgid "Search Results"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:446
+#: includes/admin/class-feas-ai-settings.php:472
 msgid ""
 "Select an AI that will vectorize (convert) your site content into a format "
 "that AI can understand."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:958
+#: includes/admin/class-feas-ai-settings.php:941
 msgid "Select Chat-Only Page"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:407
+#: includes/admin/class-feas-ai-settings.php:433
 msgid "Select the AI that generates answers for the user."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:1040
+#: includes/admin/class-feas-ai-settings.php:1023
 msgid "Select the basic colors for chat bubbles and user speech balloons."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:1228
+#: includes/admin/class-feas-ai-settings.php:1211
 msgid "Select the post types you want to include in AI search."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:614
+#: includes/admin/class-feas-ai-settings.php:643
 msgid ""
 "Select the post types you want to include in your AI search and the metadata "
 "you want to include in chunks for each post type."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:1167
+#: includes/admin/class-feas-ai-settings.php:1150
 msgid ""
 "Set this if you are trying to synchronize on a trial basis or want to reduce "
 "API costs.<br><strong>0</strong> will synchronize all eligible posts."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:1050
+#: includes/admin/class-feas-ai-settings.php:1033
 msgid "Smooth"
-msgstr ""
-
-#: includes/admin/class-feas-ai-settings.php:791
-msgid "Start syncing"
 msgstr ""
 
 #: includes/frontend/class-feas-ai-chat-ui.php:131
 msgid "Submit"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:1022
+#: includes/admin/class-feas-ai-settings.php:1005
 msgid "Submit button text"
 msgstr ""
 
@@ -542,11 +555,25 @@ msgstr ""
 msgid "Sync"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:198
+#: includes/admin/class-feas-ai-settings.php:771
+msgid "Sync Changes (Recommended)"
+msgstr ""
+
+#: includes/admin/class-feas-ai-settings.php:202
 msgid "Sync Settings"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:272
+#: includes/ajax/class-feas-ai-sync-handler.php:151
+msgid ""
+"Sync settings have changed. Please use \"Rebuild All\" to apply the new "
+"settings."
+msgstr ""
+
+#: includes/admin/class-feas-ai-settings.php:260
+msgid "Synchronous Batch Size"
+msgstr ""
+
+#: includes/admin/class-feas-ai-settings.php:280
 msgid "System Prompt"
 msgstr ""
 
@@ -554,66 +581,71 @@ msgstr ""
 msgid "Terms of Service"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:1070
+#: includes/admin/class-feas-ai-settings.php:1053
 msgid "Terms of Service Page"
 msgstr ""
 
-#: includes/ajax/class-feas-ai-sync-handler.php:422
+#: includes/ajax/class-feas-ai-sync-handler.php:651
 msgid "The Google Cloud API key is not configured."
 msgstr ""
 
-#: includes/ajax/class-feas-ai-sync-handler.php:383
+#: includes/ajax/class-feas-ai-sync-handler.php:570
 msgid "The OpenAI API key is not configured."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:742
-msgid "This feature is available in the Pro version."
+#: includes/admin/class-feas-ai-settings.php:729
+#, php-format
+msgid ""
+"This is a Pro feature. <a href=\"%s\" target=\"_blank\">Upgrade to Pro</a>"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:816
+#: includes/admin/class-feas-ai-settings.php:799
 msgid ""
 "This will delete all synced vector data and keyword indexes. AI search will "
 "no longer work until you sync again."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:364
-#: includes/admin/class-feas-ai-settings.php:1179
+#: includes/admin/class-feas-ai-settings.php:372
+#: includes/admin/class-feas-ai-settings.php:1162
 msgid "Uninstallation settings"
 msgstr ""
 
-#: includes/ajax/class-feas-ai-sync-handler.php:412
-#: includes/ajax/class-feas-ai-sync-handler.php:457
+#: includes/ajax/class-feas-ai-sync-handler.php:611
+#: includes/ajax/class-feas-ai-sync-handler.php:699
 msgid "Unknown API Error"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:743
-msgid "Upgrade to Pro"
-msgstr ""
-
-#: includes/admin/class-feas-ai-settings.php:164
+#: includes/admin/class-feas-ai-settings.php:168
 msgid "Vectorization Model"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:223
+#: includes/admin/class-feas-ai-settings.php:231
 msgid "What is synchronized and what is included?"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:968
+#: includes/admin/class-feas-ai-settings.php:1339
+msgid ""
+"When enabled, detailed operational logs will be saved to the database (in "
+"the `wp_feas_ai_system_logs` table). Only enable this when troubleshooting "
+"issues, as it can impact performance."
+msgstr ""
+
+#: includes/admin/class-feas-ai-settings.php:951
 msgid ""
 "When you access the selected static page here, the full-screen chat UI will "
 "be displayed directly."
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:993
+#: includes/admin/class-feas-ai-settings.php:976
 msgid "Window title"
 msgstr ""
 
-#: includes/ajax/class-feas-ai-sync-handler.php:573
+#: includes/ajax/class-feas-ai-sync-handler.php:1002
 msgid ""
 "Your site language is not fully optimized for keyword search. We welcome "
 "contributions for new languages!"
 msgstr ""
 
-#: includes/admin/class-feas-ai-settings.php:963
+#: includes/admin/class-feas-ai-settings.php:946
 msgid "— Don't use a dedicated page —"
 msgstr ""

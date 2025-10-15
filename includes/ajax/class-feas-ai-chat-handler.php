@@ -598,6 +598,13 @@ class FEAS_AI_Chat_Handler {
 			}
 		}
 
+		// Get site info and replace placeholders in the prompt.
+		$site_name    = get_option( 'feas_ai_site_name', get_bloginfo( 'name' ) );
+		$site_purpose = get_option( 'feas_ai_site_purpose', get_bloginfo( 'description' ) );
+
+		$system_prompt = str_replace( '{site_name}', $site_name, $system_prompt );
+		$system_prompt = str_replace( '{site_purpose}', $site_purpose, $system_prompt );
+
 		/**
 		 * Filters the final system prompt before it is sent to the AI.
 		 *
@@ -615,7 +622,7 @@ class FEAS_AI_Chat_Handler {
 		$terms_page_id = $options['terms_page_id'] ?? 0;
 		$privacy_page_id = $options['privacy_page_id'] ?? 0;
 
-		// 法的文書をコンテキストの先頭に追加 ---
+		// Add the legal document at the beginning of the context.
 		$legal_context = '';
 		if ( $terms_page_id ) {
 			$page = get_post( $terms_page_id );
@@ -678,7 +685,7 @@ class FEAS_AI_Chat_Handler {
 	 * @return string
 	 */
 	public static function get_default_system_prompt() {
-		return "You are a kind and excellent AI assistant that answers questions about this website. Based on the provided \"Site Information\" and \"Conversation History,\" please answer by strictly following the rules below.
+		return "You are a helpful and honest assistant for the website '{site_name}'. This site's purpose is: '{site_purpose}'. Based on the provided \"Site Information\" and \"Conversation History,\" please answer by strictly following the rules below.
 
 ## Thought Process
 1. Accurately understand the intent of the user's latest question.
