@@ -91,11 +91,11 @@ function initFEAIChat() {
 	 * Updates the user's preference and saves it to localStorage.
 	 */
 	shiftEnterToggle.addEventListener('change', () => {
-		// ユーザーが設定を変更したら、その値を
-		// userPrefersShiftEnter 変数に即座に反映させる
+		// When the user changes the settings,
+		// immediately reflect the value in the userPrefersShiftEnter variable
 		userPrefersShiftEnter = shiftEnterToggle.checked;
 
-		// 次回以降の訪問のために、変更をlocalStorageに保存する
+		// Save changes to localStorage for future visits.
 		localStorage.setItem('feas_ai_user_prefers_shift_enter', userPrefersShiftEnter);
 	});
 
@@ -109,7 +109,7 @@ function initFEAIChat() {
 		}
 		e.preventDefault();
 
-		// ★ サイトのデフォルト設定ではなく、ユーザーの最新の設定を参照する
+		// Refer to the user's latest settings instead of the site's default settings.
 		const shiftPressed = e.shiftKey;
 		const shouldSubmit = (userPrefersShiftEnter && shiftPressed) || (!userPrefersShiftEnter && !shiftPressed);
 
@@ -127,6 +127,16 @@ function initFEAIChat() {
 	 */
 	form.addEventListener('submit', function(e) {
 		e.preventDefault();
+
+		// Use the IP limit (per hour) passed from PHP as the maximum per session.
+		const SESSION_LIMIT = feas_ai_ajax_obj.ip_limit_count;
+
+		// If SESSION_LIMIT is not 0 (unlimited) and the history exceeds the limit
+		if ( SESSION_LIMIT > 0 && history.length > SESSION_LIMIT * 2 ) {
+			addMessage('<p>' + __('You have reached the message limit for this session. Please refresh the page to start a new conversation.', 'fe-ai-search') + '</p>', 'system');
+			return;
+		}
+
 		const question = input.value.trim();
 		if (!question) return;
 

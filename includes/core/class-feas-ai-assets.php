@@ -46,7 +46,17 @@ class FEAS_AI_Assets {
 
 		$license_data      = get_option( 'feas_ai_license_data', [] );
 		$is_license_active = ( 'active' === ( $license_data['status'] ?? 'inactive' ) );
-		$is_license_active = 'active';
+
+// test
+$is_license_active = 'active';
+
+		$ip_limit_count = 100; // Default
+		if ( class_exists( 'FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings' ) ) {
+			if ( 'active' === ( $license_data['status'] ?? 'inactive' ) ) {
+				$rate_limit_options = get_option( 'feas_ai_rate_limit_options', ['ip_limit_count' => 100] );
+				$ip_limit_count = (int) $rate_limit_options['ip_limit_count'];
+			}
+		}
 
 		if ( $enable_css ) {
 			wp_enqueue_style(
@@ -75,14 +85,15 @@ class FEAS_AI_Assets {
 			'feas-ai-chat-main',
 			'feas_ai_ajax_obj',
 			array(
-				'ajax_url'   => admin_url( 'admin-ajax.php' ), // For log storage
-				'rest_url'   => rest_url( 'feas-ai/v1/stream' ), // For streaming
-				'rest_nonce' => wp_create_nonce( 'wp_rest' ), // Nonce for REST API
-				'nonce'      => wp_create_nonce( 'feas_ai_ajax_nonce' ),
-				'animation_speed' => (int) $animation_speed,
+				'ajax_url'            => admin_url( 'admin-ajax.php' ), // For log storage
+				'rest_url'            => rest_url( 'feas-ai/v1/stream' ), // For streaming
+				'rest_nonce'          => wp_create_nonce( 'wp_rest' ), // Nonce for REST API
+				'nonce'               => wp_create_nonce( 'feas_ai_ajax_nonce' ),
+				'animation_speed'     => (int) $animation_speed,
 				'send_on_shift_enter' => (bool) $send_on_shift_enter,
 				'is_pro_active'       => class_exists( 'FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings' ),
 				'is_license_active'   => $is_license_active,
+				'ip_limit_count'      => $ip_limit_count,
 			)
 		);
 	}

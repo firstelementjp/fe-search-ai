@@ -398,4 +398,52 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 		}, 50);
 	}
+
+	// ==========================================================================
+	// License Activation & Deactivation
+	// ==========================================================================
+
+	// We must use event delegation on the document body, because the license tab
+	// is part of the main settings form, not a separate Pro feature.
+	document.body.addEventListener('click', async (e) => {
+		let action = '';
+		let button = null;
+
+		if (e.target.id === 'feas_ai_license_activate') {
+			action = 'activate';
+			button = e.target;
+		} else if (e.target.id === 'feas_ai_license_deactivate') {
+			action = 'deactivate';
+			button = e.target;
+		}
+
+		// If a license button was not clicked, do nothing.
+		if (!button) {
+			return;
+		}
+
+		const licenseKeyInput = document.getElementById('feas_ai_pro_license_key_input');
+		const licenseKey = licenseKeyInput ? licenseKeyInput.value : '';
+		const spinner = button.parentElement.querySelector('.spinner');
+
+		button.disabled = true;
+		spinner.style.visibility = 'visible';
+
+		try {
+			// Use the wpPost helper function we already defined.
+			const response = await wpPost('feas_ai_manage_license', {
+				nonce: feas_ai_sync_obj.nonce,
+				license_key: licenseKey,
+				license_action: action
+			});
+
+			// Always reload the page to show the new status.
+			location.reload();
+
+		} catch (error) {
+			alert(__('An error occurred during activation. Please try again.', 'fe-ai-search'));
+			button.disabled = false;
+			spinner.style.visibility = 'hidden';
+		}
+	});
 });

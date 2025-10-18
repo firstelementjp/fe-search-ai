@@ -56,6 +56,68 @@ class FEAS_AI_Chat_Handler {
 	 * Stream handler for processing REST API requests
 	 */
 	public function stream_handler( $request ) {
+
+		// Load Pro version license and settings
+		$is_pro_active = class_exists( 'FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings' );
+		$rate_limit_options = [];
+		if ( $is_pro_active ) {
+			$license_data = get_option( 'feas_ai_license_data', [] );
+			if ( 'active' === ( $license_data['status'] ?? 'inactive' ) ) {
+				$rate_limit_options = get_option( 'feas_ai_rate_limit_options', [
+					'ip_limit_count'     => 100,
+					'global_limit_count' => 1000,
+					'notify_threshold'   => 80,
+				] );
+			}
+		}
+
+		// Defense Line 1: IP-based Rate Limiting
+		if ( ! empty( $rate_limit_options['ip_limit_count'] ) ) {
+			$ip_limit_count = (int) $rate_limit_options['ip_limit_count'];
+			$ip_transient_key = 'feas_ai_rl_ip_' . md5( $_SERVER['REMOTE_ADDR'] );
+			$ip_request_count = get_transient( $ip_transient_key );
+
+			if ( $ip_request_count > $ip_limit_count ) {
+				status_header( 429 );
+				echo "data: " . json_encode(['text' => __( 'You have exceeded the request limit. Please try again later.', 'fe-ai-search' )]) . "\n\n";
+				exit;
+			}
+			set_transient( $ip_transient_key, ( (int) $ip_request_count + 1 ), HOUR_IN_SECONDS );
+		}
+
+		// Defense Line 2: Global (Site-wide) Rate Limit
+		if ( ! empty( $rate_limit_options['global_limit_count'] ) ) {
+			$global_limit_count = (int) $rate_limit_options['global_limit_count'];
+			$global_transient_key = 'feas_ai_rl_global_day';
+			$global_request_count = get_transient( $global_transient_key );
+
+			if ( $global_request_count > $global_limit_count ) {
+				status_header( 429 );
+				echo "data: " . json_encode(['text' => __( 'The site-wide request limit for today has been reached.', 'fe-ai-search' )]) . "\n\n";
+				exit;
+			}
+
+			$new_global_count = (int) $global_request_count + 1;
+			set_transient( $global_transient_key, $new_global_count, DAY_IN_SECONDS );
+
+			// Notify when the threshold (shikii T) is reached
+			$threshold_percent = (int) $rate_limit_options['notify_threshold'];
+			$threshold_count = ( $global_limit_count * $threshold_percent ) / 100;
+
+			if ( $new_global_count > $threshold_count ) {
+				// Check if the notification has not been sent yet.
+				if ( ! get_transient( 'feas_ai_rl_notify_sent' ) ) {
+					$admin_email = get_option( 'admin_email' );
+					$subject = get_bloginfo( 'name' ) . ' - AI Search Limit Warning';
+					$message = "Your site's daily AI request limit is about to be reached. " . $new_global_count . " / " . $global_limit_count . " requests have been used.";
+					wp_mail( $admin_email, $subject, $message );
+
+					// Recorded the sending of the notification (1 day)
+					set_transient( 'feas_ai_rl_notify_sent', true, DAY_IN_SECONDS );
+				}
+			}
+		}
+
 		// Disable server buffering
 		@ini_set('output_buffering', 'off');
 		@ini_set('zlib.output_compression', 0);
