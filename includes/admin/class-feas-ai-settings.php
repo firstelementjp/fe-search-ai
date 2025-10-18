@@ -457,7 +457,6 @@ class FEAS_AI_Settings {
 		$providers = [
 			'openai'    => 'OpenAI (text-embedding-3)',
 			'google'    => 'Google (text-embedding-004)',
-			'anthropic' => 'Anthropic (Claude) - (Not available)',
 		];
 
 		/**
@@ -685,71 +684,73 @@ class FEAS_AI_Settings {
 						<?php echo esc_html( $post_type->label ); ?> (<?php echo esc_html( $post_type->name ); ?>)
 					</label>
 				</h4>
-				<div class="accordion-content" style="<?php echo $is_enabled ? 'display: block;' : 'display: none;'; ?>">
-					<fieldset>
-						<label>
-							<input type="checkbox" name="feas_ai_sync_options[post_types][<?php echo esc_attr( $post_type->name ); ?>][include_title]" value="1" <?php checked( $include_title ); ?>>
-							<?php esc_html_e( 'Include Post Title', 'fe-ai-search' ); ?>
-						</label>
-						<label>
-							<input type="checkbox" name="feas_ai_sync_options[post_types][<?php echo esc_attr( $post_type->name ); ?>][include_content]" value="1" <?php checked( $include_content ); ?>>
-							<?php esc_html_e( 'Include Post Content', 'fe-ai-search' ); ?>
-						</label>
-						<label>
-							<input type="checkbox" name="feas_ai_sync_options[post_types][<?php echo esc_attr( $post_type->name ); ?>][include_date]" value="1" <?php checked( $include_date ); ?>>
-							<?php esc_html_e( 'Include Post Date', 'fe-ai-search' ); ?>
-						</label>
-						<label>
-							<input type="checkbox" name="feas_ai_sync_options[post_types][<?php echo esc_attr( $post_type->name ); ?>][include_author]" value="1" <?php checked( $include_author ); ?>>
-							<?php esc_html_e( 'Include Post Author (nickname)', 'fe-ai-search' ); ?>
-						</label>
-
-						<?php
-						$taxonomies = get_object_taxonomies( $post_type->name, 'objects' );
-						if ( ! empty( $taxonomies ) ) {
-							foreach ( $taxonomies as $tax ) {
-								if ( ! $tax->public ) {
-									continue;
-								}
-								$is_checked = ! empty( $pt_options['taxonomies'] ) && in_array( $tax->name, $pt_options['taxonomies'], true );
-								?>
-								<label>
-									<input type="checkbox" name="feas_ai_sync_options[post_types][<?php echo esc_attr( $post_type->name ); ?>][taxonomies][]" value="<?php echo esc_attr( $tax->name ); ?>" <?php checked( $is_checked ); ?>>
-									<?php printf( esc_html__( 'Include %s', 'fe-ai-search' ), esc_html( $tax->label ) ); ?>
-								</label>
-								<?php
-							}
-						}
-						?>
-
-						<div>
-							<label for="feas_ai_custom_fields_<?php echo esc_attr( $post_type->name ); ?>">
-								<strong><?php esc_html_e( 'Include Custom Fields', 'fe-ai-search' ); ?></strong> <?php echo $this->is_license_active ? '' : $this->license_alert_icon; ?>
+				<div class="accordion-content <?php echo $is_enabled ? 'open' : ''; ?>">
+					<div class="accordion-inner">
+						<fieldset>
+							<label>
+								<input type="checkbox" name="feas_ai_sync_options[post_types][<?php echo esc_attr( $post_type->name ); ?>][include_title]" value="1" <?php checked( $include_title ); ?>>
+								<?php esc_html_e( 'Include Post Title', 'fe-ai-search' ); ?>
 							</label>
-							<input
-								type="text"
-								id="feas_ai_custom_fields_<?php echo esc_attr( $post_type->name ); ?>"
-								name="feas_ai_sync_options[post_types][<?php echo esc_attr( $post_type->name ); ?>][custom_fields]"
-								value="<?php echo esc_attr( $pt_options['custom_fields'] ?? '' ); ?>"
-								class="regular-text"
-								placeholder="field_name_1, field_name_2"
-								<?php disabled( ! $this->is_license_active ); ?>
-							>
-							<p class="description">
-								<?php esc_html_e( 'Enter the keys of the custom fields you want to include, separated by commas.', 'fe-ai-search' ); ?>
-							</p>
-							<?php if ( ! class_exists( 'FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings' ) ) : ?>
-								<p class="description">
-									<?php
-									printf(
-										wp_kses_post( __( 'This is a Pro feature. <a href="%s" target="_blank">Upgrade to Pro</a>', 'fe-ai-search' ) ),
-										esc_url( FEAS_AI_PRO_URL )
-									);
+							<label>
+								<input type="checkbox" name="feas_ai_sync_options[post_types][<?php echo esc_attr( $post_type->name ); ?>][include_content]" value="1" <?php checked( $include_content ); ?>>
+								<?php esc_html_e( 'Include Post Content', 'fe-ai-search' ); ?>
+							</label>
+							<label>
+								<input type="checkbox" name="feas_ai_sync_options[post_types][<?php echo esc_attr( $post_type->name ); ?>][include_date]" value="1" <?php checked( $include_date ); ?>>
+								<?php esc_html_e( 'Include Post Date', 'fe-ai-search' ); ?>
+							</label>
+							<label>
+								<input type="checkbox" name="feas_ai_sync_options[post_types][<?php echo esc_attr( $post_type->name ); ?>][include_author]" value="1" <?php checked( $include_author ); ?>>
+								<?php esc_html_e( 'Include Post Author (nickname)', 'fe-ai-search' ); ?>
+							</label>
+
+							<?php
+							$taxonomies = get_object_taxonomies( $post_type->name, 'objects' );
+							if ( ! empty( $taxonomies ) ) {
+								foreach ( $taxonomies as $tax ) {
+									if ( ! $tax->public ) {
+										continue;
+									}
+									$is_checked = ! empty( $pt_options['taxonomies'] ) && in_array( $tax->name, $pt_options['taxonomies'], true );
 									?>
+									<label>
+										<input type="checkbox" name="feas_ai_sync_options[post_types][<?php echo esc_attr( $post_type->name ); ?>][taxonomies][]" value="<?php echo esc_attr( $tax->name ); ?>" <?php checked( $is_checked ); ?>>
+										<?php printf( esc_html__( 'Include %s', 'fe-ai-search' ), esc_html( $tax->label ) ); ?>
+									</label>
+									<?php
+								}
+							}
+							?>
+
+							<div>
+								<label for="feas_ai_custom_fields_<?php echo esc_attr( $post_type->name ); ?>">
+									<strong><?php esc_html_e( 'Include Custom Fields', 'fe-ai-search' ); ?></strong> <?php echo $this->is_license_active ? '' : $this->license_alert_icon; ?>
+								</label>
+								<input
+									type="text"
+									id="feas_ai_custom_fields_<?php echo esc_attr( $post_type->name ); ?>"
+									name="feas_ai_sync_options[post_types][<?php echo esc_attr( $post_type->name ); ?>][custom_fields]"
+									value="<?php echo esc_attr( $pt_options['custom_fields'] ?? '' ); ?>"
+									class="regular-text"
+									placeholder="field_name_1, field_name_2"
+									<?php disabled( ! $this->is_license_active ); ?>
+								>
+								<p class="description">
+									<?php esc_html_e( 'Enter the keys of the custom fields you want to include, separated by commas.', 'fe-ai-search' ); ?>
 								</p>
-							<?php endif; ?>
-						</div>
-					</fieldset>
+								<?php if ( ! class_exists( 'FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings' ) ) : ?>
+									<p class="description">
+										<?php
+										printf(
+											wp_kses_post( __( 'This is a Pro feature. <a href="%s" target="_blank">Upgrade to Pro</a>', 'fe-ai-search' ) ),
+											esc_url( FEAS_AI_PRO_URL )
+										);
+										?>
+									</p>
+								<?php endif; ?>
+							</div>
+						</fieldset>
+					</div>
 				</div>
 			</div>
 			<?php
@@ -783,7 +784,7 @@ class FEAS_AI_Settings {
 				?>
 			</div>
 			<div id="feas-ai-sync-wrapper">
-				<button id="feas-ai-smart-sync" class="button button-primary" style="margin-left: 10px;">
+				<button id="feas-ai-smart-sync" class="button button-primary">
 					<?php esc_html_e( 'Sync Changes (Recommended)', 'fe-ai-search' ); // 更新を同期 (推奨) ?>
 				</button>
 				<button id="feas-ai-start-sync" class="button button-secondary">
@@ -1063,6 +1064,27 @@ class FEAS_AI_Settings {
 		</div>
 		<p class="description">
 			<?php esc_html_e( 'Adjust the typing animation speed of the AI\'s response. This value represents the number of characters processed at once.', 'fe-ai-search' ); ?>
+		</p>
+
+		<p style="margin-top: 1.5em;">
+			<label>
+				<input
+					type="checkbox"
+					name="feas_ai_display_options[send_on_shift_enter]"
+					value="1"
+					<?php
+					$options = get_option( 'feas_ai_display_options', [] );
+					// CJK言語の場合はデフォルトでONにする
+					$locale = get_locale();
+					$is_cjk = in_array( substr( $locale, 0, 2 ), [ 'ja', 'zh', 'ko' ], true );
+					checked( $options['send_on_shift_enter'] ?? $is_cjk );
+					?>
+				/>
+				<?php esc_html_e( 'Use Shift + Enter to send messages (Enter for new line)', 'fe-ai-search' ); ?>
+			</label>
+			<p class="description">
+				<?php esc_html_e( 'Recommended for languages that require IME, such as Japanese and Chinese.', 'fe-ai-search' ); ?>
+			</p>
 		</p>
 
 		<p>

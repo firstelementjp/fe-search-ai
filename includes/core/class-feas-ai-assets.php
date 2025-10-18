@@ -36,8 +36,17 @@ class FEAS_AI_Assets {
 	 */
 	public static function enqueue_assets() {
 		$options = get_option( 'feas_ai_display_options', [] );
+
 		$enable_css = $options['enable_css'] ?? true;
 		$animation_speed = $display_options['animation_speed'] ?? 3;
+
+		$locale = get_locale();
+		$is_cjk = in_array( substr( $locale, 0, 2 ), [ 'ja', 'zh', 'ko' ], true );
+		$send_on_shift_enter = $options['send_on_shift_enter'] ?? $is_cjk;
+
+		$license_data      = get_option( 'feas_ai_license_data', [] );
+		$is_license_active = ( 'active' === ( $license_data['status'] ?? 'inactive' ) );
+		$is_license_active = 'active';
 
 		if ( $enable_css ) {
 			wp_enqueue_style(
@@ -71,6 +80,9 @@ class FEAS_AI_Assets {
 				'rest_nonce' => wp_create_nonce( 'wp_rest' ), // Nonce for REST API
 				'nonce'      => wp_create_nonce( 'feas_ai_ajax_nonce' ),
 				'animation_speed' => (int) $animation_speed,
+				'send_on_shift_enter' => (bool) $send_on_shift_enter,
+				'is_pro_active'       => class_exists( 'FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings' ),
+				'is_license_active'   => $is_license_active,
 			)
 		);
 	}

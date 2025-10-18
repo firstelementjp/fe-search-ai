@@ -33,10 +33,20 @@ class FEAS_AI_Sync_Handler {
 
 	// private const BATCH_SIZE = 10;
 	private $segmenter;
+	private $is_license_active;
 
 	public function __construct() {
 
 		$this->segmenter = new \U7aro\TinySegmenter\TinySegmenter();
+		// $this->is_license_active = ( 'active' === get_option( 'feas_ai_license_data', '' ) );
+
+		// $license_data = get_option( 'feas_ai_license_data', [] );
+		// $status       = $license_data['status'] ?? 'inactive';
+		// $products     = $license_data['products'] ?? [];
+
+		//Set license status for use in various methods.
+		// $this->is_license_active = ( 'active' === $status && in_array( 'pro', $products, true ) );
+		$this->is_license_active = true;
 
 		add_action( 'wp_ajax_feas_ai_start_sync', array( $this, 'ajax_start_sync' ) );
 		add_action( 'wp_ajax_feas_ai_process_batch', array( $this, 'ajax_process_batch' ) );
@@ -208,15 +218,14 @@ class FEAS_AI_Sync_Handler {
 	}
 
 	public function ajax_process_batch() {
-		// PHPの実行が、どんなエラーでも中断されないようにする
 		try {
 			set_time_limit(0);
-			ob_start(); // これ以降の予期せぬ出力をすべてバッファに溜める
+			ob_start();
 
 			error_log('--- ajax_process_batch: START ---');
 			check_ajax_referer( 'feas_ai_ajax_nonce', 'nonce' );
 
-			// --- 1. 入力データを処理 ---
+			// Process input data
 			$page          = isset( $_POST['page'] ) ? absint( $_POST['page'] ) : 1;
 			$post_ids_json = isset( $_POST['post_ids'] ) ? stripslashes( $_POST['post_ids'] ) : '[]';
 			$post_ids      = json_decode( $post_ids_json, true );
@@ -231,7 +240,7 @@ class FEAS_AI_Sync_Handler {
 				return;
 			}
 
-			// --- 2. 投稿データを取得 ---
+			// Retrieve post data
 			$posts_batch = get_posts([
 				'post__in'            => $batch_ids,
 				'post_type'           => 'any',
@@ -242,7 +251,7 @@ class FEAS_AI_Sync_Handler {
 			]);
 			error_log("2. get_posts() found " . count($posts_batch) . " posts for this batch.");
 
-			// --- 3. 各投稿を処理 ---
+			// Process each post
 			foreach ( $posts_batch as $post ) {
 				error_log("  - Processing Post ID: {$post->ID}");
 
@@ -302,7 +311,7 @@ class FEAS_AI_Sync_Handler {
 				}
 			}
 
-			ob_end_clean(); // 成功時も、意図しない出力をすべて破棄
+			ob_end_clean(); // Discard all unintended outputs even in case of success.
 			wp_send_json_success( [ 'message' => 'Batch ' . $page . ' processed.' ] );
 
 		} catch ( \Throwable $t ) {
@@ -354,7 +363,7 @@ class FEAS_AI_Sync_Handler {
 		$vectors_table = $wpdb->prefix . 'feas_ai_vectors';
 		$index_table   = $wpdb->prefix . 'feas_ai_keyword_index';
 
-		// 1. Use the finalized tokenize_text method to extract keywords from the question.
+		// Use the finalized tokenize_text method to extract keywords from the question.
 		$keywords = array_unique( $this->tokenize_text( $question ) );
 
 		if ( empty( $keywords ) ) {
@@ -571,6 +580,13 @@ class FEAS_AI_Sync_Handler {
 		}
 
 		$api_url = 'https://api.openai.com/v1/embeddings';
+		if ( $this->is_license_active ) {
+			$custom_endpoint = get_option( 'feas_ai_embedding_compatible_endpoint' );
+			if ( ! empty( $custom_endpoint ) ) {
+				$api_url = $custom_endpoint;
+			}
+		}
+
 		$body = array(
 			'model' => 'text-embedding-3-small',
 			'input' => $texts,

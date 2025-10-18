@@ -703,8 +703,8 @@ class FEAS_AI_Chat_Handler {
 	}
 
 	public function ajax_log_query() {
-		if ( ! get_option( 'feas_ai_enable_logging' ) ) {
-			wp_send_json_success();
+		if ( ! class_exists( 'FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings' ) || ! get_option( 'feas_ai_enable_logging' ) ) {
+			wp_send_json_success( [ 'log_id' => 0 ] );
 			return;
 		}
 
@@ -717,6 +717,7 @@ class FEAS_AI_Chat_Handler {
 		$answer = isset( $_POST['answer'] ) ? wp_kses_post( $_POST['answer'] ) : '';
 		$session_id = isset( $_POST['session_id'] ) ? sanitize_key( $_POST['session_id'] ) : '';
 		$context_found = isset( $_POST['context_found'] ) ? (bool) $_POST['context_found'] : false;
+		$log_id = 0;
 
 		if ( ! empty( $question ) && ! empty( $session_id ) ) {
 			$wpdb->insert(
@@ -729,9 +730,10 @@ class FEAS_AI_Chat_Handler {
 					'created_at'    => current_time( 'mysql' ),
 				)
 			);
+			$log_id = $wpdb->insert_id;
 		}
 
-		wp_send_json_success();
+		wp_send_json_success( [ 'log_id' => $log_id ] );
 	}
 
 	public function ajax_test_api_key() {

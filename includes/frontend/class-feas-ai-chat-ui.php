@@ -123,16 +123,40 @@ class FEAS_AI_Chat_UI {
 		}
 	}
 
+	/**
+	 * Generates the complete HTML for the chat UI.
+	 *
+	 * This method gathers all necessary data, builds the default HTML, and then
+	 * passes both through a filter to allow for complete customization by themes or other plugins.
+	 *
+	 * @since 1.0.0
+	 * @param string $mode The display mode ('float', 'fullscreen', or 'embed').
+	 * @return string The final, filterable HTML for the chat UI.
+	 */
 	public function get_chat_ui_html( $mode = 'float' ) {
-		$options      = get_option( 'feas_ai_display_options', [] );
-		$window_title = $options['window_title'] ?? __( 'AI Search', 'fe-ai-search' );
-		$placeholder  = $options['placeholder_text'] ?? __( 'Please enter a question...', 'fe-ai-search' );
-		$greeting     = $options['greeting_message'] ?? __( 'Hello! Please ask me anything about the information on this site.', 'fe-ai-search' );
-		$submit_text  = $options['submit_button_text'] ?? __( 'Submit', 'fe-ai-search' );
+		// --- 1. Gather all raw data needed to build the UI into a single array ---
+		$options             = get_option( 'feas_ai_display_options', [] );
+		$locale              = get_locale();
+		$is_cjk              = in_array( substr( $locale, 0, 2 ), [ 'ja', 'zh', 'ko' ], true );
+		$send_on_shift_enter = $options['send_on_shift_enter'] ?? $is_cjk;
+		$terms_page_id       = $options['terms_page_id'] ?? 0;
+		$privacy_page_id     = $options['privacy_page_id'] ?? 0;
 
+		$args = [
+			'mode'                => $mode,
+			'window_title'        => $options['window_title'] ?? __( 'AI Search', 'fe-ai-search' ),
+			'greeting_message'    => $options['greeting_message'] ?? __( 'Hello! Please ask me anything about the information on this site.', 'fe-ai-search' ),
+			'placeholder_text'    => $options['placeholder_text'] ?? __( 'Please enter a question...', 'fe-ai-search' ),
+			'submit_button_text'  => $options['submit_button_text'] ?? __( 'Submit', 'fe-ai-search' ),
+			'send_on_shift_enter' => (bool) $send_on_shift_enter,
+			'terms_url'           => $terms_page_id ? get_permalink( $terms_page_id ) : '',
+			'privacy_url'         => $privacy_page_id ? get_permalink( $privacy_page_id ) : get_privacy_policy_url(),
+		];
+
+		// --- 2. Build the default HTML using the data ---
 		ob_start();
 		?>
-		<div id="feas-ai-chat-container" class="feas-ai-mode-<?php echo esc_attr( $mode ); ?>">
+		<div id="feas-ai-chat-container" class="feas-ai-mode-<?php echo esc_attr( $args['mode'] ); ?>">
 			<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
 			<div id="feas-ai-chat-bubble">
@@ -144,7 +168,7 @@ class FEAS_AI_Chat_UI {
 					<a href="<?php echo esc_url( home_url( '/' ) ); ?>" id="feas-ai-chat-home-link" class="feas-ai-header-icon">
 						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"></path></svg>
 					</a>
-					<h3><?php echo esc_html( $window_title ); ?></h3>
+					<h3><?php echo esc_html( $args['window_title'] ); ?></h3>
 					<div class="feas-ai-header-buttons">
 						<button id="feas-ai-chat-fullscreen-toggle" class="feas-ai-header-icon">
 							<svg class="icon-maximize" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
@@ -157,58 +181,155 @@ class FEAS_AI_Chat_UI {
 				</div>
 				<div id="feas-ai-chat-messages">
 					<div class="feas-ai-message feas-ai-message-ai">
-						<p><?php echo esc_html( $greeting ); ?></p>
+						<p><?php echo esc_html( $args['greeting_message'] ); ?></p>
 					</div>
 				</div>
 				<div id="feas-ai-chat-footer">
 					<form id="feas-ai-chat-form">
-						<input type="text" id="feas-ai-chat-input" placeholder="<?php echo esc_attr( $placeholder ); ?>" autocomplete="off">
-						<button type="submit"><?php echo esc_html( $submit_text ); ?></button>
+						<input type="text" id="feas-ai-chat-input" placeholder="<?php echo esc_attr( $args['placeholder_text'] ); ?>" autocomplete="off">
+						<button type="submit"><?php echo esc_html( $args['submit_button_text'] ); ?></button>
 					</form>
-					<div class="feas-ai-privacy-notice" style="font-size: 11px; text-align: center; color: #777; margin-top: 8px;">
-						<?php
-						$terms_page_id   = $options['terms_page_id'] ?? 0;
-						$privacy_page_id = $options['privacy_page_id'] ?? 0;
-						$terms_url       = $terms_page_id ? get_permalink( $terms_page_id ) : '';
-						$privacy_url     = $privacy_page_id ? get_permalink( $privacy_page_id ) : get_privacy_policy_url();
-
-						$links = [];
-						if ( $terms_url ) {
-							$links[] = sprintf( '<a href="%s" target="_blank">%s</a>', esc_url( $terms_url ), esc_html__( 'Terms of Service', 'fe-ai-search' ) );
-						}
-						if ( $privacy_url ) {
-							$links[] = sprintf( '<a href="%s" target="_blank">%s</a>', esc_url( $privacy_url ), esc_html__( 'Privacy Policy', 'fe-ai-search' ) );
-						}
-
-						if ( ! empty( $links ) ) {
-							printf(
-								esc_html__( 'By using this chat, you agree to our %s.', 'fe-ai-search' ),
-								implode( ' and ', $links )
-							);
-						}
-						?>
+					<div id="feas-ai-chat-options">
+						<div id="feas-ai-privacy-notice">
+							<p>
+							<?php
+							$links = [];
+							if ( ! empty( $args['terms_url'] ) ) {
+								$links[] = sprintf( '<a href="%s" target="_blank">%s</a>', esc_url( $args['terms_url'] ), esc_html__( 'Terms of Service', 'fe-ai-search' ) );
+							}
+							if ( ! empty( $args['privacy_url'] ) ) {
+								$links[] = sprintf( '<a href="%s" target="_blank">%s</a>', esc_url( $args['privacy_url'] ), esc_html__( 'Privacy Policy', 'fe-ai-search' ) );
+							}
+							if ( ! empty( $links ) ) {
+								printf(
+									// Use wp_kses_post to allow the <a> tags.
+									wp_kses_post( __( 'By using this chat, you agree to our %s.', 'fe-ai-search' ) ),
+									implode( ' ' . esc_html__( 'and', 'fe-ai-search' ) . ' ', $links )
+								);
+							}
+							?>
+							</p>
+						</div>
+						<div id="feas-ai-chat-footer-actions">
+							<button id="feas-ai-options-toggle" title="<?php esc_attr_e( 'Settings', 'fe-ai-search' ); ?>">
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+							</button>
+							<div id="feas-ai-options-menu" class="hidden">
+								<label>
+									<input type="checkbox" id="feas-ai-shift-enter-toggle">
+									<?php esc_html_e( 'Send on Shift+Enter', 'fe-ai-search' ); ?>
+								</label>
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>
 		</div>
 		<script>
-			if (typeof initFEAIChat === 'function') {
+			if (typeof initFEAIChat === 'function' && !document.getElementById('feas-ai-chat-container').dataset.initialized) {
 				initFEAIChat();
 			}
 		</script>
 		<?php
-		return ob_get_clean();
+		$default_html = ob_get_clean();
+
+		/**
+		 * Filters the complete HTML of the chat user interface.
+		 *
+		 * This allows developers to completely replace or modify the chat UI.
+		 * The raw data used to build the HTML is also passed for convenience.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param string $default_html The default HTML string generated by the plugin.
+		 * @param array  $args         An associative array of data used to build the HTML
+		 * (e.g., 'window_title', 'greeting_message', etc.).
+		 */
+		return apply_filters( 'feas_ai_chat_ui_html', $default_html, $args );
 	}
 
+	/**
+	 * Outputs dynamic CSS to the page header based on user settings.
+	 *
+	 * This method generates CSS for the key color and makes the entire
+	 * style block filterable for advanced customization.
+	 *
+	 * @since 1.0.0
+	 */
 	public function output_dynamic_styles() {
-		$options = get_option( 'feas_ai_display_options', [] );
+		$options   = get_option( 'feas_ai_display_options', [] );
 		$key_color = $options['key_color'] ?? '#0073aa';
+
+		// Start output buffering to capture the CSS.
+		ob_start();
 		?>
-		<style>
+		<style id="feas-ai-dynamic-styles">
 			:root {
 				--feas-ai-key-color: <?php echo esc_attr( $key_color ); ?>;
+				--feas-ai-key-color-darker: <?php echo esc_attr( $this->adjust_brightness( $key_color, -20 ) ); ?>;
+			}
+			/* Add any other default dynamic styles here */
+			#feas-ai-chat-form button:hover {
+				background-color: var(--feas-ai-key-color-darker);
+			}
+			.feas-ai-message-user p {
+				background: var(--feas-ai-key-color);
+			}
+			.feas-ai-message-user p::after {
+				border-left-color: var(--feas-ai-key-color);
 			}
 		</style>
 		<?php
+		$default_css = ob_get_clean();
+
+		/**
+		 * Filters the dynamic CSS string for the chat UI.
+		 *
+		 * This allows developers to completely override or extend the dynamic styles
+		 * generated by the plugin, such as the key color.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param string $default_css The default CSS string, including the <style> tags.
+		 * @param string $key_color   The key color selected by the user in the settings.
+		 */
+		echo apply_filters( 'feas_ai_dynamic_styles_css', $default_css, $key_color );
+	}
+
+	// in includes/frontend/class-feas-ai-chat-ui.php
+
+	/**
+	 * Adjusts the brightness of a hexadecimal color code.
+	 *
+	 * @since 1.2.0
+	 * @access private
+	 * @param string $hex   The hex color code (e.g., '#RRGGBB').
+	 * @param int    $steps A positive (lighter) or negative (darker) integer representing the brightness change.
+	 * @return string The new, adjusted hex color code.
+	 */
+	private function adjust_brightness( $hex, $steps ) {
+		// Remove '#' if present.
+		$hex = str_replace( '#', '', $hex );
+
+		// Handle 3-digit hex codes.
+		if ( strlen( $hex ) === 3 ) {
+			$r = hexdec( substr( $hex, 0, 1 ) . substr( $hex, 0, 1 ) );
+			$g = hexdec( substr( $hex, 1, 1 ) . substr( $hex, 1, 1 ) );
+			$b = hexdec( substr( $hex, 2, 1 ) . substr( $hex, 2, 1 ) );
+		} else {
+			$r = hexdec( substr( $hex, 0, 2 ) );
+			$g = hexdec( substr( $hex, 2, 2 ) );
+			$b = hexdec( substr( $hex, 4, 2 ) );
+		}
+
+		// Adjust brightness for each color channel.
+		$r = max( 0, min( 255, $r + $steps ) );
+		$g = max( 0, min( 255, $g + $steps ) );
+		$b = max( 0, min( 255, $b + $steps ) );
+
+		// Convert back to hex and return.
+		return '#' . str_pad( dechex( $r ), 2, '0', STR_PAD_LEFT )
+				 . str_pad( dechex( $g ), 2, '0', STR_PAD_LEFT )
+				 . str_pad( dechex( $b ), 2, '0', STR_PAD_LEFT );
 	}
 }

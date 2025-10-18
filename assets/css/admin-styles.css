@@ -78,6 +78,7 @@ textarea {
 /* CodeMirror Editor */
 .CodeMirror {
 	height: 500px;
+	border: 1px solid silver;
 }
 
 /* Tab Navigation */
@@ -101,12 +102,15 @@ textarea {
 	font-weight: bold;
 }
 .accordion-title {
-	padding: 10px;
+	padding: 10px 15px;
 	margin: 0;
 	border: 1px solid #c3c4c7;
 	margin-bottom: 0;
 	background: #fff;
 	margin-top: -2px;
+	cursor: pointer;
+	font-size: 14px;
+	background: #f6f7f7;
 }
 /* .accordion-content {
 	border-top: 1px solid #ddd;
@@ -119,16 +123,36 @@ textarea {
 } */
 /* --- Accordion UI --- */
 .accordion-content {
-	display: none; /* 初期状態では非表示 */
-	padding: 15px;
+	/* The outer box only handles height and animation. NO PADDING HERE. */
+	display: none;
+	/* box-sizing: border-box; */
+	/* max-height: 0; */
+	/* overflow: hidden; */
+	/* transition: max-height 0.3s ease-out; */
 	background: #fff;
-	border: 1px solid #c3c4c7;
-	border-top: none;
+	border-left: 1px solid #c3c4c7;
+	border-right: 1px solid #c3c4c7;
+	border-bottom: 1px solid #c3c4c7;
 }
-.accordion-content.open {
-	padding-top: 15px;
-	padding-bottom: 15px;
+.js-accordion-initialized .accordion-content {
+	transition: max-height 0.3s ease-out, padding-top 0.3s ease-out, padding-bottom 0.3s ease-out, border-top-width 0.1s;
+}
+.accordion-inner {
+	/* The inner box only handles the padding (spacing). */
+	padding: 15px;
 	border-top: 1px solid #ddd;
+}
+#feas-ai-prompt-accordion .accordion-inner {
+	padding: 0;
+}
+#feas-ai-prompt-accordion .accordion-content {
+	border: none;
+	margin-top: -1px;
+}
+
+.accordion-content:not(.open) .accordion-inner {
+	/* When closed, remove the border to prevent it from showing. */
+	border-top: none;
 }
 .accordion-content > fieldset {
 	padding: 15px;

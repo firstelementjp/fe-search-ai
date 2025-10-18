@@ -112,47 +112,12 @@ document.addEventListener('DOMContentLoaded', () => {
 		startSyncProcess('feas_ai_start_sync', message);
 	});
 
-	// ★ Handler for the "Sync Changes" button
+	// Handler for the "Sync Changes" button
 	smartSyncBtn?.addEventListener('click', e => {
 		e.preventDefault();
 		const message = __('Are you sure you want to sync recent changes? This will process new, updated, and deleted posts.', 'fe-ai-search');
 		startSyncProcess('feas_ai_start_smart_sync', message);
 	});
-
-	// Handles the initial click of the "Start Syncing" button.
-	// startBtn?.addEventListener('click', async e => {
-	// 	e.preventDefault();
-	// 	if (!confirm(__('Are you sure you want to delete all existing indexes and rebuild them?', 'fe-ai-search'))) return;
-//
-	// 	startBtn.disabled = true;
-	// 	statusSpinner.style.display = 'inline-block';
-	// 	statusText.textContent = __('Preparing for synchronization...', 'fe-ai-search');
-	// 	progressContainer.style.display = 'block';
-	// 	progressBar.style.width = '0%';
-	// 	progressBar.textContent = '0%';
-//
-	// 	try {
-	// 		// Get the list of post IDs to sync.
-	// 		const response = await wpPost('feas_ai_start_sync', { nonce: feas_ai_sync_obj.nonce });
-	// 		if (!response.success) throw new Error('Failed to start sync.');
-//
-	// 		const { total_pages, total_posts, post_ids, batch_size } = response.data;
-	// 		postIDsToSync = post_ids;
-//
-	// 		if (total_pages > 0) {
-	// 			// Start the recursive batch processing.
-	// 			processBatch(1, total_pages, total_posts, batch_size);
-	// 		} else {
-	// 			statusText.textContent = __('There are no posts to sync.', 'fe-ai-search');
-	// 			statusSpinner.style.display = 'none';
-	// 			startBtn.disabled = false;
-	// 		}
-	// 	} catch (error) {
-	// 		statusText.innerHTML = `<span style="color:red;">${__('Error: Failed to communicate with the server.', 'fe-ai-search')}</span>`;
-	// 		statusSpinner.style.display = 'none';
-	// 		startBtn.disabled = false;
-	// 	}
-	// });
 
 	/**
 	 * Recursively processes one batch of posts at a time.
@@ -160,44 +125,6 @@ document.addEventListener('DOMContentLoaded', () => {
 	 * @param {number} totalPages - The total number of batches.
 	 * @param {number} totalPosts - The total number of posts to sync.
 	 */
-	// async function processBatch(currentPage, totalPages, totalPosts, batch_size) {
-	// 	// const batch_size = 100; // This should match the PHP setting.
-	// 	const processed = Math.min((currentPage - 1) * batch_size, totalPosts);
-	// 	const progress = totalPosts ? Math.round((processed / totalPosts) * 100) : 0;
-//
-	// 	progressBar.style.width = `${progress}%`;
-	// 	progressBar.textContent = `${progress}%`;
-	// 	statusText.textContent = `${__('Processing posts...', 'fe-ai-search')} (${processed} / ${totalPosts})`;
-	// 	statusSpinner.style.display = 'inline-block';
-//
-	// 	try {
-	// 		const response = await wpPost('feas_ai_process_batch', {
-	// 			nonce: feas_ai_sync_obj.nonce,
-	// 			page: currentPage,
-	// 			post_ids: JSON.stringify(postIDsToSync)
-	// 		});
-//
-	// 		if (response.success) {
-	// 			if (currentPage < totalPages) {
-	// 				await processBatch(currentPage + 1, totalPages, totalPosts);
-	// 			} else {
-	// 				// Final batch is complete.
-	// 				progressBar.style.width = '100%';
-	// 				progressBar.textContent = '100%';
-	// 				statusText.innerHTML = `<strong style="color:green;">${__('Synchronization complete!', 'fe-ai-search')} (${totalPosts} ${__('items', 'fe-ai-search')})</strong>`;
-	// 				startBtn.disabled = false;
-	// 				statusSpinner.style.display = 'none';
-	// 				wpPost('feas_ai_update_sync_timestamp', { nonce: feas_ai_sync_obj.nonce });
-	// 			}
-	// 		} else {
-	// 			throw new Error(response.data.message || 'Batch processing failed.');
-	// 		}
-	// 	} catch (error) {
-	// 		statusText.innerHTML = `<span style="color:red;">${__('Error: A problem occurred while processing batch', 'fe-ai-search')} ${currentPage}.</span>`;
-	// 		statusSpinner.style.display = 'none';
-	// 		startBtn.disabled = false;
-	// 	}
-	// }
 	async function processBatch(currentPage, totalPages, totalPosts, batch_size) {
 		const processed = Math.min((currentPage - 1) * batch_size, totalPosts);
 		const progress = totalPosts ? Math.round((processed / totalPosts) * 100) : 0;
@@ -261,29 +188,47 @@ document.addEventListener('DOMContentLoaded', () => {
 	// UI Interactions
 	// ==========================================================================
 
-	// API Key Test Buttons
+	// --- API Key Test Buttons ---
 	document.querySelectorAll('.feas-ai-test-api').forEach(button => {
 		button.addEventListener('click', async () => {
 			const provider = button.dataset.provider;
-			const input = document.querySelector(`#feas_ai_${provider}_api_key`);
-			const apiKey = input?.value;
+			const apiKeyId = button.dataset.apiKeyId || `feas_ai_${provider}_api_key`; // デフォルトのIDを構築
+			const endpointId = button.dataset.endpointId;
+
+			const apiKeyInput = document.getElementById(apiKeyId);
+			const apiKey = apiKeyInput ? apiKeyInput.value : '';
+
 			const spinner = button.parentElement.querySelector('.spinner');
 			const status = button.parentElement.querySelector('.feas-ai-api-status');
 
-			if (!apiKey) {
-				alert(__('Please enter an API key.', 'fe-ai-search'));
-				return;
+			if ( ! apiKey ) {
+				// APIキーが空でも、エンドポイントテストの場合は警告しない（キーが不要な場合もあるため）
+				if ( ! endpointId ) {
+					alert(__('Please enter an API key.', 'fe-ai-search'));
+					return;
+				}
 			}
 
 			spinner.style.visibility = 'visible';
 			status.textContent = '';
 
+			// AJAXで送信するデータを準備
+			const postData = {
+				nonce: feas_ai_sync_obj.nonce,
+				provider: provider,
+				api_key: apiKey,
+			};
+
+			// エンドポイントIDがあれば、その値もデータに追加
+			if (endpointId) {
+				const endpointInput = document.getElementById(endpointId);
+				if (endpointInput) {
+					postData.endpoint = endpointInput.value;
+				}
+			}
+
 			try {
-				const response = await wpPost('feas_ai_test_api_key', {
-					nonce: feas_ai_sync_obj.nonce,
-					provider,
-					api_key: apiKey
-				});
+				const response = await wpPost('feas_ai_test_api_key', postData);
 				status.innerHTML = response.data;
 			} catch {
 				status.innerHTML = `<span style="color:red;">✖ ${__('A communication error has occurred.', 'fe-ai-search')}</span>`;
@@ -292,55 +237,6 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 		});
 	});
-
-	// Tab Navigation
-	if (tabsWrapper) {
-		const tabContents = document.querySelectorAll('.tab-content');
-		tabContents.forEach(content => content.style.display = 'none');
-
-		const activateTab = (targetId) => {
-			if (!targetId || !document.querySelector(targetId)) return;
-
-			const targetTab = tabsWrapper.querySelector(`a[href="${targetId}"]`);
-			const targetContent = document.querySelector(targetId);
-
-			tabsWrapper.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('nav-tab-active'));
-			tabContents.forEach(content => content.style.display = 'none');
-
-			if (targetTab && targetContent) {
-				targetTab.classList.add('nav-tab-active');
-				targetContent.style.display = 'block';
-				targetContent.querySelectorAll('.feas-ai-prompt-editor').forEach(initializeCodeMirror);
-			}
-
-			if (history.pushState) {
-				history.pushState(null, '', targetId);
-			} else {
-				location.hash = targetId;
-			}
-		};
-
-		// Use event delegation to handle clicks on tab links.
-		tabsWrapper.addEventListener('click', e => {
-			if (e.target.classList.contains('nav-tab')) {
-				e.preventDefault();
-				activateTab(e.target.getAttribute('href'));
-			}
-		});
-
-		// Activate the correct tab on page load (based on URL hash).
-		setTimeout(() => {
-			const hash = window.location.hash;
-			if (hash && tabsWrapper.querySelector(`a[href="${hash}"]`)) {
-				activateTab(hash);
-			} else {
-				const firstTab = tabsWrapper.querySelector('.nav-tab');
-				if (firstTab) {
-					activateTab(firstTab.getAttribute('href'));
-				}
-			}
-		}, 0);
-	}
 
 	// Delete Synced Data Button
 	deleteButton?.addEventListener('click', async () => {
@@ -369,79 +265,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 	});
 
-	// Accordion UI Logic
-	document.querySelectorAll('.feas-ai-accordion-wrapper').forEach(wrapper => {
-		wrapper.querySelectorAll('.accordion-title').forEach(title => {
-			title.addEventListener('click', e => {
-				if (e.target.tagName === 'INPUT' && e.target.type === 'checkbox') return;
-				e.preventDefault();
-				const content = title.nextElementSibling;
-				if (content) {
-					content.classList.toggle('open');
-					content.style.display = content.classList.contains('open') ? 'block' : 'none';
-
-					const cm = content.querySelector('.CodeMirror');
-					if (cm && cm.CodeMirror) {
-						setTimeout(() => cm.CodeMirror.refresh(), 100);
-					}
-				}
-			});
-		});
-	});
-	// document.querySelectorAll('.feas-ai-accordion-wrapper').forEach(wrapper => {
-	// 	wrapper.querySelectorAll('.accordion-title').forEach(title => {
-	// 		title.addEventListener('click', e => {
-	// 			if (e.target.closest('input[type="checkbox"]')) {
-	// 				return;
-	// 			}
-	// 			e.preventDefault();
-//
-	// 			const content = title.nextElementSibling;
-	// 			if (!content) return;
-//
-	// 			title.classList.toggle('active');
-//
-	// 			if (content.style.maxHeight) {
-	// 				// Close the accordion
-	// 				content.style.maxHeight = null;
-	// 			} else {
-	// 				// Open the accordion
-	// 				content.style.maxHeight = content.scrollHeight + "px";
-//
-	// 				// Refresh CodeMirror if it exists inside
-	// 				const cmElement = content.querySelector('.CodeMirror');
-	// 				if (cmElement && cmElement.CodeMirror) {
-	// 					setTimeout(() => cmElement.CodeMirror.refresh(), 300); // After animation
-	// 				}
-	// 			}
-	// 		});
-	// 	});
-	// });
-
-
-	// document.querySelectorAll('.feas-ai-accordion-wrapper').forEach(wrapper => {
-	// 	wrapper.querySelectorAll('.accordion-title').forEach(title => {
-	// 		title.addEventListener('click', e => {
-	// 			if (e.target.tagName === 'INPUT' && e.target.type === 'checkbox') return;
-	// 			e.preventDefault();
-	// 			const content = title.nextElementSibling;
-	// 			if (content) {
-	// 				content.classList.toggle('open');
-//
-	// 				if (content.style.maxHeight) {
-	// 					content.style.maxHeight = null;
-	// 				} else {
-	// 					content.style.maxHeight = content.scrollHeight + "px";
-	// 					const cmElement = content.querySelector('.CodeMirror');
-	// 					if (cmElement && cmElement.CodeMirror) {
-	// 						setTimeout(() => cmElement.CodeMirror.refresh(), 300);
-	// 					}
-	// 				}
-	// 			}
-	// 		});
-	// 	});
-	// });
-
 	// "Change Model" Link Handler
 	document.querySelectorAll('.feas-ai-change-model-link').forEach(link => {
 		link.addEventListener('click', e => {
@@ -454,24 +277,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	});
 
-	// CodeMirror Initialization
-	function initializeCodeMirror(textarea) {
-		if (!textarea || textarea.dataset.codemirrorInitialized) return;
-
-		const isDisabled = textarea.dataset.disabled === 'true';
-		const editor = CodeMirror.fromTextArea(textarea, {
-			lineNumbers: true,
-			mode: 'markdown',
-			lineWrapping: true,
-			readOnly: isDisabled
-		});
-
-		if (isDisabled) {
-			editor.getWrapperElement().style.backgroundColor = '#f0f0f0';
-		}
-		textarea.dataset.codemirrorInitialized = 'true';
-	}
-
 	// --- Animation Speed Slider UI ---
 	const animationSpeedSlider = document.querySelector('#feas_ai_animation_speed_slider');
 	if (animationSpeedSlider) {
@@ -480,5 +285,117 @@ document.addEventListener('DOMContentLoaded', () => {
 		animationSpeedSlider.addEventListener('input', () => {
 			animationSpeedValue.textContent = animationSpeedSlider.value;
 		});
+	}
+
+	// ==========================================================================
+	// Accordion UI Logic (FINAL & COMPLETE VERSION)
+	// ==========================================================================
+
+	/**
+	 * Initializes any open accordions within a specific container.
+	 * This is the core function for making accordions visible.
+	 * @param {HTMLElement} container - The element to search within.
+	 */
+	// --- CodeMirror Initialization ---
+	// This function is now called specifically when its container becomes visible.
+	function initializeCodeMirror(textarea) {
+		if (!textarea || textarea.dataset.codemirrorInitialized) return;
+		const isDisabled = textarea.dataset.disabled === 'true';
+		const editor = CodeMirror.fromTextArea(textarea, {
+			lineNumbers: true,
+			mode: 'markdown',
+			lineWrapping: true,
+			readOnly: isDisabled
+		});
+		if (isDisabled) {
+			editor.getWrapperElement().style.backgroundColor = '#f0f0f0';
+		}
+		textarea.dataset.codemirrorInitialized = 'true';
+		// Refresh is now handled by the tab/accordion logic.
+	}
+
+	// --- Accordion Click Handler (Event Delegation) ---
+	// We listen on the entire settings page for clicks.
+	const settingsWrapper = document.querySelector('.wrap');
+	if (settingsWrapper) {
+		settingsWrapper.addEventListener('click', e => {
+			// Check if an accordion title was the target of the click.
+			const title = e.target.closest('.accordion-title');
+			if (!title) return;
+
+			// If a checkbox inside the title was clicked, let it do its thing.
+			if (e.target.tagName === 'INPUT' && e.target.type === 'checkbox') {
+				return;
+			}
+
+			e.preventDefault();
+
+			const content = title.nextElementSibling;
+			if (content && content.classList.contains('accordion-content')) {
+				// Simply toggle the display property. No animations, but always reliable.
+				const isOpen = content.style.display === 'block';
+				content.style.display = isOpen ? 'none' : 'block';
+
+				// If it was just opened, initialize any CodeMirror instances inside.
+				if (!isOpen) {
+					content.querySelectorAll('.feas-ai-prompt-editor').forEach(textarea => {
+						initializeCodeMirror(textarea);
+					});
+					// Also explicitly refresh any that might already exist.
+					content.querySelectorAll('.CodeMirror').forEach(cm => {
+						if (cm.CodeMirror) cm.CodeMirror.refresh();
+					});
+				}
+			}
+		});
+	}
+
+	// --- Tab Navigation Logic ---
+	if (tabsWrapper) {
+		const tabContents = document.querySelectorAll('.tab-content');
+		tabContents.forEach(content => content.style.display = 'none');
+
+		const activateTab = (targetId) => {
+			if (!targetId || !document.querySelector(targetId)) return;
+
+			const targetTab = tabsWrapper.querySelector(`a[href="${targetId}"]`);
+			const targetContent = document.querySelector(targetId);
+
+			tabsWrapper.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('nav-tab-active'));
+			tabContents.forEach(content => content.style.display = 'none');
+
+			if (targetTab && targetContent) {
+				targetTab.classList.add('nav-tab-active');
+				targetContent.style.display = 'block';
+
+				// When a tab becomes visible, initialize any CodeMirror editors inside it.
+				targetContent.querySelectorAll('.feas-ai-prompt-editor').forEach(textarea => {
+					initializeCodeMirror(textarea);
+				});
+			}
+
+			if (history.pushState) {
+				history.pushState(null, '', targetId);
+			} else {
+				location.hash = targetId;
+			}
+		};
+
+		tabsWrapper.addEventListener('click', e => {
+			if (e.target.classList.contains('nav-tab')) {
+				e.preventDefault();
+				activateTab(e.target.getAttribute('href'));
+			}
+		});
+
+		// On initial page load, activate the correct tab.
+		setTimeout(() => {
+			const hash = window.location.hash;
+			const initialTabAnchor = tabsWrapper.querySelector(`a[href="${hash}"]`);
+			const initialTabId = (hash && initialTabAnchor) ? hash : tabsWrapper.querySelector('.nav-tab')?.getAttribute('href');
+			if(initialTabId) {
+				activateTab(initialTabId);
+			}
+		}, 50);
 	}
 });

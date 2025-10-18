@@ -34,7 +34,6 @@
 	right: 20px;
 	z-index: 10000;
 }
-
 .feas-ai-mode-float #feas-ai-chat-bubble {
 	display: flex;
 	align-items: center;
@@ -48,11 +47,9 @@
 	cursor: pointer;
 	background-color: var(--feas-ai-key-color);
 }
-
 .feas-ai-mode-float #feas-ai-chat-bubble.hidden {
 	display: none;
 }
-
 .feas-ai-mode-float #feas-ai-chat-window {
 	width: 370px;
 	height: 550px;
@@ -60,6 +57,99 @@
 	max-height: 85vh;
 	border-radius: 10px;
 	box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+#feas-ai-chat-footer {
+	border-top: 1px solid #eee;
+}
+#feas-ai-chat-footer-actions {
+	position: relative;
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	padding: 5px;
+	border-left: 1px solid #dddddd;
+}
+#feas-ai-privacy-notice {
+	font-size: 11px;
+	text-align: center;
+	color: #777;
+	text-align: left;
+	padding: 5px 10px;
+	display: flex;
+	align-items: center;
+	justify-content: end;
+	width: 100%;
+}
+#feas-ai-privacy-notice p {
+	margin: 0;
+}
+#feas-ai-options-toggle {
+	background: none;
+	border: none;
+	padding: 5px;
+	cursor: pointer;
+	opacity: 0.2;
+	transition: opacity 0.2s;
+}
+#feas-ai-options-toggle:hover {
+	opacity: 1;
+}
+#feas-ai-options-toggle svg {
+	display: block;
+}
+
+#feas-ai-options-menu {
+	position: absolute;
+	bottom: 100%;
+	right: 3px;
+	background: #fff;
+	border: 1px solid #ccc;
+	border-radius: 8px;
+	padding: 10px;
+	margin-bottom: 5px;
+	box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+	white-space: nowrap;
+}
+#feas-ai-options-menu.hidden {
+	display: none;
+}
+#feas-ai-options-menu label {
+	display: flex;
+	flex-direction: row;
+}
+#feas-ai-options-menu label [type=checkbox] {
+	margin: 0 0.5em 0 0;
+}
+.feas-ai-feedback {
+	margin-top: 10px;
+	text-align: left;
+}
+
+.feedback-btn {
+	background: none;
+	border: none;
+	padding: 2px 5px;
+	cursor: pointer;
+	color: #bbb; /* ★ 初期状態の色を、目立たないグレーに */
+	transition: color 0.2s;
+}
+
+.feedback-btn:hover {
+	color: #333; /* ★ マウスオーバーで濃い色に */
+}
+
+/* クリック後のスタイル */
+.feedback-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.feedback-btn.good:disabled {
+	color: #0073aa; /* Goodボタンが押されたら青色に */
+}
+
+.feedback-btn.bad:disabled {
+	color: #d63638; /* Badボタンが押されたら赤色に */
 }
 
 /* ==========================================================================
@@ -159,7 +249,8 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	padding: 0 8px;
+	/* padding: 0 8px; */
+	margin-left: 10px;
 	background: none;
 	border: none;
 	color: #555;
@@ -223,9 +314,16 @@
 	color: #000;
 	border-top-left-radius: 4px;
 }
+.feas-ai-message-ai p::before {
+	display: blcok;
+	content: '';
+	border-left: 2px;
+	background: black;
+}
 
 .feas-ai-message-user {
 	align-self: flex-end;
+	justify-content: flex-end;
 }
 .feas-ai-message-user p {
 	background: #007cba;
@@ -246,19 +344,69 @@
 }
 
 /* ==========================================================================
+   Chat Message Bubbles
+   ========================================================================== */
+
+.feas-ai-message p {
+	position: relative; /* 三角形を配置するための基準点 */
+	padding: 10px 15px;
+	border-radius: 12px;
+	max-width: 90%;
+	word-wrap: break-word;
+}
+
+/* --- AI's Message Bubble (Left side) --- */
+.feas-ai-message-ai p {
+	background: #f0f0f1;
+	color: #333;
+	align-self: flex-start;
+}
+
+.feas-ai-message-ai p::after {
+	content: '';
+	position: absolute;
+	top: 15px;
+	left: -8px; /* 左側に配置 */
+	width: 0;
+	height: 0;
+	border: 8px solid transparent;
+	border-right-color: #f0f0f1; /* 右側のボーダーに色を付けて三角形を作る */
+	border-left: 0;
+}
+
+/* --- User's Message Bubble (Right side) --- */
+.feas-ai-message-user p {
+	background: #0073aa; /* WordPressの標準的な青色 */
+	color: #fff;
+	align-self: flex-end;
+}
+
+.feas-ai-message-user p::after {
+	content: '';
+	position: absolute;
+	top: 15px;
+	right: -8px; /* 右側に配置 */
+	width: 0;
+	height: 0;
+	border: 8px solid transparent;
+	border-left-color: #0073aa; /* 左側のボーダーに色を付けて三角形を作る */
+	border-right: 0;
+}
+
+/* ==========================================================================
    Chat Footer (Input Form)
    ========================================================================== */
 
 #feas-ai-chat-footer {
-	padding: 10px;
+	/* padding: 10px; */
 	border-top: 1px solid #ddd;
 	background: #f9f9f9;
 }
-
 #feas-ai-chat-form {
 	display: flex;
+	padding: 10px;
+	gap: 10px;
 }
-
 #feas-ai-chat-input {
 	flex-grow: 1;
 	padding: 8px 12px;
@@ -266,9 +414,8 @@
 	border-radius: 18px;
 	margin: 0;
 }
-
 #feas-ai-chat-form button {
-	margin-left: 10px;
+	opacity: 0.7;
 	padding: 8px 15px;
 	background: #0073aa;
 	color: white;
@@ -278,9 +425,18 @@
 	cursor: pointer;
 	background: var(--feas-ai-key-color);
 }
+#feas-ai-chat-form button:hover {
+	opacity: 1;
+}
 #feas-ai-chat-form button:disabled {
 	background: #ccc;
 	cursor: not-allowed;
+}
+#feas-ai-chat-options {
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	border-top: 1px solid #dfdfdf;
 }
 
 /* ==========================================================================
