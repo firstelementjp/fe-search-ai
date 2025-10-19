@@ -784,6 +784,30 @@ class FEAS_AI_Settings {
 				?>
 			</div>
 			<div id="feas-ai-sync-wrapper">
+				<div style="border: 1px solid #c3c4c7; background: #f6f7f7; padding: 10px 15px; margin-bottom: 1.5em; border-radius: 4px;">
+					<strong><?php esc_html_e( 'Japanese Tokenizer Status', 'fe-ai-search' ); ?>:</strong>
+					<?php
+					$tokenizer_status = '<span style="color:#a0a5aa;">' . esc_html__( 'Built-in (TinySegmenter)', 'fe-ai-search' ) . '</span>';
+					$mecab_available  = false;
+
+					// FEAS_AI_Sync_Handlerの__constructと全く同じロジックでMeCabを検知
+					if ( class_exists( '\Natto\MeCab' ) ) {
+						try {
+							new \Natto\MeCab(); // 実際にインスタンス化を試みる
+							$tokenizer_status  = '<span style="color:green; font-weight:bold;">' . esc_html__( 'High-Accuracy (MeCab)', 'fe-ai-search' ) . '</span>';
+							$mecab_available   = true;
+						} catch ( \Exception $e ) {
+							// MeCab本体または辞書が見つからない
+							$tokenizer_status .= ' <span style="color:red;">(' . esc_html__( 'MeCab load failed', 'fe-ai-search' ) . ')</span>';
+						}
+					}
+					echo ' ' . $tokenizer_status; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+
+					if ( ! $mecab_available ) {
+						echo '<p class="description" style="margin: 5px 0 0 0;">' . esc_html__( 'For higher search accuracy, install MeCab on your server and the "natto-php" library via Composer.', 'fe-ai-search' ) . '</p>';
+					}
+					?>
+				</div>
 				<button id="feas-ai-smart-sync" class="button button-primary">
 					<?php esc_html_e( 'Sync Changes (Recommended)', 'fe-ai-search' ); // 更新を同期 (推奨) ?>
 				</button>

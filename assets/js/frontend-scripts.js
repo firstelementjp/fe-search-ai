@@ -1,4 +1,15 @@
+/**
+ * FE AI Search Frontend Scripts
+ *
+ * This file handles all the JavaScript functionality for the public-facing
+ * chat UI, including sending messages, streaming responses, handling
+ * session history, and managing user interaction events.
+ *
+ * @package    fe-ai-search
+ * @since      1.0.0
+ */
 
+// Initialize WordPress internationalization functions.
 const { __ } = wp.i18n;
 
 /**
@@ -17,13 +28,17 @@ async function wpPost(action, data = {}) {
 	return response.json();
 }
 
+/**
+ * Main function to initialize the chat interface.
+ */
 function initFEAIChat() {
 	const container = document.getElementById('feas-ai-chat-container');
 	if (!container || container.dataset.initialized) {
-		return; // 既に初期化済みか、要素がなければ何もしない
+		return; // Already initialized or element not found.
 	}
 	container.dataset.initialized = 'true';
 
+	// --- 1. DOM Element Caching ---
 	const bubble = document.getElementById('feas-ai-chat-bubble');
 	const windowEl = document.getElementById('feas-ai-chat-window');
 	const closeBtn = document.getElementById('feas-ai-chat-close');
@@ -35,25 +50,42 @@ function initFEAIChat() {
 	const optionsMenu = document.getElementById('feas-ai-options-menu');
 	const shiftEnterToggle = document.getElementById('feas-ai-shift-enter-toggle');
 
-	if (!bubble || !form) return;
+	if (!bubble || !form || !input || !messagesContainer) return;
 
-	// ページ読み込み時に、既に全画面モードで表示すべきか判定する
+	// Handle fullscreen mode on load
 	if (container.classList.contains('is-fullscreen')) {
 		windowEl.classList.remove('hidden');
 		bubble.classList.add('hidden');
 	}
 
+	// --- 2. State Variables ---
 	let sessionId = sessionStorage.getItem('feas_ai_session_id');
 	if (!sessionId) {
 		sessionId = Date.now().toString(36) + Math.random().toString(36).substr(2);
 		sessionStorage.setItem('feas_ai_session_id', sessionId);
 	}
 
+	let sessionHistory = JSON.parse(sessionStorage.getItem('feas_ai_chat_history')) || [];
 	let charQueue = [];
 	let renderInterval;
 	let currentAiMessageElement = null;
 	let fullResponse = '';
 
+	// --- 3. Initialize Settings (Shift+Enter) ---
+	let userPrefersShiftEnter = localStorage.getItem('feas_ai_user_prefers_shift_enter');
+
+	if (userPrefersShiftEnter === null) {
+		// If no user preference, use the site's default setting
+		userPrefersShiftEnter = feas_ai_ajax_obj.send_on_shift_enter;
+	} else {
+		// Convert stored string back to boolean
+		userPrefersShiftEnter = userPrefersShiftEnter === 'true';
+	}
+	shiftEnterToggle.checked = userPrefersShiftEnter;
+
+	// --- 4. Event Listeners ---
+
+	// Toggle chat window
 	bubble.addEventListener('click', () => {
 		windowEl.classList.remove('hidden');
 		bubble.classList.add('hidden');
@@ -64,75 +96,58 @@ function initFEAIChat() {
 		bubble.classList.remove('hidden');
 	});
 
+	// Toggle fullscreen mode
 	fullscreenBtn.addEventListener('click', () => {
 		container.classList.toggle('is-fullscreen');
 	});
 
-	// まずlocalStorageからユーザーの個人設定を読み込む
-	let userPrefersShiftEnter = localStorage.getItem('feas_ai_user_prefers_shift_enter');
-
-	// 個人設定がなければ、サイトのデフォルト設定を使う
-	if (userPrefersShiftEnter === null) {
-		userPrefersShiftEnter = feas_ai_ajax_obj.send_on_shift_enter;
-	} else {
-		userPrefersShiftEnter = userPrefersShiftEnter === 'true'; // 文字列を真偽値に変換
-	}
-
-	// UIのチェックボックスの状態を、現在の設定に合わせる
-	shiftEnterToggle.checked = userPrefersShiftEnter;
-
-	// --- 2. イベントリスナーの修正 ---
+	// Toggle settings menu
 	optionsToggle.addEventListener('click', () => {
 		optionsMenu.classList.toggle('hidden');
 	});
 
-	/**
-	 * Handles changes to the "Shift+Enter to send" checkbox.
-	 * Updates the user's preference and saves it to localStorage.
-	 */
+	// Handle 'Shift+Enter' setting change
 	shiftEnterToggle.addEventListener('change', () => {
-		// When the user changes the settings,
-		// immediately reflect the value in the userPrefersShiftEnter variable
 		userPrefersShiftEnter = shiftEnterToggle.checked;
-
-		// Save changes to localStorage for future visits.
 		localStorage.setItem('feas_ai_user_prefers_shift_enter', userPrefersShiftEnter);
 	});
 
 	/**
-	 * Handles keyboard input to determine when to send a message.
-	 * This acts as a "gatekeeper" for the form submission.
+	 * Handles keyboard input ("Gatekeeper").
+	 * Decides whether to submit the form or create a new line.
 	 */
 	input.addEventListener('keydown', (e) => {
 		if (e.isComposing || e.key !== 'Enter') {
 			return;
 		}
+
+		// Prevent default Enter action (form submission or newline)
 		e.preventDefault();
 
-		// Refer to the user's latest settings instead of the site's default settings.
 		const shiftPressed = e.shiftKey;
 		const shouldSubmit = (userPrefersShiftEnter && shiftPressed) || (!userPrefersShiftEnter && !shiftPressed);
 
 		if (shouldSubmit) {
+			// Programmatically trigger the 'submit' event.
 			form.dispatchEvent(new Event('submit', { cancelable: true }));
+		}
+		// If it's not a submit action (e.g., Enter alone when Shift+Enter is required),
+		// we must manually add the newline since we prevented the default behavior.
+		else if (useShiftEnter && !shiftPressed) {
+			input.value += '\n';
 		}
 	});
 
 	/**
-	 * Handles the actual form submission process.
-	 * This is the "worker" that gets triggered by either the user clicking the send button,
-	 * or by the 'keydown' event listener above.
-	 *
-	 * (This is your existing, fully functional code, with no changes to its internal logic.)
+	 * Handles the actual form submission ("Worker").
+	 * This is triggered by the 'keydown' listener or the send button.
 	 */
 	form.addEventListener('submit', function(e) {
 		e.preventDefault();
 
-		// Use the IP limit (per hour) passed from PHP as the maximum per session.
+		// Check session message limit
 		const SESSION_LIMIT = feas_ai_ajax_obj.ip_limit_count;
-
-		// If SESSION_LIMIT is not 0 (unlimited) and the history exceeds the limit
-		if ( SESSION_LIMIT > 0 && history.length > SESSION_LIMIT * 2 ) {
+		if ( SESSION_LIMIT > 0 && sessionHistory.length > SESSION_LIMIT * 2 ) {
 			addMessage('<p>' + __('You have reached the message limit for this session. Please refresh the page to start a new conversation.', 'fe-ai-search') + '</p>', 'system');
 			return;
 		}
@@ -140,21 +155,22 @@ function initFEAIChat() {
 		const question = input.value.trim();
 		if (!question) return;
 
-		let history = JSON.parse(sessionStorage.getItem('feas_ai_chat_history')) || [];
-		const aiMessageWrapper = addMessage(`<p>${question}</p>`, 'user'); // Modified to get wrapper
-		history.push({ role: 'user', content: question });
+		// Update the session history variable
+		const aiMessageWrapper = addMessage(`<p>${question}</p>`, 'user');
+		sessionHistory.push({ role: 'user', content: question });
 
-		const recentHistory = history.slice(-10);
+		const recentHistory = sessionHistory.slice(-10);
 		input.value = '';
+		input.style.height = 'auto'; // Reset height
 		disableForm();
 
-		currentAiMessageElement = addMessage('<p><span class="feas-ai-spinner"></span></p>', 'ai').querySelector('p');
-		const currentAiMessageWrapper = currentAiMessageElement.parentElement; // Get the wrapper for feedback buttons
+		const aiMessageWrapperForFeedback = addMessage('<p><span class="feas-ai-spinner"></span></p>', 'ai');
+		currentAiMessageElement = aiMessageWrapperForFeedback.querySelector('p');
 
 		fullResponse = '';
 		let contextFound = false;
 		let isFirstChunk = true;
-		let currentLogId = null; // Variable to store the log ID
+		let currentLogId = null;
 
 		startRenderingQueue();
 
@@ -176,10 +192,11 @@ function initFEAIChat() {
 					if (done) {
 						waitForQueueToEmpty().then(() => {
 							clearInterval(renderInterval);
-							const currentAiMessageWrapper = currentAiMessageElement.parentElement;
-							currentAiMessageWrapper.innerHTML = marked.parse(fullResponse);
-							history.push({ role: 'assistant', content: fullResponse });
-							sessionStorage.setItem('feas_ai_chat_history', JSON.stringify(history));
+							// Replace the spinner wrapper with the final, parsed content
+							aiMessageWrapperForFeedback.innerHTML = marked.parse(fullResponse);
+
+							sessionHistory.push({ role: 'assistant', content: fullResponse });
+							sessionStorage.setItem('feas_ai_chat_history', JSON.stringify(sessionHistory));
 
 							// Log conversation and get the log ID back
 							logConversation(question, fullResponse, contextFound).then(logId => {
@@ -192,10 +209,10 @@ function initFEAIChat() {
 											<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none"/><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
 										</button>
 										<button class="feedback-btn bad" data-log-id="${currentLogId}" data-rating="-1" title="Bad">
-											<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none"/><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
+											<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none"/><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79-.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
 										</button>
 									`;
-									currentAiMessageWrapper.appendChild(feedbackWrapper);
+									aiMessageWrapperForFeedback.appendChild(feedbackWrapper);
 								}
 							});
 
@@ -233,6 +250,45 @@ function initFEAIChat() {
 		.catch(error => { handleError(error); });
 	});
 
+	/**
+	 * Handles clicks on the feedback (good/bad) buttons using event delegation.
+	 */
+	messagesContainer.addEventListener('click', function(e) {
+		const button = e.target.closest('.feedback-btn');
+		if (button) {
+			const logId = button.dataset.logId;
+			const rating = button.dataset.rating;
+			const feedbackWrapper = button.parentElement;
+
+			if (!logId || !rating) return;
+
+			wpPost('feas_ai_rate_answer', {
+				nonce: feas_ai_ajax_obj.nonce,
+				log_id: logId,
+				rating: rating,
+			});
+
+			feedbackWrapper.querySelectorAll('.feedback-btn').forEach(btn => {
+				btn.disabled = true;
+				if (btn !== button) {
+					btn.style.opacity = '0.5';
+				}
+			});
+			const thanksMessage = document.createElement('span');
+			thanksMessage.className = 'feas-ai-feedback-thanks';
+			thanksMessage.textContent = 'Thank you for your feedback!';
+			feedbackWrapper.replaceWith(thanksMessage);
+		}
+	});
+
+	// --- 5. Helper Functions ---
+
+	/**
+	 * Adds a message to the chat UI.
+	 * @param {string} html - The HTML content of the message.
+	 * @param {string} type - 'user', 'ai', or 'system'.
+	 * @returns {HTMLElement} The new message wrapper element.
+	 */
 	function addMessage(html, type) {
 		const messageWrapper = document.createElement('div');
 		messageWrapper.className = `feas-ai-message feas-ai-message-${type}`;
@@ -242,29 +298,17 @@ function initFEAIChat() {
 		return messageWrapper;
 	}
 
-	// function logConversation(question, answer, contextFound) {
-	// 	fetch(feas_ai_ajax_obj.ajax_url, {
-	// 		method: 'POST',
-	// 		body: new URLSearchParams({
-	// 			action: 'feas_ai_log_query',
-	// 			nonce: feas_ai_ajax_obj.nonce,
-	// 			session_id: sessionId,
-	// 			question: question,
-	// 			answer: answer,
-	// 			context_found: contextFound ? '1' : '0',
-	// 		}),
-	// 	});
-	// }
-
 	/**
-	 * Logs the conversation to the database via AJAX and returns the new log ID.
+	 * Logs the conversation to the database via AJAX.
 	 * @param {string} question - The user's question.
 	 * @param {string} answer - The AI's full answer.
 	 * @param {boolean} contextFound - Whether context was found.
 	 * @returns {Promise<number|null>} The ID of the newly created log entry.
 	 */
 	async function logConversation(question, answer, contextFound) {
-		if (!feas_ai_ajax_obj.is_license_active) return null;
+		if (!feas_ai_ajax_obj.is_license_active) {
+			return null;
+		}
 
 		try {
 			const response = await wpPost('feas_ai_log_query', {
@@ -275,7 +319,7 @@ function initFEAIChat() {
 				context_found: contextFound ? '1' : '0',
 			});
 
-			if (response.success && response.data.log_id) {
+			if (response.success && response.data && response.data.log_id) {
 				return response.data.log_id;
 			}
 		} catch (error) {
@@ -284,6 +328,9 @@ function initFEAIChat() {
 		return null;
 	}
 
+	/**
+	 * Renders the typing animation queue.
+	 */
 	function renderQueue() {
 		if (currentAiMessageElement && currentAiMessageElement.querySelector('.feas-ai-spinner') && charQueue.length > 0) {
 			currentAiMessageElement.innerHTML = '';
@@ -291,18 +338,24 @@ function initFEAIChat() {
 		if (charQueue.length === 0) return;
 
 		const charsToRender = charQueue.splice(0, feas_ai_ajax_obj.animation_speed || 3).join('');
-
 		fullResponse += charsToRender;
 
 		currentAiMessageElement.innerHTML = marked.parse(fullResponse);
 		messagesContainer.scrollTop = messagesContainer.scrollHeight;
 	}
 
+	/**
+	 * Starts the rendering interval for the typing animation.
+	 */
 	function startRenderingQueue() {
 		clearInterval(renderInterval);
 		renderInterval = setInterval(renderQueue, 25);
 	}
 
+	/**
+	 * Waits for the character queue to be empty.
+	 * @returns {Promise<void>}
+	 */
 	function waitForQueueToEmpty() {
 		return new Promise(resolve => {
 			const interval = setInterval(() => {
@@ -314,68 +367,41 @@ function initFEAIChat() {
 		});
 	}
 
+	/**
+	 * Disables the chat form.
+	 */
 	function disableForm() {
 		input.disabled = true;
 		form.querySelector('button').disabled = true;
 	}
 
+	/**
+	 * Enables the chat form.
+	 */
 	function enableForm() {
 		input.disabled = false;
 		form.querySelector('button').disabled = false;
 		input.focus();
 	}
 
+	/**
+	 * Handles fetch or stream errors.
+	 * @param {Error} error - The error object.
+	 */
 	function handleError(error) {
 		clearInterval(renderInterval);
 		if (currentAiMessageElement) {
-			currentAiMessageElement.innerHTML = '<p>通信エラーが発生しました。</p>';
+			currentAiMessageElement.innerHTML = '<p>' + __('An error occurred. Please try again.', 'fe-ai-search') + '</p>';
 		}
 		console.error('Chat Error:', error);
 		enableForm();
 	}
-
-	/**
-	 * Handles clicks on the feedback (good/bad) buttons using event delegation.
-	 */
-	messagesContainer.addEventListener('click', function(e) {
-		// ★★★ BUG FIX: Use .closest() to find the button, even if the SVG icon inside it was clicked. ★★★
-		const button = e.target.closest('.feedback-btn');
-
-		// If a feedback button (or something inside it) was clicked...
-		if (button) {
-			const logId = button.dataset.logId;
-			const rating = button.dataset.rating;
-			const feedbackWrapper = button.parentElement;
-
-			if (!logId || !rating) return;
-
-			// Send the rating to the server.
-			wpPost('feas_ai_rate_answer', {
-				nonce: feas_ai_ajax_obj.nonce,
-				log_id: logId,
-				rating: rating,
-			});
-
-			// Provide visual feedback.
-			feedbackWrapper.querySelectorAll('.feedback-btn').forEach(btn => {
-				btn.disabled = true;
-				if (btn !== button) {
-					btn.style.opacity = '0.5';
-				}
-			});
-
-			// Create and insert the "Thank you" message.
-			const thanksMessage = document.createElement('span');
-			thanksMessage.className = 'feas-ai-feedback-thanks';
-			thanksMessage.textContent = 'Thank you for your feedback!';
-			feedbackWrapper.replaceWith(thanksMessage); // Replace the buttons with the message.
-		}
-	});
 }
 
+// Auto-run the initializer.
 if (document.readyState === 'loading') {
 	document.addEventListener('DOMContentLoaded', initFEAIChat);
 } else {
-	// 既にDOMが構築済みの場合（wp_footerで呼ばれるなど）
+	// DOM is already ready.
 	initFEAIChat();
 }
