@@ -15,10 +15,10 @@
 <ruleset name="FE AI Search">
   <description>WordPress plugin ruleset</description>
 
-  <!-- スキャン範囲 -->
+  <!-- Scan scope -->
   <file>./</file>
 
-  <!-- 除外 -->
+  <!-- Exclusions -->
   <exclude-pattern>vendor/*</exclude-pattern>
   <exclude-pattern>node_modules/*</exclude-pattern>
   <exclude-pattern>tests/*</exclude-pattern>
@@ -29,18 +29,18 @@
   <exclude-pattern>*.po</exclude-pattern>
   <exclude-pattern>*.mo</exclude-pattern>
 
-  <!-- 実行オプション -->
+  <!-- Execution options -->
   <arg value="p"/>
   <arg name="basepath" value="./"/>
   <arg name="parallel" value="8"/>
 
-  <!-- WordPress 一式 -->
+  <!-- WordPress standard rulesets -->
   <rule ref="WordPress"/>
   <rule ref="WordPress-Core"/>
   <rule ref="WordPress-Docs"/>
   <rule ref="WordPress-Extra"/>
 
-  <!-- I18n: text_domain は配列で -->
+  <!-- I18n: text_domain as array -->
   <rule ref="WordPress.WP.I18n">
     <properties>
       <property name="text_domain" type="array">
@@ -49,10 +49,10 @@
     </properties>
   </rule>
 
-  <!-- 配列は短配列 [] を要求（長配列 array() を禁止） -->
+  <!-- Require short array syntax [] (prohibit long array() syntax) -->
   <rule ref="Generic.Arrays.DisallowLongArraySyntax"/>
 
-  <!-- 互換性チェック（任意） -->
+  <!-- Compatibility checks (optional) -->
   <rule ref="PHPCompatibility"/>
   <rule ref="PHPCompatibilityWP"/>
 
