@@ -1,0 +1,59 @@
+{
+    "php.suggest.basic": false,
+    "phpcs.executablePath": "${workspaceFolder}/vendor/bin/phpcs",
+    "phpcbf.executablePath": "${workspaceFolder}/vendor/bin/phpcbf",
+    "phpcs.autoConfigSearch": true,
+    "phpcs.showWarnings": true,
+    "phpcs.showSources": true,
+    "phpcs.showNotices": true,
+    "phpcs.composerJsonPath": "${workspaceFolder}/composer.json",
+    "phpSniffer.run": "onSave",
+    "phpSniffer.standard": "phpcs.xml.dist",
+    "phpSniffer.executablesFolder": "${workspaceFolder}/vendor/bin"
+}
+<?xml version="1.0"?>
+<ruleset name="FE AI Search">
+  <description>WordPress plugin ruleset</description>
+
+  <!-- スキャン範囲 -->
+  <file>./</file>
+
+  <!-- 除外 -->
+  <exclude-pattern>vendor/*</exclude-pattern>
+  <exclude-pattern>node_modules/*</exclude-pattern>
+  <exclude-pattern>tests/*</exclude-pattern>
+  <exclude-pattern>*.min.js</exclude-pattern>
+  <exclude-pattern>*.min.css</exclude-pattern>
+  <exclude-pattern>languages/*</exclude-pattern>
+  <exclude-pattern>*.pot</exclude-pattern>
+  <exclude-pattern>*.po</exclude-pattern>
+  <exclude-pattern>*.mo</exclude-pattern>
+
+  <!-- 実行オプション -->
+  <arg value="p"/>
+  <arg name="basepath" value="./"/>
+  <arg name="parallel" value="8"/>
+
+  <!-- WordPress 一式 -->
+  <rule ref="WordPress"/>
+  <rule ref="WordPress-Core"/>
+  <rule ref="WordPress-Docs"/>
+  <rule ref="WordPress-Extra"/>
+
+  <!-- I18n: text_domain は配列で -->
+  <rule ref="WordPress.WP.I18n">
+    <properties>
+      <property name="text_domain" type="array">
+        <element value="fe-ai-search"/>
+      </property>
+    </properties>
+  </rule>
+
+  <!-- 配列は短配列 [] を要求（長配列 array() を禁止） -->
+  <rule ref="Generic.Arrays.DisallowLongArraySyntax"/>
+
+  <!-- 互換性チェック（任意） -->
+  <rule ref="PHPCompatibility"/>
+  <rule ref="PHPCompatibilityWP"/>
+
+</ruleset>
