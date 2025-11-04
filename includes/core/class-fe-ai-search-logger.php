@@ -11,7 +11,13 @@ namespace FEAISearch\Core;
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-class FEAS_AI_Logger {
+class FE_AI_Search_Logger {
+
+	private $options = [];
+
+	public function __construct( $sync_handler ) {
+		$this->options = get_option( 'fe_ai_search_settings', [] );
+	}
 
 	/**
 	 * Records a system-level event to the database if debug mode is enabled.
@@ -24,13 +30,13 @@ class FEAS_AI_Logger {
 	 * @param array  $data    Optional. Additional data to store as JSON.
 	 */
 	public static function log( string $level, string $message, array $data = [] ) {
-		// Do nothing if debug mode is not enabled.
-		if ( ! get_option( 'feas_ai_debug_mode_enabled' ) ) {
+		$is_enabled = $this->options['data']['debug_options']['is_enabled'];
+		if ( ! $is_enabled ) {
 			return;
 		}
 
 		global $wpdb;
-		$table_name = $wpdb->prefix . 'feas_ai_system_logs';
+		$table_name = $wpdb->prefix . 'fe_ai_search_system_logs';
 
 		// Check if the table exists to prevent errors.
 		if ( $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" ) !== $table_name ) {

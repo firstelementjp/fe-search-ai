@@ -2,7 +2,7 @@
 /**
  * Handles all content synchronization and data retrieval tasks.
  *
- * This file defines the FEAS_AI_Sync_Handler class, which is responsible for
+ * This file defines the fe_ai_search_Sync_Handler class, which is responsible for
  * all processes related to indexing content, creating vector embeddings, and
  * retrieving relevant information from the database for the chat handler.
  *
@@ -29,64 +29,62 @@ use WP_Error;
  * @package    fe-ai-search
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
  */
-class FEAS_AI_Sync_Handler {
+class FE_AI_Search_Sync_Handler {
 
-	// private const BATCH_SIZE = 10;
-	private $segmenter;
+	private $options = [];
 	private $is_license_active;
-
+	private $segmenter;
 	private $japanese_tokenizer = 'tinysegmenter';
 
 	public function __construct() {
 
-		$this->segmenter = new \U7aro\TinySegmenter\TinySegmenter();
+		$this->options = get_option( 'fe_ai_search_settings', [] );
+		$this->segmenter = new TinySegmenter();
 
-		if ( class_exists('\Natto\MeCab') ) {
+		if ( class_exists( '\Natto\MeCab' ) ) {
 			try {
-				new \Natto\MeCab(); // 実際にインスタンス化を試みる
-				$this->japanese_tokenizer = 'mecab'; // 成功すれば、MeCabモードに設定
-			} catch (\Exception $e) {
-				// MeCab本体が見つからない場合などは、TinySegmenterのまま
+				new \Natto\MeCab();
+				$this->japanese_tokenizer = 'mecab';
+			} catch ( \Exception $e ) {
 			}
 		}
 
-		// $this->is_license_active = ( 'active' === get_option( 'feas_ai_license_data', '' ) );
-//
-		// $license_data = get_option( 'feas_ai_license_data', [] );
-		// $status       = $license_data['status'] ?? 'inactive';
-		// $products     = $license_data['products'] ?? [];
+		$license_data = $this->options['license'] ?? [];
+		$status       = $license_data['status'] ?? 'inactive';
+		$products     = $license_data['data']['products'] ?? [];
 
-		//Set license status for use in various methods.
+		// Set license status for use in various methods.
 		$this->is_license_active = ( 'active' === $status && in_array( 'pro', $products, true ) );
+
 $this->is_license_active = true;
 
-		add_action( 'wp_ajax_feas_ai_start_sync', array( $this, 'ajax_start_sync' ) );
-		add_action( 'wp_ajax_feas_ai_process_batch', array( $this, 'ajax_process_batch' ) );
-		add_action( 'wp_ajax_feas_ai_update_sync_timestamp', array( $this, 'ajax_update_sync_timestamp' ) );
-		add_action( 'wp_ajax_feas_ai_delete_vectors', array( $this, 'ajax_delete_vectors' ) );
-		add_action( 'wp_ajax_feas_ai_start_smart_sync', [ $this, 'ajax_start_smart_sync' ] );
-		add_action( 'wp_ajax_feas_ai_update_settings_hash', [ $this, 'ajax_update_settings_hash' ] );
-
+		add_filter( 'fe_ai_search_tokenizer_status', [ $this, 'add_japanese_tokenizer_status' ] );
+		add_action( 'wp_ajax_fe_ai_search_start_sync', array( $this, 'ajax_start_sync' ) );
+		add_action( 'wp_ajax_fe_ai_search_process_batch', array( $this, 'ajax_process_batch' ) );
+		add_action( 'wp_ajax_fe_ai_search_update_sync_timestamp', array( $this, 'ajax_update_sync_timestamp' ) );
+		add_action( 'wp_ajax_fe_ai_search_delete_vectors', array( $this, 'ajax_delete_vectors' ) );
+		add_action( 'wp_ajax_fe_ai_search_start_smart_sync', [ $this, 'ajax_start_smart_sync' ] );
+		add_action( 'wp_ajax_fe_ai_search_update_settings_hash', [ $this, 'ajax_update_settings_hash' ] );
 	}
 
 	public function ajax_start_sync() {
-		check_ajax_referer( 'feas_ai_ajax_nonce', 'nonce' );
+		check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
 
 		global $wpdb;
-		$vectors_table = $wpdb->prefix . 'feas_ai_vectors';
-		$index_table   = $wpdb->prefix . 'feas_ai_keyword_index';
+		$vectors_table = $wpdb->prefix . 'fe_ai_search_vectors';
+		$index_table   = $wpdb->prefix . 'fe_ai_search_keyword_index';
 		$wpdb->query( "TRUNCATE TABLE `{$vectors_table}`" );
 		$wpdb->query( "TRUNCATE TABLE `{$index_table}`" );
 
-		$sync_options    = get_option( 'feas_ai_sync_options', [] );
-		$include_ids_str = get_option( 'feas_ai_include_post_ids', '' );
-		$exclude_ids_str = get_option( 'feas_ai_exclude_post_ids', '' );
-		$sync_limit      = (int) get_option( 'feas_ai_sync_limit', 0 );
+		$sync_options    = $this->options['sync'] ?? [];
+		$include_ids_str = $sync_options['includes']['ids'];
+		$exclude_ids_str = $sync_options['exclude']['ids'];
+		$limit           = $sync_options['limit'] ?? -1;
 
 		$post_types_to_sync = [];
-		if ( !empty($sync_options['post_types']) && is_array($sync_options['post_types']) ) {
-			foreach ($sync_options['post_types'] as $pt_slug => $pt_options) {
-				if ( !empty($pt_options['enabled']) ) {
+		if ( ! empty( $sync_options['post_types'] ) && is_array( $sync_options['post_types'] ) ) {
+			foreach ( $sync_options['post_types'] as $pt_slug => $pt_options ) {
+				if ( !empty( $pt_options['enabled'] ) ) {
 					$post_types_to_sync[] = $pt_slug;
 				}
 			}
@@ -96,18 +94,18 @@ $this->is_license_active = true;
 			'post_status'    => 'publish',
 			'fields'         => 'ids',
 			'cache_results'  => false,
-			'posts_per_page' => ($sync_limit > 0) ? $sync_limit : -1,
+			'posts_per_page' => $limit,
 			'orderby'        => 'date',
 			'order'          => 'DESC',
 		];
 
-		$include_ids = array_filter( array_map('intval', explode(',', $include_ids_str)) );
-		$exclude_ids = array_filter( array_map('intval', explode(',', $exclude_ids_str)) );
+		$include_ids = array_filter( array_map( 'intval', explode( ',', $include_ids_str ) ) );
+		$exclude_ids = array_filter( array_map( 'intval', explode( ',', $exclude_ids_str ) ) );
 
 		if ( ! empty( $include_ids ) ) {
 			$args['post__in'] = $include_ids;
 		} else {
-			$args['post_type'] = empty($post_types_to_sync) ? ['post', 'page'] : $post_types_to_sync;
+			$args['post_type'] = empty( $post_types_to_sync ) ? ['post', 'page'] : $post_types_to_sync;
 			if ( ! empty( $exclude_ids ) ) {
 				$args['post__not_in'] = $exclude_ids;
 			}
@@ -123,12 +121,12 @@ $this->is_license_active = true;
 		 *
 		 * @param array $args The array of query arguments passed to `get_posts()`.
 		 */
-		$args = apply_filters( 'feas_ai_sync_query_args', $args );
+		$args = apply_filters( 'fe_ai_search_sync_query_args', $args );
 
 		$all_post_ids = get_posts( $args );
-		$total_posts = count($all_post_ids);
+		$total_posts = count( $all_post_ids );
 
-		$batch_size = (int) get_option( 'feas_ai_batch_size', 10 );
+		$batch_size = (int) $this->options['sync']['options']['batch_size'] ?? 10;
 		$total_pages = ceil( $total_posts / $batch_size );
 
 		wp_send_json_success( [
@@ -140,13 +138,13 @@ $this->is_license_active = true;
 	}
 
 	public function ajax_start_smart_sync() {
-		check_ajax_referer( 'feas_ai_ajax_nonce', 'nonce' );
+		check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( [ 'message' => 'Permission denied.' ] );
 		}
 
-		// --- 1. Get enabled post types from settings ---
-		$sync_options         = get_option( 'feas_ai_sync_options', [] );
+		// Get enabled post types from settings
+		$sync_options = $this->options['sync']['options'];
 		$post_types_to_sync = [];
 		if ( ! empty( $sync_options['post_types'] ) ) {
 			foreach ( $sync_options['post_types'] as $pt => $options ) {
@@ -160,34 +158,29 @@ $this->is_license_active = true;
 			return;
 		}
 
-		// --- 2. Check if sync settings have changed ---
+		// Check if sync settings have changed
 		$current_settings_hash = md5( serialize( $sync_options ) );
-		$last_settings_hash    = get_option( 'feas_ai_last_settings_hash' );
+		$last_settings_hash    = $this->options['sync']['settings']['hash'];
 
-		error_log( '--- Smart Sync Hash Comparison ---' );
-		error_log( 'Current Settings Hash: ' . $current_settings_hash );
-		error_log( 'Last Saved Hash:       ' . $last_settings_hash );
-		error_log( 'Data for Current Hash: ' . print_r( $sync_options, true ) );
-
-		if ( get_option( 'feas_ai_last_sync_timestamp' ) && $current_settings_hash !== $last_settings_hash ) {
+		if ( $this->options['sync']['settings']['last_sync_timestamp'] && $current_settings_hash !== $last_settings_hash ) {
 			wp_send_json_error( [ 'message' => __( 'Sync settings have changed. Please use "Rebuild All" to apply the new settings.', 'fe-ai-search' ) ] );
 		}
 
-		// --- 3. Find deleted posts ---
+		// Find deleted posts
 		global $wpdb;
-		$vectors_table         = $wpdb->prefix . 'feas_ai_vectors';
+		$vectors_table         = $wpdb->prefix . 'fe_ai_search_vectors';
 		$indexed_post_ids      = array_map( 'intval', $wpdb->get_col( "SELECT DISTINCT post_id FROM {$vectors_table}" ) );
 		$all_existing_post_ids = array_map( 'intval', get_posts( [ 'post_type' => $post_types_to_sync, 'posts_per_page' => -1, 'fields' => 'ids', 'post_status' => 'publish' ] ) );
 		$deleted_post_ids      = array_diff( $indexed_post_ids, $all_existing_post_ids );
 
 		if ( ! empty( $deleted_post_ids ) ) {
 			foreach ( $deleted_post_ids as $post_id ) {
-				$GLOBALS['feas_ai_sync_hooks']->delete_post_from_index( $post_id );
+				$GLOBALS['fe_ai_search_sync_hooks']->delete_post_from_index( $post_id );
 			}
 		}
 
 		// --- 4. Find new and updated posts ---
-		$last_sync        = get_option( 'feas_ai_last_sync_timestamp', 0 );
+		$last_sync        = $this->options['sync']['options']['last_sync_timestamp'] ?? 0;
 		$updated_post_ids = get_posts( [
 			'post_type'      => $post_types_to_sync,
 			'posts_per_page' => -1,
@@ -203,12 +196,12 @@ $this->is_license_active = true;
 		// --- 5. Return the list of IDs to process to JavaScript ---
 		$post_ids_to_process = array_values( array_unique( $updated_post_ids ) );
 		$total_posts         = count( $post_ids_to_process );
-		$batch_size          = (int) get_option( 'feas_ai_batch_size', 10 );
+		$batch_size          = (int) $this->options['sync']['options']['batch_size'] ?? 10;
 		$total_pages         = ( $total_posts > 0 ) ? ceil( $total_posts / $batch_size ) : 0;
 
 		// After a successful sync, the settings hash should be updated.
 		// We do this here, assuming the JS process will complete.
-		// update_option( 'feas_ai_last_settings_hash', $current_settings_hash );
+		// update_option( 'fe_ai_search_last_settings_hash', $current_settings_hash );
 
 		wp_send_json_success( [
 			'total_pages' => $total_pages,
@@ -223,9 +216,9 @@ $this->is_license_active = true;
 	 * This is called after a successful sync process.
 	 */
 	public function ajax_update_settings_hash() {
-		check_ajax_referer( 'feas_ai_ajax_nonce', 'nonce' );
-		$current_settings_hash = md5( serialize( get_option('feas_ai_sync_options') ) );
-		update_option( 'feas_ai_last_settings_hash', $current_settings_hash );
+		check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
+		$current_settings_hash = md5( serialize( $this->options['sync']['options'] ) );
+		update_option( 'fe_ai_search_last_settings_hash', $current_settings_hash );
 		wp_send_json_success();
 	}
 
@@ -235,13 +228,13 @@ $this->is_license_active = true;
 			ob_start();
 
 			error_log('--- ajax_process_batch: START ---');
-			check_ajax_referer( 'feas_ai_ajax_nonce', 'nonce' );
+			check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
 
 			// Process input data
 			$page          = isset( $_POST['page'] ) ? absint( $_POST['page'] ) : 1;
 			$post_ids_json = isset( $_POST['post_ids'] ) ? stripslashes( $_POST['post_ids'] ) : '[]';
 			$post_ids      = json_decode( $post_ids_json, true );
-			$batch_size    = (int) get_option( 'feas_ai_batch_size', 10 );
+			$batch_size    = (int) $this->options['sync']['options']['batch_size'] ?? 10;
 			$offset        = ( $page - 1 ) * $batch_size;
 			$batch_ids     = array_slice( $post_ids, $offset, $batch_size );
 			error_log("1. Processing Batch {$page}. Batch IDs (" . count($batch_ids) . " items): " . print_r($batch_ids, true));
@@ -281,8 +274,8 @@ $this->is_license_active = true;
 				if ( ! is_wp_error( $embedding_response ) && ! empty( $embedding_response['data'] ) ) {
 					error_log("    - Embedding successful. Starting DB insert...");
 					global $wpdb;
-					$vectors_table = $wpdb->prefix . 'feas_ai_vectors';
-					$index_table   = $wpdb->prefix . 'feas_ai_keyword_index';
+					$vectors_table = $wpdb->prefix . 'fe_ai_search_vectors';
+					$index_table   = $wpdb->prefix . 'fe_ai_search_keyword_index';
 					$vectors_data  = $embedding_response['data'];
 
 					foreach ( $vectors_data as $index => $vector_item ) {
@@ -341,22 +334,22 @@ $this->is_license_active = true;
 	}
 
 	public function ajax_update_sync_timestamp() {
-		check_ajax_referer( 'feas_ai_ajax_nonce', 'nonce' );
-		update_option( 'feas_ai_last_sync_timestamp', current_time( 'timestamp' ) );
+		check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
+		update_option( 'fe_ai_search_last_sync_timestamp', current_time( 'timestamp' ) );
 		wp_send_json_success();
 	}
 
 	public function ajax_delete_vectors() {
-		check_ajax_referer( 'feas_ai_ajax_nonce', 'nonce' );
+		check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
 
 		global $wpdb;
-		$vectors_table = $wpdb->prefix . 'feas_ai_vectors';
-		$index_table   = $wpdb->prefix . 'feas_ai_keyword_index';
+		$vectors_table = $wpdb->prefix . 'fe_ai_search_vectors';
+		$index_table   = $wpdb->prefix . 'fe_ai_search_keyword_index';
 
 		$wpdb->query( "TRUNCATE TABLE `{$vectors_table}`" );
 		$wpdb->query( "TRUNCATE TABLE `{$index_table}`" );
 
-		delete_option( 'feas_ai_last_sync_timestamp' );
+		delete_option( 'fe_ai_search_last_sync_timestamp' );
 
 		wp_send_json_success( __( 'All sync data has been deleted.', 'fe-ai-search' ) );
 	}
@@ -372,8 +365,8 @@ $this->is_license_active = true;
 	 */
 	public function find_similar_chunks( $question ) {
 		global $wpdb;
-		$vectors_table = $wpdb->prefix . 'feas_ai_vectors';
-		$index_table   = $wpdb->prefix . 'feas_ai_keyword_index';
+		$vectors_table = $wpdb->prefix . 'fe_ai_search_vectors';
+		$index_table   = $wpdb->prefix . 'fe_ai_search_keyword_index';
 
 		// Use the finalized tokenize_text method to extract keywords from the question.
 		$keywords = array_unique( $this->tokenize_text( $question ) );
@@ -388,7 +381,7 @@ $this->is_license_active = true;
 		});
 
 		// DEBUG: Log keyword extraction results.
-		\FEAISearch\Core\FEAS_AI_Logger::log(
+		\FEAISearch\Core\fe_ai_search_Logger::log(
 			'DEBUG',
 			'Keyword extraction from user question.',
 			[
@@ -408,7 +401,7 @@ $this->is_license_active = true;
 		$vector_ids   = $wpdb->get_col( $wpdb->prepare( $sql, $valid_keywords ) );
 
 		// DEBUG: Log index search results.
-		\FEAISearch\Core\FEAS_AI_Logger::log(
+		\FEAISearch\Core\fe_ai_search_Logger::log(
 			'DEBUG',
 			'Keyword index search completed.',
 			[
@@ -445,7 +438,7 @@ $this->is_license_active = true;
 	 * @return array An array of text chunks.
 	 */
 	public function create_chunks_from_post( $post ) {
-		$options    = get_option( 'feas_ai_sync_options', [] );
+		$options = $this->options['sync']['options'];
 		$pt_options = $options['post_types'][ $post->post_type ] ?? [];
 
 		$text_parts = [];
@@ -528,25 +521,25 @@ $this->is_license_active = true;
 
 	public function get_embeddings_via_selected_provider( $texts ) {
 
-		\FEAISearch\Core\FEAS_AI_Logger::log(
+		\FEAISearch\Core\fe_ai_search_Logger::log(
 			'INFO',
 			'Embedding process started.',
 			[
-				'provider' => get_option( 'feas_ai_embedding_provider', 'openai' ),
+				'provider' => $this->options['provider']['embedding'] ?? 'openai',
 				'chunks_count' => count( $texts ),
 			]
 		);
 
-		$provider = get_option( 'feas_ai_embedding_provider', 'openai' );
+		$provider = $this->options['provider']['embedding'] ?? 'openai';
 
 		/**
 		 * A filter hook for interposing your own embedding provider processing.
-		 * Hook name: feas_ai_embedding_result_for_{provider slug}
+		 * Hook name: fe_ai_search_embedding_result_for_{provider slug}
 		 *
 		 * @param WP_Error|array|null $result Result. If null, the default processing will be performed.
 		 * @param array               $texts  Array of text to vectorize.
 		 */
-		$result = apply_filters( "feas_ai_embedding_result_for_{$provider}", null, $texts );
+		$result = apply_filters( "fe_ai_search_embedding_result_for_{$provider}", null, $texts );
 
 		if ( null !== $result ) {
 			return $result;
@@ -584,16 +577,16 @@ $this->is_license_active = true;
 		// Start the timer.
 		$start_time = microtime( true );
 
-		$api_key = get_option( 'feas_ai_openai_api_key' );
+		$api_key = $this->options['api']['openai']['key'];
 		if ( empty( $api_key ) ) {
 			// Log the error before returning.
-			\FEAISearch\Core\FEAS_AI_Logger::log( 'ERROR', 'OpenAI Embedding API call skipped: API Key is not set.' );
+			\FEAISearch\Core\fe_ai_search_Logger::log( 'ERROR', 'OpenAI Embedding API call skipped: API Key is not set.' );
 			return new \WP_Error( 'api_key_missing', __( 'The OpenAI API key is not configured.', 'fe-ai-search' ) );
 		}
 
 		$api_url = 'https://api.openai.com/v1/embeddings';
 		if ( $this->is_license_active ) {
-			$custom_endpoint = get_option( 'feas_ai_embedding_compatible_endpoint' );
+			$custom_endpoint = $this->options['provider']['openai_compatible']['embedding']['endpoint'];
 			if ( ! empty( $custom_endpoint ) ) {
 				$api_url = $custom_endpoint;
 			}
@@ -618,7 +611,7 @@ $this->is_license_active = true;
 
 		if ( is_wp_error( $response ) ) {
 			// Log the connection failure.
-			\FEAISearch\Core\FEAS_AI_Logger::log(
+			\FEAISearch\Core\fe_ai_search_Logger::log(
 				'ERROR',
 				'OpenAI Embedding API call failed.',
 				[
@@ -639,7 +632,7 @@ $this->is_license_active = true;
 				: __( 'Unknown API Error', 'fe-ai-search' );
 
 			// Log the API error.
-			\FEAISearch\Core\FEAS_AI_Logger::log(
+			\FEAISearch\Core\fe_ai_search_Logger::log(
 				'ERROR',
 				'OpenAI Embedding API call failed (API Error).',
 				[
@@ -655,7 +648,7 @@ $this->is_license_active = true;
 		$usage = $response_body['usage'] ?? [];
 
 		// Log the successful call.
-		\FEAISearch\Core\FEAS_AI_Logger::log(
+		\FEAISearch\Core\fe_ai_search_Logger::log(
 			'SUCCESS',
 			'OpenAI Embedding API call succeeded.',
 			[
@@ -672,10 +665,10 @@ $this->is_license_active = true;
 		// Start the timer.
 		$start_time = microtime( true );
 
-		$api_key = get_option( 'feas_ai_google_api_key' );
+		$api_key = $this->options['api']['google']['key'];
 		if ( empty( $api_key ) ) {
 			// Log the error before returning.
-			\FEAISearch\Core\FEAS_AI_Logger::log( 'ERROR', 'Gemini Embedding API call skipped: API Key is not set.' );
+			\FEAISearch\Core\fe_ai_search_Logger::log( 'ERROR', 'Gemini Embedding API call skipped: API Key is not set.' );
 			return new \WP_Error( 'api_key_missing', __( 'The Google Cloud API key is not configured.', 'fe-ai-search' ) );
 		}
 
@@ -706,7 +699,7 @@ $this->is_license_active = true;
 
 		if ( is_wp_error( $response ) ) {
 			// Log the connection failure.
-			\FEAISearch\Core\FEAS_AI_Logger::log(
+			\FEAISearch\Core\fe_ai_search_Logger::log(
 				'ERROR',
 				'Gemini Embedding API call failed.',
 				[
@@ -727,7 +720,7 @@ $this->is_license_active = true;
 				: __( 'Unknown API Error', 'fe-ai-search' );
 
 			// Log the API error.
-			\FEAISearch\Core\FEAS_AI_Logger::log(
+			\FEAISearch\Core\fe_ai_search_Logger::log(
 				'ERROR',
 				'Gemini Embedding API call failed (API Error).',
 				[
@@ -757,7 +750,7 @@ $this->is_license_active = true;
 		$usage = $response_body['usage'] ?? [];
 
 		// Log the successful call.
-		\FEAISearch\Core\FEAS_AI_Logger::log(
+		\FEAISearch\Core\fe_ai_search_Logger::log(
 			'SUCCESS',
 			'Gemini Embedding API call succeeded.',
 			[
@@ -797,71 +790,59 @@ $this->is_license_active = true;
 		$stop_words = [];
 
 		// --- Step 2: Load stop words ---
-		$lang_file = FEAS_AI_PLUGIN_DIR . "includes/i18n/{$locale}.php";
+		$lang_file = fe_ai_search_PLUGIN_DIR . "includes/i18n/{$locale}.php";
 		if ( ! file_exists( $lang_file ) ) {
-			$lang_file = FEAS_AI_PLUGIN_DIR . "includes/i18n/{$lang_code}.php";
+			$lang_file = fe_ai_search_PLUGIN_DIR . "includes/i18n/{$lang_code}.php";
 		}
 		if ( file_exists( $lang_file ) ) {
 			$lang_data  = include( $lang_file );
 			$stop_words = $lang_data['stop_words'] ?? [];
 		}
-		$stop_words = apply_filters( 'feas_ai_stop_words', $stop_words, $locale );
-		error_log('3. Stop words type: ' . gettype($stop_words));
-
+		$stop_words = apply_filters( 'fe_ai_search_stop_words', $stop_words, $locale );
 
 		// --- Step 3: Tokenize (Applying MeCab auto-detection fix) ---
-		// ★ BUG FIX 1: Check which tokenizer to use based on the property set in __construct
 		if ( 'ja' === $lang_code ) {
 			if ( 'mecab' === $this->japanese_tokenizer ) {
-				error_log('4. Tokenizing using: MeCab');
 				try {
 					$mecab = new \Natto\MeCab();
 					$mecab_keywords = [];
-					$mecab->parse($text_normalized, function($node) use (&$mecab_keywords) {
-						if ($node->isNor()) {
-							$features = explode(',', $node->getFeature());
+					$mecab->parse( $text_normalized, function( $node ) use ( &$mecab_keywords ) {
+						if ( $node->isNor() ) {
+							$features = explode( ',', $node->getFeature() );
 							$part_of_speech = $features[0];
-							if (in_array($part_of_speech, ['名詞', '動詞', '形容詞', '副詞'])) {
+							if ( in_array( $part_of_speech, ['名詞', '動詞', '形容詞', '副詞'] )) {
 								$base_form = $features[6] !== '*' ? $features[6] : $node->getSurface();
 								$mecab_keywords[] = $base_form; // Already normalized
 							}
 						}
 					});
 					$words = $mecab_keywords;
-				} catch (\Throwable $t) {
-					error_log('MeCab Error: ' . $t->getMessage() . ' - Falling back to TinySegmenter.');
+				} catch ( \Throwable $t ) {
 					$words = $this->segmenter->segment( $text_normalized );
 				}
 			} else {
-				error_log('4. Tokenizing using: TinySegmenter');
 				$words = $this->segmenter->segment( $text_normalized );
 			}
 		} else {
-			error_log('4. Tokenizing using: preg_split');
-			$words = preg_split('/\s+/', $text_normalized, -1, PREG_SPLIT_NO_EMPTY);
+			$words = preg_split( '/\s+/', $text_normalized, -1, PREG_SPLIT_NO_EMPTY );
 		}
-		// error_log('4. Words after tokenization value: ' . print_r($words, true));
-
 
 		// --- Step 4: Remove stop words ---
 		$words_after_diff = array_diff( (array) $words, (array) $stop_words );
-		// error_log('5. Words after array_diff: ' . print_r($words_after_diff, true));
 
 		// --- Step 5: Stemming for non-Japanese languages ---
 		if ( 'ja' !== $lang_code ) {
 			try {
 				$stemmerManager = new \Wamania\Snowball\StemmerManager();
 				if ( in_array($lang_code, $stemmerManager->getAvailableLanguages()) ) {
-					$stemmer = $stemmerManager->create($lang_code);
+					$stemmer = $stemmerManager->create( $lang_code );
 					$stemmed_words = [];
-					foreach ($words_after_diff as $word) {
-						$stemmed_words[] = $stemmer->stem($word);
+					foreach ( $words_after_diff as $word) {
+						$stemmed_words[] = $stemmer->stem( $word );
 					}
 					$words_after_diff = $stemmed_words;
-					// error_log('6. Words after stemming: ' . print_r($words_after_diff, true));
 				}
-			} catch (\Throwable $t) {
-				error_log('Stemmer error: ' . $t->getMessage());
+			} catch ( \Throwable $t ) {
 			}
 		}
 
@@ -877,111 +858,10 @@ $this->is_license_active = true;
 		$final_words = array_values( array_unique( $words_after_diff ) );
 
 		// --- Step 7: Filter ---
-		$final_words = apply_filters( 'feas_ai_tokenize_text', $final_words, $text_normalized, $locale );
+		$final_words = apply_filters( 'fe_ai_search_tokenize_text', $final_words, $text_normalized, $locale );
 
-		error_log('--- tokenize_text: END ---');
 		return $final_words;
 	}
-	// private function tokenize_text( $text ) {
-	// 	error_log('--- tokenize_text: START ---');
-	// 	error_log('1. Input text type: ' . gettype($text));
-	// 	// error_log('1. Input text value: ' . print_r($text, true)); // This can be very long.
-//
-	// 	// Normalization
-	// 	// --- Step 1: Basic Normalization ---
-	// 	// First, convert the entire text to lowercase.
-	// 	$text_normalized = mb_strtolower( (string) $text, 'UTF-8' );
-//
-	// 	// --- Step 3: Normalize Alphanumeric Characters and Spaces ---
-	// 	// 'a': Converts full-width alphanumeric characters to half-width.
-	// 	// 's': Converts full-width spaces to half-width.
-	// 	$text_normalized = mb_convert_kana( $text_normalized, 'Hca', 'UTF-8' );
-//
-	// 	// --- Step 2: Unify Japanese Kana to HIRAGANA ---
-	// 	// This is a two-step process to handle all variations.
-	// 	// 'K': Converts half-width katakana to full-width katakana.
-	// 	// 'V': Combines voiced sound marks (dakuten/handakuten).
-	// 	// $text_normalized = mb_convert_kana( $text_normalized, 'KV', 'UTF-8' );
-	// 	// 'C': Converts the now-unified full-width katakana to full-width hiragana.
-	// 	// $text_normalized = mb_convert_kana( $text_normalized, 'C', 'UTF-8' );
-//
-//
-	// 	$text_normalized = preg_replace('/[^\p{L}\p{N}\s*]/u', ' ', $text_normalized);
-	// 	error_log('2. Normalized text: ' . $text_normalized);
-//
-	// 	$locale     = get_locale();
-	// 	$lang_code  = strstr( $locale, '_', true ) ?: $locale;
-	// 	$stop_words = [];
-//
-	// 	// Load stop words
-	// 	$lang_file = FEAS_AI_PLUGIN_DIR . "includes/i18n/{$locale}.php";
-	// 	if ( ! file_exists( $lang_file ) ) {
-	// 		$lang_file = FEAS_AI_PLUGIN_DIR . "includes/i18n/{$lang_code}.php";
-	// 	}
-	// 	if ( file_exists( $lang_file ) ) {
-	// 		$lang_data  = include( $lang_file );
-	// 		$stop_words = $lang_data['stop_words'] ?? [];
-	// 	}
-	// 	// Add filter for stop words
-	// 	$stop_words = apply_filters( 'feas_ai_stop_words', $stop_words, $locale );
-	// 	error_log('3. Stop words type: ' . gettype($stop_words));
-//
-	// 	// Tokenize
-	// 	if ( 'ja' === $lang_code ) {
-	// 		$words = $this->segmenter->segment( $text_normalized );
-	// 	} else {
-	// 		$words = preg_split('/\s+/', $text_normalized, -1, PREG_SPLIT_NO_EMPTY);
-	// 	}
-	// 	error_log('4. Words after tokenization type: ' . gettype($words));
-	// 	// error_log('4. Words after tokenization value: ' . print_r($words, true));
-//
-	// 	// Remove stop words
-	// 	$words_after_diff = array_diff( (array) $words, (array) $stop_words );
-	// 	// error_log('5. Words after array_diff: ' . print_r($words_after_diff, true));
-//
-	// 	// Stemming
-	// 	if ( 'ja' !== $lang_code ) {
-	// 		try {
-	// 			$stemmerManager = new \Wamania\Snowball\StemmerManager();
-	// 			if ( in_array($lang_code, $stemmerManager->getAvailableLanguages()) ) {
-	// 				$stemmer = $stemmerManager->create($lang_code);
-	// 				$stemmed_words = [];
-	// 				foreach ($words_after_diff as $word) {
-	// 					$stemmed_words[] = $stemmer->stem($word);
-	// 				}
-	// 				$words_after_diff = $stemmed_words;
-	// 				// error_log('6. Words after stemming: ' . print_r($words_after_diff, true));
-	// 			}
-	// 		} catch (\Throwable $t) {
-	// 			error_log('Stemmer error: ' . $t->getMessage());
-	// 		}
-	// 	}
-//
-	// 	if ( ! empty( $words_after_diff ) ) {
-	// 		$words_after_diff = array_filter( $words_after_diff, function( $words_after_diff ) {
-	// 			return ! empty( trim( $words_after_diff ) );
-	// 		} );
-	// 	}
-//
-	// 	$final_words = array_values($words_after_diff);
-//
-	// 	/**
-	// 	 * Filters the array of keywords extracted from a text.
-	// 	 *
-	// 	 * This allows developers to implement their own language support or
-	// 	 * replace the default tokenizer entirely.
-	// 	 *
-	// 	 * @since 1.2.0
-	// 	 *
-	// 	 * @param array  $words  The array of processed keywords.
-	// 	 * @param string $text   The original, unmodified text.
-	// 	 * @param string $locale The current site locale.
-	// 	 */
-	// 	$final_words = apply_filters( 'feas_ai_tokenize_text', $final_words, $text, $locale );
-//
-	// 	error_log('--- tokenize_text: END ---');
-	// 	return $final_words;
-	// }
 
 	/**
 	 * Renders an administrator notification about internationalization
@@ -990,7 +870,7 @@ $this->is_license_active = true;
 		// What happens when a user clicks on a "hidden" link?
 		if ( isset( $_GET['feas-ai-dismiss-i18n-notice'] ) ) {
 			// Flag to hide this notification for one week
-			set_transient( 'feas_ai_i18n_notice_dismissed', true, WEEK_IN_SECONDS );
+			set_transient( 'fe_ai_search_i18n_notice_dismissed', true, WEEK_IN_SECONDS );
 			return;
 		}
 		?>
@@ -1005,12 +885,44 @@ $this->is_license_active = true;
 			jQuery(function($){
 				$('div[data-dismiss-url]').on('click', '.notice-dismiss', function(e){
 					e.preventDefault();
-					$.post(ajaxurl, { action: 'dismiss-wp-pointer', pointer: 'feas_ai_i18n_notice_dismissed' });
+					$.post(ajaxurl, { action: 'dismiss-wp-pointer', pointer: 'fe_ai_search_i18n_notice_dismissed' });
 					$(this).closest('.notice').fadeOut();
 				});
 			});
 		</script>
 		<?php
+	}
+
+	/**
+	 * Adds the Japanese tokenizer status to the sync page UI.
+	 *
+	 * This method hooks into the 'fe_ai_search_tokenizer_status' filter.
+	 *
+	 * @since 1.0.0
+	 * @param array $statuses The existing status messages.
+	 * @return array The modified status messages.
+	 */
+	public function add_japanese_tokenizer_status( $statuses ) {
+		if ( 'ja' !== get_locale() ) {
+			return $statuses;
+		}
+
+		$status_label = '<strong>' . esc_html__( 'Japanese Tokenizer Status', 'fe-ai-search' ) . ':</strong>';
+		$status_text  = '';
+
+		if ( 'mecab' === $this->japanese_tokenizer ) {
+			$status_text = '<span style="color:green; font-weight:bold;">' . esc_html__( 'High-Accuracy (MeCab)', 'fe-ai-search' ) . '</span>';
+		} else {
+			$status_text = '<span style="color:#a0a5aa;">' . esc_html__( 'Built-in (TinySegmenter)', 'fe-ai-search' ) . '</span>';
+			if ( class_exists( '\Natto\MeCab' ) ) {
+				 $status_text .= ' <span style="color:red;">(' . esc_html__( 'MeCab load failed', 'fe-ai-search' ) . ')</span>';
+			} else {
+				$status_text .= '<br><span class="description" style="font-size: 12px;">' . esc_html__( 'For higher search accuracy, install MeCab on your server and the "natto-php" library via Composer.', 'fe-ai-search' ) . '</span>';
+			}
+		}
+
+		$statuses[] = $status_label . ' ' . $status_text;
+		return $statuses;
 	}
 
 }

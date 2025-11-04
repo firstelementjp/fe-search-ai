@@ -26,26 +26,41 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  * @package    fe-ai-search
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
  */
-class FEAS_AI_Chat_Handler {
+class FE_AI_Search_Chat_Handler {
+
+	private $options = [];
+	private $is_license_active = '';
 	private $sync_handler;
 
 	public function __construct( $sync_handler ) {
+
+		// Retrieve all configuration data
+		$this->options = get_option( 'fe_ai_search_settings', [] );
+
+		/**
+		 * Check the status of the license
+		 */
+		$license_data = $this->options['license'] ?? [];
+		$status       = $license_data['status'] ?? 'inactive';
+		$products     = $license_data['data']['products'] ?? [];
+
+		$this->is_license_active = ( 'active' === $status && in_array( 'pro', $products, true ) );
 		$this->sync_handler = $sync_handler;
 
 		add_action( 'rest_api_init', array( $this, 'register_endpoints' ) );
 		add_action( 'wp_ajax_nopriv_feas_ai_log_query', array( $this, 'ajax_log_query' ) );
-		add_action( 'wp_ajax_feas_ai_log_query', array( $this, 'ajax_log_query' ) );
-		add_action( 'wp_ajax_feas_ai_test_api_key', array( $this, 'ajax_test_api_key' ) );
-		add_action( 'wp_ajax_feas_ai_manage_license', [ $this, 'ajax_manage_license' ] );
-		add_filter( 'feas_ai_filter_user_question', [ $this, 'filter_basic_injection_phrases' ], 20 );
-		add_filter( 'feas_ai_filter_model_response', [ $this, 'filter_basic_injection_phrases' ], 20 );
+		add_action( 'wp_ajax_fe_ai_search_log_query', array( $this, 'ajax_log_query' ) );
+		add_action( 'wp_ajax_fe_ai_search_test_api_key', array( $this, 'ajax_test_api_key' ) );
+		add_action( 'wp_ajax_fe_ai_search_manage_license', [ $this, 'ajax_manage_license' ] );
+		add_filter( 'fe_ai_search_filter_user_question', [ $this, 'filter_basic_injection_phrases' ], 20 );
+		add_filter( 'fe_ai_search_filter_model_response', [ $this, 'filter_basic_injection_phrases' ], 20 );
 	}
 
 	/**
 	 * Register REST API endpoints for streaming and non-streaming
 	 */
 	public function register_endpoints() {
-		register_rest_route( 'feas-ai/v1', '/stream', [
+		register_rest_route( 'fe-ai-search/v1', '/stream', [
 			'methods'             => 'POST',
 			'callback'            => [ $this, 'stream_handler' ],
 			'permission_callback' => '__return_true',
@@ -55,26 +70,32 @@ class FEAS_AI_Chat_Handler {
 	/**
 	 * Stream handler for processing REST API requests
 	 */
-	public function stream_handler( $request ) {
+	public function stream_handler( \WP_REST_Request $request ) {
 
-		// Load Pro version license and settings
-		$is_pro_active = class_exists( 'FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings' );
-		$rate_limit_options = [];
-		if ( $is_pro_active ) {
-			$license_data = get_option( 'feas_ai_license_data', [] );
-			if ( 'active' === ( $license_data['status'] ?? 'inactive' ) ) {
-				$rate_limit_options = get_option( 'feas_ai_rate_limit_options', [
-					'ip_limit_count'     => 100,
-					'global_limit_count' => 1000,
-					'notify_threshold'   => 80,
-				] );
-			}
-		}
+		$default_limits = [
+			'ip_limit_count'     => 100,  // 100 requests per hour per IP
+			'global_limit_count' => 1000, // 1000 requests per day for the whole site
+			'notify_threshold'   => 80,   // Notify at 80%
+			'notify_email'       => get_option( 'admin_email' ), // Default email
+		];
 
-		// Defense Line 1: IP-based Rate Limiting
-		if ( ! empty( $rate_limit_options['ip_limit_count'] ) ) {
-			$ip_limit_count = (int) $rate_limit_options['ip_limit_count'];
-			$ip_transient_key = 'feas_ai_rl_ip_' . md5( $_SERVER['REMOTE_ADDR'] );
+		/**
+		* Filters the rate-limiting settings.
+		*
+		* This allows the Pro version or other plugins to override the default rate limits
+		* with values from the settings page.
+		*
+		* @param array $default_limits The default hardcoded limits.
+		*/
+		$rate_limit_options = apply_filters( 'fe_ai_search_rate_limit_settings', $default_limits );
+
+		$ip_limit_count     = (int) ( $rate_limit_options['ip_limit_count'] ?? 100 );
+		$global_limit_count = (int) ( $rate_limit_options['global_limit_count'] ?? 1000 );
+		$threshold_percent  = (int) ( $rate_limit_options['notify_threshold'] ?? 80 );
+		$notify_email       = $rate_limit_options['notify_email'] ?? get_option( 'admin_email' );
+
+		if ( $ip_limit_count > 0 ) {
+			$ip_transient_key = 'fe_ai_search_rl_ip_' . md5( $_SERVER['REMOTE_ADDR'] );
 			$ip_request_count = get_transient( $ip_transient_key );
 
 			if ( $ip_request_count > $ip_limit_count ) {
@@ -85,10 +106,8 @@ class FEAS_AI_Chat_Handler {
 			set_transient( $ip_transient_key, ( (int) $ip_request_count + 1 ), HOUR_IN_SECONDS );
 		}
 
-		// Defense Line 2: Global (Site-wide) Rate Limit
-		if ( ! empty( $rate_limit_options['global_limit_count'] ) ) {
-			$global_limit_count = (int) $rate_limit_options['global_limit_count'];
-			$global_transient_key = 'feas_ai_rl_global_day';
+		if ( $global_limit_count > 0 ) {
+			$global_transient_key = 'fe_ai_search_rl_global_day';
 			$global_request_count = get_transient( $global_transient_key );
 
 			if ( $global_request_count > $global_limit_count ) {
@@ -100,69 +119,90 @@ class FEAS_AI_Chat_Handler {
 			$new_global_count = (int) $global_request_count + 1;
 			set_transient( $global_transient_key, $new_global_count, DAY_IN_SECONDS );
 
-			// Notify when the threshold (shikii T) is reached
-			$threshold_percent = (int) $rate_limit_options['notify_threshold'];
 			$threshold_count = ( $global_limit_count * $threshold_percent ) / 100;
 
 			if ( $new_global_count > $threshold_count ) {
-				// Check if the notification has not been sent yet.
-				if ( ! get_transient( 'feas_ai_rl_notify_sent' ) ) {
-					$admin_email = get_option( 'admin_email' );
+				if ( ! get_transient( 'fe_ai_search_rl_notify_sent' ) ) {
 					$subject = get_bloginfo( 'name' ) . ' - AI Search Limit Warning';
-					$message = "Your site's daily AI request limit is about to be reached. " . $new_global_count . " / " . $global_limit_count . " requests have been used.";
-					wp_mail( $admin_email, $subject, $message );
-
-					// Recorded the sending of the notification (1 day)
-					set_transient( 'feas_ai_rl_notify_sent', true, DAY_IN_SECONDS );
+					$message = "Your site's daily AI request limit is about to be reached. "
+					. $new_global_count . " / " . $global_limit_count . " requests have been used.";
+					wp_mail( $notify_email, $subject, $message ); // Use the final email address
+					set_transient( 'fe_ai_search_rl_notify_sent', true, DAY_IN_SECONDS );
 				}
 			}
 		}
 
 		// Disable server buffering
-		@ini_set('output_buffering', 'off');
-		@ini_set('zlib.output_compression', 0);
-		@ini_set('implicit_flush', 1);
-		ob_implicit_flush(1);
+		@ini_set( 'output_buffering', 'off' );
+		@ini_set( 'zlib.output_compression', 0 );
+		@ini_set( 'implicit_flush', 1 );
+		ob_implicit_flush( 1 );
 
 		// Clear all existing output buffers.
-		while (ob_get_level() > 0) {
+		while ( ob_get_level() > 0 ) {
 			ob_end_flush();
 		}
 
-		header('Content-Type: text/event-stream');
-		header('Cache-Control: no-cache');
-		header('Connection: keep-alive');
-		header('X-Accel-Buffering: no'); // Nginx
+		header( 'Content-Type: text/event-stream' );
+		header( 'Cache-Control: no-cache' );
+		header( 'Connection: keep-alive' );
+		header( 'X-Accel-Buffering: no' ); // Nginx
 
 		try {
 			$nonce = $request->get_header( 'X-WP-Nonce' );
 			if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
-				throw new \Exception('Nonce verification failed.');
+				throw new \Exception( 'Nonce verification failed.' );
 			}
 
-			$provider = get_option( 'feas_ai_chat_provider', 'openai' );
+			$provider = $this->options['provider']['chat'];
 
 			$question = sanitize_text_field( $request->get_param( 'question' ) );
 			$history = json_decode( stripslashes( $request->get_param( 'history' ) ?? '[]' ), true );
 
-			$question = apply_filters( 'feas_ai_filter_user_question', $question );
-			if ( empty( $question ) ) { return; }
+			/**
+			 * Filters the user's question right before it is processed.
+			 *
+			 * This hook is applied after basic sanitization and allows for custom modifications
+			 * to the user's input before it is used for context retrieval or sent to the AI.
+			 * This is the final opportunity to filter or modify the question.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param string $question The sanitized user's question.
+			 */
+			$question = apply_filters( 'fe_ai_search_filter_user_question', $question );
+			if ( empty( $question ) ) {
+				return;
+			}
 
 			$similar_chunks = $this->sync_handler->find_similar_chunks( $question );
-			$similar_chunks = apply_filters( 'feas_ai_retrieved_chunks', $similar_chunks, $question );
+
+			/**
+			 * Filters the array of retrieved context chunks.
+			 *
+			 * This hook is applied after the database search (both keyword and vector)
+			 * is complete, but before the chunks are passed to the AI. It allows for
+			 * advanced manipulation of the context, such as re-ranking, filtering,
+			 * or adding external data.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param array  $similar_chunks An array of the retrieved chunk items.
+			 * @param string $question       The original user's question.
+			 */
+			$similar_chunks = apply_filters( 'fe_ai_search_retrieved_chunks', $similar_chunks, $question );
 
 			$context_found = ! empty( $similar_chunks );
-			echo "data: " . json_encode(['meta' => [
+			echo "data: " . json_encode( ['meta' => [
 				'context_found' => $context_found,
 				'provider'      => $provider,
-			]]) . "\n\n";
+			]] ) . "\n\n";
 			flush();
 
 			$this->stream_chat_completion( $question, $similar_chunks, $history, $provider );
 
-		} catch (\Exception $e) {
-			error_log('FE AI Search Stream Error: ' . $e->getMessage());
-			echo "data: " . json_encode(['error' => 'An error occurred during processing.']) . "\n\n";
+		} catch ( \Exception $e ) {
+			echo "data: " . json_encode( ['error' => 'An error occurred during processing.'] ) . "\n\n";
 			flush();
 		} finally {
 			exit;
@@ -174,9 +214,6 @@ class FEAS_AI_Chat_Handler {
 	 */
 	public function stream_chat_completion( $question, $context_chunks, $history = array(), $provider ) {
 
-		error_log('--- stream_chat_completion: START ---');
-		error_log("Provider received: {$provider}");
-
 		/**
 		 * Fires before the default stream completion handlers.
 		 * Allows Pro add-on or other plugins to implement their own handlers.
@@ -186,46 +223,43 @@ class FEAS_AI_Chat_Handler {
 		 * @param array  $context_chunks Relevant context chunks.
 		 * @param array  $history        Conversation history.
 		 */
-		error_log('About to fire the stream action hook...');
-		do_action( "feas_ai_stream_for_{$provider}", $question, $context_chunks, $history, $provider );
-		error_log('Stream action hook has fired. Proceeding to switch statement...');
+		do_action( "fe_ai_search_stream_for_{$provider}", $question, $context_chunks, $history, $provider );
 
 		switch ($provider) {
 			case 'google':
-				error_log('Entering Gemini handler...');
 				$this->stream_completion_for_gemini( $question, $context_chunks, $history, $provider );
 				break;
 			case 'anthropic':
-				error_log('Entering Claude handler...');
 				$this->stream_completion_for_claude( $question, $context_chunks, $history, $provider );
 				break;
 			case 'openai':
 			default:
-				error_log('Entering OpenAI / Compatible handler...');
 				$this->stream_completion_for_openai( $question, $context_chunks, $history, $provider );
 				break;
 		}
-		error_log('--- stream_chat_completion: END ---');
 	}
 
 	/**
 	 * Streaming processing dedicated to OpenAI
 	 */
 	private function stream_completion_for_openai( $question, $context_chunks, $history, $provider ) {
-		// Start the timer.
+		// Start the timer for System Log.
 		$start_time = microtime( true );
 
 		if ( 'openai_compatible' === $provider ) {
-			$api_url = get_option( 'feas_ai_openai_compatible_endpoint' );
-			$api_key = get_option( 'feas_ai_openai_api_key' );
+			$api_url = $this->options['api']['openai_compatible']['endpoint'];
+			$api_key = $this->options['api']['openai_compatible']['key'];
 		} else {
 			$api_url = 'https://api.openai.com/v1/chat/completions';
-			$api_key = get_option( 'feas_ai_openai_api_key' );
+			$api_key = $this->options['api']['openai']['key'];
 		}
 
 		if ( empty( $api_key ) || empty($api_url) ) {
-			// Log the error.
-			\FEAISearch\Core\FEAS_AI_Logger::log( 'ERROR', 'Chat completion failed: API Key or Endpoint URL is not set.', [ 'provider' => $provider ] );
+			\FEAISearch\Core\FE_AI_Search_Logger::log(
+				'ERROR',
+				'Chat completion failed: API Key or Endpoint URL is not set.',
+				[ 'provider' => $provider ]
+			);
 
 			echo "data: " . json_encode(['text' => __( 'Error: OpenAI API key not set.', 'fe-ai-search' )]) . "\n\n";
 			echo "data: [DONE]\n\n";
@@ -234,17 +268,17 @@ class FEAS_AI_Chat_Handler {
 		}
 
 		$model = 'gpt-4o-mini'; // Default
-		if ( class_exists('FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings') ) {
+		if ( $this->is_license_active ) {
 			if ( 'openai_compatible' === $provider ) {
-				$model = get_option( 'feas_ai_openai_compatible_model', 'local-model' );
+				$model = $this->options['model']['openai_compatible'];
 			} else {
-				$options = get_option( 'feas_ai_openai_model_options', ['type' => 'gpt-4o-mini'] );
-				$model = ( 'custom' === $options['type'] ) ? $options['custom'] : $options['type'];
+				$model = $this->options['model']['openai'];
+				$model = ( 'custom' === $model['type'] ) ? $model['custom'] : $model['type'];
 			}
 		}
 
 		// Log the start of the API call.
-		\FEAISearch\Core\FEAS_AI_Logger::log(
+		\FEAISearch\Core\FE_AI_Search_Logger::log(
 			'INFO',
 			'Chat completion stream started.',
 			[
@@ -253,7 +287,7 @@ class FEAS_AI_Chat_Handler {
 			]
 		);
 
-		$messages = \FEAISearch\Ajax\FEAS_AI_Chat_Handler::build_prompt_messages(
+		$messages = \FEAISearch\Ajax\FE_AI_Search_Chat_Handler::build_prompt_messages(
 			$question,
 			$context_chunks,
 			$history,
@@ -276,18 +310,18 @@ class FEAS_AI_Chat_Handler {
 		// The WRITEFUNCTION callback processes the stream chunks as they arrive.
 		curl_setopt( $ch, CURLOPT_WRITEFUNCTION, function( $curl, $data ) {
 
-			$lines = explode("\n", $data);
+			$lines = explode( "\n", $data );
 
-			foreach ($lines as $line) {
-				if (strpos($line, 'data: ') === 0) {
+			foreach ( $lines as $line ) {
+				if ( strpos( $line, 'data: ' ) === 0) {
 
-					$json_data = substr($line, 6);
-					if (trim($json_data) === '[DONE]') {
+					$json_data = substr( $line, 6 );
+					if ( trim( $json_data ) === '[DONE]' ) {
 						continue;
 					}
 					$chunk = json_decode($json_data, true);
 
-					if (isset($chunk['choices'][0]['delta']['content'])) {
+					if ( isset( $chunk['choices'][0]['delta']['content'] ) ) {
 
 						/**
 						 * Filters a chunk of the AI's response text right before it is sent to the user.
@@ -299,15 +333,17 @@ class FEAS_AI_Chat_Handler {
 						 *
 						 * @param string $content The text chunk generated by the AI model.
 						 */
-						$content = apply_filters( 'feas_ai_filter_model_response', $chunk['choices'][0]['delta']['content'] );
+						$content = apply_filters( 'fe_ai_search_filter_model_response', $chunk['choices'][0]['delta']['content'] );
 
-						echo "data: " . json_encode(['text' => $content]) . "\n\n";
-						if (ob_get_level() > 0) { ob_flush(); }
+						echo "data: " . json_encode( ['text' => $content] ) . "\n\n";
+						if ( ob_get_level() > 0 ) {
+							ob_flush();
+						}
 						flush();
 					}
 				}
 			}
-			return strlen($data);
+			return strlen( $data );
 		});
 
 		// Execute the request.
@@ -319,7 +355,7 @@ class FEAS_AI_Chat_Handler {
 		// Check for cURL errors after execution.
 		if ( curl_errno( $ch ) ) {
 			// ERROR: Log the cURL (connection) failure.
-			\FEAISearch\Core\FEAS_AI_Logger::log(
+			\FEAISearch\Core\FE_AI_Search_Logger::log(
 				'ERROR',
 				'Chat completion stream failed (cURL Error).',
 				[
@@ -331,7 +367,7 @@ class FEAS_AI_Chat_Handler {
 			);
 		} else {
 			// SUCCESS: Log the successful completion of the stream.
-			\FEAISearch\Core\FEAS_AI_Logger::log(
+			\FEAISearch\Core\FE_AI_Search_Logger::log(
 				'SUCCESS',
 				'Chat completion stream finished successfully.',
 				[
@@ -349,29 +385,30 @@ class FEAS_AI_Chat_Handler {
 	 * Streaming processing dedicated to Gemini
 	 */
 	private function stream_completion_for_gemini( $question, $context_chunks, $history, $provider ) {
-		// Start the timer.
 		$start_time = microtime( true );
 
-		$api_key = get_option( 'feas_ai_google_api_key' );
+		$api_key = $this->options['api']['google']['key'];
 		if ( empty( $api_key ) ) {
-			// Log the error.
-			\FEAISearch\Core\FEAS_AI_Logger::log( 'ERROR', 'Chat completion failed: API Key or Endpoint URL is not set.', [ 'provider' => $provider ] );
+			\FEAISearch\Core\FE_AI_Search_Logger::log(
+				'ERROR',
+				'Chat completion failed: API Key or Endpoint URL is not set.',
+				[ 'provider' => $provider ]
+			);
 
-			echo "data: " . json_encode(['text' => __( 'Error: Google API key is not set.', 'fe-ai-search' )]) . "\n\n";
+			echo "data: " . json_encode( ['text' => __( 'Error: Google API key is not set.', 'fe-ai-search' )] ) . "\n\n";
 			echo "data: [DONE]\n\n";
 			flush();
 			return;
 		}
 
 		$model = 'gemini-2.5-flash-lite'; // Default
-		if ( class_exists('FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings') ) {
-			$options = get_option( 'feas_ai_google_model_options', ['type' => $model] );
-			$model = ( 'custom' === ( $options['type'] ?? '' )
-				&& ! empty( $options['custom'] ) ) ? $options['custom'] : ( $options['type'] ?? $model );
+		if ( $this->is_license_active ) {
+			$model = $this->options['model']['google'] ?? ['type' => $model];
+			$model = ( 'custom' === $model['type'] ) ? $model['custom'] : $model['type'];
 		}
 
 		// INFO: Log the start of the API call.
-		\FEAISearch\Core\FEAS_AI_Logger::log(
+		\FEAISearch\Core\FE_AI_Search_Logger::log(
 			'INFO',
 			'Chat completion stream started.',
 			[
@@ -380,7 +417,7 @@ class FEAS_AI_Chat_Handler {
 			]
 		);
 
-		$messages = \FEAISearch\Ajax\FEAS_AI_Chat_Handler::build_prompt_messages(
+		$messages = \FEAISearch\Ajax\FE_AI_Search_Chat_Handler::build_prompt_messages(
 			$question,
 			$context_chunks,
 			$history,
@@ -391,9 +428,9 @@ class FEAS_AI_Chat_Handler {
 		$system_prompt_text = $system_prompt_data['content'];
 
 		$gemini_contents = [];
-		foreach ($messages as $message) {
-			$role = ($message['role'] === 'assistant') ? 'model' : 'user';
-			if (!empty($gemini_contents) && end($gemini_contents)['role'] === $role) continue;
+		foreach ( $messages as $message ) {
+			$role = ( $message['role'] === 'assistant' ) ? 'model' : 'user';
+			if ( ! empty( $gemini_contents ) && end( $gemini_contents )['role'] === $role ) continue;
 			$gemini_contents[] = [
 				'role' => $role,
 				'parts' => [
@@ -422,18 +459,18 @@ class FEAS_AI_Chat_Handler {
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
 		curl_setopt( $ch, CURLOPT_POST, true );
 		curl_setopt( $ch, CURLOPT_POSTFIELDS, json_encode( $body ) );
-		curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json') );
+		curl_setopt( $ch, CURLOPT_HTTPHEADER, array( 'Content-Type: application/json' ) );
 		curl_setopt( $ch, CURLOPT_WRITEFUNCTION, function( $curl, $data ) {
 
-			$lines = explode("\n", $data);
+			$lines = explode( "\n", $data );
 
-			foreach ($lines as $line_index => $line) {
-				if (strpos($line, 'data: ') === 0) {
+			foreach ( $lines as $line_index => $line ) {
+				if ( strpos( $line, 'data: ' ) === 0 ) {
 
-					$json_data = substr($line, 6);
-					$chunk = json_decode($json_data, true);
+					$json_data = substr( $line, 6 );
+					$chunk = json_decode( $json_data, true );
 
-					if (is_array($chunk) && isset($chunk['candidates'][0]['content']['parts'][0]['text'])) {
+					if ( is_array( $chunk ) && isset( $chunk['candidates'][0]['content']['parts'][0]['text'] ) ) {
 
 						$content = $chunk['candidates'][0]['content']['parts'][0]['text'];
 
@@ -447,15 +484,17 @@ class FEAS_AI_Chat_Handler {
 						 *
 						 * @param string $content The text chunk generated by the AI model.
 						 */
-						$content = apply_filters( 'feas_ai_filter_model_response', $content );
+						$content = apply_filters( 'fe_ai_search_filter_model_response', $content );
 
-						echo "data: " . json_encode(['text' => $content]) . "\n\n";
-						if (ob_get_level() > 0) ob_flush();
+						echo "data: " . json_encode( ['text' => $content] ) . "\n\n";
+						if ( ob_get_level() > 0 ) {
+							ob_flush();
+						}
 						flush();
 					}
 				}
 			}
-			return strlen($data);
+			return strlen( $data );
 		});
 
 		// Execute the request.
@@ -468,8 +507,7 @@ class FEAS_AI_Chat_Handler {
 
 		// Check for cURL errors after execution.
 		if ( curl_errno( $ch ) ) {
-			// ERROR: Log the cURL (connection) failure.
-			\FEAISearch\Core\FEAS_AI_Logger::log(
+			\FEAISearch\Core\FE_AI_Search_Logger::log(
 				'ERROR',
 				'Chat completion stream failed (cURL Error).',
 				[
@@ -480,8 +518,7 @@ class FEAS_AI_Chat_Handler {
 				]
 			);
 		} else {
-			// SUCCESS: Log the successful completion of the stream.
-			\FEAISearch\Core\FEAS_AI_Logger::log(
+			\FEAISearch\Core\FE_AI_Search_Logger::log(
 				'SUCCESS',
 				'Chat completion stream finished successfully.',
 				[
@@ -502,10 +539,9 @@ class FEAS_AI_Chat_Handler {
 		// Start the timer.
 		$start_time = microtime( true );
 
-		$api_key = get_option( 'feas_ai_anthropic_api_key' );
+		$api_key = $this->options['api']['anthropic']['key'];
 		if ( empty( $api_key ) ) {
-			// Log the error.
-			\FEAISearch\Core\FEAS_AI_Logger::log(
+			\FEAISearch\Core\FE_AI_Search_Logger::log(
 				'ERROR',
 				'Chat completion failed: API Key or Endpoint URL is not set.',
 				[ 'provider' => $provider ]
@@ -520,13 +556,13 @@ class FEAS_AI_Chat_Handler {
 		}
 
 		$model = 'claude-3-5-haiku-20241022'; // Default
-		if ( class_exists('FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings') ) {
-			$options = get_option( 'feas_ai_anthropic_model_options', ['type' => $model] );
-			$model = ( 'custom' === ( $options['type'] ?? '' ) && ! empty( $options['custom'] ) ) ? $options['custom'] : ( $options['type'] ?? $model );
+		if ( $this->is_license_active ) {
+			$model = $this->options['model']['anthropic'] ?? ['type' => $model];
+			$model = ( 'custom' === $model['type'] ) ? $model['custom'] : $model['type'];
 		}
 
 		// INFO: Log the start of the API call.
-		\FEAISearch\Core\FEAS_AI_Logger::log(
+		\FEAISearch\Core\FE_AI_Search_Logger::log(
 			'INFO',
 			'Chat completion stream started.',
 			[
@@ -535,7 +571,7 @@ class FEAS_AI_Chat_Handler {
 			]
 		);
 
-		$messages = \FEAISearch\Ajax\FEAS_AI_Chat_Handler::build_prompt_messages(
+		$messages = \FEAISearch\Ajax\FE_AI_Search_Chat_Handler::build_prompt_messages(
 			$question,
 			$context_chunks,
 			$history,
@@ -562,17 +598,17 @@ class FEAS_AI_Chat_Handler {
 		] );
 		curl_setopt( $ch, CURLOPT_WRITEFUNCTION, function( $curl, $data ) {
 
-			$lines = explode("\n", $data);
+			$lines = explode( "\n", $data );
 
-			foreach ($lines as $line) {
-				if (strpos($line, 'data: ') === 0) {
+			foreach ( $lines as $line ) {
+				if ( strpos( $line, 'data: ' ) === 0 ) {
 
-					$json_data = substr($line, 6);
-					$chunk = json_decode($json_data, true);
+					$json_data = substr( $line, 6 );
+					$chunk = json_decode( $json_data, true );
 
-					if (isset($chunk['type'])
+					if ( isset( $chunk['type'] )
 						&& $chunk['type'] === 'content_block_delta'
-						&& isset($chunk['delta']['type']) && $chunk['delta']['type'] === 'text_delta') {
+						&& isset( $chunk['delta']['type'] ) && $chunk['delta']['type'] === 'text_delta' ) {
 
 						$content = $chunk['delta']['text'];
 
@@ -586,11 +622,11 @@ class FEAS_AI_Chat_Handler {
 						 *
 						 * @param string $content The text chunk generated by the AI model.
 						 */
-						$content = apply_filters( 'feas_ai_filter_model_response', $content );
+						$content = apply_filters( 'fe_ai_search_filter_model_response', $content );
 
-						echo "data: " . json_encode(['text' => $content]) . "\n\n";
+						echo "data: " . json_encode( ['text' => $content] ) . "\n\n";
 
-						if (ob_get_level() > 0) {
+						if ( ob_get_level() > 0 ) {
 							ob_flush();
 						}
 						flush();
@@ -607,10 +643,8 @@ class FEAS_AI_Chat_Handler {
 		// Calculate the total duration.
 		$duration = round( ( microtime( true ) - $start_time ) * 1000 );
 
-		// Check for cURL errors after execution.
 		if ( curl_errno( $ch ) ) {
-			// ERROR: Log the cURL (connection) failure.
-			\FEAISearch\Core\FEAS_AI_Logger::log(
+			\FEAISearch\Core\FE_AI_Search_Logger::log(
 				'ERROR',
 				'Chat completion stream failed (cURL Error).',
 				[
@@ -621,8 +655,7 @@ class FEAS_AI_Chat_Handler {
 				]
 			);
 		} else {
-			// SUCCESS: Log the successful completion of the stream.
-			\FEAISearch\Core\FEAS_AI_Logger::log(
+			\FEAISearch\Core\FE_AI_Search_Logger::log(
 				'SUCCESS',
 				'Chat completion stream finished successfully.',
 				[
@@ -641,28 +674,30 @@ class FEAS_AI_Chat_Handler {
 	 */
 	public static function build_prompt_messages( $question, $context_chunks, $history, $for_claude = false ) {
 		$context_str = '';
-		$provider = get_option( 'feas_ai_chat_provider', 'openai' );
+
+		$provider = $this->options['provider']['chat'] ?? 'openai';
 
 		// Get the default prompt
 		$system_prompt = self::get_default_system_prompt();
 
 		// If there is a basic prompt, overwrite with it.
-		$free_prompt = get_option( 'feas_ai_system_prompt' );
+		$free_prompt = $this->options['prompt']['system'];
 		if ( ! empty( $free_prompt ) ) {
 			$system_prompt = $free_prompt;
 		}
 
 		// If the Pro version is enabled and there are model-specific settings, they will overwrite accordingly.
-		if ( class_exists('FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings') ) {
-			$custom_prompts = get_option( 'feas_ai_custom_prompts', [] );
+		if ( $this->is_license_active ) {
+			$custom_prompts = $this->options['prompt'];
+
 			if ( ! empty( $custom_prompts[$provider] ) ) {
 				$system_prompt = $custom_prompts[$provider];
 			}
 		}
 
 		// Get site info and replace placeholders in the prompt.
-		$site_name    = get_option( 'feas_ai_site_name', get_bloginfo( 'name' ) );
-		$site_purpose = get_option( 'feas_ai_site_purpose', get_bloginfo( 'description' ) );
+		$site_name = $this->options['site_info']['site_name'] ?? get_bloginfo( 'name' );
+		$site_purpose = $this->options['site_info']['site_purpose'] ?? get_bloginfo( 'description' );
 
 		$system_prompt = str_replace( '{site_name}', $site_name, $system_prompt );
 		$system_prompt = str_replace( '{site_purpose}', $site_purpose, $system_prompt );
@@ -678,9 +713,9 @@ class FEAS_AI_Chat_Handler {
 		 * @param string $system_prompt The system prompt string to be sent to the AI model.
 		 * @param string $provider      The slug of the current AI provider (e.g., 'openai', 'google').
 		 */
-		$system_prompt = apply_filters( 'feas_ai_system_prompt', $system_prompt, $provider );
+		$system_prompt = apply_filters( 'fe_ai_search_system_prompt', $system_prompt, $provider );
 
-		$options = get_option( 'feas_ai_display_options', [] );
+		$options = $this->options['display']['options'];
 		$terms_page_id = $options['terms_page_id'] ?? 0;
 		$privacy_page_id = $options['privacy_page_id'] ?? 0;
 
@@ -722,8 +757,8 @@ class FEAS_AI_Chat_Handler {
 		 *
 		 * @var array $messages The cleaned conversation history.
 		 */
-		$messages = array_filter($history, function($msg){
-			return !(isset($msg['role']) && $msg['role'] === 'assistant' && empty(trim($msg['content'])));
+		$messages = array_filter( $history, function( $msg ) {
+			return ! ( isset( $msg['role'] ) && $msg['role'] === 'assistant' && empty( trim( $msg['content'] ) ) );
 		});
 
 		$user_question_with_context = $context_str . "\n\nBased on the Site Information provided above, answer the following question:\n" . $question;
@@ -735,7 +770,7 @@ class FEAS_AI_Chat_Handler {
 
 		// Return the final data in the format specified by the provider.
 		if ( $for_claude ) {
-			return ['messages' => array_values($messages), 'system' => $system_prompt];
+			return ['messages' => array_values( $messages ), 'system' => $system_prompt];
 		} else { // for OpenAI & Gemini
 			array_unshift( $messages, ['role' => 'system', 'content' => $system_prompt] );
 			return $messages;
@@ -765,15 +800,15 @@ class FEAS_AI_Chat_Handler {
 	}
 
 	public function ajax_log_query() {
-		if ( ! class_exists( 'FEAISearch\Pro\Admin\FEAS_AI_Pro_Settings' ) || ! get_option( 'feas_ai_enable_logging' ) ) {
+		if ( ! class_exists( 'FEAISearch\Pro\Admin\FE_AI_Search_Pro_Settings' ) || ! get_option( 'fe_ai_search_enable_logging' ) ) {
 			wp_send_json_success( [ 'log_id' => 0 ] );
 			return;
 		}
 
-		check_ajax_referer( 'feas_ai_ajax_nonce', 'nonce' );
+		check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
 
 		global $wpdb;
-		$logs_table = $wpdb->prefix . 'feas_ai_logs';
+		$logs_table = $wpdb->prefix . 'fe_ai_search_logs';
 
 		$question = isset( $_POST['question'] ) ? sanitize_text_field( $_POST['question'] ) : '';
 		$answer = isset( $_POST['answer'] ) ? wp_kses_post( $_POST['answer'] ) : '';
@@ -798,13 +833,29 @@ class FEAS_AI_Chat_Handler {
 		wp_send_json_success( [ 'log_id' => $log_id ] );
 	}
 
+	/**
+	 * Handles the AJAX request to test an AI provider's API key.
+	 *
+	 * This method receives a provider slug and an API key. It attempts to
+	 * authenticate against the provider's endpoint.
+	 *
+	 * It first checks a filter ('fe_ai_search_handle_custom_api_test') to allow
+	 * add-ons (like the Pro version) to handle their own provider tests.
+	 * If not handled by an add-on, it proceeds to test the built-in
+	 * providers (OpenAI, Google, Anthropic).
+	 *
+	 * It sends a JSON response indicating success or failure.
+	 *
+	 * @since 1.0.0
+	 * @hook wp_ajax_fe_ai_search_test_api_key
+	 */
 	public function ajax_test_api_key() {
-		check_ajax_referer( 'feas_ai_ajax_nonce', 'nonce' );
-		$provider = isset($_POST['provider']) ? sanitize_key($_POST['provider']) : '';
-		$api_key = isset($_POST['api_key']) ? sanitize_text_field($_POST['api_key']) : '';
+		check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
+		$provider = isset( $_POST['provider'] ) ? sanitize_key( $_POST['provider'] ) : '';
+		$api_key  = isset( $_POST['api_key'] ) ? sanitize_text_field( $_POST['api_key'] ) : '';
 
-		if ( empty($provider) || empty($api_key) ) {
-			wp_send_json_error( __( 'Provider or API key missing.', 'fe-ai-search' ) );
+		if ( empty( $provider ) ) {
+			wp_send_json_error( __( 'Provider missing.', 'fe-ai-search' ) );
 		}
 
 		$result = null;
@@ -818,79 +869,92 @@ class FEAS_AI_Chat_Handler {
 		 * @param string     $provider The provider slug being tested.
 		 * @param string     $api_key  The API key being tested.
 		 */
-		$result = apply_filters( 'feas_ai_handle_custom_api_test', $result, $provider, $api_key );
+		$result = apply_filters( 'fe_ai_search_handle_custom_api_test', $result, $provider, $api_key );
 
-		if ( null === $result ) {
+		if ( is_array( $result ) ) {
+
+			$is_valid      = $result['is_valid'];
+			$error_message = $result['message'];
+
+		} else {
+
 			$is_valid = false;
 			$error_message = '';
 
-			switch ($provider) {
+			switch ( $provider ) {
 				case 'openai':
-					$response = wp_remote_get('https://api.openai.com/v1/models', [
+					if ( empty( $api_key ) ) {
+						$error_message = __( 'API key is missing.', 'fe-ai-search' );
+						break;
+					}
+					$response = wp_remote_get( 'https://api.openai.com/v1/models', [
 						'headers' => ['Authorization' => 'Bearer ' . $api_key]
 					]);
-					if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
+					if ( ! is_wp_error( $response ) && wp_remote_retrieve_response_code( $response ) === 200 ) {
 						$is_valid = true;
 					} else {
-						$error_message = is_wp_error($response) ? $response->get_error_message() : __( 'Authentication failed.', 'fe-ai-search' );
+						$error_message = is_wp_error( $response ) ? $response->get_error_message() : __( 'Authentication failed.', 'fe-ai-search' );
 					}
 					break;
 
 				case 'anthropic':
-					$response = wp_remote_post('https://api.anthropic.com/v1/messages', [
+					if ( empty( $api_key ) ) {
+						$error_message = __( 'API key is missing.', 'fe-ai-search' );
+						break;
+					}
+					$response = wp_remote_post( 'https://api.anthropic.com/v1/messages', [
 						'headers' => [
-							'x-api-key' => $api_key,
+							'x-api-key'         => $api_key,
 							'anthropic-version' => '2023-06-01',
-							'Content-Type' => 'application/json'
+							'Content-Type'      => 'application/json'
 						],
-						'body' => json_encode([
-							'model' => 'claude-3-haiku-20240307',
+						'body'    => json_encode([
+							'model'      => 'claude-3-haiku-20240307',
 							'max_tokens' => 1,
-							'messages' => [['role' => 'user', 'content' => 'Hello']]
+							'messages'   => [['role' => 'user', 'content' => 'Hello']]
 						])
 					]);
-					// Claude may return 200 even for invalid keys, so we determine this by the error type in the body.
-					if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 401) {
-						$error_message = __( '401 Unauthorized', 'fe-ai-search' );
-					} else {
-						$is_valid = true; // Any response other than 401 is likely to mean the key is valid
-					}
-					break;
 
-				case 'google':
-					// Call a free API to get a list of models
-					$api_url = 'https://generativelanguage.googleapis.com/v1beta/models?key=' . $api_key;
-					$response = wp_remote_get($api_url);
-
-					if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
+					if ( ! is_wp_error( $response ) && wp_remote_retrieve_response_code( $response ) === 200 ) {
 						$is_valid = true;
 					} else {
-						$error_message =  __( 'Authentication failed.', 'fe-ai-search' );
-						if (!is_wp_error($response)) {
-							$body = json_decode(wp_remote_retrieve_body($response), true);
+						$error_message = __( 'Authentication failed.', 'fe-ai-search' );
+						if ( ! is_wp_error( $response ) ) {
+							$body = json_decode( wp_remote_retrieve_body( $response ), true );
 							$error_message = $body['error']['message'] ?? $error_message;
 						}
 					}
 					break;
 
-				case 'deepseek':
-					$response = wp_remote_get('https://api.deepseek.com/models', [
-						'headers' => ['Authorization' => 'Bearer ' . $api_key]
-					]);
-					if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
+				case 'google':
+					if ( empty( $api_key ) ) {
+						$error_message = __( 'API key is missing.', 'fe-ai-search' );
+						break;
+					}
+					$api_url = 'https://generativelanguage.googleapis.com/v1beta/models?key=' . $api_key;
+					$response = wp_remote_get( $api_url );
+
+					if ( ! is_wp_error( $response ) && wp_remote_retrieve_response_code( $response ) === 200 ) {
 						$is_valid = true;
 					} else {
-						$error_message = is_wp_error($response) ? $response->get_error_message() : __( 'Authentication failed.', 'fe-ai-search' );
+						$error_message = __( 'Authentication failed.', 'fe-ai-search' );
+						if ( ! is_wp_error( $response ) ) {
+							$body = json_decode( wp_remote_retrieve_body( $response ), true );
+							$error_message = $body['error']['message'] ?? $error_message;
+						}
 					}
 					break;
+
+				default:
+					$error_message = __( 'Unknown provider.', 'fe-ai-search' );
 			}
 			$result = ['is_valid' => $is_valid, 'message' => $error_message];
 		}
 
 		if ( $result['is_valid'] ) {
-			wp_send_json_success('<span style="color: green;">✔ ' . __( 'Connection successful', 'fe-ai-search' ) . '</span>' );
+			wp_send_json_success( '<span style="color: green;">✔ ' . __( 'Connection successful', 'fe-ai-search' ) . '</span>' );
 		} else {
-			wp_send_json_error('<span style="color: red;">✖ ' . __( 'Connection failed', 'fe-ai-search' ) . ': ' . $result['message'] . '</span>');
+			wp_send_json_error( '<span style="color: red;">✖ ' . __( 'Connection failed', 'fe-ai-search' ) . ': ' . $result['message'] . '</span>' );
 		}
 	}
 
@@ -905,7 +969,7 @@ class FEAS_AI_Chat_Handler {
 	 */
 	public function filter_basic_injection_phrases( $text ) {
 		$all_injection_phrases = [];
-		$i18n_dir = FEAS_AI_PLUGIN_DIR . 'includes/i18n/';
+		$i18n_dir = FE_AI_SEARCH_PLUGIN_DIR . 'includes/i18n/';
 
 		// Find all language files in the i18n directory.
 		$lang_files = glob( $i18n_dir . '*.php' );
@@ -932,7 +996,7 @@ class FEAS_AI_Chat_Handler {
 
 		// SECURITY: Log if a basic security filter was triggered.
 		if ( $filtered_text !== $text ) {
-			\FEAISearch\Core\FEAS_AI_Logger::log(
+			\FEAISearch\Core\FE_AI_Search_Logger::log(
 				'SECURITY',
 				'Basic prompt injection filter triggered.',
 				[ 'original_text' => mb_substr( $text, 0, 100 ) . '...' ] // Log a snippet for context
@@ -943,28 +1007,53 @@ class FEAS_AI_Chat_Handler {
 	}
 
 	/**
-	 * AJAX handler for activating and deactivating licenses
+	 * Handles the AJAX request to activate or deactivate the Pro license.
+	 *
+	 * This method communicates with the License_Handler and updates the
+	 * single master settings array ('fe_ai_search_settings') with the new
+	 * license key, status, and data.
+	 *
+	 * @since 1.0.0
+	 * @hook wp_ajax_fe_ai_search_manage_license
 	 */
 	public function ajax_manage_license() {
-		if ( ! check_ajax_referer( 'feas_ai_ajax_nonce', 'security', false ) ) {
-			wp_send_json_error( 'Nonce verification failed.' );
+		check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( [ 'message' => 'Permission denied.' ] );
 		}
 
-		$license_key = sanitize_text_field( $_POST['license_key'] );
-		$action = sanitize_key( $_POST['license_action'] );
+		$license_key = isset( $_POST['license_key'] ) ? sanitize_text_field( $_POST['license_key'] ) : '';
+		$action      = isset( $_POST['license_action'] ) ? sanitize_key( $_POST['license_action'] ) : '';
 
-		$handler = new FEAS_AI_License_Handler();
-		$result = ( $action === 'activate' ) ? $handler->activate( $license_key ) : $handler->deactivate( $license_key );
+		if ( empty( $license_key ) || empty( $action ) ) {
+			wp_send_json_error( [ 'message' => 'Missing key or action.' ] );
+		}
 
-		if ( $result['success'] ) {
-			update_option( 'feas_ai_pro_license_key', $license_key );
-			update_option( 'feas_ai_pro_license_status', $result['status'] );
-			delete_transient('feas_ai_license_error');
-			wp_send_json_success( ['message' => $result['message']] );
+		// Perform the license action.
+		$handler = new \FEAISearch\Core\FE_AI_Search_License_Handler();
+		$result  = ( 'activate' === $action ) ? $handler->activate( $license_key ) : $handler->deactivate( $license_key );
+
+		if ( $result && $result['success'] ) {
+			$this->options['license']['key']    = $license_key;
+			$this->options['license']['status'] = $result['status']; // e.g., 'active'
+			$this->options['license']['data']   = $result['data'] ?? []; // e.g., {'products': ['pro'], ...}
+
+			delete_transient('fe_ai_search_license_error');
+			$send_response = 'wp_send_json_success';
+
 		} else {
-			set_transient('feas_ai_license_error', $result['message'], 60);
-			update_option( 'feas_ai_pro_license_status', 'inactive' );
-			wp_send_json_error( ['message' => $result['message']] );
+			$this->options['license']['key']    = $license_key;
+			$this->options['license']['status'] = 'inactive';
+			$this->options['license']['data']   = [];
+
+			set_transient('fe_ai_search_license_error', $result['message'], 60);
+			$send_response = 'wp_send_json_error';
 		}
+
+		// Save the entire master options array back to the database.
+		update_option( 'fe_ai_search_settings', $this->options );
+
+		// Send the final JSON response.
+		$send_response( [ 'message' => $result['message'] ] );
 	}
 }

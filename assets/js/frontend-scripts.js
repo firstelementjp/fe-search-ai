@@ -10,7 +10,7 @@
  */
 
 // Initialize WordPress internationalization functions.
-const { __ } = wp.i18n;
+const { __ } = window.wp.i18n;
 
 /**
  * A simple wrapper for WordPress AJAX calls using the Fetch API.
@@ -20,7 +20,7 @@ const { __ } = wp.i18n;
  */
 async function wpPost(action, data = {}) {
 	const formData = new URLSearchParams({ action, ...data });
-	const response = await fetch(feas_ai_ajax_obj.ajax_url, {
+	const response = await fetch(fe_ai_search_ajax_obj.ajax_url, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
 		body: formData
@@ -32,23 +32,23 @@ async function wpPost(action, data = {}) {
  * Main function to initialize the chat interface.
  */
 function initFEAIChat() {
-	const container = document.getElementById('feas-ai-chat-container');
+	const container = document.getElementById('fe_ai_search_chat_container');
 	if (!container || container.dataset.initialized) {
 		return; // Already initialized or element not found.
 	}
 	container.dataset.initialized = 'true';
 
-	// --- 1. DOM Element Caching ---
-	const bubble = document.getElementById('feas-ai-chat-bubble');
-	const windowEl = document.getElementById('feas-ai-chat-window');
-	const closeBtn = document.getElementById('feas-ai-chat-close');
-	const form = document.getElementById('feas-ai-chat-form');
-	const input = document.getElementById('feas-ai-chat-input');
-	const messagesContainer = document.getElementById('feas-ai-chat-messages');
-	const fullscreenBtn = document.getElementById('feas-ai-chat-fullscreen-toggle');
-	const optionsToggle = document.getElementById('feas-ai-options-toggle');
-	const optionsMenu = document.getElementById('feas-ai-options-menu');
-	const shiftEnterToggle = document.getElementById('feas-ai-shift-enter-toggle');
+	// DOM Element Caching
+	const bubble = document.getElementById('fe_ai_search_chat_bubble');
+	const windowEl = document.getElementById('fe_ai_search_chat_window');
+	const closeBtn = document.getElementById('fe_ai_search_chat_close');
+	const form = document.getElementById('fe_ai_search_chat_form');
+	const input = document.getElementById('fe_ai_search_chat_input');
+	const messagesContainer = document.getElementById('fe_ai_search_chat_messages');
+	const fullscreenBtn = document.getElementById('fe_ai_search_chat_fullscreen_toggle');
+	const optionsToggle = document.getElementById('fe_ai_search_options_toggle');
+	const optionsMenu = document.getElementById('fe_ai_search_options_menu');
+	const shiftEnterToggle = document.getElementById('fe_ai_search_send_mode_toggle');
 
 	if (!bubble || !form || !input || !messagesContainer) return;
 
@@ -58,32 +58,30 @@ function initFEAIChat() {
 		bubble.classList.add('hidden');
 	}
 
-	// --- 2. State Variables ---
-	let sessionId = sessionStorage.getItem('feas_ai_session_id');
+	// State Variables
+	let sessionId = sessionStorage.getItem('fe_ai_search_session_id');
 	if (!sessionId) {
 		sessionId = Date.now().toString(36) + Math.random().toString(36).substr(2);
-		sessionStorage.setItem('feas_ai_session_id', sessionId);
+		sessionStorage.setItem('fe_ai_search_session_id', sessionId);
 	}
 
-	let sessionHistory = JSON.parse(sessionStorage.getItem('feas_ai_chat_history')) || [];
+	let sessionHistory = JSON.parse(sessionStorage.getItem('fe_ai_search_chat_history')) || [];
 	let charQueue = [];
 	let renderInterval;
 	let currentAiMessageElement = null;
 	let fullResponse = '';
 
-	// --- 3. Initialize Settings (Shift+Enter) ---
-	let userPrefersShiftEnter = localStorage.getItem('feas_ai_user_prefers_shift_enter');
+	const sendModeToggle = document.getElementById('fe_ai_search_send_mode_toggle');
 
-	if (userPrefersShiftEnter === null) {
-		// If no user preference, use the site's default setting
-		userPrefersShiftEnter = feas_ai_ajax_obj.send_on_shift_enter;
-	} else {
-		// Convert stored string back to boolean
-		userPrefersShiftEnter = userPrefersShiftEnter === 'true';
+	let userSendMode = localStorage.getItem('fe_ai_user_send_mode');
+
+	if (userSendMode === null) {
+		userSendMode = fe_ai_search_ajax_obj.send_mode;
 	}
-	shiftEnterToggle.checked = userPrefersShiftEnter;
 
-	// --- 4. Event Listeners ---
+	sendModeToggle.value = userSendMode;
+
+	// Event Listeners
 
 	// Toggle chat window
 	bubble.addEventListener('click', () => {
@@ -107,9 +105,9 @@ function initFEAIChat() {
 	});
 
 	// Handle 'Shift+Enter' setting change
-	shiftEnterToggle.addEventListener('change', () => {
-		userPrefersShiftEnter = shiftEnterToggle.checked;
-		localStorage.setItem('feas_ai_user_prefers_shift_enter', userPrefersShiftEnter);
+	sendModeToggle.addEventListener('change', () => {
+		userSendMode = sendModeToggle.value;
+		localStorage.setItem('fe_ai_user_send_mode', userSendMode);
 	});
 
 	/**
@@ -125,17 +123,41 @@ function initFEAIChat() {
 		e.preventDefault();
 
 		const shiftPressed = e.shiftKey;
-		const shouldSubmit = (userPrefersShiftEnter && shiftPressed) || (!userPrefersShiftEnter && !shiftPressed);
+		const cmdPressed = e.metaKey || e.ctrlKey;
+
+		let shouldSubmit = false;
+
+		// Check the user's current preference
+		switch (userSendMode) {
+			case 'enter':
+				if (!shiftPressed) {
+					shouldSubmit = true;
+				}
+				break;
+			case 'shift_enter':
+				if (shiftPressed) {
+					shouldSubmit = true;
+				}
+				else {
+					input.value += '\n';
+				}
+				break;
+			case 'cmd_enter':
+				if (cmdPressed) {
+					shouldSubmit = true;
+				}
+				else {
+					input.value += '\n';
+				}
+				break;
+		}
 
 		if (shouldSubmit) {
 			// Programmatically trigger the 'submit' event.
 			form.dispatchEvent(new Event('submit', { cancelable: true }));
 		}
-		// If it's not a submit action (e.g., Enter alone when Shift+Enter is required),
-		// we must manually add the newline since we prevented the default behavior.
-		else if (useShiftEnter && !shiftPressed) {
-			input.value += '\n';
-		}
+		// Note: The logic for 'useShiftEnter && !shiftPressed' was part of an older, conflicting implementation and is removed.
+		// The switch(userSendMode) handles all cases correctly.
 	});
 
 	/**
@@ -146,7 +168,7 @@ function initFEAIChat() {
 		e.preventDefault();
 
 		// Check session message limit
-		const SESSION_LIMIT = feas_ai_ajax_obj.ip_limit_count;
+		const SESSION_LIMIT = fe_ai_search_ajax_obj.ip_limit_count;
 		if ( SESSION_LIMIT > 0 && sessionHistory.length > SESSION_LIMIT * 2 ) {
 			addMessage('<p>' + __('You have reached the message limit for this session. Please refresh the page to start a new conversation.', 'fe-ai-search') + '</p>', 'system');
 			return;
@@ -164,7 +186,7 @@ function initFEAIChat() {
 		input.style.height = 'auto'; // Reset height
 		disableForm();
 
-		const aiMessageWrapperForFeedback = addMessage('<p><span class="feas-ai-spinner"></span></p>', 'ai');
+		const aiMessageWrapperForFeedback = addMessage('<p><span class="fe-ai-search-spinner"></span></p>', 'ai');
 		currentAiMessageElement = aiMessageWrapperForFeedback.querySelector('p');
 
 		fullResponse = '';
@@ -174,9 +196,9 @@ function initFEAIChat() {
 
 		startRenderingQueue();
 
-		fetch(feas_ai_ajax_obj.rest_url, {
+		fetch(fe_ai_search_ajax_obj.rest_url, {
 			method: 'POST',
-			headers: { 'X-WP-Nonce': feas_ai_ajax_obj.rest_nonce },
+			headers: { 'X-WP-Nonce': fe_ai_search_ajax_obj.rest_nonce },
 			body: new URLSearchParams({
 				question: question,
 				history: JSON.stringify(recentHistory)
@@ -196,20 +218,20 @@ function initFEAIChat() {
 							aiMessageWrapperForFeedback.innerHTML = marked.parse(fullResponse);
 
 							sessionHistory.push({ role: 'assistant', content: fullResponse });
-							sessionStorage.setItem('feas_ai_chat_history', JSON.stringify(sessionHistory));
+							sessionStorage.setItem('fe_ai_search_chat_history', JSON.stringify(sessionHistory));
 
 							// Log conversation and get the log ID back
 							logConversation(question, fullResponse, contextFound).then(logId => {
 								currentLogId = logId;
-								if (feas_ai_ajax_obj.is_license_active && currentLogId) {
+								if (fe_ai_search_ajax_obj.is_license_active && currentLogId) {
 									const feedbackWrapper = document.createElement('div');
-									feedbackWrapper.className = 'feas-ai-feedback';
+									feedbackWrapper.className = 'fe-ai-search-feedback';
 									feedbackWrapper.innerHTML = `
 										<button class="feedback-btn good" data-log-id="${currentLogId}" data-rating="1" title="Good">
 											<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none"/><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
 										</button>
 										<button class="feedback-btn bad" data-log-id="${currentLogId}" data-rating="-1" title="Bad">
-											<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none"/><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79-.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
+											<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none"/><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14-.47-.14-.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
 										</button>
 									`;
 									aiMessageWrapperForFeedback.appendChild(feedbackWrapper);
@@ -262,8 +284,8 @@ function initFEAIChat() {
 
 			if (!logId || !rating) return;
 
-			wpPost('feas_ai_rate_answer', {
-				nonce: feas_ai_ajax_obj.nonce,
+			wpPost('fe_ai_search_rate_answer', {
+				nonce: fe_ai_search_ajax_obj.nonce,
 				log_id: logId,
 				rating: rating,
 			});
@@ -275,13 +297,13 @@ function initFEAIChat() {
 				}
 			});
 			const thanksMessage = document.createElement('span');
-			thanksMessage.className = 'feas-ai-feedback-thanks';
+			thanksMessage.className = 'fe-ai-search-feedback-thanks';
 			thanksMessage.textContent = 'Thank you for your feedback!';
 			feedbackWrapper.replaceWith(thanksMessage);
 		}
 	});
 
-	// --- 5. Helper Functions ---
+	// Helper Functions
 
 	/**
 	 * Adds a message to the chat UI.
@@ -291,7 +313,7 @@ function initFEAIChat() {
 	 */
 	function addMessage(html, type) {
 		const messageWrapper = document.createElement('div');
-		messageWrapper.className = `feas-ai-message feas-ai-message-${type}`;
+		messageWrapper.className = `fe-ai-search-message fe-ai-search-message-${type}`;
 		messageWrapper.innerHTML = html;
 		messagesContainer.appendChild(messageWrapper);
 		messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -306,13 +328,13 @@ function initFEAIChat() {
 	 * @returns {Promise<number|null>} The ID of the newly created log entry.
 	 */
 	async function logConversation(question, answer, contextFound) {
-		if (!feas_ai_ajax_obj.is_license_active) {
+		if (!fe_ai_search_ajax_obj.is_license_active) {
 			return null;
 		}
 
 		try {
-			const response = await wpPost('feas_ai_log_query', {
-				nonce: feas_ai_ajax_obj.nonce,
+			const response = await wpPost('fe_ai_search_log_query', {
+				nonce: fe_ai_search_ajax_obj.nonce,
 				session_id: sessionId,
 				question: question,
 				answer: answer,
@@ -332,12 +354,12 @@ function initFEAIChat() {
 	 * Renders the typing animation queue.
 	 */
 	function renderQueue() {
-		if (currentAiMessageElement && currentAiMessageElement.querySelector('.feas-ai-spinner') && charQueue.length > 0) {
+		if (currentAiMessageElement && currentAiMessageElement.querySelector('.fe-ai-search-spinner') && charQueue.length > 0) {
 			currentAiMessageElement.innerHTML = '';
 		}
 		if (charQueue.length === 0) return;
 
-		const charsToRender = charQueue.splice(0, feas_ai_ajax_obj.animation_speed || 3).join('');
+		const charsToRender = charQueue.splice(0, fe_ai_search_ajax_obj.animation_speed || 3).join('');
 		fullResponse += charsToRender;
 
 		currentAiMessageElement.innerHTML = marked.parse(fullResponse);

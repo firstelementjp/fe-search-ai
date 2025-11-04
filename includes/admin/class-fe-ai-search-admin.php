@@ -12,9 +12,9 @@
 
 namespace FEAISearch\Admin;
 
-if ( ! defined( 'ABSPATH' ) ) exit;
+if ( ! defined( 'ABSPATH' ) ) exit; 
 
-use FEAISearch\Admin\FEAS_AI_Settings;
+use FEAISearch\Admin\FE_AI_Search_Settings;
 
 /**
  * The admin-specific functionality of the plugin.
@@ -26,11 +26,11 @@ use FEAISearch\Admin\FEAS_AI_Settings;
  * @package    fe-ai-search
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
  */
-class FEAS_AI_Admin {
+class FE_AI_Search_Admin {
 
 	public function __construct() {
 
-		new FEAS_AI_Settings();
+		new FE_AI_Search_Settings();
 
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
 		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
@@ -43,7 +43,7 @@ class FEAS_AI_Admin {
 		$allowed_hooks = array(
 			'toplevel_page_fe-ai-search',
 		);
-		$allowed_hooks = apply_filters( 'feas_ai_admin_allowed_hooks', $allowed_hooks );
+		$allowed_hooks = apply_filters( 'fe_ai_search_admin_allowed_hooks', $allowed_hooks );
 
 		if ( ! in_array( $hook_suffix, $allowed_hooks ) ) {
 			return;
@@ -55,10 +55,10 @@ class FEAS_AI_Admin {
 			'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.css'
 		);
 		wp_enqueue_style(
-			'feas-ai-admin-style',
-			plugin_dir_url( FEAS_AI_PLUGIN_FILE ) . 'assets/css/admin-styles.css',
+			'fe-ai-search-admin-style',
+			plugin_dir_url( FE_AI_SEARCH_PLUGIN_FILE ) . 'assets/css/admin-styles.css',
 			array(),
-			FEAS_AI_VERSION
+			FE_AI_SEARCH_VERSION
 		);
 
 		wp_enqueue_script( 'wp-color-picker' );
@@ -77,19 +77,19 @@ class FEAS_AI_Admin {
 			true
 		);
 		wp_enqueue_script(
-			'feas-ai-admin-sync',
-			plugin_dir_url( FEAS_AI_PLUGIN_FILE ) . 'assets/js/admin-scripts.js',
+			'fe-ai-search-admin-sync',
+			plugin_dir_url( FE_AI_SEARCH_PLUGIN_FILE ) . 'assets/js/admin-scripts.js',
 			[ 'wp-i18n', 'codemirror-js', 'wp-color-picker' ],
-			FEAS_AI_VERSION,
+			FE_AI_SEARCH_VERSION,
 			true
 		);
 
 		wp_localize_script(
-			'feas-ai-admin-sync',
-			'feas_ai_sync_obj',
+			'fe-ai-search-admin-sync',
+			'fe_ai_search_sync_obj',
 			array(
 				'ajax_url' => admin_url( 'admin-ajax.php' ),
-				'nonce'    => wp_create_nonce( 'feas_ai_ajax_nonce' ),
+				'nonce'    => wp_create_nonce( 'fe_ai_search_ajax_nonce' ),
 			)
 		);
 	}
@@ -104,7 +104,7 @@ class FEAS_AI_Admin {
 			'FE AI Search',
 			'manage_options',
 			$parent_slug,
-			array( FEAS_AI_Settings::class, 'render_page' ),
+			array( FE_AI_Search_Settings::class, 'render_page' ),
 			'dashicons-search',
 			80
 		);
@@ -114,7 +114,7 @@ class FEAS_AI_Admin {
 			'Settings',
 			'manage_options',
 			$parent_slug,
-			array( FEAS_AI_Settings::class, 'render_page' )
+			array( FE_AI_Search_Settings::class, 'render_page' )
 		);
 	}
 }

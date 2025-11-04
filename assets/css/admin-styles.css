@@ -12,37 +12,45 @@
    ========================================================================== */
 
 h4 {
-	margin: 1rem 0 0.5rem;
-	font-size: 1.1rem;
+	margin: 1em 0 0.5em;
+	font-size: 1.1em;
 }
 
 h5 {
-	margin: 1rem 0 0.5rem;
-	font-size: 1rem;
+	margin: 1em 0 0.5em;
+	font-size: 1em;
 }
 
 strong {
-	margin: 1rem 0 0.5rem;
+	margin: 1em 0 0.5em;
 }
 
 p {
-	margin: 0.5rem 0 1rem;
+	margin: 0.5em 0 1em;
 }
 
 pre {
-	margin: 0.5rem 0;
+	margin: 0.5em 0;
 }
 
 code {
 	display: block;
-	margin: 0.5rem 0;
-	padding: 0.5rem;
+	margin: 0.5em 0;
+	padding: 0.5em;
 	background-color: #d4dbe6;
 	border-radius: 5px;
 }
 
 hr {
-	margin: 2rem 0 1rem;
+	margin: 2em 0 1em;
+}
+
+.tab-content select,
+.tab-content input[type="text"],
+.tab-content input[type="number"],
+.tab-content input[type="password"],
+.wp-picker-container {
+	margin-bottom: 0.5em;
 }
 
 /* ==========================================================================
@@ -50,17 +58,17 @@ hr {
    ========================================================================== */
 
 .wp-list-table th {
-	padding: 0.5rem 1rem;
+	padding: 0.5em 1em;
 }
 
 .form-table td p {
-	margin: 0 0 1rem;
+	margin: 0 0 1em;
 }
 
 .form-table td label,
 .form-table td fieldset label {
 	display: block;
-	margin: 0 0 0.3rem;
+	margin: 0 0 0.3em;
 }
 
 .form-table .wp-picker-input-wrap label {
@@ -72,9 +80,116 @@ textarea {
 }
 
 /* ==========================================================================
+   Header
+   ========================================================================== */
+#feas-head {
+	display: grid;
+    grid-template: 60px 2.5rem / 1fr 1fr;
+    align-items: center;
+    background-image: url(../images/bg-feas-header5@2x-min.jpg);
+    background-position: right top;
+    background-repeat: no-repeat;
+    background-size: 27%;
+    background-color: white;
+    margin-bottom: 15px;
+}
+#feas-head-upper {
+	grid-column: span 2;
+    display: grid;
+    grid-template: 60px / 1fr 1fr;
+    align-items: center;
+    padding: 0 1em;
+}
+#feas-head .plugin-title {
+    font-size: 23px;
+    font-weight: 400;
+}
+#feas-head #feas-version {
+    padding: 0 1em;
+    background-color: white;
+    height: 2.5rem;
+    display: grid;
+    grid-template: 100% / 1fr;
+    align-items: center;
+}
+#feas-support {
+    font-size: 12px;
+    padding: 0 1em;
+    height: 2.5rem;
+    background-color: white;
+    display: grid;
+    grid-template: 100% / 5em 5em 7em 25px 25px 25px;
+    grid-gap: 1.5em;
+    justify-content: end;
+    align-items: center;
+}
+#feas-support a {
+    text-align: right;
+}
+#feas-head #feas-logo {
+    display: grid;
+    margin-left: auto;
+    justify-content: center;
+    align-items: center;
+}
+#feas-head #feas-logo img {
+    width: 106px;
+    height: 27px;
+}
+#feas-head a {
+    text-decoration: none;
+}
+#feas-head .icon {
+    content: '\f465';
+    -webkit-font-smoothing: antialiased;
+    font: normal 17px / 1 'dashicons';
+    color: #46aae6;
+}
+#feas-head .icon_tw.icon {
+    content: '';
+    display: grid;
+    justify-content: center;
+}
+#feas-head .icon_tw.icon svg {
+    width: 13px;
+    fill: #46aae6;
+}
+#feas-head .icon_fb.icon:before {
+    content: '\f305';
+}
+#feas-head .icon_mail.icon:before {
+    content: '\f465';
+}
+#feas-head .icon_mail.icon svg {
+    width: 13px;
+    fill: #46aae6;
+}
+/* ==========================================================================
    Specific Components
    ========================================================================== */
-
+.wrap form:has(.tab-content) {
+	background: white;
+    padding: 1rem;
+}
+.wrap h2.nav-tab-wrapper {
+	border-bottom: none;
+}
+.nav-tab {
+	border: none;
+	padding: 0.5em 1em;
+	color: #0071a1;
+	margin-bottom: 2px;
+	background: #f9f9f9;
+}
+.nav-tab.nav-tab-active {
+	color: #1d2327;
+	background: #fff;
+	margin-bottom: -2px;
+	line-height: 1.9;
+}
+a.nav-tab:last-of-type {
+	border-right: none !important;
+}
 /* CodeMirror Editor */
 .CodeMirror {
 	height: 500px;
@@ -82,7 +197,7 @@ textarea {
 }
 
 /* Tab Navigation */
-.feas-ai-tabs-wrapper .tab-content {
+.fe-ai-search-tabs-wrapper .tab-content {
 	display: none;
 	margin-top: 1em;
 }
@@ -97,7 +212,7 @@ textarea {
 }
 
 .option-header {
-	margin: 1rem 0 0.5rem;
+	/* margin: 1em 0 0.5em; */
 	font-weight: bold;
 }
 
@@ -130,11 +245,11 @@ textarea {
 	border-top: 1px solid #ddd;
 }
 
-#feas-ai-prompt-accordion .accordion-inner {
+#fe-ai-search-prompt-accordion .accordion-inner {
 	padding: 0;
 }
 
-#feas-ai-prompt-accordion .accordion-content {
+#fe-ai-search-prompt-accordion .accordion-content {
 	border: none;
 	margin-top: -1px;
 }
@@ -150,7 +265,51 @@ textarea {
 .form-table td .accordion-title label {
 	margin: 0;
 }
-
+.fe-ai-search-wrapper {
+	margin: 10px 0;
+}
+.japanese-tokenizer-status {
+	border: 1px solid #c3c4c7;
+	background: #f6f7f7;
+	padding: 10px 15px;
+	margin-bottom: 1.5em;
+	border-radius: 4px;
+}
+#fe-ai-search-sync-wrapper button {
+	margin-right: 10px;
+}
+.sync-status {
+	margin-bottom: 1em;
+	padding: 10px;
+	background-color: #f0f0f1;
+	border: 1px solid #ddd;
+}
+#fe-ai-search-tokenizer-status {
+	border: 1px solid #c3c4c7;
+	background: #f6f7f7;
+	padding: 10px 15px;
+	margin-bottom: 1em;
+	border-radius: 4px;
+}
+#fe-ai-search-tokenizer-status p {
+	margin: 0;
+}
+#fe_ai_search_animation_speed_value {
+	display: inline-block;
+	vertical-align: middle;
+	width: 2em;
+	text-align: right;
+	font-weight: bold;
+}
+.fe-ai-search-wrapper.slider {
+	padding: 1em;
+	border: 1px solid silver;
+	border-radius: 5px;
+	display: inline-flex;
+}
+.form-table td > div {
+	margin: 0 0 1em;
+}
 /* ==========================================================================
    Icons & Utilities
    ========================================================================== */
@@ -167,9 +326,37 @@ a:has(.dashicons-warning) span {
 	vertical-align: middle;
 }
 
-/* Spinner Animation Class */
-.spin {
+#fe-ai-search-sync-status .spin {
+	display: none;
+	float: none;
+	vertical-align: middle;
+	margin-right: 5px;
 	animation: spin 1s infinite linear;
+}
+
+/* --- Sync UI Styles --- */
+
+#fe-ai-search-progress-container {
+	display: none; /* ★ デフォルトではコンテナ全体を非表示にする */
+	width: 100%;
+	background-color: #eee;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	margin-top: 1em;
+	overflow: hidden; /* 角丸をキレイに保つため */
+}
+
+#fe-ai-search-progress-bar {
+	width: 0%; /* 初期幅は0% */
+	height: 20px;
+	line-height: 20px;
+	text-align: center;
+	font-size: 12px;
+	color: #fff;
+	background-color: #0073aa; /* WordPressの標準的な青 */
+	border-radius: 3px;
+	/* JSが幅を変更する際に、滑らかなアニメーションを追加 */
+	transition: width 0.3s ease-in-out;
 }
 
 /* ==========================================================================

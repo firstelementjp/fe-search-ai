@@ -5,7 +5,7 @@
  * This class is responsible for sending activation and deactivation requests
  * to the licensing server to validate the user's Pro license key.
  *
- * @package    fe-ai-search-pro
+ * @package    fe-ai-search
  * @subpackage Core
  * @since      1.0.0
  */
@@ -18,10 +18,10 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  * The license handler class for the Pro add-on.
  *
  * @since      1.0.0
- * @package    fe-ai-search-pro
+ * @package    fe-ai-search
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
  */
-class FEAS_AI_License_Handler {
+class FE_AI_Search_License_Handler {
 
 	/**
 	 * Activates a license key by sending it to the license server.
@@ -58,24 +58,24 @@ class FEAS_AI_License_Handler {
 	 */
 	private function send_request( string $action, string $license_key ): array {
 		if ( empty($license_key) ) {
-			return ['success' => false, 'message' => __( 'The license key has not been entered.', 'fe-ai-search-pro' )];
+			return ['success' => false, 'message' => __( 'The license key has not been entered.', 'fe-ai-search' )];
 		}
 
 		// Build the API URL for the license server.
-		$api_url = FEAS_AI_PRO_STORE_URL . '/wp-json/lmfwc/v2/licenses/' . $action;
+		$api_url = FE_AI_SEARCH_PRO_STORE_URL . '/wp-json/lmfwc/v2/licenses/' . $action;
 
 		$response = wp_remote_post($api_url, [
 			'timeout' => 20,
 			'body'    => [
 				'license_key' => $license_key,
 				'instance'    => home_url(),
-				'product_id'  => FEAS_AI_PRO_PRODUCT_ID,
+				'product_id'  => FE_AI_SEARCH_PRO_PRODUCT_ID,
 			]
 		]);
 
 		// Handle connection errors.
 		if ( is_wp_error($response) ) {
-			return ['success' => false, 'message' => __( 'Could not connect to the license server', 'fe-ai-search-pro' ) . ': ' . $response->get_error_message()];
+			return ['success' => false, 'message' => __( 'Could not connect to the license server', 'fe-ai-search' ) . ': ' . $response->get_error_message()];
 		}
 
 		$body = wp_remote_retrieve_body($response);
@@ -83,14 +83,14 @@ class FEAS_AI_License_Handler {
 
 		// Handle invalid responses from the server.
 		if ( wp_remote_retrieve_response_code($response) >= 400 || empty($data) || ! isset($data['success']) ) {
-			$error_message = $data['message'] ?? __( 'An invalid response was received from the license server.', 'fe-ai-search-pro' );
+			$error_message = $data['message'] ?? __( 'An invalid response was received from the license server.', 'fe-ai-search' );
 			return ['success' => false, 'message' => $error_message];
 		}
 
 		// Return a formatted result array.
 		return [
 			'success' => $data['success'],
-			'message' => $data['message'] ?? ($data['success'] ? __( 'The operation was successful.', 'fe-ai-search-pro' ) : __( 'The operation failed.', 'fe-ai-search-pro' ) ),
+			'message' => $data['message'] ?? ($data['success'] ? __( 'The operation was successful.', 'fe-ai-search' ) : __( 'The operation failed.', 'fe-ai-search' ) ),
 			'status'  => ($data['success'] && ($data['data']['activated'] ?? false)) ? 'active' : 'inactive',
 		];
 	}

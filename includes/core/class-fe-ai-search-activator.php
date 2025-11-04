@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  * @package    fe-ai-search
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
  */
-class FEAS_AI_Activator {
+class FE_AI_Search_Activator {
 
 	/**
 	 * The current database version.
@@ -50,7 +50,10 @@ class FEAS_AI_Activator {
 	public static function activate() {
 		self::create_tables();
 		self::schedule_cron_jobs();
-		update_option( 'feas_ai_db_version', self::DB_VERSION );
+
+		$options = get_option( 'fe_ai_search_settings', [] );
+		$options['advanced']['db_version'] = self::DB_VERSION;
+		update_option( 'fe_ai_search_settings', $options );
 	}
 
 	/**
@@ -62,7 +65,7 @@ class FEAS_AI_Activator {
 	 */
 	public static function deactivate() {
 		// Canceling Cron Job
-		wp_clear_scheduled_hook( 'feas_ai_daily_log_rotation_event' );
+		wp_clear_scheduled_hook( 'fe_ai_search_daily_log_rotation_event' );
 	}
 
 	/**
@@ -75,11 +78,16 @@ class FEAS_AI_Activator {
 	 * @since 1.0.0
 	 */
 	public static function check_db_version() {
-		$installed_version = get_option( 'feas_ai_db_version' );
+		$options           = get_option( 'fe_ai_search_settings', [] );
+		$installed_version = $options['advanced']['db_version'] ?? '1.0';
 
 		if ( version_compare( $installed_version, self::DB_VERSION, '<' ) ) {
+			// Version is old, call the static method create_tables
 			self::create_tables();
-			update_option( 'feas_ai_db_version', self::DB_VERSION );
+
+			// Update the DB version in the master options array
+			$options['advanced']['db_version'] = self::DB_VERSION;
+			update_option( 'fe_ai_search_settings', $options );
 		}
 	}
 
@@ -97,7 +105,7 @@ class FEAS_AI_Activator {
 		$charset_collate = $wpdb->get_charset_collate();
 
 		// Vector Storage Table
-		$table_name_vectors = $wpdb->prefix . 'feas_ai_vectors';
+		$table_name_vectors = $wpdb->prefix . 'fe_ai_search_vectors';
 		$sql_vectors = "CREATE TABLE `{$table_name_vectors}` (
 			`id` mediumint(9) NOT NULL AUTO_INCREMENT,
 			`post_id` bigint(20) UNSIGNED NOT NULL,
@@ -112,7 +120,7 @@ class FEAS_AI_Activator {
 		dbDelta( $sql_vectors );
 
 		// Keyword Index Table
-		$table_name_index = $wpdb->prefix . 'feas_ai_keyword_index';
+		$table_name_index = $wpdb->prefix . 'fe_ai_search_keyword_index';
 		$sql_index = "CREATE TABLE `{$table_name_index}` (
 			`keyword` varchar(100) NOT NULL,
 			`vector_id` mediumint(9) NOT NULL,
@@ -124,7 +132,7 @@ class FEAS_AI_Activator {
 		dbDelta( $sql_index );
 
 		// System Logs Table
-		$table_name = $wpdb->prefix . 'feas_ai_system_logs';
+		$table_name = $wpdb->prefix . 'fe_ai_search_system_logs';
 		$sql = "CREATE TABLE $table_name (
 			`id` bigint(20) NOT NULL AUTO_INCREMENT,
 			`level` varchar(20) NOT NULL DEFAULT 'INFO',
@@ -144,8 +152,8 @@ class FEAS_AI_Activator {
 	 */
 	public static function schedule_cron_jobs() {
 		// Registering Cron Job
-		if ( ! wp_next_scheduled( 'feas_ai_daily_log_rotation_event' ) ) {
-			wp_schedule_event( time(), 'daily', 'feas_ai_daily_log_rotation_event' );
+		if ( ! wp_next_scheduled( 'fe_ai_search_daily_log_rotation_event' ) ) {
+			wp_schedule_event( time(), 'daily', 'fe_ai_search_daily_log_rotation_event' );
 		}
 	}
 }

@@ -10,22 +10,22 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  * Provides static methods for symmetric encryption using a key derived from
  * either a custom constant or WordPress's salts.
  */
-class FEAS_AI_Encryption_Helper {
+class FE_AI_Search_Encryption_Helper {
 
 	private const CIPHER = 'aes-256-cbc';
 
 	/**
 	 * Gets the encryption key in a hierarchical manner.
 	 *
-	 * 1. Uses the FEAS_AI_ENCRYPTION_KEY constant if defined in wp-config.php.
+	 * 1. Uses the FE_AI_SEARCH_ENCRYPTION_KEY constant if defined in wp-config.php.
 	 * 2. Falls back to using WordPress's default AUTH_KEY as a secure, site-unique key.
 	 *
 	 * @return string|false The encryption key, or false if no key is available.
 	 */
 	private static function get_key() {
 		// Priority 1: User-defined constant in wp-config.php for advanced users.
-		if ( defined( 'FEAS_AI_ENCRYPTION_KEY' ) && ! empty( FEAS_AI_ENCRYPTION_KEY ) ) {
-			return FEAS_AI_ENCRYPTION_KEY;
+		if ( defined( 'FE_AI_SEARCH_ENCRYPTION_KEY' ) && ! empty( FE_AI_SEARCH_ENCRYPTION_KEY ) ) {
+			return FE_AI_SEARCH_ENCRYPTION_KEY;
 		}
 
 		// Priority 2: Fallback to WordPress's secure, site-unique AUTH_KEY.

@@ -17,14 +17,14 @@ document.addEventListener('DOMContentLoaded', () => {
 	// DOM Element Caching
 	// ==========================================================================
 
-	const startBtn = document.querySelector('#feas-ai-start-sync');
-	const progressContainer = document.querySelector('#feas-ai-progress-container');
-	const progressBar = document.querySelector('#feas-ai-progress-bar');
-	const statusDiv = document.querySelector('#feas-ai-sync-status');
+	const startBtn = document.querySelector('#fe-ai-start-sync');
+	const progressContainer = document.querySelector('#fe-ai-search-progress-container');
+	const progressBar = document.querySelector('#fe-ai-search-progress-bar');
+	const statusDiv = document.querySelector('#fe-ai-search-sync-status');
 	const statusSpinner = statusDiv?.querySelector('.spin');
 	const statusText = statusDiv?.querySelector('.status-text');
-	const deleteButton = document.querySelector('#feas-ai-delete-vectors-button');
-	const deleteStatus = document.querySelector('#feas-ai-delete-status');
+	const deleteButton = document.querySelector('#fe-ai-search-delete-vectors-button');
+	const deleteStatus = document.querySelector('#fe-ai-search-delete-status');
 	const tabsWrapper = document.querySelector('.nav-tab-wrapper');
 
 	// ==========================================================================
@@ -57,12 +57,12 @@ document.addEventListener('DOMContentLoaded', () => {
 	// Manual Synchronization
 	// ==========================================================================
 
-	const rebuildBtn = document.querySelector('#feas-ai-start-sync');
-	const smartSyncBtn = document.querySelector('#feas-ai-smart-sync');
+	const rebuildBtn = document.querySelector('#fe-ai-search-start-sync');
+	const smartSyncBtn = document.querySelector('#fe-ai-search-smart-sync');
 
 	/**
 	 * Initiates a sync process (either full rebuild or smart sync).
-	 * @param {string} action - The AJAX action to call ('feas_ai_start_sync' or 'feas_ai_start_smart_sync').
+	 * @param {string} action - The AJAX action to call ('fe_ai_search_start_sync' or 'fe_ai_search_start_smart_sync').
 	 * @param {string} confirmationMessage - The message to display in the confirm() dialog.
 	 */
 	async function startSyncProcess(action, confirmationMessage) {
@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		progressBar.textContent = '0%';
 
 		try {
-			const response = await wpPost(action, { nonce: feas_ai_sync_obj.nonce });
+			const response = await wpPost(action, { nonce: fe_ai_search_sync_obj.nonce });
 			if (!response.success) {
 				// If the backend sends an error (like settings changed), display it.
 				throw new Error(response.data.message || 'Failed to start sync.');
@@ -109,14 +109,14 @@ document.addEventListener('DOMContentLoaded', () => {
 	rebuildBtn?.addEventListener('click', e => {
 		e.preventDefault();
 		const message = __('Are you sure you want to delete all existing indexes and rebuild them? This is a resource-intensive process.', 'fe-ai-search');
-		startSyncProcess('feas_ai_start_sync', message);
+		startSyncProcess('fe_ai_search_start_sync', message);
 	});
 
 	// Handler for the "Sync Changes" button
 	smartSyncBtn?.addEventListener('click', e => {
 		e.preventDefault();
 		const message = __('Are you sure you want to sync recent changes? This will process new, updated, and deleted posts.', 'fe-ai-search');
-		startSyncProcess('feas_ai_start_smart_sync', message);
+		startSyncProcess('fe_ai_search_start_smart_sync', message);
 	});
 
 	/**
@@ -138,8 +138,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		try {
 			const formData = new URLSearchParams({
-				action: 'feas_ai_process_batch',
-				nonce: feas_ai_sync_obj.nonce,
+				action: 'fe_ai_search_process_batch',
+				nonce: fe_ai_search_sync_obj.nonce,
 				page: currentPage,
 				post_ids: JSON.stringify(postIDsToSync)
 			});
@@ -167,8 +167,8 @@ document.addEventListener('DOMContentLoaded', () => {
 					statusText.innerHTML = `<strong style="color:green;">${__('Synchronization complete!', 'fe-ai-search')} (${totalPosts} ${__('items', 'fe-ai-search')})</strong>`;
 					startBtn.disabled = false;
 					statusSpinner.style.display = 'none';
-					wpPost('feas_ai_update_sync_timestamp', { nonce: feas_ai_sync_obj.nonce });
-					wpPost('feas_ai_update_settings_hash', { nonce: feas_ai_sync_obj.nonce });
+					wpPost('fe_ai_search_update_sync_timestamp', { nonce: fe_ai_search_sync_obj.nonce });
+					wpPost('fe_ai_search_update_settings_hash', { nonce: fe_ai_search_sync_obj.nonce });
 				}
 			} else {
 				throw new Error(response.data.message || 'Batch processing failed.');
@@ -189,17 +189,17 @@ document.addEventListener('DOMContentLoaded', () => {
 	// ==========================================================================
 
 	// --- API Key Test Buttons ---
-	document.querySelectorAll('.feas-ai-test-api').forEach(button => {
+	document.querySelectorAll('.fe-ai-search-test-api').forEach(button => {
 		button.addEventListener('click', async () => {
 			const provider = button.dataset.provider;
-			const apiKeyId = button.dataset.apiKeyId || `feas_ai_${provider}_api_key`; // デフォルトのIDを構築
+			const apiKeyId = button.dataset.apiKeyId || `fe_ai_search_${provider}_api_key`; // デフォルトのIDを構築
 			const endpointId = button.dataset.endpointId;
 
 			const apiKeyInput = document.getElementById(apiKeyId);
 			const apiKey = apiKeyInput ? apiKeyInput.value : '';
 
 			const spinner = button.parentElement.querySelector('.spinner');
-			const status = button.parentElement.querySelector('.feas-ai-api-status');
+			const status = button.parentElement.querySelector('.fe-ai-search-api-status');
 
 			if ( ! apiKey ) {
 				// APIキーが空でも、エンドポイントテストの場合は警告しない（キーが不要な場合もあるため）
@@ -214,7 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			// AJAXで送信するデータを準備
 			const postData = {
-				nonce: feas_ai_sync_obj.nonce,
+				nonce: fe_ai_search_sync_obj.nonce,
 				provider: provider,
 				api_key: apiKey,
 			};
@@ -228,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 
 			try {
-				const response = await wpPost('feas_ai_test_api_key', postData);
+				const response = await wpPost('fe_ai_search_test_api_key', postData);
 				status.innerHTML = response.data;
 			} catch {
 				status.innerHTML = `<span style="color:red;">✖ ${__('A communication error has occurred.', 'fe-ai-search')}</span>`;
@@ -248,7 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		deleteStatus.textContent = '';
 
 		try {
-			const response = await wpPost('feas_ai_delete_vectors', { nonce: feas_ai_sync_obj.nonce });
+			const response = await wpPost('fe_ai_search_delete_vectors', { nonce: fe_ai_search_sync_obj.nonce });
 			if (response.success) {
 				deleteStatus.style.color = 'green';
 				deleteStatus.textContent = response.data;
@@ -266,7 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	});
 
 	// "Change Model" Link Handler
-	document.querySelectorAll('.feas-ai-change-model-link').forEach(link => {
+	document.querySelectorAll('.fe-ai-search-change-model-link').forEach(link => {
 		link.addEventListener('click', e => {
 			e.preventDefault();
 			const targetTabId = link.getAttribute('href');
@@ -278,9 +278,9 @@ document.addEventListener('DOMContentLoaded', () => {
 	});
 
 	// --- Animation Speed Slider UI ---
-	const animationSpeedSlider = document.querySelector('#feas_ai_animation_speed_slider');
+	const animationSpeedSlider = document.querySelector('#fe_ai_search_animation_speed_slider');
 	if (animationSpeedSlider) {
-		const animationSpeedValue = document.querySelector('#feas_ai_animation_speed_value');
+		const animationSpeedValue = document.querySelector('#fe_ai_search_animation_speed_value');
 
 		animationSpeedSlider.addEventListener('input', () => {
 			animationSpeedValue.textContent = animationSpeedSlider.value;
@@ -338,7 +338,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				// If it was just opened, initialize any CodeMirror instances inside.
 				if (!isOpen) {
-					content.querySelectorAll('.feas-ai-prompt-editor').forEach(textarea => {
+					content.querySelectorAll('.fe-ai-search-prompt-editor').forEach(textarea => {
 						initializeCodeMirror(textarea);
 					});
 					// Also explicitly refresh any that might already exist.
@@ -369,7 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				targetContent.style.display = 'block';
 
 				// When a tab becomes visible, initialize any CodeMirror editors inside it.
-				targetContent.querySelectorAll('.feas-ai-prompt-editor').forEach(textarea => {
+				targetContent.querySelectorAll('.fe-ai-search-prompt-editor').forEach(textarea => {
 					initializeCodeMirror(textarea);
 				});
 			}
@@ -409,10 +409,10 @@ document.addEventListener('DOMContentLoaded', () => {
 		let action = '';
 		let button = null;
 
-		if (e.target.id === 'feas_ai_license_activate') {
+		if (e.target.id === 'fe_ai_search_license_activate') {
 			action = 'activate';
 			button = e.target;
-		} else if (e.target.id === 'feas_ai_license_deactivate') {
+		} else if (e.target.id === 'fe_ai_search_license_deactivate') {
 			action = 'deactivate';
 			button = e.target;
 		}
@@ -422,7 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			return;
 		}
 
-		const licenseKeyInput = document.getElementById('feas_ai_pro_license_key_input');
+		const licenseKeyInput = document.getElementById('fe_ai_search_pro_license_key_input');
 		const licenseKey = licenseKeyInput ? licenseKeyInput.value : '';
 		const spinner = button.parentElement.querySelector('.spinner');
 
@@ -431,8 +431,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		try {
 			// Use the wpPost helper function we already defined.
-			const response = await wpPost('feas_ai_manage_license', {
-				nonce: feas_ai_sync_obj.nonce,
+			const response = await wpPost('fe_ai_search_manage_license', {
+				nonce: fe_ai_search_sync_obj.nonce,
 				license_key: licenseKey,
 				license_action: action
 			});
