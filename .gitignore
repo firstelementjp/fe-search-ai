@@ -6,7 +6,8 @@ vendor/
 *-copy*
 * copy*      # matches 'filename copy' or 'filename copy.ext'
 * copy *     # matches 'filename copy .ext' or 'filename copy 2.ext'
+* copy.*     # matches 'filename copy.php'
 
 # Exclude hidden files and backup language files
 _*
-*.po~
+*-backup-*.po~
