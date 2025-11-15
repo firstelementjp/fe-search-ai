@@ -9,12 +9,13 @@
  * @since      1.0.0
  */
 
+/* global fe_ai_search_ajax_obj, marked */
+
 // Initialize WordPress internationalization functions.
-const { __ } = window.wp.i18n;
+const { __ } = wp.i18n;
 
 /**
  * A simple wrapper for WordPress AJAX calls using the Fetch API.
- *
  * @param {string} action - The wp_ajax_{action} hook to target.
  * @param {Object} data   - Additional data to send in the request body.
  * @return {Promise<object>} - A promise that resolves to the JSON response.
@@ -39,7 +40,7 @@ function initFEAIChat() {
 	}
 	container.dataset.initialized = 'true';
 
-	// DOM Element Caching
+	// --- 1. DOM Element Caching ---
 	const bubble = document.getElementById('fe_ai_search_chat_bubble');
 	const windowEl = document.getElementById('fe_ai_search_chat_window');
 	const closeBtn = document.getElementById('fe_ai_search_chat_close');
@@ -51,9 +52,7 @@ function initFEAIChat() {
 	const optionsMenu = document.getElementById('fe_ai_search_options_menu');
 	const shiftEnterToggle = document.getElementById('fe_ai_search_send_mode_toggle');
 
-	if (!bubble || !form || !input || !messagesContainer) {
-		return;
-	}
+	if (!bubble || !form || !input || !messagesContainer) return;
 
 	// Handle fullscreen mode on load
 	if (container.classList.contains('is-fullscreen')) {
@@ -61,7 +60,7 @@ function initFEAIChat() {
 		bubble.classList.add('hidden');
 	}
 
-	// State Variables
+	// --- 2. State Variables ---
 	let sessionId = sessionStorage.getItem('fe_ai_search_session_id');
 	if (!sessionId) {
 		sessionId = Date.now().toString(36) + Math.random().toString(36).substr(2);
@@ -74,17 +73,23 @@ function initFEAIChat() {
 	let currentAiMessageElement = null;
 	let fullResponse = '';
 
-	const sendModeToggle = document.getElementById('fe_ai_search_send_mode_toggle');
-
-	let userSendMode = localStorage.getItem('fe_ai_user_send_mode');
-
-	if (userSendMode === null) {
-		userSendMode = fe_ai_search_ajax_obj.send_mode;
+	// --- 3. Initialize Settings (send mode) ---
+	// The chat window uses the site-wide default send_mode as the
+	// initial value, but each user can override it per-browser via
+	// localStorage.
+	// Supported values: 'enter', 'shift_enter', 'cmd_enter'.
+	const storedSendMode = localStorage.getItem('fe_ai_search_send_mode');
+	let sendMode = storedSendMode || fe_ai_search_ajax_obj.send_mode || 'enter';
+	if (!['enter', 'shift_enter', 'cmd_enter'].includes(sendMode)) {
+		sendMode = 'enter';
 	}
 
-	sendModeToggle.value = userSendMode;
+	// Reflect initial state in the dropdown.
+	if (shiftEnterToggle) {
+		shiftEnterToggle.value = sendMode;
+	}
 
-	// Event Listeners
+	// --- 4. Event Listeners ---
 
 	// Toggle chat window
 	bubble.addEventListener('click', () => {
@@ -107,10 +112,16 @@ function initFEAIChat() {
 		optionsMenu.classList.toggle('hidden');
 	});
 
-	// Handle 'Shift+Enter' setting change
-	sendModeToggle.addEventListener('change', () => {
-		userSendMode = sendModeToggle.value;
-		localStorage.setItem('fe_ai_user_send_mode', userSendMode);
+	// Handle send mode dropdown change (per-user override).
+	// This persists the user's preference in localStorage so that
+	// it overrides the site-wide default on subsequent visits.
+	shiftEnterToggle.addEventListener('change', () => {
+		let nextMode = shiftEnterToggle.value;
+		if (!['enter', 'shift_enter', 'cmd_enter'].includes(nextMode)) {
+			nextMode = 'enter';
+		}
+		sendMode = nextMode;
+		localStorage.setItem('fe_ai_search_send_mode', sendMode);
 	});
 
 	/**
@@ -121,40 +132,39 @@ function initFEAIChat() {
 		if (e.isComposing || e.key !== 'Enter') {
 			return;
 		}
-		// Prevent default Enter action (form submission or newline)
+
+		// Prevent default Enter action (form submission or newline).
 		e.preventDefault();
-		const shiftPressed = e.shiftKey;
-		const cmdPressed = e.metaKey || e.ctrlKey;
-		let shouldSubmit = false;
-		// Check the user's current preference
-		switch (userSendMode) {
-			case 'enter':
-				if (!shiftPressed) {
-					shouldSubmit = true;
-				}
-				break;
-			case 'shift_enter':
-				if (shiftPressed) {
-					shouldSubmit = true;
-				} else {
-					input.value += '\n';
-				}
-				break;
-			case 'cmd_enter':
-				if (cmdPressed) {
-					shouldSubmit = true;
-				} else {
-					input.value += '\n';
-				}
-				break;
+
+		// --- Cmd/Ctrl+Enter mode ---
+		if (sendMode === 'cmd_enter') {
+			const modifierPressed = e.metaKey || e.ctrlKey;
+			if (modifierPressed) {
+				// Cmd/Ctrl + Enter -> submit
+				form.dispatchEvent(new Event('submit', { cancelable: true }));
+			} else {
+				// Enter alone -> newline
+				input.value += '\n';
+			}
+			return;
 		}
+
+		// --- Enter / Shift+Enter modes ---
+		const shiftPressed = e.shiftKey;
+		const modifierPressed = e.metaKey || e.ctrlKey;
+		const shouldSubmit =
+			// Shift+Enter mode: submit only on Shift+Enter with no Cmd/Ctrl.
+			(sendMode === 'shift_enter' && shiftPressed && !modifierPressed) ||
+			// Enter mode: submit only on bare Enter (no Shift, no Cmd/Ctrl).
+			(sendMode === 'enter' && !shiftPressed && !modifierPressed);
 
 		if (shouldSubmit) {
 			// Programmatically trigger the 'submit' event.
 			form.dispatchEvent(new Event('submit', { cancelable: true }));
+		} else if (sendMode === 'shift_enter' && !shiftPressed) {
+			// Shift+Enter required but only Enter pressed -> newline.
+			input.value += '\n';
 		}
-		// Note: The logic for 'useShiftEnter && !shiftPressed' was part of an older, conflicting implementation and is removed.
-		// The switch(userSendMode) handles all cases correctly.
 	});
 
 	/**
@@ -180,12 +190,10 @@ function initFEAIChat() {
 		}
 
 		const question = input.value.trim();
-		if (!question) {
-			return;
-		}
+		if (!question) return;
 
 		// Update the session history variable
-		const aiMessageWrapper = addMessage(` <p>${question}</p> `, 'user');
+		const aiMessageWrapper = addMessage(`<p>${question}</p>`, 'user');
 		sessionHistory.push({ role: 'user', content: question });
 
 		const recentHistory = sessionHistory.slice(-10);
@@ -220,120 +228,105 @@ function initFEAIChat() {
 				}
 				const reader = response.body.getReader();
 				const decoder = new TextDecoder();
-				async function processStream(reader, decoder) {
-					try {
-						const { done, value } = await reader.read();
 
-						if (done) {
-							await waitForQueueToEmpty();
-							clearInterval(renderInterval);
+				function processStream() {
+					reader
+						.read()
+						.then(({ done, value }) => {
+							if (done) {
+								waitForQueueToEmpty().then(() => {
+									clearInterval(renderInterval);
+									// Replace the spinner wrapper with the final, parsed content
+									aiMessageWrapperForFeedback.innerHTML =
+										marked.parse(fullResponse);
 
-							// 最終的なレスポンスを表示
-							aiMessageWrapperForFeedback.innerHTML = marked.parse(fullResponse);
-							sessionHistory.push({ role: 'assistant', content: fullResponse });
-							sessionStorage.setItem(
-								'fe_ai_search_chat_history',
-								JSON.stringify(sessionHistory)
-							);
+									sessionHistory.push({
+										role: 'assistant',
+										content: fullResponse,
+									});
+									sessionStorage.setItem(
+										'fe_ai_search_chat_history',
+										JSON.stringify(sessionHistory)
+									);
 
-							// 会話をログに記録
-							try {
-								const logId = await logConversation(
-									question,
-									fullResponse,
-									contextFound
-								);
-								currentLogId = logId;
-
-								if (fe_ai_search_ajax_obj.is_license_active && currentLogId) {
-									const feedbackWrapper = document.createElement('div');
-									feedbackWrapper.className = 'fe-ai-search-feedback';
-									feedbackWrapper.innerHTML = `
-												<button class="feedback-btn good" data-log-id="${currentLogId}" data-rating="1" title="Good">
-													<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor">
-														<path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none" />
-														<path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z" />
-													</svg>
-												</button>
-												<button class="feedback-btn bad" data-log-id="${currentLogId}" data-rating="-1" title="Bad">
-													<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor">
-														<path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none" />
-														<path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14-.47-.14-.73v-2c0-1.1.9-2 2-2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z" />
-													</svg>
-												</button>
-											`;
-									aiMessageWrapperForFeedback.appendChild(feedbackWrapper);
-								}
-
-								enableForm();
-								return;
-							} catch (error) {
-								console.error('Error in logConversation:', error);
-								enableForm();
-								throw error;
-							}
-						}
-
-						// ストリームデータの処理
-						const chunk = decoder.decode(value, { stream: true });
-						const lines = chunk.split('\n\n');
-
-						for (const line of lines) {
-							if (line.startsWith('data: ')) {
-								const dataContent = line.substring(6).trim();
-								if (dataContent === '[DONE]') {
-									continue;
-								}
-
-								try {
-									const jsonData = JSON.parse(dataContent);
-
-									if (jsonData.meta) {
-										contextFound = jsonData.meta.context_found;
-									}
-
-									if (jsonData.text) {
-										if (isFirstChunk) {
-											charQueue = [];
-											isFirstChunk = false;
+									// Log conversation and get the log ID back
+									logConversation(question, fullResponse, contextFound).then(
+										logId => {
+											currentLogId = logId;
+											if (
+												fe_ai_search_ajax_obj.is_license_active &&
+												currentLogId
+											) {
+												const feedbackWrapper =
+													document.createElement('div');
+												feedbackWrapper.className = 'fe-ai-search-feedback';
+												feedbackWrapper.innerHTML = `
+										<button class="feedback-btn good" data-log-id="${currentLogId}" data-rating="1" title="Good">
+											<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none"/><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+										</button>
+										<button class="feedback-btn bad" data-log-id="${currentLogId}" data-rating="-1" title="Bad">
+											<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none"/><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
+										</button>
+									`;
+												aiMessageWrapperForFeedback.appendChild(
+													feedbackWrapper
+												);
+											}
 										}
-										charQueue.push(...jsonData.text.split(''));
-									}
-								} catch (e) {
-									console.error('JSON Parse Error:', e, dataContent);
-								}
+									);
+
+									enableForm();
+								});
+								return;
 							}
-						}
 
-						// 再帰的に次のチャンクを処理
-						return processStream(reader, decoder);
-					} catch (error) {
-						handleError(error);
-						throw error; // エラーを上位に伝播
-					}
+							const chunk = decoder.decode(value, { stream: true });
+							const lines = chunk.split('\n\n');
+							lines.forEach(line => {
+								if (line.startsWith('data: ')) {
+									const dataContent = line.substring(6).trim();
+									if (dataContent === '[DONE]') return;
+									try {
+										const jsonData = JSON.parse(dataContent);
+										if (jsonData.meta) {
+											contextFound = jsonData.meta.context_found;
+										}
+										if (jsonData.text) {
+											if (isFirstChunk) {
+												charQueue = [];
+												isFirstChunk = false;
+											}
+											charQueue.push(...jsonData.text.split(''));
+										}
+									} catch (e) {
+										// Silently ignore malformed JSON chunks in the stream.
+									}
+								}
+							});
+							processStream();
+						})
+						.catch(error => {
+							// Silently ignore stream errors.
+						});
 				}
-
-				// ストリーム処理を開始
-				return processStream(reader, decoder);
+				processStream();
 			})
 			.catch(error => {
-				handleError(error);
+				// Silently ignore fetch errors.
 			});
 	});
 
 	/**
 	 * Handles clicks on the feedback (good/bad) buttons using event delegation.
 	 */
-	messagesContainer.addEventListener('click', function (e) {
-		const button = e.target.closest('.feedback-btn');
+	messagesContainer.addEventListener('click', function (event) {
+		const button = event.target.closest('.feedback-btn');
 		if (button) {
 			const logId = button.dataset.logId;
 			const rating = button.dataset.rating;
 			const feedbackWrapper = button.parentElement;
 
-			if (!logId || !rating) {
-				return;
-			}
+			if (!logId || !rating) return;
 
 			wpPost('fe_ai_search_rate_answer', {
 				nonce: fe_ai_search_ajax_obj.nonce,
@@ -354,11 +347,10 @@ function initFEAIChat() {
 		}
 	});
 
-	// Helper Functions
+	// --- 5. Helper Functions ---
 
 	/**
 	 * Adds a message to the chat UI.
-	 *
 	 * @param {string} html - The HTML content of the message.
 	 * @param {string} type - 'user', 'ai', or 'system'.
 	 * @return {HTMLElement} The new message wrapper element.
@@ -374,7 +366,6 @@ function initFEAIChat() {
 
 	/**
 	 * Logs the conversation to the database via AJAX.
-	 *
 	 * @param {string}  question     - The user's question.
 	 * @param {string}  answer       - The AI's full answer.
 	 * @param {boolean} contextFound - Whether context was found.
@@ -398,7 +389,7 @@ function initFEAIChat() {
 				return response.data.log_id;
 			}
 		} catch (error) {
-			console.error('Error logging conversation:', error);
+			// Swallow logging errors to avoid impacting the chat UI.
 		}
 		return null;
 	}
@@ -414,9 +405,7 @@ function initFEAIChat() {
 		) {
 			currentAiMessageElement.innerHTML = '';
 		}
-		if (charQueue.length === 0) {
-			return;
-		}
+		if (charQueue.length === 0) return;
 
 		const charsToRender = charQueue
 			.splice(0, fe_ai_search_ajax_obj.animation_speed || 3)
@@ -437,7 +426,6 @@ function initFEAIChat() {
 
 	/**
 	 * Waits for the character queue to be empty.
-	 *
 	 * @return {Promise<void>}
 	 */
 	function waitForQueueToEmpty() {
@@ -470,7 +458,6 @@ function initFEAIChat() {
 
 	/**
 	 * Handles fetch or stream errors.
-	 *
 	 * @param {Error} error - The error object.
 	 */
 	function handleError(error) {
@@ -479,7 +466,6 @@ function initFEAIChat() {
 			currentAiMessageElement.innerHTML =
 				'<p>' + __('An error occurred. Please try again.', 'fe-ai-search') + '</p>';
 		}
-		console.error('Chat Error:', error);
 		enableForm();
 	}
 }
