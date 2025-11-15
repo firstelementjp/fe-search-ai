@@ -9,6 +9,8 @@
  * @package    fe-ai-search
  * @subpackage Frontend
  * @since      1.0.0
+ * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @license    GPL-2.0-or-later
  */
 
 namespace FEAISearch\Frontend;
@@ -26,7 +28,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since      1.0.0
  * @package    fe-ai-search
+ * @subpackage Frontend
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @license    GPL-2.0-or-later
  */
 class FE_AI_Search_Chat_UI {
 

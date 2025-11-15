@@ -3,7 +3,7 @@
  * Plugin Name: FE AI Search
  * Plugin URI:  https://fe-advanced-search.com/
  * Description: AI-powered search for WordPress.
- * Version:     0.3
+ * Version:     1.0.0
  * Author:      FirstElement, Inc.
  * Author URI:  https://www.firstelement.co.jp/
  * Text Domain: fe-ai-search
@@ -11,7 +11,7 @@
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+	exit;
 }
 
 define( 'FE_AI_SEARCH_VERSION', '1.0.0' );
@@ -28,42 +28,50 @@ if ( file_exists( FE_AI_SEARCH_PLUGIN_DIR . 'vendor/autoload.php' ) ) {
  */
 spl_autoload_register(
 	function ( $class ) {
-	$prefix   = 'FEAISearch\\';
-	$base_dir = FE_AI_SEARCH_PLUGIN_DIR . 'includes/';
-	$len      = strlen( $prefix );
+		$prefix   = 'FEAISearch\\';
+		$base_dir = FE_AI_SEARCH_PLUGIN_DIR . 'includes/';
+		$len      = strlen( $prefix );
 
-	if ( strncmp( $prefix, $class, $len ) !== 0 ) {
-		return;
-	}
+		if ( strncmp( $prefix, $class, $len ) !== 0 ) {
+			return;
+		}
 
-	$relative_class = substr( $class, $len );
+		$relative_class = substr( $class, $len );
 
-	$psr4_file = $base_dir . str_replace( '\\', '/', $relative_class ) . '.php';
-	if ( file_exists( $psr4_file ) ) {
-		require $psr4_file;
-		return;
-	}
+		$psr4_file = $base_dir . str_replace( '\\', '/', $relative_class ) . '.php';
+		if ( file_exists( $psr4_file ) ) {
+			require $psr4_file;
+			return;
+		}
 
-	$parts        = explode( '\\', $relative_class );
-	$class_name   = array_pop( $parts );
-	$wp_file_name = 'class-' . str_replace( '_', '-', strtolower( $class_name ) ) . '.php';
+		$parts        = explode( '\\', $relative_class );
+		$class_name   = array_pop( $parts );
+		$wp_file_name = 'class-' . str_replace( '_', '-', strtolower( $class_name ) ) . '.php';
 
-	$wp_file_path = $base_dir . strtolower( implode( '/', $parts ) );
-	if ( ! empty( $parts ) ) {
-		$wp_file_path .= '/';
-	}
-	$wp_file_path .= $wp_file_name;
+		$wp_file_path = $base_dir . strtolower( implode( '/', $parts ) );
+		if ( ! empty( $parts ) ) {
+			$wp_file_path .= '/';
+		}
+		$wp_file_path .= $wp_file_name;
 
-	if ( file_exists( $wp_file_path ) ) {
-		require $wp_file_path;
-		return;
-	}
+		if ( file_exists( $wp_file_path ) ) {
+			require $wp_file_path;
+			return;
+		}
 	}
 );
 
 register_activation_hook( FE_AI_SEARCH_PLUGIN_FILE, [ 'FEAISearch\Core\FE_AI_Search_Activator', 'activate' ] );
 register_deactivation_hook( FE_AI_SEARCH_PLUGIN_FILE, [ 'FEAISearch\Core\FE_AI_Search_Activator', 'deactivate' ] );
 
+/**
+ * Boots the FE AI Search plugin and wires up core services.
+ *
+ * Initializes the database schema if needed, registers the main admin,
+ * frontend, and AJAX handlers, and stores the shared sync hooks instance.
+ *
+ * @since 1.0.0
+ */
 function fe_ai_search_run_plugin() {
 	\FEAISearch\Core\FE_AI_Search_Activator::check_db_version();
 	$assets_handler = new FEAISearch\Core\FE_AI_Search_Assets();
@@ -72,7 +80,7 @@ function fe_ai_search_run_plugin() {
 	add_filter(
 		'fe_ai_get_sync_handler_instance',
 		function () use ( $sync_handler ) {
-		return $sync_handler;
+			return $sync_handler;
 		}
 	);
 

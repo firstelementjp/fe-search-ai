@@ -1,13 +1,20 @@
 <?php
 /**
- * Italian Language Data for FE AI Search.
+ * Italian language configuration for FE AI Search.
+ *
+ * Provides stop words and basic prompt injection phrases used when the
+ * site locale is set to Italian.
  *
  * @package    fe-ai-search
  * @subpackage i18n
  * @since      1.0.0
+ * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @license    GPL-2.0-or-later
  */
 
-if ( ! defined( 'ABSPATH' ) ) exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 
 // Italian Language Data.
 return [

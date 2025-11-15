@@ -1,13 +1,20 @@
 <?php
 /**
- * Portuguese (Brazil) Language Data for FE AI Search.
+ * Portuguese (Brazil) language configuration for FE AI Search.
+ *
+ * Provides stop words and basic prompt injection phrases used when the
+ * site locale is set to Brazilian Portuguese.
  *
  * @package    fe-ai-search
  * @subpackage i18n
  * @since      1.0.0
+ * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @license    GPL-2.0-or-later
  */
 
-if ( ! defined( 'ABSPATH' ) ) exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 
 // Portuguese (Brazil) Language Data.
 return [

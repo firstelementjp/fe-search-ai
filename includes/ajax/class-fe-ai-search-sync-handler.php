@@ -9,6 +9,8 @@
  * @package    fe-ai-search
  * @subpackage Ajax
  * @since      1.0.0
+ * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @license    GPL-2.0-or-later
  */
 
 namespace FEAISearch\Ajax;
@@ -29,7 +31,9 @@ use WP_Error;
  *
  * @since      1.0.0
  * @package    fe-ai-search
+ * @subpackage Ajax
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @license    GPL-2.0-or-later
  */
 class FE_AI_Search_Sync_Handler {
 
@@ -415,7 +419,7 @@ class FE_AI_Search_Sync_Handler {
 		);
 
 		// DEBUG: Log keyword extraction results.
-		\FEAISearch\Core\fe_ai_search_Logger::log(
+		\FEAISearch\Core\FE_AI_Search_Logger::log(
 			'DEBUG',
 			'Keyword extraction from user question.',
 			[
@@ -435,7 +439,7 @@ class FE_AI_Search_Sync_Handler {
 		$vector_ids   = $wpdb->get_col( $wpdb->prepare( $sql, $valid_keywords ) );
 
 		// DEBUG: Log index search results.
-		\FEAISearch\Core\fe_ai_search_Logger::log(
+		\FEAISearch\Core\FE_AI_Search_Logger::log(
 			'DEBUG',
 			'Keyword index search completed.',
 			[
@@ -614,7 +618,7 @@ class FE_AI_Search_Sync_Handler {
 		$api_key = $this->options['api']['openai']['key'];
 		if ( empty( $api_key ) ) {
 			// Log the error before returning.
-			\FEAISearch\Core\fe_ai_search_Logger::log( 'ERROR', 'OpenAI Embedding API call skipped: API Key is not set.' );
+			\FEAISearch\Core\FE_AI_Search_Logger::log( 'ERROR', 'OpenAI Embedding API call skipped: API Key is not set.' );
 			return new \WP_Error( 'api_key_missing', __( 'The OpenAI API key is not configured.', 'fe-ai-search' ) );
 		}
 
@@ -648,7 +652,7 @@ class FE_AI_Search_Sync_Handler {
 
 		if ( is_wp_error( $response ) ) {
 			// Log the connection failure.
-			\FEAISearch\Core\fe_ai_search_Logger::log(
+			\FEAISearch\Core\FE_AI_Search_Logger::log(
 				'ERROR',
 				'OpenAI Embedding API call failed.',
 				[
@@ -669,7 +673,7 @@ class FE_AI_Search_Sync_Handler {
 				: __( 'Unknown API Error', 'fe-ai-search' );
 
 			// Log the API error.
-			\FEAISearch\Core\fe_ai_search_Logger::log(
+			\FEAISearch\Core\FE_AI_Search_Logger::log(
 				'ERROR',
 				'OpenAI Embedding API call failed (API Error).',
 				[
@@ -685,7 +689,7 @@ class FE_AI_Search_Sync_Handler {
 		$usage = $response_body['usage'] ?? [];
 
 		// Log the successful call.
-		\FEAISearch\Core\fe_ai_search_Logger::log(
+		\FEAISearch\Core\FE_AI_Search_Logger::log(
 			'SUCCESS',
 			'OpenAI Embedding API call succeeded.',
 			[
@@ -705,7 +709,7 @@ class FE_AI_Search_Sync_Handler {
 		$api_key = $this->options['api']['google']['key'];
 		if ( empty( $api_key ) ) {
 			// Log the error before returning.
-			\FEAISearch\Core\fe_ai_search_Logger::log( 'ERROR', 'Gemini Embedding API call skipped: API Key is not set.' );
+			\FEAISearch\Core\FE_AI_Search_Logger::log( 'ERROR', 'Gemini Embedding API call skipped: API Key is not set.' );
 			return new \WP_Error( 'api_key_missing', __( 'The Google Cloud API key is not configured.', 'fe-ai-search' ) );
 		}
 

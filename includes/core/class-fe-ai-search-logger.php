@@ -5,6 +5,8 @@
  * @package    fe-ai-search
  * @subpackage Core
  * @since      1.0.0
+ * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @license    GPL-2.0-or-later
  */
 
 namespace FEAISearch\Core;
@@ -13,13 +15,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * System logger utility class for FE AI Search.
+ *
+ * Provides a static interface for writing structured log entries to the
+ * custom system logs table when debug mode is enabled.
+ *
+ * @since      1.0.0
+ * @package    fe-ai-search
+ * @subpackage Core
+ * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @license    GPL-2.0-or-later
+ */
 class FE_AI_Search_Logger {
-
-	private $options = [];
-
-	public function __construct( $sync_handler ) {
-		$this->options = get_option( 'fe_ai_search_settings', [] );
-	}
 
 	/**
 	 * Records a system-level event to the database if debug mode is enabled.
@@ -32,7 +40,9 @@ class FE_AI_Search_Logger {
 	 * @param array  $data    Optional. Additional data to store as JSON.
 	 */
 	public static function log( string $level, string $message, array $data = [] ) {
-		$is_enabled = $this->options['data']['debug_options']['is_enabled'];
+		// Read the latest settings directly because this is a static method.
+		$options    = get_option( 'fe_ai_search_settings', [] );
+		$is_enabled = $options['data']['debug_options']['is_enabled'] ?? false;
 		if ( ! $is_enabled ) {
 			return;
 		}

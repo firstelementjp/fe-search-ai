@@ -8,6 +8,7 @@
  * @package    fe-ai-search
  * @subpackage Core
  * @since      1.0.0
+ * @license    GPL-2.0-or-later
  */
 
 namespace FEAISearch\Core;
@@ -21,7 +22,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since      1.0.0
  * @package    fe-ai-search
+ * @subpackage Core
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @license    GPL-2.0-or-later
  */
 class FE_AI_Search_License_Handler {
 

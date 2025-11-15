@@ -8,6 +8,8 @@
  * @package    fe-ai-search
  * @subpackage Admin
  * @since      1.0.0
+ * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @license    GPL-2.0-or-later
  */
 
 namespace FEAISearch\Admin;
@@ -25,7 +27,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since      1.0.0
  * @package    fe-ai-search
+ * @subpackage Admin
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @license    GPL-2.0-or-later
  */
 class FE_AI_Search_Settings {
 
@@ -90,6 +94,7 @@ class FE_AI_Search_Settings {
 				<a href="#tab-display" class="nav-tab"><?php esc_html_e( 'Display', 'fe-ai-search' ); ?></a>
 				<a href="#tab-prompt" class="nav-tab"><?php esc_html_e( 'Prompt', 'fe-ai-search' ); ?></a>
 				<a href="#tab-data" class="nav-tab"><?php esc_html_e( 'Data', 'fe-ai-search' ); ?></a>
+				<a href="#tab-advanced" class="nav-tab"><?php esc_html_e( 'Advanced', 'fe-ai-search' ); ?></a>
 				<?php
 				/**
 				 * Fires within the settings page's tab wrapper to add custom navigation tabs.
@@ -175,10 +180,12 @@ class FE_AI_Search_Settings {
 					<table class="form-table">
 						<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_data_section' ); ?>
 					</table>
+				</div>
 
-					<?php do_settings_sections( 'fe_ai_search_debug_section' ); ?>
+				<div id="tab-advanced" class="tab-content">
+					<?php do_settings_sections( 'fe_ai_search_advanced_section' ); ?>
 					<table class="form-table">
-						<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_debug_section' ); ?>
+						<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_advanced_section' ); ?>
 					</table>
 				</div>
 
@@ -261,7 +268,6 @@ class FE_AI_Search_Settings {
 		add_settings_field( 'fe_ai_search_display_chat_text', __( 'Chat Text & Colors', 'fe-ai-search' ), [ $this, 'display_text_color_field_html' ], $page_slug, 'fe_ai_search_display_appearance_section' );
 		add_settings_field( 'fe_ai_search_display_interaction', __( 'Interaction', 'fe-ai-search' ), [ $this, 'display_interaction_field_html' ], $page_slug, 'fe_ai_search_display_appearance_section' );
 		add_settings_field( 'fe_ai_search_display_links', __( 'Legal Links', 'fe-ai-search' ), [ $this, 'display_links_field_html' ], $page_slug, 'fe_ai_search_display_appearance_section' );
-		add_settings_field( 'fe_ai_search_display_advanced', __( 'Advanced Display', 'fe-ai-search' ), [ $this, 'display_advanced_field_html' ], $page_slug, 'fe_ai_search_display_appearance_section' );
 
 		// Floating Mode Section
 		add_settings_section( 'fe_ai_search_display_floating_section', __( 'Floating Mode Settings', 'fe-ai-search' ), null, $page_slug );
@@ -287,8 +293,12 @@ class FE_AI_Search_Settings {
 		add_settings_field( 'fe_ai_search_delete_vectors_ui', __( 'Delete Synced Data', 'fe-ai-search' ), [ $this, 'delete_vectors_ui_field_html' ], $page_slug, 'fe_ai_search_data_section' );
 		add_settings_field( 'fe_ai_search_delete_on_uninstall', __( 'Delete Data on Uninstall', 'fe-ai-search' ), [ $this, 'delete_on_uninstall_field_html' ], $page_slug, 'fe_ai_search_data_section' );
 
-		add_settings_section( 'fe_ai_search_debug_section', __( 'Debugging', 'fe-ai-search' ), null, $page_slug );
-		add_settings_field( 'fe_ai_search_debug_mode_enabled', __( 'Enable Debug Mode', 'fe-ai-search' ), [ $this, 'debug_mode_field_html' ], $page_slug, 'fe_ai_search_debug_section' );
+		// ------------------
+		// Advanced Tab
+		// ------------------
+		add_settings_section( 'fe_ai_search_advanced_section', __( 'Advanced Settings', 'fe-ai-search' ), null, $page_slug );
+		add_settings_field( 'fe_ai_search_display_advanced', __( 'Assets Loading', 'fe-ai-search' ), [ $this, 'display_advanced_field_html' ], $page_slug, 'fe_ai_search_advanced_section' );
+		add_settings_field( 'fe_ai_search_debug_mode_enabled', __( 'Debug Mode', 'fe-ai-search' ), [ $this, 'debug_mode_field_html' ], $page_slug, 'fe_ai_search_advanced_section' );
 	}
 
 	/**
@@ -399,7 +409,7 @@ class FE_AI_Search_Settings {
 	}
 
 	public function openai_api_key_field_html() {
-		$api_key = $this->options['api']['openai_key'] ?? '';
+		$api_key = $this->options['provider']['openai_key'] ?? '';
 
 		$model_to_display = 'gpt-4o-mini';
 		if ( $this->is_license_active ) {
@@ -410,7 +420,7 @@ class FE_AI_Search_Settings {
 		<input
 			type="password"
 			id="fe_ai_search_openai_api_key"
-			name="fe_ai_search_settings[api][openai_key]"
+			name="fe_ai_search_settings[provider][openai_key]"
 			value="<?php echo esc_attr( $api_key ); ?>"
 			class="regular-text"
 		>
@@ -453,7 +463,7 @@ class FE_AI_Search_Settings {
 	}
 
 	public function google_api_key_field_html() {
-		$api_key = $this->options['api']['google_key'] ?? '';
+		$api_key = $this->options['provider']['google_key'] ?? '';
 
 		$model_to_display = 'gemini-2.5-flash-lite';
 		if ( $this->is_license_active ) {
@@ -464,7 +474,7 @@ class FE_AI_Search_Settings {
 		<input
 			type="password"
 			id="fe_ai_search_google_api_key"
-			name="fe_ai_search_settings[api][google_key]"
+			name="fe_ai_search_settings[provider][google_key]"
 			value="<?php echo esc_attr( $api_key ); ?>"
 			class="regular-text"
 		>
@@ -507,7 +517,7 @@ class FE_AI_Search_Settings {
 	}
 
 	public function anthropic_api_key_field_html() {
-		$api_key = $this->options['api']['anthropic'] ?? '';
+		$api_key = $this->options['provider']['anthropic_key'] ?? '';
 
 		$model_to_display = 'claude-haiku-4-5-20251001';
 		if ( $this->is_license_active ) {
@@ -518,7 +528,7 @@ class FE_AI_Search_Settings {
 		<input
 			type="password"
 			id="fe_ai_search_anthropic_api_key"
-			name="fe_ai_search_settings[api][anthropic]"
+			name="fe_ai_search_settings[provider][anthropic_key]"
 			value="<?php echo esc_attr( $api_key ); ?>"
 			class="regular-text"
 		>
@@ -1376,7 +1386,7 @@ class FE_AI_Search_Settings {
 	 * It receives the raw input from the form, validates/cleans each part,
 	 * and merges it with the existing settings to ensure no data is lost.
 	 *
-	 * @since 1.2.0
+	 * @since 1.0.0
 	 * @param array $input The raw array of settings data from the $_POST request.
 	 * @return array The fully sanitized and merged array to be saved.
 	 */
@@ -1384,16 +1394,12 @@ class FE_AI_Search_Settings {
 		// Start with the existing, saved options.
 		$new_input = get_option( 'fe_ai_search_settings', [] );
 
-		// --- API Tab ---
-		$new_input['api']['openai_key']    = sanitize_text_field( $input['api']['openai_key'] ?? '' );
-		$new_input['api']['google_key']    = sanitize_text_field( $input['api']['google_key'] ?? '' );
-		$new_input['api']['anthropic_key'] = sanitize_text_field( $input['api']['anthropic_key'] ?? '' );
-
-		// --- Embedding Tab ---
-		$new_input['embedding']['provider'] = sanitize_key( $input['embedding']['provider'] ?? 'openai' );
-
-		// --- Chat Tab ---
-		$new_input['chat']['provider'] = sanitize_key( $input['chat']['provider'] ?? 'openai' );
+		// --- Provider Tab ---
+		$new_input['provider']['openai_key']    = sanitize_text_field( $input['provider']['openai_key'] ?? '' );
+		$new_input['provider']['google_key']    = sanitize_text_field( $input['provider']['google_key'] ?? '' );
+		$new_input['provider']['anthropic_key'] = sanitize_text_field( $input['provider']['anthropic_key'] ?? '' );
+		$new_input['provider']['embedding']     = sanitize_key( $input['provider']['embedding'] ?? 'openai' );
+		$new_input['provider']['chat']          = sanitize_key( $input['provider']['chat'] ?? 'openai' );
 
 		// --- Prompt Tab ---
 		$new_input['prompt']['site_name']     = sanitize_text_field( $input['prompt']['site_name'] ?? '' );
@@ -1478,7 +1484,12 @@ class FE_AI_Search_Settings {
 		$new_input                        = [];
 		$new_input['key_color']           = sanitize_hex_color( $input['key_color'] ?? '#0073aa' );
 		$new_input['animation_speed']     = absint( $input['animation_speed'] ?? 3 );
-		$new_input['send_on_shift_enter'] = ! empty( $input['send_on_shift_enter'] );
+		// Validate send_mode string (enter / shift_enter / cmd_enter).
+		$send_mode = $input['send_mode'] ?? 'enter';
+		if ( ! in_array( $send_mode, [ 'enter', 'shift_enter', 'cmd_enter' ], true ) ) {
+			$send_mode = 'enter';
+		}
+		$new_input['send_mode'] = $send_mode;
 		$new_input['enable_css']          = ! empty( $input['enable_css'] );
 		$new_input['enable_js']           = ! empty( $input['enable_js'] );
 		return $new_input;

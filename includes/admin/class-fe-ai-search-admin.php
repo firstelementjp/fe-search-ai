@@ -8,6 +8,8 @@
  * @package    fe-ai-search
  * @subpackage Admin
  * @since      1.0.0
+ * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @license    GPL-2.0-or-later
  */
 
 namespace FEAISearch\Admin;
@@ -26,7 +28,9 @@ use FEAISearch\Admin\FE_AI_Search_Settings;
  *
  * @since      1.0.0
  * @package    fe-ai-search
+ * @subpackage Admin
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @license    GPL-2.0-or-later
  */
 class FE_AI_Search_Admin {
 

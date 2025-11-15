@@ -6,8 +6,10 @@
  * like tab navigation and CodeMirror initialization.
  *
  * @package
- * @since 1.0.0
+ * @since   1.0.0
  */
+
+/* global ajaxurl, fe_ai_search_sync_obj */
 
 document.addEventListener('DOMContentLoaded', () => {
 	// Initialize WordPress internationalization functions.

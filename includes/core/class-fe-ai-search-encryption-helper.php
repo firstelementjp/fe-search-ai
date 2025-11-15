@@ -5,6 +5,8 @@
  * @package    fe-ai-search
  * @subpackage Core
  * @since      1.0.0
+ * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @license    GPL-2.0-or-later
  */
 
 namespace FEAISearch\Core;
@@ -20,9 +22,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  * It can use either a custom encryption key defined in wp-config.php or fall back
  * to WordPress's AUTH_KEY for encryption/decryption operations.
  *
- * @since   1.0.0
- * @package fe-ai-search
- * @author  FirstElement, Inc. <info@firstelement.co.jp>
+ * @since      1.0.0
+ * @package    fe-ai-search
+ * @subpackage Core
+ * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @license    GPL-2.0-or-later
  */
 class FE_AI_Search_Encryption_Helper {
 

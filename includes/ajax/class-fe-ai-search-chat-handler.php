@@ -9,6 +9,8 @@
  * @package    fe-ai-search
  * @subpackage Ajax
  * @since      1.0.0
+ * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @license    GPL-2.0-or-later
  */
 
 namespace FEAISearch\Ajax;
@@ -26,7 +28,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since      1.0.0
  * @package    fe-ai-search
+ * @subpackage Ajax
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @license    GPL-2.0-or-later
  */
 class FE_AI_Search_Chat_Handler {
 
@@ -77,6 +81,7 @@ class FE_AI_Search_Chat_Handler {
 	 * Stream handler for processing REST API requests
 	 */
 	public function stream_handler( \WP_REST_Request $request ) {
+		error_log('[fe-ai] stream_handler START');
 
 		$default_limits = [
 			'ip_limit_count'     => 100,  // 100 requests per hour per IP
@@ -160,10 +165,15 @@ class FE_AI_Search_Chat_Handler {
 				throw new \Exception( 'Nonce verification failed.' );
 			}
 
-			$provider = $this->options['provider']['chat'];
+			error_log('[fe-ai] stream_handler after nonce, before question');
+
+			// Provider is selected from the provider.chat setting (e.g. openai/google/anthropic).
+			$provider = $this->options['provider']['chat'] ?? 'openai';
 
 			$question = sanitize_text_field( $request->get_param( 'question' ) );
 			$history  = json_decode( stripslashes( $request->get_param( 'history' ) ?? '[]' ), true );
+
+			error_log('[fe-ai] stream_handler question = ' . $question);
 
 			/**
 			 * Filters the user's question right before it is processed.
@@ -181,7 +191,9 @@ class FE_AI_Search_Chat_Handler {
 				return;
 			}
 
-			$similar_chunks = $this->sync_handler->find_similar_chunks( $question );
+			//$similar_chunks = $this->sync_handler->find_similar_chunks( $question );
+			error_log('[fe-ai] stream_handler after find_similar_chunks, count=' . ( is_array( $similar_chunks ) ? count( $similar_chunks ) : -1 ) );
+
 
 			/**
 			 * Filters the array of retrieved context chunks.
@@ -196,9 +208,12 @@ class FE_AI_Search_Chat_Handler {
 			 * @param array  $similar_chunks An array of the retrieved chunk items.
 			 * @param string $question       The original user's question.
 			 */
-			$similar_chunks = apply_filters( 'fe_ai_search_retrieved_chunks', $similar_chunks, $question );
+			//$similar_chunks = apply_filters( 'fe_ai_search_retrieved_chunks', $similar_chunks, $question );
+			error_log('[fe-ai] stream_handler after retrieved_chunks filter');
 
 			$context_found = ! empty( $similar_chunks );
+			error_log('[fe-ai] stream_handler before meta echo, context_found=' . ( $context_found ? '1' : '0' ));
+
 			echo 'data: ' . json_encode(
 				[
 					'meta' => [
@@ -209,7 +224,11 @@ class FE_AI_Search_Chat_Handler {
 			) . "\n\n";
 			flush();
 
+			error_log('[fe-ai] stream_handler after meta echo, before stream_chat_completion');
+
 			$this->stream_chat_completion( $question, $similar_chunks, $history, $provider );
+
+			error_log('[fe-ai] stream_handler after stream_chat_completion');
 
 		} catch ( \Exception $e ) {
 			echo 'data: ' . json_encode( [ 'error' => 'An error occurred during processing.' ] ) . "\n\n";
@@ -257,11 +276,12 @@ class FE_AI_Search_Chat_Handler {
 		$start_time = microtime( true );
 
 		if ( 'openai_compatible' === $provider ) {
-			$api_url = $this->options['api']['openai_compatible']['endpoint'];
-			$api_key = $this->options['api']['openai_compatible']['key'];
+			$api_url = $this->options['provider']['openai_compatible_endpoint'] ?? '';
+			$api_key = $this->options['provider']['openai_compatible_key'] ?? '';
 		} else {
 			$api_url = 'https://api.openai.com/v1/chat/completions';
-			$api_key = $this->options['api']['openai']['key'];
+			// Admin UI stores the key at provider.openai_key.
+			$api_key = $this->options['provider']['openai_key'] ?? '';
 		}
 
 		if ( empty( $api_key ) || empty( $api_url ) ) {
@@ -280,10 +300,10 @@ class FE_AI_Search_Chat_Handler {
 		$model = 'gpt-4o-mini'; // Default
 		if ( $this->is_license_active ) {
 			if ( 'openai_compatible' === $provider ) {
-				$model = $this->options['model']['openai_compatible'];
+				$model = $this->options['model']['openai_compatible'] ?? $model;
 			} else {
-				$model = $this->options['model']['openai'];
-				$model = ( 'custom' === $model['type'] ) ? $model['custom'] : $model['type'];
+				$model = $this->options['model']['openai'] ?? [ 'type' => $model ];
+				$model = ( isset( $model['type'] ) && 'custom' === $model['type'] ) ? $model['custom'] : $model['type'];
 			}
 		}
 
@@ -297,7 +317,7 @@ class FE_AI_Search_Chat_Handler {
 			]
 		);
 
-		$messages = self::build_prompt_messages(
+		$messages = $this->build_prompt_messages(
 			$question,
 			$context_chunks,
 			$history,
@@ -401,7 +421,8 @@ class FE_AI_Search_Chat_Handler {
 	private function stream_completion_for_gemini( $question, $context_chunks, $history, $provider ) {
 		$start_time = microtime( true );
 
-		$api_key = $this->options['api']['google']['key'];
+		// Admin UI stores the key at provider.google_key.
+		$api_key = $this->options['provider']['google_key'] ?? '';
 		if ( empty( $api_key ) ) {
 			\FEAISearch\Core\FE_AI_Search_Logger::log(
 				'ERROR',
@@ -418,7 +439,7 @@ class FE_AI_Search_Chat_Handler {
 		$model = 'gemini-2.5-flash-lite'; // Default
 		if ( $this->is_license_active ) {
 			$model = $this->options['model']['google'] ?? [ 'type' => $model ];
-			$model = ( 'custom' === $model['type'] ) ? $model['custom'] : $model['type'];
+			$model = ( isset( $model['type'] ) && 'custom' === $model['type'] ) ? $model['custom'] : $model['type'];
 		}
 
 		// INFO: Log the start of the API call.
@@ -559,7 +580,8 @@ class FE_AI_Search_Chat_Handler {
 		// Start the timer.
 		$start_time = microtime( true );
 
-		$api_key = $this->options['api']['anthropic']['key'];
+		// Admin UI stores the key at provider.anthropic_key.
+		$api_key = $this->options['provider']['anthropic_key'] ?? '';
 		if ( empty( $api_key ) ) {
 			\FEAISearch\Core\FE_AI_Search_Logger::log(
 				'ERROR',
@@ -700,16 +722,17 @@ class FE_AI_Search_Chat_Handler {
 	/**
 	 * A common function to assemble prompts and messages array
 	 */
-	public static function build_prompt_messages( $question, $context_chunks, $history, $for_claude = false ) {
+	public function build_prompt_messages( $question, $context_chunks, $history, $for_claude = false ) {
 		$context_str = '';
 
+		// Provider slug from provider settings.
 		$provider = $this->options['provider']['chat'] ?? 'openai';
 
 		// Get the default prompt
 		$system_prompt = self::get_default_system_prompt();
 
 		// If there is a basic prompt, overwrite with it.
-		$free_prompt = $this->options['prompt']['system'];
+		$free_prompt = $this->options['prompt']['system_prompt'] ?? '';
 		if ( ! empty( $free_prompt ) ) {
 			$system_prompt = $free_prompt;
 		}
@@ -724,8 +747,8 @@ class FE_AI_Search_Chat_Handler {
 		}
 
 		// Get site info and replace placeholders in the prompt.
-		$site_name    = $this->options['site_info']['site_name'] ?? get_bloginfo( 'name' );
-		$site_purpose = $this->options['site_info']['site_purpose'] ?? get_bloginfo( 'description' );
+		$site_name    = $this->options['prompt']['site_name'] ?? get_bloginfo( 'name' );
+		$site_purpose = $this->options['prompt']['site_purpose'] ?? get_bloginfo( 'description' );
 
 		$system_prompt = str_replace( '{site_name}', $site_name, $system_prompt );
 		$system_prompt = str_replace( '{site_purpose}', $site_purpose, $system_prompt );
@@ -743,9 +766,10 @@ class FE_AI_Search_Chat_Handler {
 		 */
 		$system_prompt = apply_filters( 'fe_ai_search_system_prompt', $system_prompt, $provider );
 
-		$options         = $this->options['display']['options'];
-		$terms_page_id   = $options['terms_page_id'] ?? 0;
-		$privacy_page_id = $options['privacy_page_id'] ?? 0;
+		// Legal links are managed under the Display > Text/Links settings.
+		$links           = $this->options['display']['links'] ?? [];
+		$terms_page_id   = $links['terms_page_id'] ?? 0;
+		$privacy_page_id = $links['privacy_page_id'] ?? 0;
 
 		// Add the legal document at the beginning of the context.
 		$legal_context = '';
