@@ -13,7 +13,9 @@
 
 namespace FEAISearch\Ajax;
 
-if ( ! defined( 'ABSPATH' ) ) exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 
 /**
  * Main controller for all frontend chat interactions.
@@ -28,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  */
 class FE_AI_Search_Chat_Handler {
 
-	private $options = [];
+	private $options           = [];
 	private $is_license_active = '';
 	private $sync_handler;
 
@@ -45,12 +47,12 @@ class FE_AI_Search_Chat_Handler {
 		$products     = $license_data['data']['products'] ?? [];
 
 		$this->is_license_active = ( 'active' === $status && in_array( 'pro', $products, true ) );
-		$this->sync_handler = $sync_handler;
+		$this->sync_handler      = $sync_handler;
 
-		add_action( 'rest_api_init', array( $this, 'register_endpoints' ) );
-		add_action( 'wp_ajax_nopriv_feas_ai_log_query', array( $this, 'ajax_log_query' ) );
-		add_action( 'wp_ajax_fe_ai_search_log_query', array( $this, 'ajax_log_query' ) );
-		add_action( 'wp_ajax_fe_ai_search_test_api_key', array( $this, 'ajax_test_api_key' ) );
+		add_action( 'rest_api_init', [ $this, 'register_endpoints' ] );
+		add_action( 'wp_ajax_nopriv_fe_ai_search_log_query', [ $this, 'ajax_log_query' ] );
+		add_action( 'wp_ajax_fe_ai_search_log_query', [ $this, 'ajax_log_query' ] );
+		add_action( 'wp_ajax_fe_ai_search_test_api_key', [ $this, 'ajax_test_api_key' ] );
 		add_action( 'wp_ajax_fe_ai_search_manage_license', [ $this, 'ajax_manage_license' ] );
 		add_filter( 'fe_ai_search_filter_user_question', [ $this, 'filter_basic_injection_phrases' ], 20 );
 		add_filter( 'fe_ai_search_filter_model_response', [ $this, 'filter_basic_injection_phrases' ], 20 );
@@ -60,11 +62,15 @@ class FE_AI_Search_Chat_Handler {
 	 * Register REST API endpoints for streaming and non-streaming
 	 */
 	public function register_endpoints() {
-		register_rest_route( 'fe-ai-search/v1', '/stream', [
-			'methods'             => 'POST',
-			'callback'            => [ $this, 'stream_handler' ],
-			'permission_callback' => '__return_true',
-		] );
+		register_rest_route(
+			'fe-ai-search/v1',
+			'/stream',
+			[
+				'methods'             => 'POST',
+				'callback'            => [ $this, 'stream_handler' ],
+				'permission_callback' => '__return_true',
+			]
+		);
 	}
 
 	/**
@@ -100,7 +106,7 @@ class FE_AI_Search_Chat_Handler {
 
 			if ( $ip_request_count > $ip_limit_count ) {
 				status_header( 429 );
-				echo "data: " . json_encode(['text' => __( 'You have exceeded the request limit. Please try again later.', 'fe-ai-search' )]) . "\n\n";
+				echo 'data: ' . json_encode( [ 'text' => __( 'You have exceeded the request limit. Please try again later.', 'fe-ai-search' ) ] ) . "\n\n";
 				exit;
 			}
 			set_transient( $ip_transient_key, ( (int) $ip_request_count + 1 ), HOUR_IN_SECONDS );
@@ -112,7 +118,7 @@ class FE_AI_Search_Chat_Handler {
 
 			if ( $global_request_count > $global_limit_count ) {
 				status_header( 429 );
-				echo "data: " . json_encode(['text' => __( 'The site-wide request limit for today has been reached.', 'fe-ai-search' )]) . "\n\n";
+				echo 'data: ' . json_encode( [ 'text' => __( 'The site-wide request limit for today has been reached.', 'fe-ai-search' ) ] ) . "\n\n";
 				exit;
 			}
 
@@ -125,7 +131,7 @@ class FE_AI_Search_Chat_Handler {
 				if ( ! get_transient( 'fe_ai_search_rl_notify_sent' ) ) {
 					$subject = get_bloginfo( 'name' ) . ' - AI Search Limit Warning';
 					$message = "Your site's daily AI request limit is about to be reached. "
-					. $new_global_count . " / " . $global_limit_count . " requests have been used.";
+					. $new_global_count . ' / ' . $global_limit_count . ' requests have been used.';
 					wp_mail( $notify_email, $subject, $message ); // Use the final email address
 					set_transient( 'fe_ai_search_rl_notify_sent', true, DAY_IN_SECONDS );
 				}
@@ -157,7 +163,7 @@ class FE_AI_Search_Chat_Handler {
 			$provider = $this->options['provider']['chat'];
 
 			$question = sanitize_text_field( $request->get_param( 'question' ) );
-			$history = json_decode( stripslashes( $request->get_param( 'history' ) ?? '[]' ), true );
+			$history  = json_decode( stripslashes( $request->get_param( 'history' ) ?? '[]' ), true );
 
 			/**
 			 * Filters the user's question right before it is processed.
@@ -193,16 +199,20 @@ class FE_AI_Search_Chat_Handler {
 			$similar_chunks = apply_filters( 'fe_ai_search_retrieved_chunks', $similar_chunks, $question );
 
 			$context_found = ! empty( $similar_chunks );
-			echo "data: " . json_encode( ['meta' => [
-				'context_found' => $context_found,
-				'provider'      => $provider,
-			]] ) . "\n\n";
+			echo 'data: ' . json_encode(
+				[
+					'meta' => [
+						'context_found' => $context_found,
+						'provider'      => $provider,
+					],
+				]
+			) . "\n\n";
 			flush();
 
 			$this->stream_chat_completion( $question, $similar_chunks, $history, $provider );
 
 		} catch ( \Exception $e ) {
-			echo "data: " . json_encode( ['error' => 'An error occurred during processing.'] ) . "\n\n";
+			echo 'data: ' . json_encode( [ 'error' => 'An error occurred during processing.' ] ) . "\n\n";
 			flush();
 		} finally {
 			exit;
@@ -212,7 +222,7 @@ class FE_AI_Search_Chat_Handler {
 	/**
 	 * Command tower for switching response-generating AI
 	 */
-	public function stream_chat_completion( $question, $context_chunks, $history = array(), $provider ) {
+	public function stream_chat_completion( $question, $context_chunks, $history = [], $provider ) {
 
 		/**
 		 * Fires before the default stream completion handlers.
@@ -225,7 +235,7 @@ class FE_AI_Search_Chat_Handler {
 		 */
 		do_action( "fe_ai_search_stream_for_{$provider}", $question, $context_chunks, $history, $provider );
 
-		switch ($provider) {
+		switch ( $provider ) {
 			case 'google':
 				$this->stream_completion_for_gemini( $question, $context_chunks, $history, $provider );
 				break;
@@ -254,14 +264,14 @@ class FE_AI_Search_Chat_Handler {
 			$api_key = $this->options['api']['openai']['key'];
 		}
 
-		if ( empty( $api_key ) || empty($api_url) ) {
+		if ( empty( $api_key ) || empty( $api_url ) ) {
 			\FEAISearch\Core\FE_AI_Search_Logger::log(
 				'ERROR',
 				'Chat completion failed: API Key or Endpoint URL is not set.',
 				[ 'provider' => $provider ]
 			);
 
-			echo "data: " . json_encode(['text' => __( 'Error: OpenAI API key not set.', 'fe-ai-search' )]) . "\n\n";
+			echo 'data: ' . json_encode( [ 'text' => __( 'Error: OpenAI API key not set.', 'fe-ai-search' ) ] ) . "\n\n";
 			echo "data: [DONE]\n\n";
 			flush();
 			return;
@@ -287,7 +297,7 @@ class FE_AI_Search_Chat_Handler {
 			]
 		);
 
-		$messages = \FEAISearch\Ajax\FE_AI_Search_Chat_Handler::build_prompt_messages(
+		$messages = self::build_prompt_messages(
 			$question,
 			$context_chunks,
 			$history,
@@ -308,43 +318,47 @@ class FE_AI_Search_Chat_Handler {
 		curl_setopt( $ch, CURLOPT_HTTPHEADER, [ 'Content-Type: application/json', 'Authorization: Bearer ' . $api_key ] );
 
 		// The WRITEFUNCTION callback processes the stream chunks as they arrive.
-		curl_setopt( $ch, CURLOPT_WRITEFUNCTION, function( $curl, $data ) {
+		curl_setopt(
+			$ch,
+			CURLOPT_WRITEFUNCTION,
+			function ( $curl, $data ) {
 
-			$lines = explode( "\n", $data );
+				$lines = explode( "\n", $data );
 
-			foreach ( $lines as $line ) {
-				if ( strpos( $line, 'data: ' ) === 0) {
+				foreach ( $lines as $line ) {
+					if ( strpos( $line, 'data: ' ) === 0 ) {
 
-					$json_data = substr( $line, 6 );
-					if ( trim( $json_data ) === '[DONE]' ) {
-						continue;
-					}
-					$chunk = json_decode($json_data, true);
-
-					if ( isset( $chunk['choices'][0]['delta']['content'] ) ) {
-
-						/**
-						 * Filters a chunk of the AI's response text right before it is sent to the user.
-						 *
-						 * This hook allows for real-time censorship or modification of the AI's output
-						 * as it is being streamed.
-						 *
-						 * @since 1.0.0
-						 *
-						 * @param string $content The text chunk generated by the AI model.
-						 */
-						$content = apply_filters( 'fe_ai_search_filter_model_response', $chunk['choices'][0]['delta']['content'] );
-
-						echo "data: " . json_encode( ['text' => $content] ) . "\n\n";
-						if ( ob_get_level() > 0 ) {
-							ob_flush();
+						$json_data = substr( $line, 6 );
+						if ( trim( $json_data ) === '[DONE]' ) {
+							continue;
 						}
-						flush();
+						$chunk = json_decode( $json_data, true );
+
+						if ( isset( $chunk['choices'][0]['delta']['content'] ) ) {
+
+							/**
+							 * Filters a chunk of the AI's response text right before it is sent to the user.
+							 *
+							 * This hook allows for real-time censorship or modification of the AI's output
+							 * as it is being streamed.
+							 *
+							 * @since 1.0.0
+							 *
+							 * @param string $content The text chunk generated by the AI model.
+							 */
+							$content = apply_filters( 'fe_ai_search_filter_model_response', $chunk['choices'][0]['delta']['content'] );
+
+							echo 'data: ' . json_encode( [ 'text' => $content ] ) . "\n\n";
+							if ( ob_get_level() > 0 ) {
+								ob_flush();
+							}
+							flush();
+						}
 					}
 				}
+				return strlen( $data );
 			}
-			return strlen( $data );
-		});
+		);
 
 		// Execute the request.
 		curl_exec( $ch );
@@ -395,7 +409,7 @@ class FE_AI_Search_Chat_Handler {
 				[ 'provider' => $provider ]
 			);
 
-			echo "data: " . json_encode( ['text' => __( 'Error: Google API key is not set.', 'fe-ai-search' )] ) . "\n\n";
+			echo 'data: ' . json_encode( [ 'text' => __( 'Error: Google API key is not set.', 'fe-ai-search' ) ] ) . "\n\n";
 			echo "data: [DONE]\n\n";
 			flush();
 			return;
@@ -403,7 +417,7 @@ class FE_AI_Search_Chat_Handler {
 
 		$model = 'gemini-2.5-flash-lite'; // Default
 		if ( $this->is_license_active ) {
-			$model = $this->options['model']['google'] ?? ['type' => $model];
+			$model = $this->options['model']['google'] ?? [ 'type' => $model ];
 			$model = ( 'custom' === $model['type'] ) ? $model['custom'] : $model['type'];
 		}
 
@@ -417,7 +431,7 @@ class FE_AI_Search_Chat_Handler {
 			]
 		);
 
-		$messages = \FEAISearch\Ajax\FE_AI_Search_Chat_Handler::build_prompt_messages(
+		$messages = self::build_prompt_messages(
 			$question,
 			$context_chunks,
 			$history,
@@ -430,12 +444,14 @@ class FE_AI_Search_Chat_Handler {
 		$gemini_contents = [];
 		foreach ( $messages as $message ) {
 			$role = ( $message['role'] === 'assistant' ) ? 'model' : 'user';
-			if ( ! empty( $gemini_contents ) && end( $gemini_contents )['role'] === $role ) continue;
+			if ( ! empty( $gemini_contents ) && end( $gemini_contents )['role'] === $role ) {
+				continue;
+			}
 			$gemini_contents[] = [
-				'role' => $role,
+				'role'  => $role,
 				'parts' => [
-						['text' => $message['content']]
-				]
+					[ 'text' => $message['content'] ],
+				],
 			];
 		}
 
@@ -446,11 +462,11 @@ class FE_AI_Search_Chat_Handler {
 		);
 
 		$body = [
-			'contents' => $gemini_contents,
+			'contents'          => $gemini_contents,
 			'systemInstruction' => [
 				'parts' => [
-					['text' => $system_prompt_text]
-				]
+					[ 'text' => $system_prompt_text ],
+				],
 			],
 		];
 
@@ -459,43 +475,47 @@ class FE_AI_Search_Chat_Handler {
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
 		curl_setopt( $ch, CURLOPT_POST, true );
 		curl_setopt( $ch, CURLOPT_POSTFIELDS, json_encode( $body ) );
-		curl_setopt( $ch, CURLOPT_HTTPHEADER, array( 'Content-Type: application/json' ) );
-		curl_setopt( $ch, CURLOPT_WRITEFUNCTION, function( $curl, $data ) {
+		curl_setopt( $ch, CURLOPT_HTTPHEADER, [ 'Content-Type: application/json' ] );
+		curl_setopt(
+			$ch,
+			CURLOPT_WRITEFUNCTION,
+			function ( $curl, $data ) {
 
-			$lines = explode( "\n", $data );
+				$lines = explode( "\n", $data );
 
-			foreach ( $lines as $line_index => $line ) {
-				if ( strpos( $line, 'data: ' ) === 0 ) {
+				foreach ( $lines as $line_index => $line ) {
+					if ( strpos( $line, 'data: ' ) === 0 ) {
 
-					$json_data = substr( $line, 6 );
-					$chunk = json_decode( $json_data, true );
+						$json_data = substr( $line, 6 );
+						$chunk     = json_decode( $json_data, true );
 
-					if ( is_array( $chunk ) && isset( $chunk['candidates'][0]['content']['parts'][0]['text'] ) ) {
+						if ( is_array( $chunk ) && isset( $chunk['candidates'][0]['content']['parts'][0]['text'] ) ) {
 
-						$content = $chunk['candidates'][0]['content']['parts'][0]['text'];
+							$content = $chunk['candidates'][0]['content']['parts'][0]['text'];
 
-						/**
-						 * Filters a chunk of the AI's response text right before it is sent to the user.
-						 *
-						 * This hook allows for real-time censorship or modification of the AI's output
-						 * as it is being streamed.
-						 *
-						 * @since 1.0.0
-						 *
-						 * @param string $content The text chunk generated by the AI model.
-						 */
-						$content = apply_filters( 'fe_ai_search_filter_model_response', $content );
+							/**
+							 * Filters a chunk of the AI's response text right before it is sent to the user.
+							 *
+							 * This hook allows for real-time censorship or modification of the AI's output
+							 * as it is being streamed.
+							 *
+							 * @since 1.0.0
+							 *
+							 * @param string $content The text chunk generated by the AI model.
+							 */
+							$content = apply_filters( 'fe_ai_search_filter_model_response', $content );
 
-						echo "data: " . json_encode( ['text' => $content] ) . "\n\n";
-						if ( ob_get_level() > 0 ) {
-							ob_flush();
+							echo 'data: ' . json_encode( [ 'text' => $content ] ) . "\n\n";
+							if ( ob_get_level() > 0 ) {
+								ob_flush();
+							}
+							flush();
 						}
-						flush();
 					}
 				}
+				return strlen( $data );
 			}
-			return strlen( $data );
-		});
+		);
 
 		// Execute the request.
 		curl_exec( $ch );
@@ -547,17 +567,17 @@ class FE_AI_Search_Chat_Handler {
 				[ 'provider' => $provider ]
 			);
 
-			echo "data: " . json_encode(
-				['text' => __( 'Error: Anthropic API key not set.', 'fe-ai-search' )]
+			echo 'data: ' . json_encode(
+				[ 'text' => __( 'Error: Anthropic API key not set.', 'fe-ai-search' ) ]
 			) . "\n\n";
 			echo "data: [DONE]\n\n";
 			flush();
 			return;
 		}
 
-		$model = 'claude-3-5-haiku-20241022'; // Default
+		$model = 'claude-haiku-4-5-20251001'; // Default
 		if ( $this->is_license_active ) {
-			$model = $this->options['model']['anthropic'] ?? ['type' => $model];
+			$model = $this->options['model']['anthropic'] ?? [ 'type' => $model ];
 			$model = ( 'custom' === $model['type'] ) ? $model['custom'] : $model['type'];
 		}
 
@@ -571,7 +591,7 @@ class FE_AI_Search_Chat_Handler {
 			]
 		);
 
-		$messages = \FEAISearch\Ajax\FE_AI_Search_Chat_Handler::build_prompt_messages(
+		$messages = self::build_prompt_messages(
 			$question,
 			$context_chunks,
 			$history,
@@ -591,50 +611,58 @@ class FE_AI_Search_Chat_Handler {
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
 		curl_setopt( $ch, CURLOPT_POST, true );
 		curl_setopt( $ch, CURLOPT_POSTFIELDS, json_encode( $body ) );
-		curl_setopt( $ch, CURLOPT_HTTPHEADER, [
-			'Content-Type: application/json',
-			'x-api-key: ' . $api_key,
-			'anthropic-version: 2023-06-01'
-		] );
-		curl_setopt( $ch, CURLOPT_WRITEFUNCTION, function( $curl, $data ) {
+		curl_setopt(
+			$ch,
+			CURLOPT_HTTPHEADER,
+			[
+				'Content-Type: application/json',
+				'x-api-key: ' . $api_key,
+				'anthropic-version: 2023-06-01',
+			]
+		);
+		curl_setopt(
+			$ch,
+			CURLOPT_WRITEFUNCTION,
+			function ( $curl, $data ) {
 
-			$lines = explode( "\n", $data );
+				$lines = explode( "\n", $data );
 
-			foreach ( $lines as $line ) {
-				if ( strpos( $line, 'data: ' ) === 0 ) {
+				foreach ( $lines as $line ) {
+					if ( strpos( $line, 'data: ' ) === 0 ) {
 
-					$json_data = substr( $line, 6 );
-					$chunk = json_decode( $json_data, true );
+						$json_data = substr( $line, 6 );
+						$chunk     = json_decode( $json_data, true );
 
-					if ( isset( $chunk['type'] )
+						if ( isset( $chunk['type'] )
 						&& $chunk['type'] === 'content_block_delta'
 						&& isset( $chunk['delta']['type'] ) && $chunk['delta']['type'] === 'text_delta' ) {
 
-						$content = $chunk['delta']['text'];
+							$content = $chunk['delta']['text'];
 
-						/**
-						 * Filters a chunk of the AI's response text right before it is sent to the user.
-						 *
-						 * This hook allows for real-time censorship or modification of the AI's output
-						 * as it is being streamed.
-						 *
-						 * @since 1.0.0
-						 *
-						 * @param string $content The text chunk generated by the AI model.
-						 */
-						$content = apply_filters( 'fe_ai_search_filter_model_response', $content );
+							/**
+							 * Filters a chunk of the AI's response text right before it is sent to the user.
+							 *
+							 * This hook allows for real-time censorship or modification of the AI's output
+							 * as it is being streamed.
+							 *
+							 * @since 1.0.0
+							 *
+							 * @param string $content The text chunk generated by the AI model.
+							 */
+							$content = apply_filters( 'fe_ai_search_filter_model_response', $content );
 
-						echo "data: " . json_encode( ['text' => $content] ) . "\n\n";
+							echo 'data: ' . json_encode( [ 'text' => $content ] ) . "\n\n";
 
-						if ( ob_get_level() > 0 ) {
-							ob_flush();
+							if ( ob_get_level() > 0 ) {
+								ob_flush();
+							}
+							flush();
 						}
-						flush();
 					}
 				}
+				return strlen( $data );
 			}
-			return strlen( $data );
-		});
+		);
 
 		curl_exec( $ch );
 		echo "data: [DONE]\n\n";
@@ -690,13 +718,13 @@ class FE_AI_Search_Chat_Handler {
 		if ( $this->is_license_active ) {
 			$custom_prompts = $this->options['prompt'];
 
-			if ( ! empty( $custom_prompts[$provider] ) ) {
-				$system_prompt = $custom_prompts[$provider];
+			if ( ! empty( $custom_prompts[ $provider ] ) ) {
+				$system_prompt = $custom_prompts[ $provider ];
 			}
 		}
 
 		// Get site info and replace placeholders in the prompt.
-		$site_name = $this->options['site_info']['site_name'] ?? get_bloginfo( 'name' );
+		$site_name    = $this->options['site_info']['site_name'] ?? get_bloginfo( 'name' );
 		$site_purpose = $this->options['site_info']['site_purpose'] ?? get_bloginfo( 'description' );
 
 		$system_prompt = str_replace( '{site_name}', $site_name, $system_prompt );
@@ -715,8 +743,8 @@ class FE_AI_Search_Chat_Handler {
 		 */
 		$system_prompt = apply_filters( 'fe_ai_search_system_prompt', $system_prompt, $provider );
 
-		$options = $this->options['display']['options'];
-		$terms_page_id = $options['terms_page_id'] ?? 0;
+		$options         = $this->options['display']['options'];
+		$terms_page_id   = $options['terms_page_id'] ?? 0;
 		$privacy_page_id = $options['privacy_page_id'] ?? 0;
 
 		// Add the legal document at the beginning of the context.
@@ -742,7 +770,7 @@ class FE_AI_Search_Chat_Handler {
 			$context_str = "Site Information:\n";
 			foreach ( $context_chunks as $chunk ) {
 				$context_str .= "--- START OF ARTICLE ---\n" .
-								"Source URL: " . $chunk['permalink'] . "\n" .
+								'Source URL: ' . $chunk['permalink'] . "\n" .
 								"Content:\n" . $chunk['content_chunk'] . "\n" .
 								"--- END OF ARTICLE ---\n\n";
 			}
@@ -757,9 +785,12 @@ class FE_AI_Search_Chat_Handler {
 		 *
 		 * @var array $messages The cleaned conversation history.
 		 */
-		$messages = array_filter( $history, function( $msg ) {
-			return ! ( isset( $msg['role'] ) && $msg['role'] === 'assistant' && empty( trim( $msg['content'] ) ) );
-		});
+		$messages = array_filter(
+			$history,
+			function ( $msg ) {
+				return ! ( isset( $msg['role'] ) && $msg['role'] === 'assistant' && empty( trim( $msg['content'] ) ) );
+			}
+		);
 
 		$user_question_with_context = $context_str . "\n\nBased on the Site Information provided above, answer the following question:\n" . $question;
 
@@ -770,15 +801,16 @@ class FE_AI_Search_Chat_Handler {
 
 		// Return the final data in the format specified by the provider.
 		if ( $for_claude ) {
-			return ['messages' => array_values( $messages ), 'system' => $system_prompt];
+			return [ 'messages' => array_values( $messages ), 'system' => $system_prompt ];
 		} else { // for OpenAI & Gemini
-			array_unshift( $messages, ['role' => 'system', 'content' => $system_prompt] );
+			array_unshift( $messages, [ 'role' => 'system', 'content' => $system_prompt ] );
 			return $messages;
 		}
 	}
 
 	/**
 	 * Returns the default system prompt.
+	 *
 	 * @return string
 	 */
 	public static function get_default_system_prompt() {
@@ -799,6 +831,22 @@ class FE_AI_Search_Chat_Handler {
 - **Formatting**: Format your answers using standard Markdown, such as headings and lists, to make them easy to read.";
 	}
 
+	/**
+	 * AJAX handler: Saves chat conversation logs to the database.
+	 *
+	 * This method processes the AJAX request to log chat interactions. It checks if logging is enabled
+	 * and the Pro version is active before proceeding. The method sanitizes input data and stores
+	 * the conversation in the custom database table.
+	 *
+	 * @since    1.0.0
+	 * @return   void
+	 *
+	 * @uses     check_ajax_referer() Verifies the AJAX request to prevent CSRF.
+	 * @uses     wpdb::insert()       Inserts the log entry into the database.
+	 *
+	 * @hook     wp_ajax_fe_ai_search_log_query
+	 * @hook     wp_ajax_nopriv_feas_ai_log_query
+	 */
 	public function ajax_log_query() {
 		if ( ! class_exists( 'FEAISearch\Pro\Admin\FE_AI_Search_Pro_Settings' ) || ! get_option( 'fe_ai_search_enable_logging' ) ) {
 			wp_send_json_success( [ 'log_id' => 0 ] );
@@ -810,22 +858,22 @@ class FE_AI_Search_Chat_Handler {
 		global $wpdb;
 		$logs_table = $wpdb->prefix . 'fe_ai_search_logs';
 
-		$question = isset( $_POST['question'] ) ? sanitize_text_field( $_POST['question'] ) : '';
-		$answer = isset( $_POST['answer'] ) ? wp_kses_post( $_POST['answer'] ) : '';
-		$session_id = isset( $_POST['session_id'] ) ? sanitize_key( $_POST['session_id'] ) : '';
+		$question      = isset( $_POST['question'] ) ? sanitize_text_field( $_POST['question'] ) : '';
+		$answer        = isset( $_POST['answer'] ) ? wp_kses_post( $_POST['answer'] ) : '';
+		$session_id    = isset( $_POST['session_id'] ) ? sanitize_key( $_POST['session_id'] ) : '';
 		$context_found = isset( $_POST['context_found'] ) ? (bool) $_POST['context_found'] : false;
-		$log_id = 0;
+		$log_id        = 0;
 
 		if ( ! empty( $question ) && ! empty( $session_id ) ) {
 			$wpdb->insert(
 				$logs_table,
-				array(
+				[
 					'session_id'    => $session_id,
 					'question'      => $question,
 					'answer'        => $answer,
 					'context_found' => $context_found,
 					'created_at'    => current_time( 'mysql' ),
-				)
+				]
 			);
 			$log_id = $wpdb->insert_id;
 		}
@@ -878,7 +926,7 @@ class FE_AI_Search_Chat_Handler {
 
 		} else {
 
-			$is_valid = false;
+			$is_valid      = false;
 			$error_message = '';
 
 			switch ( $provider ) {
@@ -887,9 +935,12 @@ class FE_AI_Search_Chat_Handler {
 						$error_message = __( 'API key is missing.', 'fe-ai-search' );
 						break;
 					}
-					$response = wp_remote_get( 'https://api.openai.com/v1/models', [
-						'headers' => ['Authorization' => 'Bearer ' . $api_key]
-					]);
+					$response = wp_remote_get(
+						'https://api.openai.com/v1/models',
+						[
+							'headers' => [ 'Authorization' => 'Bearer ' . $api_key ],
+						]
+					);
 					if ( ! is_wp_error( $response ) && wp_remote_retrieve_response_code( $response ) === 200 ) {
 						$is_valid = true;
 					} else {
@@ -902,25 +953,30 @@ class FE_AI_Search_Chat_Handler {
 						$error_message = __( 'API key is missing.', 'fe-ai-search' );
 						break;
 					}
-					$response = wp_remote_post( 'https://api.anthropic.com/v1/messages', [
-						'headers' => [
-							'x-api-key'         => $api_key,
-							'anthropic-version' => '2023-06-01',
-							'Content-Type'      => 'application/json'
-						],
-						'body'    => json_encode([
-							'model'      => 'claude-3-haiku-20240307',
-							'max_tokens' => 1,
-							'messages'   => [['role' => 'user', 'content' => 'Hello']]
-						])
-					]);
+					$response = wp_remote_post(
+						'https://api.anthropic.com/v1/messages',
+						[
+							'headers' => [
+								'x-api-key'         => $api_key,
+								'anthropic-version' => '2023-06-01',
+								'Content-Type'      => 'application/json',
+							],
+							'body'    => json_encode(
+								[
+									'model'      => 'claude-3-haiku-20240307',
+									'max_tokens' => 1,
+									'messages'   => [ [ 'role' => 'user', 'content' => 'Hello' ] ],
+								]
+							),
+						]
+					);
 
 					if ( ! is_wp_error( $response ) && wp_remote_retrieve_response_code( $response ) === 200 ) {
 						$is_valid = true;
 					} else {
 						$error_message = __( 'Authentication failed.', 'fe-ai-search' );
 						if ( ! is_wp_error( $response ) ) {
-							$body = json_decode( wp_remote_retrieve_body( $response ), true );
+							$body          = json_decode( wp_remote_retrieve_body( $response ), true );
 							$error_message = $body['error']['message'] ?? $error_message;
 						}
 					}
@@ -931,7 +987,7 @@ class FE_AI_Search_Chat_Handler {
 						$error_message = __( 'API key is missing.', 'fe-ai-search' );
 						break;
 					}
-					$api_url = 'https://generativelanguage.googleapis.com/v1beta/models?key=' . $api_key;
+					$api_url  = 'https://generativelanguage.googleapis.com/v1beta/models?key=' . $api_key;
 					$response = wp_remote_get( $api_url );
 
 					if ( ! is_wp_error( $response ) && wp_remote_retrieve_response_code( $response ) === 200 ) {
@@ -939,7 +995,7 @@ class FE_AI_Search_Chat_Handler {
 					} else {
 						$error_message = __( 'Authentication failed.', 'fe-ai-search' );
 						if ( ! is_wp_error( $response ) ) {
-							$body = json_decode( wp_remote_retrieve_body( $response ), true );
+							$body          = json_decode( wp_remote_retrieve_body( $response ), true );
 							$error_message = $body['error']['message'] ?? $error_message;
 						}
 					}
@@ -948,7 +1004,7 @@ class FE_AI_Search_Chat_Handler {
 				default:
 					$error_message = __( 'Unknown provider.', 'fe-ai-search' );
 			}
-			$result = ['is_valid' => $is_valid, 'message' => $error_message];
+			$result = [ 'is_valid' => $is_valid, 'message' => $error_message ];
 		}
 
 		if ( $result['is_valid'] ) {
@@ -969,14 +1025,14 @@ class FE_AI_Search_Chat_Handler {
 	 */
 	public function filter_basic_injection_phrases( $text ) {
 		$all_injection_phrases = [];
-		$i18n_dir = FE_AI_SEARCH_PLUGIN_DIR . 'includes/i18n/';
+		$i18n_dir              = FE_AI_SEARCH_PLUGIN_DIR . 'includes/i18n/';
 
 		// Find all language files in the i18n directory.
 		$lang_files = glob( $i18n_dir . '*.php' );
 
 		if ( ! empty( $lang_files ) ) {
 			foreach ( $lang_files as $file ) {
-				$lang_data = include( $file );
+				$lang_data = include $file;
 				if ( ! empty( $lang_data['injection_phrases'] ) && is_array( $lang_data['injection_phrases'] ) ) {
 					// Merge phrases from all language files into one master list.
 					$all_injection_phrases = array_merge( $all_injection_phrases, $lang_data['injection_phrases'] );
@@ -1038,7 +1094,7 @@ class FE_AI_Search_Chat_Handler {
 			$this->options['license']['status'] = $result['status']; // e.g., 'active'
 			$this->options['license']['data']   = $result['data'] ?? []; // e.g., {'products': ['pro'], ...}
 
-			delete_transient('fe_ai_search_license_error');
+			delete_transient( 'fe_ai_search_license_error' );
 			$send_response = 'wp_send_json_success';
 
 		} else {
@@ -1046,7 +1102,7 @@ class FE_AI_Search_Chat_Handler {
 			$this->options['license']['status'] = 'inactive';
 			$this->options['license']['data']   = [];
 
-			set_transient('fe_ai_search_license_error', $result['message'], 60);
+			set_transient( 'fe_ai_search_license_error', $result['message'], 60 );
 			$send_response = 'wp_send_json_error';
 		}
 

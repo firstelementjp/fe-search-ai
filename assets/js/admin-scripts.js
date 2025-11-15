@@ -5,8 +5,8 @@
  * settings page, including AJAX-based synchronization, API tests, and UI interactions
  * like tab navigation and CodeMirror initialization.
  *
- * @package    fe-ai-search
- * @since      1.0.0
+ * @package
+ * @since 1.0.0
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -16,7 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
 	// ==========================================================================
 	// DOM Element Caching
 	// ==========================================================================
-
 	const startBtn = document.querySelector('#fe-ai-start-sync');
 	const progressContainer = document.querySelector('#fe-ai-search-progress-container');
 	const progressBar = document.querySelector('#fe-ai-search-progress-bar');
@@ -30,7 +29,6 @@ document.addEventListener('DOMContentLoaded', () => {
 	// ==========================================================================
 	// Variables
 	// ==========================================================================
-
 	let postIDsToSync = []; // Holds the list of post IDs for the batch sync process.
 
 	// ==========================================================================
@@ -39,17 +37,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	/**
 	 * A simple wrapper for WordPress AJAX calls using the Fetch API.
+	 *
 	 * @param {string} action - The wp_ajax_{action} hook to target.
-	 * @param {object} data - Additional data to send in the request body.
-	 * @returns {Promise<object>} - A promise that resolves to the JSON response.
+	 * @param {Object} data   - Additional data to send in the request body.
+	 * @return {Promise<Object>} A promise that resolves to the JSON response.
 	 */
 	async function wpPost(action, data = {}) {
 		const formData = new URLSearchParams({ action, ...data });
 		const response = await fetch(ajaxurl, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: formData
+			body: formData,
 		});
+
 		return response.json();
 	}
 
@@ -62,23 +62,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	/**
 	 * Initiates a sync process (either full rebuild or smart sync).
-	 * @param {string} action - The AJAX action to call ('fe_ai_search_start_sync' or 'fe_ai_search_start_smart_sync').
-	 * @param {string} confirmationMessage - The message to display in the confirm() dialog.
+	 *
+	 * @param {string} action              The AJAX action to call.
+	 * @param {string} confirmationMessage The message to display in the confirm() dialog.
+	 * @return {void}
 	 */
 	async function startSyncProcess(action, confirmationMessage) {
-		if (!confirm(confirmationMessage)) return;
+		if (!confirm(confirmationMessage)) {
+			return;
+		}
 
-		// Disable both buttons to prevent multiple clicks
+		// Disable both buttons to prevent multiple clicks.
 		rebuildBtn.disabled = true;
 		smartSyncBtn.disabled = true;
 		statusSpinner.style.display = 'inline-block';
-		statusText.textContent = __('Preparing for synchronization...', 'fe-ai-search');
+		statusText.textContent = __('Preparing for synchronization…', 'fe-ai-search');
 		progressContainer.style.display = 'block';
 		progressBar.style.width = '0%';
 		progressBar.textContent = '0%';
 
 		try {
-			const response = await wpPost(action, { nonce: fe_ai_search_sync_obj.nonce });
+			const response = await wpPost(action, {
+				nonce: fe_ai_search_sync_obj.nonce,
+			});
 			if (!response.success) {
 				// If the backend sends an error (like settings changed), display it.
 				throw new Error(response.data.message || 'Failed to start sync.');
@@ -108,22 +114,29 @@ document.addEventListener('DOMContentLoaded', () => {
 	// Handler for the "Rebuild Index" button
 	rebuildBtn?.addEventListener('click', e => {
 		e.preventDefault();
-		const message = __('Are you sure you want to delete all existing indexes and rebuild them? This is a resource-intensive process.', 'fe-ai-search');
+		const message = __(
+			'Are you sure you want to delete all existing indexes and rebuild them? This is a resource-intensive process.',
+			'fe-ai-search'
+		);
 		startSyncProcess('fe_ai_search_start_sync', message);
 	});
-
 	// Handler for the "Sync Changes" button
 	smartSyncBtn?.addEventListener('click', e => {
 		e.preventDefault();
-		const message = __('Are you sure you want to sync recent changes? This will process new, updated, and deleted posts.', 'fe-ai-search');
+		const message = __(
+			'Are you sure you want to sync recent changes? This will process new, updated, and deleted posts.',
+			'fe-ai-search'
+		);
 		startSyncProcess('fe_ai_search_start_smart_sync', message);
 	});
-
 	/**
 	 * Recursively processes one batch of posts at a time.
-	 * @param {number} currentPage - The current batch number to process.
-	 * @param {number} totalPages - The total number of batches.
-	 * @param {number} totalPosts - The total number of posts to sync.
+	 *
+	 * @param {number} currentPage The current batch number to process.
+	 * @param {number} totalPages  The total number of batches.
+	 * @param {number} totalPosts  The total number of posts to sync.
+	 * @param {number} batch_size  Number of posts to process in each batch.
+	 * @return {void}
 	 */
 	async function processBatch(currentPage, totalPages, totalPosts, batch_size) {
 		const processed = Math.min((currentPage - 1) * batch_size, totalPosts);
@@ -131,23 +144,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		progressBar.style.width = `${progress}%`;
 		progressBar.textContent = `${progress}%`;
-		statusText.textContent = `${__('Processing posts...', 'fe-ai-search')} (${processed} / ${totalPosts})`;
+		statusText.textContent = `${__('Processing posts…', 'fe-ai-search')} (${processed} / ${totalPosts})`;
 		statusSpinner.style.display = 'inline-block';
 
-		let responseText = ''; // サーバーからの生テキストを保持する変数
+		// サーバーからの生テキストを保持する変数
+		let responseText = '';
 
 		try {
 			const formData = new URLSearchParams({
 				action: 'fe_ai_search_process_batch',
 				nonce: fe_ai_search_sync_obj.nonce,
 				page: currentPage,
-				post_ids: JSON.stringify(postIDsToSync)
+				post_ids: JSON.stringify(postIDsToSync),
 			});
 
 			// 1. fetchを直接使い、応答をまずテキストとして受け取る
 			const rawResponse = await fetch(ajaxurl, {
 				method: 'POST',
-				body: formData
+				body: formData,
 			});
 			responseText = await rawResponse.text();
 
@@ -167,8 +181,12 @@ document.addEventListener('DOMContentLoaded', () => {
 					statusText.innerHTML = `<strong style="color:green;">${__('Synchronization complete!', 'fe-ai-search')} (${totalPosts} ${__('items', 'fe-ai-search')})</strong>`;
 					startBtn.disabled = false;
 					statusSpinner.style.display = 'none';
-					wpPost('fe_ai_search_update_sync_timestamp', { nonce: fe_ai_search_sync_obj.nonce });
-					wpPost('fe_ai_search_update_settings_hash', { nonce: fe_ai_search_sync_obj.nonce });
+					wpPost('fe_ai_search_update_sync_timestamp', {
+						nonce: fe_ai_search_sync_obj.nonce,
+					});
+					wpPost('fe_ai_search_update_settings_hash', {
+						nonce: fe_ai_search_sync_obj.nonce,
+					});
 				}
 			} else {
 				throw new Error(response.data.message || 'Batch processing failed.');
@@ -194,31 +212,25 @@ document.addEventListener('DOMContentLoaded', () => {
 			const provider = button.dataset.provider;
 			const apiKeyId = button.dataset.apiKeyId || `fe_ai_search_${provider}_api_key`; // デフォルトのIDを構築
 			const endpointId = button.dataset.endpointId;
-
 			const apiKeyInput = document.getElementById(apiKeyId);
 			const apiKey = apiKeyInput ? apiKeyInput.value : '';
-
 			const spinner = button.parentElement.querySelector('.spinner');
 			const status = button.parentElement.querySelector('.fe-ai-search-api-status');
-
-			if ( ! apiKey ) {
+			if (!apiKey) {
 				// APIキーが空でも、エンドポイントテストの場合は警告しない（キーが不要な場合もあるため）
-				if ( ! endpointId ) {
+				if (!endpointId) {
 					alert(__('Please enter an API key.', 'fe-ai-search'));
 					return;
 				}
 			}
-
 			spinner.style.visibility = 'visible';
 			status.textContent = '';
-
 			// AJAXで送信するデータを準備
 			const postData = {
 				nonce: fe_ai_search_sync_obj.nonce,
-				provider: provider,
+				provider,
 				api_key: apiKey,
 			};
-
 			// エンドポイントIDがあれば、その値もデータに追加
 			if (endpointId) {
 				const endpointInput = document.getElementById(endpointId);
@@ -231,24 +243,32 @@ document.addEventListener('DOMContentLoaded', () => {
 				const response = await wpPost('fe_ai_search_test_api_key', postData);
 				status.innerHTML = response.data;
 			} catch {
-				status.innerHTML = `<span style="color:red;">✖ ${__('A communication error has occurred.', 'fe-ai-search')}</span>`;
+				status.innerHTML = `<span style="color:red;">✖${__('A communication error has occurred.', 'fe-ai-search')}</span>`;
 			} finally {
 				spinner.style.visibility = 'hidden';
 			}
 		});
 	});
-
 	// Delete Synced Data Button
 	deleteButton?.addEventListener('click', async () => {
-		if (!confirm(__('Are you sure you want to delete all synced data? This action cannot be undone.', 'fe-ai-search'))) return;
-
+		if (
+			!confirm(
+				__(
+					'Are you sure you want to delete all synced data? This action cannot be undone.',
+					'fe-ai-search'
+				)
+			)
+		) {
+			return;
+		}
 		deleteButton.disabled = true;
 		const spinner = deleteButton.parentElement.querySelector('.spinner');
 		spinner.style.visibility = 'visible';
 		deleteStatus.textContent = '';
-
 		try {
-			const response = await wpPost('fe_ai_search_delete_vectors', { nonce: fe_ai_search_sync_obj.nonce });
+			const response = await wpPost('fe_ai_search_delete_vectors', {
+				nonce: fe_ai_search_sync_obj.nonce,
+			});
 			if (response.success) {
 				deleteStatus.style.color = 'green';
 				deleteStatus.textContent = response.data;
@@ -264,19 +284,19 @@ document.addEventListener('DOMContentLoaded', () => {
 			spinner.style.visibility = 'hidden';
 		}
 	});
-
 	// "Change Model" Link Handler
 	document.querySelectorAll('.fe-ai-search-change-model-link').forEach(link => {
 		link.addEventListener('click', e => {
 			e.preventDefault();
 			const targetTabId = link.getAttribute('href');
-			const targetTab = document.querySelector(`.nav-tab-wrapper a.nav-tab[href="${targetTabId}"]`);
+			const targetTab = document.querySelector(
+				`.nav-tab-wrapper a.nav-tab[href="${targetTabId}"]`
+			);
 			if (targetTab) {
 				targetTab.click();
 			}
 		});
 	});
-
 	// --- Animation Speed Slider UI ---
 	const animationSpeedSlider = document.querySelector('#fe_ai_search_animation_speed_slider');
 	if (animationSpeedSlider) {
@@ -286,7 +306,6 @@ document.addEventListener('DOMContentLoaded', () => {
 			animationSpeedValue.textContent = animationSpeedSlider.value;
 		});
 	}
-
 	// ==========================================================================
 	// Accordion UI Logic (FINAL & COMPLETE VERSION)
 	// ==========================================================================
@@ -294,18 +313,22 @@ document.addEventListener('DOMContentLoaded', () => {
 	/**
 	 * Initializes any open accordions within a specific container.
 	 * This is the core function for making accordions visible.
+	 *
 	 * @param {HTMLElement} container - The element to search within.
+	 * @param               textarea
 	 */
 	// --- CodeMirror Initialization ---
 	// This function is now called specifically when its container becomes visible.
 	function initializeCodeMirror(textarea) {
-		if (!textarea || textarea.dataset.codemirrorInitialized) return;
+		if (!textarea || textarea.dataset.codemirrorInitialized) {
+			return;
+		}
 		const isDisabled = textarea.dataset.disabled === 'true';
 		const editor = CodeMirror.fromTextArea(textarea, {
 			lineNumbers: true,
 			mode: 'markdown',
 			lineWrapping: true,
-			readOnly: isDisabled
+			readOnly: isDisabled,
 		});
 		if (isDisabled) {
 			editor.getWrapperElement().style.backgroundColor = '#f0f0f0';
@@ -321,15 +344,15 @@ document.addEventListener('DOMContentLoaded', () => {
 		settingsWrapper.addEventListener('click', e => {
 			// Check if an accordion title was the target of the click.
 			const title = e.target.closest('.accordion-title');
-			if (!title) return;
-
+			if (!title) {
+				return;
+			}
 			// If a checkbox inside the title was clicked, let it do its thing.
 			if (e.target.tagName === 'INPUT' && e.target.type === 'checkbox') {
 				return;
 			}
 
 			e.preventDefault();
-
 			const content = title.nextElementSibling;
 			if (content && content.classList.contains('accordion-content')) {
 				// Simply toggle the display property. No animations, but always reliable.
@@ -343,26 +366,31 @@ document.addEventListener('DOMContentLoaded', () => {
 					});
 					// Also explicitly refresh any that might already exist.
 					content.querySelectorAll('.CodeMirror').forEach(cm => {
-						if (cm.CodeMirror) cm.CodeMirror.refresh();
+						if (cm.CodeMirror) {
+							cm.CodeMirror.refresh();
+						}
 					});
 				}
 			}
 		});
 	}
-
 	// --- Tab Navigation Logic ---
 	if (tabsWrapper) {
 		const tabContents = document.querySelectorAll('.tab-content');
-		tabContents.forEach(content => content.style.display = 'none');
+		tabContents.forEach(content => (content.style.display = 'none'));
 
-		const activateTab = (targetId) => {
-			if (!targetId || !document.querySelector(targetId)) return;
+		const activateTab = targetId => {
+			if (!targetId || !document.querySelector(targetId)) {
+				return;
+			}
 
-			const targetTab = tabsWrapper.querySelector(`a[href="${targetId}"]`);
+			const targetTab = tabsWrapper.querySelector(`a[href = "${targetId}"]`);
 			const targetContent = document.querySelector(targetId);
 
-			tabsWrapper.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('nav-tab-active'));
-			tabContents.forEach(content => content.style.display = 'none');
+			tabsWrapper
+				.querySelectorAll('.nav-tab')
+				.forEach(tab => tab.classList.remove('nav-tab-active'));
+			tabContents.forEach(content => (content.style.display = 'none'));
 
 			if (targetTab && targetContent) {
 				targetTab.classList.add('nav-tab-active');
@@ -391,9 +419,12 @@ document.addEventListener('DOMContentLoaded', () => {
 		// On initial page load, activate the correct tab.
 		setTimeout(() => {
 			const hash = window.location.hash;
-			const initialTabAnchor = tabsWrapper.querySelector(`a[href="${hash}"]`);
-			const initialTabId = (hash && initialTabAnchor) ? hash : tabsWrapper.querySelector('.nav-tab')?.getAttribute('href');
-			if(initialTabId) {
+			const initialTabAnchor = tabsWrapper.querySelector(`a[href = "${hash}"]`);
+			const initialTabId =
+				hash && initialTabAnchor
+					? hash
+					: tabsWrapper.querySelector('.nav-tab')?.getAttribute('href');
+			if (initialTabId) {
 				activateTab(initialTabId);
 			}
 		}, 50);
@@ -405,10 +436,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	// We must use event delegation on the document body, because the license tab
 	// is part of the main settings form, not a separate Pro feature.
-	document.body.addEventListener('click', async (e) => {
+	document.body.addEventListener('click', async e => {
 		let action = '';
 		let button = null;
-
 		if (e.target.id === 'fe_ai_search_license_activate') {
 			action = 'activate';
 			button = e.target;
@@ -425,21 +455,18 @@ document.addEventListener('DOMContentLoaded', () => {
 		const licenseKeyInput = document.getElementById('fe_ai_search_pro_license_key_input');
 		const licenseKey = licenseKeyInput ? licenseKeyInput.value : '';
 		const spinner = button.parentElement.querySelector('.spinner');
-
 		button.disabled = true;
 		spinner.style.visibility = 'visible';
-
 		try {
 			// Use the wpPost helper function we already defined.
 			const response = await wpPost('fe_ai_search_manage_license', {
 				nonce: fe_ai_search_sync_obj.nonce,
 				license_key: licenseKey,
-				license_action: action
+				license_action: action,
 			});
 
 			// Always reload the page to show the new status.
 			location.reload();
-
 		} catch (error) {
 			alert(__('An error occurred during activation. Please try again.', 'fe-ai-search'));
 			button.disabled = false;

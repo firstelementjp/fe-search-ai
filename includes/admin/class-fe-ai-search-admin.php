@@ -12,7 +12,9 @@
 
 namespace FEAISearch\Admin;
 
-if ( ! defined( 'ABSPATH' ) ) exit; 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 
 use FEAISearch\Admin\FE_AI_Search_Settings;
 
@@ -32,17 +34,17 @@ class FE_AI_Search_Admin {
 
 		new FE_AI_Search_Settings();
 
-		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
-		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
+		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_admin_assets' ] );
+		add_action( 'admin_menu', [ $this, 'add_admin_menu' ] );
 	}
 
 	/**
 	 * Load scripts and styles for the admin panel.
 	 */
 	public function enqueue_admin_assets( $hook_suffix ) {
-		$allowed_hooks = array(
+		$allowed_hooks = [
 			'toplevel_page_fe-ai-search',
-		);
+		];
 		$allowed_hooks = apply_filters( 'fe_ai_search_admin_allowed_hooks', $allowed_hooks );
 
 		if ( ! in_array( $hook_suffix, $allowed_hooks ) ) {
@@ -57,7 +59,7 @@ class FE_AI_Search_Admin {
 		wp_enqueue_style(
 			'fe-ai-search-admin-style',
 			plugin_dir_url( FE_AI_SEARCH_PLUGIN_FILE ) . 'assets/css/admin-styles.css',
-			array(),
+			[],
 			FE_AI_SEARCH_VERSION
 		);
 
@@ -65,14 +67,14 @@ class FE_AI_Search_Admin {
 		wp_enqueue_script(
 			'codemirror-js',
 			'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.js',
-			array(),
+			[],
 			false,
 			true
 		);
 		wp_enqueue_script(
 			'codemirror-markdown',
 			'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/mode/markdown/markdown.min.js',
-			array('codemirror-js'),
+			[ 'codemirror-js' ],
 			false,
 			true
 		);
@@ -87,10 +89,10 @@ class FE_AI_Search_Admin {
 		wp_localize_script(
 			'fe-ai-search-admin-sync',
 			'fe_ai_search_sync_obj',
-			array(
+			[
 				'ajax_url' => admin_url( 'admin-ajax.php' ),
 				'nonce'    => wp_create_nonce( 'fe_ai_search_ajax_nonce' ),
-			)
+			]
 		);
 	}
 
@@ -104,7 +106,7 @@ class FE_AI_Search_Admin {
 			'FE AI Search',
 			'manage_options',
 			$parent_slug,
-			array( FE_AI_Search_Settings::class, 'render_page' ),
+			[ FE_AI_Search_Settings::class, 'render_page' ],
 			'dashicons-search',
 			80
 		);
@@ -114,7 +116,7 @@ class FE_AI_Search_Admin {
 			'Settings',
 			'manage_options',
 			$parent_slug,
-			array( FE_AI_Search_Settings::class, 'render_page' )
+			[ FE_AI_Search_Settings::class, 'render_page' ]
 		);
 	}
 }

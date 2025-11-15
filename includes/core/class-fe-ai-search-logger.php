@@ -4,12 +4,14 @@
  *
  * @package    fe-ai-search
  * @subpackage Core
- * @since      1.2.0
+ * @since      1.0.0
  */
 
 namespace FEAISearch\Core;
 
-if ( ! defined( 'ABSPATH' ) ) exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 
 class FE_AI_Search_Logger {
 
@@ -39,7 +41,7 @@ class FE_AI_Search_Logger {
 		$table_name = $wpdb->prefix . 'fe_ai_search_system_logs';
 
 		// Check if the table exists to prevent errors.
-		if ( $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" ) !== $table_name ) {
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) !== $table_name ) {
 			return;
 		}
 

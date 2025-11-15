@@ -2,7 +2,7 @@
 /**
  * Handles real-time synchronization of posts with the AI index.
  *
- * This file defines the FEAS_AI_Sync_Hooks class, which is responsible for
+ * This file defines the FE_AI_Search_Sync_Hooks class, which is responsible for
  * hooking into WordPress actions like 'save_post' and 'delete_post' to
  * automatically keep the vector database up-to-date.
  *
@@ -38,18 +38,18 @@ class FE_AI_Search_Sync_Hooks {
 	 * all methods in this class to access settings without repeated
 	 * database calls, improving performance.
 	 *
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 * @access private
-	 * @var array $options The complete settings array.
+	 * @var    array $options The complete settings array.
 	 */
 	private $options = [];
 
 	/**
 	 * A reference to the main sync handler class.
 	 *
-	 * @since 1.0.0
+	 * @since  1.0.0
 	 * @access private
-	 * @var \FEAISearch\Ajax\FE_AI_Search_Sync_Handler $sync_handler The main sync handler instance.
+	 * @var    \FEAISearch\Ajax\FE_AI_Search_Sync_Handler $sync_handler The main sync handler instance.
 	 */
 	private $sync_handler;
 
@@ -58,11 +58,11 @@ class FE_AI_Search_Sync_Hooks {
 	 *
 	 * Stores the sync handler dependency and registers the necessary WordPress hooks.
 	 *
-	 * @since 1.0.0
-	 * @param \FEAISearch\Ajax\FE_AI_Search_Sync_Handler $sync_handler The main sync handler instance.
+	 * @since  1.0.0
+	 * @param  \FEAISearch\Ajax\FE_AI_Search_Sync_Handler $sync_handler The main sync handler instance.
 	 */
 	public function __construct( $sync_handler ) {
-		$this->options = get_option( 'fe_ai_search_settings', [] );
+		$this->options      = get_option( 'fe_ai_search_settings', [] );
 		$this->sync_handler = $sync_handler;
 
 		add_action( 'save_post', [ $this, 'sync_single_post_on_update' ], 10, 2 );
@@ -77,9 +77,9 @@ class FE_AI_Search_Sync_Hooks {
 	 * of vector embeddings and keyword indexes for a specific post. It includes
 	 * logic to detect the post's language using common multilingual plugins.
 	 *
-	 * @since 1.0.0
-	 * @param int     $post_id The ID of the post being saved.
-	 * @param \WP_Post $post    The post object.
+	 * @since  1.0.0
+	 * @param  int      $post_id The ID of the post being saved.
+	 * @param  \WP_Post $post    The post object.
 	 */
 	public function sync_single_post_on_update( $post_id, $post ) {
 		$sync_targets = $this->options['sync']['targets'] ?? [];
@@ -118,10 +118,10 @@ class FE_AI_Search_Sync_Hooks {
 		 * Filters the detected language code for a post being indexed.
 		 * Allows developers using other multilingual plugins to provide the correct language code.
 		 *
-		 * @since 1.2.0
-		 * @param string  $lang_code The detected language code (e.g., 'en', 'ja').
-		 * @param int     $post_id   The ID of the post being indexed.
-		 * @param WP_Post $post      The post object.
+		 * @since  1.0.0
+		 * @param  string  $lang_code The detected language code (e.g., 'en', 'ja').
+		 * @param  int     $post_id   The ID of the post being indexed.
+		 * @param  WP_Post $post      The post object.
 		 */
 		$lang_code = apply_filters( 'fe_ai_search_post_language_code', $lang_code, $post_id, $post );
 
@@ -152,7 +152,9 @@ class FE_AI_Search_Sync_Hooks {
 				}
 
 				$chunk_content = $chunks_with_meta[ $index ]['content_chunk'] ?? '';
-				if ( empty( $chunk_content ) ) continue;
+				if ( empty( $chunk_content ) ) {
+					continue;
+				}
 
 				// Insert the vector data into the vectors table.
 				$wpdb->insert(

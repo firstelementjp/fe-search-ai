@@ -5,7 +5,7 @@
  * chat UI, including sending messages, streaming responses, handling
  * session history, and managing user interaction events.
  *
- * @package    fe-ai-search
+ * @package
  * @since      1.0.0
  */
 
@@ -14,16 +14,17 @@ const { __ } = window.wp.i18n;
 
 /**
  * A simple wrapper for WordPress AJAX calls using the Fetch API.
+ *
  * @param {string} action - The wp_ajax_{action} hook to target.
- * @param {object} data - Additional data to send in the request body.
- * @returns {Promise<object>} - A promise that resolves to the JSON response.
+ * @param {Object} data   - Additional data to send in the request body.
+ * @return {Promise<object>} - A promise that resolves to the JSON response.
  */
 async function wpPost(action, data = {}) {
 	const formData = new URLSearchParams({ action, ...data });
 	const response = await fetch(fe_ai_search_ajax_obj.ajax_url, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-		body: formData
+		body: formData,
 	});
 	return response.json();
 }
@@ -50,7 +51,9 @@ function initFEAIChat() {
 	const optionsMenu = document.getElementById('fe_ai_search_options_menu');
 	const shiftEnterToggle = document.getElementById('fe_ai_search_send_mode_toggle');
 
-	if (!bubble || !form || !input || !messagesContainer) return;
+	if (!bubble || !form || !input || !messagesContainer) {
+		return;
+	}
 
 	// Handle fullscreen mode on load
 	if (container.classList.contains('is-fullscreen')) {
@@ -65,7 +68,7 @@ function initFEAIChat() {
 		sessionStorage.setItem('fe_ai_search_session_id', sessionId);
 	}
 
-	let sessionHistory = JSON.parse(sessionStorage.getItem('fe_ai_search_chat_history')) || [];
+	const sessionHistory = JSON.parse(sessionStorage.getItem('fe_ai_search_chat_history')) || [];
 	let charQueue = [];
 	let renderInterval;
 	let currentAiMessageElement = null;
@@ -114,19 +117,15 @@ function initFEAIChat() {
 	 * Handles keyboard input ("Gatekeeper").
 	 * Decides whether to submit the form or create a new line.
 	 */
-	input.addEventListener('keydown', (e) => {
+	input.addEventListener('keydown', e => {
 		if (e.isComposing || e.key !== 'Enter') {
 			return;
 		}
-
 		// Prevent default Enter action (form submission or newline)
 		e.preventDefault();
-
 		const shiftPressed = e.shiftKey;
 		const cmdPressed = e.metaKey || e.ctrlKey;
-
 		let shouldSubmit = false;
-
 		// Check the user's current preference
 		switch (userSendMode) {
 			case 'enter':
@@ -137,16 +136,14 @@ function initFEAIChat() {
 			case 'shift_enter':
 				if (shiftPressed) {
 					shouldSubmit = true;
-				}
-				else {
+				} else {
 					input.value += '\n';
 				}
 				break;
 			case 'cmd_enter':
 				if (cmdPressed) {
 					shouldSubmit = true;
-				}
-				else {
+				} else {
 					input.value += '\n';
 				}
 				break;
@@ -164,21 +161,31 @@ function initFEAIChat() {
 	 * Handles the actual form submission ("Worker").
 	 * This is triggered by the 'keydown' listener or the send button.
 	 */
-	form.addEventListener('submit', function(e) {
+	form.addEventListener('submit', function (e) {
 		e.preventDefault();
 
 		// Check session message limit
 		const SESSION_LIMIT = fe_ai_search_ajax_obj.ip_limit_count;
-		if ( SESSION_LIMIT > 0 && sessionHistory.length > SESSION_LIMIT * 2 ) {
-			addMessage('<p>' + __('You have reached the message limit for this session. Please refresh the page to start a new conversation.', 'fe-ai-search') + '</p>', 'system');
+		if (SESSION_LIMIT > 0 && sessionHistory.length > SESSION_LIMIT * 2) {
+			addMessage(
+				'<p>' +
+					__(
+						'You have reached the message limit for this session. Please refresh the page to start a new conversation.',
+						'fe-ai-search'
+					) +
+					'</p>',
+				'system'
+			);
 			return;
 		}
 
 		const question = input.value.trim();
-		if (!question) return;
+		if (!question) {
+			return;
+		}
 
 		// Update the session history variable
-		const aiMessageWrapper = addMessage(`<p>${question}</p>`, 'user');
+		const aiMessageWrapper = addMessage(` <p>${question}</p> `, 'user');
 		sessionHistory.push({ role: 'user', content: question });
 
 		const recentHistory = sessionHistory.slice(-10);
@@ -186,7 +193,10 @@ function initFEAIChat() {
 		input.style.height = 'auto'; // Reset height
 		disableForm();
 
-		const aiMessageWrapperForFeedback = addMessage('<p><span class="fe-ai-search-spinner"></span></p>', 'ai');
+		const aiMessageWrapperForFeedback = addMessage(
+			'<p><span class="fe-ai-search-spinner"></span></p>',
+			'ai'
+		);
 		currentAiMessageElement = aiMessageWrapperForFeedback.querySelector('p');
 
 		fullResponse = '';
@@ -200,94 +210,135 @@ function initFEAIChat() {
 			method: 'POST',
 			headers: { 'X-WP-Nonce': fe_ai_search_ajax_obj.rest_nonce },
 			body: new URLSearchParams({
-				question: question,
-				history: JSON.stringify(recentHistory)
+				question,
+				history: JSON.stringify(recentHistory),
 			}),
 		})
-		.then(response => {
-			if (!response.ok) { throw new Error('Network response was not ok.'); }
-			const reader = response.body.getReader();
-			const decoder = new TextDecoder();
+			.then(response => {
+				if (!response.ok) {
+					throw new Error('Network response was not ok.');
+				}
+				const reader = response.body.getReader();
+				const decoder = new TextDecoder();
+				async function processStream(reader, decoder) {
+					try {
+						const { done, value } = await reader.read();
 
-			function processStream() {
-				reader.read().then(({ done, value }) => {
-					if (done) {
-						waitForQueueToEmpty().then(() => {
+						if (done) {
+							await waitForQueueToEmpty();
 							clearInterval(renderInterval);
-							// Replace the spinner wrapper with the final, parsed content
+
+							// 最終的なレスポンスを表示
 							aiMessageWrapperForFeedback.innerHTML = marked.parse(fullResponse);
-
 							sessionHistory.push({ role: 'assistant', content: fullResponse });
-							sessionStorage.setItem('fe_ai_search_chat_history', JSON.stringify(sessionHistory));
+							sessionStorage.setItem(
+								'fe_ai_search_chat_history',
+								JSON.stringify(sessionHistory)
+							);
 
-							// Log conversation and get the log ID back
-							logConversation(question, fullResponse, contextFound).then(logId => {
+							// 会話をログに記録
+							try {
+								const logId = await logConversation(
+									question,
+									fullResponse,
+									contextFound
+								);
 								currentLogId = logId;
+
 								if (fe_ai_search_ajax_obj.is_license_active && currentLogId) {
 									const feedbackWrapper = document.createElement('div');
 									feedbackWrapper.className = 'fe-ai-search-feedback';
 									feedbackWrapper.innerHTML = `
-										<button class="feedback-btn good" data-log-id="${currentLogId}" data-rating="1" title="Good">
-											<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none"/><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
-										</button>
-										<button class="feedback-btn bad" data-log-id="${currentLogId}" data-rating="-1" title="Bad">
-											<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none"/><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14-.47-.14-.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
-										</button>
-									`;
+												<button class="feedback-btn good" data-log-id="${currentLogId}" data-rating="1" title="Good">
+													<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor">
+														<path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none" />
+														<path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z" />
+													</svg>
+												</button>
+												<button class="feedback-btn bad" data-log-id="${currentLogId}" data-rating="-1" title="Bad">
+													<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor">
+														<path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none" />
+														<path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14-.47-.14-.73v-2c0-1.1.9-2 2-2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z" />
+													</svg>
+												</button>
+											`;
 									aiMessageWrapperForFeedback.appendChild(feedbackWrapper);
 								}
-							});
 
-							enableForm();
-						});
-						return;
-					}
-
-					const chunk = decoder.decode(value, {stream: true});
-					const lines = chunk.split('\n\n');
-					lines.forEach(line => {
-						if (line.startsWith('data: ')) {
-							const dataContent = line.substring(6).trim();
-							if (dataContent === '[DONE]') return;
-							try {
-								const jsonData = JSON.parse(dataContent);
-								if (jsonData.meta) { contextFound = jsonData.meta.context_found; }
-								if (jsonData.text) {
-									if (isFirstChunk) {
-										charQueue = [];
-										isFirstChunk = false;
-									}
-									charQueue.push(...jsonData.text.split(''));
-								}
-							} catch (e) {
-								console.error("JSON Parse Error:", e, dataContent);
+								enableForm();
+								return;
+							} catch (error) {
+								console.error('Error in logConversation:', error);
+								enableForm();
+								throw error;
 							}
 						}
-					});
-					processStream();
-				}).catch(error => { handleError(error); });
-			}
-			processStream();
-		})
-		.catch(error => { handleError(error); });
+
+						// ストリームデータの処理
+						const chunk = decoder.decode(value, { stream: true });
+						const lines = chunk.split('\n\n');
+
+						for (const line of lines) {
+							if (line.startsWith('data: ')) {
+								const dataContent = line.substring(6).trim();
+								if (dataContent === '[DONE]') {
+									continue;
+								}
+
+								try {
+									const jsonData = JSON.parse(dataContent);
+
+									if (jsonData.meta) {
+										contextFound = jsonData.meta.context_found;
+									}
+
+									if (jsonData.text) {
+										if (isFirstChunk) {
+											charQueue = [];
+											isFirstChunk = false;
+										}
+										charQueue.push(...jsonData.text.split(''));
+									}
+								} catch (e) {
+									console.error('JSON Parse Error:', e, dataContent);
+								}
+							}
+						}
+
+						// 再帰的に次のチャンクを処理
+						return processStream(reader, decoder);
+					} catch (error) {
+						handleError(error);
+						throw error; // エラーを上位に伝播
+					}
+				}
+
+				// ストリーム処理を開始
+				return processStream(reader, decoder);
+			})
+			.catch(error => {
+				handleError(error);
+			});
 	});
 
 	/**
 	 * Handles clicks on the feedback (good/bad) buttons using event delegation.
 	 */
-	messagesContainer.addEventListener('click', function(e) {
+	messagesContainer.addEventListener('click', function (e) {
 		const button = e.target.closest('.feedback-btn');
 		if (button) {
 			const logId = button.dataset.logId;
 			const rating = button.dataset.rating;
 			const feedbackWrapper = button.parentElement;
 
-			if (!logId || !rating) return;
+			if (!logId || !rating) {
+				return;
+			}
 
 			wpPost('fe_ai_search_rate_answer', {
 				nonce: fe_ai_search_ajax_obj.nonce,
 				log_id: logId,
-				rating: rating,
+				rating,
 			});
 
 			feedbackWrapper.querySelectorAll('.feedback-btn').forEach(btn => {
@@ -307,9 +358,10 @@ function initFEAIChat() {
 
 	/**
 	 * Adds a message to the chat UI.
+	 *
 	 * @param {string} html - The HTML content of the message.
 	 * @param {string} type - 'user', 'ai', or 'system'.
-	 * @returns {HTMLElement} The new message wrapper element.
+	 * @return {HTMLElement} The new message wrapper element.
 	 */
 	function addMessage(html, type) {
 		const messageWrapper = document.createElement('div');
@@ -322,10 +374,11 @@ function initFEAIChat() {
 
 	/**
 	 * Logs the conversation to the database via AJAX.
-	 * @param {string} question - The user's question.
-	 * @param {string} answer - The AI's full answer.
+	 *
+	 * @param {string}  question     - The user's question.
+	 * @param {string}  answer       - The AI's full answer.
 	 * @param {boolean} contextFound - Whether context was found.
-	 * @returns {Promise<number|null>} The ID of the newly created log entry.
+	 * @return {Promise<number|null>} The ID of the newly created log entry.
 	 */
 	async function logConversation(question, answer, contextFound) {
 		if (!fe_ai_search_ajax_obj.is_license_active) {
@@ -336,8 +389,8 @@ function initFEAIChat() {
 			const response = await wpPost('fe_ai_search_log_query', {
 				nonce: fe_ai_search_ajax_obj.nonce,
 				session_id: sessionId,
-				question: question,
-				answer: answer,
+				question,
+				answer,
 				context_found: contextFound ? '1' : '0',
 			});
 
@@ -354,12 +407,20 @@ function initFEAIChat() {
 	 * Renders the typing animation queue.
 	 */
 	function renderQueue() {
-		if (currentAiMessageElement && currentAiMessageElement.querySelector('.fe-ai-search-spinner') && charQueue.length > 0) {
+		if (
+			currentAiMessageElement &&
+			currentAiMessageElement.querySelector('.fe-ai-search-spinner') &&
+			charQueue.length > 0
+		) {
 			currentAiMessageElement.innerHTML = '';
 		}
-		if (charQueue.length === 0) return;
+		if (charQueue.length === 0) {
+			return;
+		}
 
-		const charsToRender = charQueue.splice(0, fe_ai_search_ajax_obj.animation_speed || 3).join('');
+		const charsToRender = charQueue
+			.splice(0, fe_ai_search_ajax_obj.animation_speed || 3)
+			.join('');
 		fullResponse += charsToRender;
 
 		currentAiMessageElement.innerHTML = marked.parse(fullResponse);
@@ -376,7 +437,8 @@ function initFEAIChat() {
 
 	/**
 	 * Waits for the character queue to be empty.
-	 * @returns {Promise<void>}
+	 *
+	 * @return {Promise<void>}
 	 */
 	function waitForQueueToEmpty() {
 		return new Promise(resolve => {
@@ -408,12 +470,14 @@ function initFEAIChat() {
 
 	/**
 	 * Handles fetch or stream errors.
+	 *
 	 * @param {Error} error - The error object.
 	 */
 	function handleError(error) {
 		clearInterval(renderInterval);
 		if (currentAiMessageElement) {
-			currentAiMessageElement.innerHTML = '<p>' + __('An error occurred. Please try again.', 'fe-ai-search') + '</p>';
+			currentAiMessageElement.innerHTML =
+				'<p>' + __('An error occurred. Please try again.', 'fe-ai-search') + '</p>';
 		}
 		console.error('Chat Error:', error);
 		enableForm();

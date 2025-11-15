@@ -13,7 +13,9 @@
 
 namespace FEAISearch\Ajax;
 
-if ( ! defined( 'ABSPATH' ) ) exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 
 use U7aro\TinySegmenter\TinySegmenter;
 use WP_Error;
@@ -38,7 +40,7 @@ class FE_AI_Search_Sync_Handler {
 
 	public function __construct() {
 
-		$this->options = get_option( 'fe_ai_search_settings', [] );
+		$this->options   = get_option( 'fe_ai_search_settings', [] );
 		$this->segmenter = new TinySegmenter();
 
 		if ( class_exists( '\Natto\MeCab' ) ) {
@@ -56,13 +58,13 @@ class FE_AI_Search_Sync_Handler {
 		// Set license status for use in various methods.
 		$this->is_license_active = ( 'active' === $status && in_array( 'pro', $products, true ) );
 
-$this->is_license_active = true;
+		// $this->is_license_active = true; // Debug override
 
 		add_filter( 'fe_ai_search_tokenizer_status', [ $this, 'add_japanese_tokenizer_status' ] );
-		add_action( 'wp_ajax_fe_ai_search_start_sync', array( $this, 'ajax_start_sync' ) );
-		add_action( 'wp_ajax_fe_ai_search_process_batch', array( $this, 'ajax_process_batch' ) );
-		add_action( 'wp_ajax_fe_ai_search_update_sync_timestamp', array( $this, 'ajax_update_sync_timestamp' ) );
-		add_action( 'wp_ajax_fe_ai_search_delete_vectors', array( $this, 'ajax_delete_vectors' ) );
+		add_action( 'wp_ajax_fe_ai_search_start_sync', [ $this, 'ajax_start_sync' ] );
+		add_action( 'wp_ajax_fe_ai_search_process_batch', [ $this, 'ajax_process_batch' ] );
+		add_action( 'wp_ajax_fe_ai_search_update_sync_timestamp', [ $this, 'ajax_update_sync_timestamp' ] );
+		add_action( 'wp_ajax_fe_ai_search_delete_vectors', [ $this, 'ajax_delete_vectors' ] );
 		add_action( 'wp_ajax_fe_ai_search_start_smart_sync', [ $this, 'ajax_start_smart_sync' ] );
 		add_action( 'wp_ajax_fe_ai_search_update_settings_hash', [ $this, 'ajax_update_settings_hash' ] );
 	}
@@ -84,7 +86,7 @@ $this->is_license_active = true;
 		$post_types_to_sync = [];
 		if ( ! empty( $sync_options['post_types'] ) && is_array( $sync_options['post_types'] ) ) {
 			foreach ( $sync_options['post_types'] as $pt_slug => $pt_options ) {
-				if ( !empty( $pt_options['enabled'] ) ) {
+				if ( ! empty( $pt_options['enabled'] ) ) {
 					$post_types_to_sync[] = $pt_slug;
 				}
 			}
@@ -105,7 +107,7 @@ $this->is_license_active = true;
 		if ( ! empty( $include_ids ) ) {
 			$args['post__in'] = $include_ids;
 		} else {
-			$args['post_type'] = empty( $post_types_to_sync ) ? ['post', 'page'] : $post_types_to_sync;
+			$args['post_type'] = empty( $post_types_to_sync ) ? [ 'post', 'page' ] : $post_types_to_sync;
 			if ( ! empty( $exclude_ids ) ) {
 				$args['post__not_in'] = $exclude_ids;
 			}
@@ -124,17 +126,19 @@ $this->is_license_active = true;
 		$args = apply_filters( 'fe_ai_search_sync_query_args', $args );
 
 		$all_post_ids = get_posts( $args );
-		$total_posts = count( $all_post_ids );
+		$total_posts  = count( $all_post_ids );
 
-		$batch_size = (int) $this->options['sync']['options']['batch_size'] ?? 10;
+		$batch_size  = (int) $this->options['sync']['options']['batch_size'] ?? 10;
 		$total_pages = ceil( $total_posts / $batch_size );
 
-		wp_send_json_success( [
-			'total_pages' => $total_pages,
-			'total_posts' => $total_posts,
-			'post_ids'    => $all_post_ids, // Pass the list of IDs to be processed to JS
-			'batch_size'  => $batch_size,
-		] );
+		wp_send_json_success(
+			[
+				'total_pages' => $total_pages,
+				'total_posts' => $total_posts,
+				'post_ids'    => $all_post_ids, // Pass the list of IDs to be processed to JS
+				'batch_size'  => $batch_size,
+			]
+		);
 	}
 
 	public function ajax_start_smart_sync() {
@@ -144,7 +148,7 @@ $this->is_license_active = true;
 		}
 
 		// Get enabled post types from settings
-		$sync_options = $this->options['sync']['options'];
+		$sync_options       = $this->options['sync']['options'];
 		$post_types_to_sync = [];
 		if ( ! empty( $sync_options['post_types'] ) ) {
 			foreach ( $sync_options['post_types'] as $pt => $options ) {
@@ -154,7 +158,13 @@ $this->is_license_active = true;
 			}
 		}
 		if ( empty( $post_types_to_sync ) ) {
-			wp_send_json_success( [ 'total_pages' => 0, 'total_posts' => 0, 'post_ids' => [] ] );
+			wp_send_json_success(
+				[
+					'total_pages' => 0,
+					'total_posts' => 0,
+					'post_ids'    => [],
+				]
+			);
 			return;
 		}
 
@@ -170,7 +180,17 @@ $this->is_license_active = true;
 		global $wpdb;
 		$vectors_table         = $wpdb->prefix . 'fe_ai_search_vectors';
 		$indexed_post_ids      = array_map( 'intval', $wpdb->get_col( "SELECT DISTINCT post_id FROM {$vectors_table}" ) );
-		$all_existing_post_ids = array_map( 'intval', get_posts( [ 'post_type' => $post_types_to_sync, 'posts_per_page' => -1, 'fields' => 'ids', 'post_status' => 'publish' ] ) );
+		$all_existing_post_ids = array_map(
+			'intval',
+			get_posts(
+				[
+					'post_type'      => $post_types_to_sync,
+					'posts_per_page' => -1,
+					'fields'         => 'ids',
+					'post_status'    => 'publish',
+				]
+			)
+		);
 		$deleted_post_ids      = array_diff( $indexed_post_ids, $all_existing_post_ids );
 
 		if ( ! empty( $deleted_post_ids ) ) {
@@ -181,17 +201,19 @@ $this->is_license_active = true;
 
 		// --- 4. Find new and updated posts ---
 		$last_sync        = $this->options['sync']['options']['last_sync_timestamp'] ?? 0;
-		$updated_post_ids = get_posts( [
-			'post_type'      => $post_types_to_sync,
-			'posts_per_page' => -1,
-			'fields'         => 'ids',
-			'date_query'     => [
-				[
-					'column' => 'post_modified_gmt',
-					'after'  => date( 'Y-m-d H:i:s', $last_sync ),
+		$updated_post_ids = get_posts(
+			[
+				'post_type'      => $post_types_to_sync,
+				'posts_per_page' => -1,
+				'fields'         => 'ids',
+				'date_query'     => [
+					[
+						'column' => 'post_modified_gmt',
+						'after'  => date( 'Y-m-d H:i:s', $last_sync ),
+					],
 				],
-			],
-		] );
+			]
+		);
 
 		// --- 5. Return the list of IDs to process to JavaScript ---
 		$post_ids_to_process = array_values( array_unique( $updated_post_ids ) );
@@ -203,12 +225,14 @@ $this->is_license_active = true;
 		// We do this here, assuming the JS process will complete.
 		// update_option( 'fe_ai_search_last_settings_hash', $current_settings_hash );
 
-		wp_send_json_success( [
-			'total_pages' => $total_pages,
-			'total_posts' => $total_posts,
-			'post_ids'    => $post_ids_to_process,
-			'batch_size'  => $batch_size,
-		] );
+		wp_send_json_success(
+			[
+				'total_pages' => $total_pages,
+				'total_posts' => $total_posts,
+				'post_ids'    => $post_ids_to_process,
+				'batch_size'  => $batch_size,
+			]
+		);
 	}
 
 	/**
@@ -224,10 +248,10 @@ $this->is_license_active = true;
 
 	public function ajax_process_batch() {
 		try {
-			set_time_limit(0);
+			set_time_limit( 0 );
 			ob_start();
 
-			error_log('--- ajax_process_batch: START ---');
+			error_log( '--- ajax_process_batch: START ---' );
 			check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
 
 			// Process input data
@@ -237,7 +261,7 @@ $this->is_license_active = true;
 			$batch_size    = (int) $this->options['sync']['options']['batch_size'] ?? 10;
 			$offset        = ( $page - 1 ) * $batch_size;
 			$batch_ids     = array_slice( $post_ids, $offset, $batch_size );
-			error_log("1. Processing Batch {$page}. Batch IDs (" . count($batch_ids) . " items): " . print_r($batch_ids, true));
+			error_log( "1. Processing Batch {$page}. Batch IDs (" . count( $batch_ids ) . ' items): ' . print_r( $batch_ids, true ) );
 
 			if ( empty( $batch_ids ) ) {
 				ob_end_clean();
@@ -246,40 +270,44 @@ $this->is_license_active = true;
 			}
 
 			// Retrieve post data
-			$posts_batch = get_posts([
-				'post__in'            => $batch_ids,
-				'post_type'           => 'any',
-				'orderby'             => 'post__in',
-				'posts_per_page'      => count( $batch_ids ),
-				'ignore_sticky_posts' => 1,
-				'post_status'         => 'publish',
-			]);
-			error_log("2. get_posts() found " . count($posts_batch) . " posts for this batch.");
+			$posts_batch = get_posts(
+				[
+					'post__in'            => $batch_ids,
+					'post_type'           => 'any',
+					'orderby'             => 'post__in',
+					'posts_per_page'      => count( $batch_ids ),
+					'ignore_sticky_posts' => 1,
+					'post_status'         => 'publish',
+				]
+			);
+			error_log( '2. get_posts() found ' . count( $posts_batch ) . ' posts for this batch.' );
 
 			// Process each post
 			foreach ( $posts_batch as $post ) {
-				error_log("  - Processing Post ID: {$post->ID}");
+				error_log( "  - Processing Post ID: {$post->ID}" );
 
 				$chunks_with_meta = $this->create_chunks_from_post( $post );
 				if ( empty( $chunks_with_meta ) ) {
-					error_log("    - No chunks created. Skipping.");
+					error_log( '    - No chunks created. Skipping.' );
 					continue;
 				}
-				error_log("    - Created " . count($chunks_with_meta) . " chunks.");
+				error_log( '    - Created ' . count( $chunks_with_meta ) . ' chunks.' );
 
 				$chunks_for_embedding = wp_list_pluck( $chunks_with_meta, 'content_chunk' );
 				$embedding_response   = $this->get_embeddings_via_selected_provider( $chunks_for_embedding );
-				error_log("    - Embedding API Response: " . print_r($embedding_response, true));
+				error_log( '    - Embedding API Response: ' . print_r( $embedding_response, true ) );
 
 				if ( ! is_wp_error( $embedding_response ) && ! empty( $embedding_response['data'] ) ) {
-					error_log("    - Embedding successful. Starting DB insert...");
+					error_log( '    - Embedding successful. Starting DB insert...' );
 					global $wpdb;
 					$vectors_table = $wpdb->prefix . 'fe_ai_search_vectors';
 					$index_table   = $wpdb->prefix . 'fe_ai_search_keyword_index';
 					$vectors_data  = $embedding_response['data'];
 
 					foreach ( $vectors_data as $index => $vector_item ) {
-						if ( empty( $vector_item['embedding'] ) ) continue;
+						if ( empty( $vector_item['embedding'] ) ) {
+							continue;
+						}
 
 						$chunk_item = $chunks_with_meta[ $index ];
 
@@ -293,18 +321,21 @@ $this->is_license_active = true;
 							]
 						);
 						$vector_id = $wpdb->insert_id;
-						error_log("      - Inserted vector. New vector_id: " . $vector_id);
+						error_log( '      - Inserted vector. New vector_id: ' . $vector_id );
 
-						if ($vector_id) {
-							$keywords = $this->tokenize_text( $chunk_item['content_chunk'] );
+						if ( $vector_id ) {
+							$keywords        = $this->tokenize_text( $chunk_item['content_chunk'] );
 							$unique_keywords = array_unique( $keywords );
-							error_log("      - Tokenized to " . count($unique_keywords) . " unique keywords.");
+							error_log( '      - Tokenized to ' . count( $unique_keywords ) . ' unique keywords.' );
 
 							foreach ( $unique_keywords as $keyword ) {
 								if ( mb_strlen( $keyword ) > 1 ) {
 									$wpdb->insert(
 										$index_table,
-										[ 'keyword' => $keyword, 'vector_id' => $vector_id ],
+										[
+											'keyword'   => $keyword,
+											'vector_id' => $vector_id,
+										],
 										[ '%s', '%d' ]
 									);
 								}
@@ -312,7 +343,7 @@ $this->is_license_active = true;
 						}
 					}
 				} else {
-					error_log("    - Embedding FAILED or returned empty data. Skipping DB insert.");
+					error_log( '    - Embedding FAILED or returned empty data. Skipping DB insert.' );
 				}
 			}
 
@@ -376,17 +407,20 @@ $this->is_license_active = true;
 		}
 
 		// Remove keywords that are too short to be meaningful.
-		$valid_keywords = array_filter($keywords, function($kw) {
-			return mb_strlen($kw) > 1;
-		});
+		$valid_keywords = array_filter(
+			$keywords,
+			function ( $kw ) {
+				return mb_strlen( $kw ) > 1;
+			}
+		);
 
 		// DEBUG: Log keyword extraction results.
 		\FEAISearch\Core\fe_ai_search_Logger::log(
 			'DEBUG',
 			'Keyword extraction from user question.',
 			[
-				'initial_keywords' => count($keywords),
-				'valid_keywords'   => count($valid_keywords),
+				'initial_keywords' => count( $keywords ),
+				'valid_keywords'   => count( $valid_keywords ),
 				'keywords_list'    => $valid_keywords, // Log the actual keywords
 			]
 		);
@@ -405,8 +439,8 @@ $this->is_license_active = true;
 			'DEBUG',
 			'Keyword index search completed.',
 			[
-				'keywords_searched' => $valid_keywords,
-				'matched_vector_ids' => count($vector_ids),
+				'keywords_searched'  => $valid_keywords,
+				'matched_vector_ids' => count( $vector_ids ),
 			]
 		);
 
@@ -415,16 +449,16 @@ $this->is_license_active = true;
 		}
 
 		// 3. Retrieve the full content chunks for the found vector IDs.
-		$placeholders   = implode( ', ', array_fill( 0, count( $vector_ids ), '%d' ) );
-		$sql            = "SELECT `content_chunk`, `post_id` FROM `{$vectors_table}` WHERE `id` IN ( {$placeholders} )";
-		$chunks_data    = $wpdb->get_results( $wpdb->prepare( $sql, $vector_ids ), ARRAY_A );
+		$placeholders = implode( ', ', array_fill( 0, count( $vector_ids ), '%d' ) );
+		$sql          = "SELECT `content_chunk`, `post_id` FROM `{$vectors_table}` WHERE `id` IN ( {$placeholders} )";
+		$chunks_data  = $wpdb->get_results( $wpdb->prepare( $sql, $vector_ids ), ARRAY_A );
 
 		// 4. Add permalink to the results.
 		$results = [];
-		foreach($chunks_data as $row){
+		foreach ( $chunks_data as $row ) {
 			$results[] = [
 				'content_chunk' => $row['content_chunk'],
-				'permalink'     => get_permalink($row['post_id']),
+				'permalink'     => get_permalink( $row['post_id'] ),
 			];
 		}
 
@@ -438,7 +472,7 @@ $this->is_license_active = true;
 	 * @return array An array of text chunks.
 	 */
 	public function create_chunks_from_post( $post ) {
-		$options = $this->options['sync']['options'];
+		$options    = $this->options['sync']['options'];
 		$pt_options = $options['post_types'][ $post->post_type ] ?? [];
 
 		$text_parts = [];
@@ -473,8 +507,8 @@ $this->is_license_active = true;
 
 		// 2. Add the main content.
 		if ( ! empty( $pt_options['include_content'] ) ) {
-			$content = strip_shortcodes( $post->post_content );
-			$content = wp_strip_all_tags( $content );
+			$content      = strip_shortcodes( $post->post_content );
+			$content      = wp_strip_all_tags( $content );
 			$text_parts[] = "以下は記事の本文です。\n" . $content;
 		}
 
@@ -489,11 +523,11 @@ $this->is_license_active = true;
 		$chunk_size = 1000; // characters
 		$chunks     = [];
 		if ( mb_strlen( $full_text ) > $chunk_size ) {
-			$sentences = preg_split('/(?<=[。．！？\n])\s*/u', $full_text, -1, PREG_SPLIT_NO_EMPTY);
+			$sentences     = preg_split( '/(?<=[。．！？\n])\s*/u', $full_text, -1, PREG_SPLIT_NO_EMPTY );
 			$current_chunk = '';
 			foreach ( $sentences as $sentence ) {
 				if ( mb_strlen( $current_chunk . $sentence ) > $chunk_size ) {
-					$chunks[] = trim( $current_chunk );
+					$chunks[]      = trim( $current_chunk );
 					$current_chunk = $sentence;
 				} else {
 					$current_chunk .= $sentence;
@@ -506,9 +540,9 @@ $this->is_license_active = true;
 			$chunks[] = trim( $full_text );
 		}
 
-		$permalink = get_permalink( $post );
+		$permalink        = get_permalink( $post );
 		$chunks_with_meta = [];
-		foreach( $chunks as $chunk_content ){
+		foreach ( $chunks as $chunk_content ) {
 			$chunks_with_meta[] = [
 				'content_chunk' => $chunk_content,
 				'permalink'     => $permalink,
@@ -525,7 +559,7 @@ $this->is_license_active = true;
 			'INFO',
 			'Embedding process started.',
 			[
-				'provider' => $this->options['provider']['embedding'] ?? 'openai',
+				'provider'     => $this->options['provider']['embedding'] ?? 'openai',
 				'chunks_count' => count( $texts ),
 			]
 		);
@@ -545,7 +579,7 @@ $this->is_license_active = true;
 			return $result;
 		}
 
-		switch ($provider) {
+		switch ( $provider ) {
 			case 'google':
 				return $this->fetch_embeddings_for_gemini( $texts );
 			case 'openai':
@@ -556,14 +590,14 @@ $this->is_license_active = true;
 
 	public function calculate_cosine_similarity_php( $vec1, $vec2 ) {
 		$dot_product = 0;
-		$norm1 = 0;
-		$norm2 = 0;
-		$count = count( $vec1 );
+		$norm1       = 0;
+		$norm2       = 0;
+		$count       = count( $vec1 );
 
 		for ( $i = 0; $i < $count; $i++ ) {
-			$dot_product += $vec1[$i] * $vec2[$i];
-			$norm1 += $vec1[$i] * $vec1[$i];
-			$norm2 += $vec2[$i] * $vec2[$i];
+			$dot_product += $vec1[ $i ] * $vec2[ $i ];
+			$norm1       += $vec1[ $i ] * $vec1[ $i ];
+			$norm2       += $vec2[ $i ] * $vec2[ $i ];
 		}
 
 		if ( $norm1 == 0 || $norm2 == 0 ) {
@@ -592,19 +626,22 @@ $this->is_license_active = true;
 			}
 		}
 
-		$body = array(
+		$body = [
 			'model' => 'text-embedding-3-small',
 			'input' => $texts,
-		);
+		];
 
-		$response = wp_remote_post( $api_url, array(
-			'headers' => array(
-				'Content-Type'  => 'application/json',
-				'Authorization' => 'Bearer ' . $api_key,
-			),
-			'body'        => json_encode( $body ),
-			'timeout'     => 60,
-		) );
+		$response = wp_remote_post(
+			$api_url,
+			[
+				'headers' => [
+					'Content-Type'  => 'application/json',
+					'Authorization' => 'Bearer ' . $api_key,
+				],
+				'body'    => json_encode( $body ),
+				'timeout' => 60,
+			]
+		);
 
 		// Calculate the duration in milliseconds.
 		$duration = round( ( microtime( true ) - $start_time ) * 1000 ); // ミリ秒に変換
@@ -675,24 +712,27 @@ $this->is_license_active = true;
 		$api_url = 'https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:batchEmbedContents?key=' . $api_key;
 
 		// The request body structure is different
-		$requests = array();
+		$requests = [];
 		foreach ( $texts as $text ) {
-			$requests[] = array(
-				'model' => 'models/text-embedding-004',
-				'content' => array(
-					'parts' => array(
-						array( 'text' => $text )
-					)
-				)
-			);
+			$requests[] = [
+				'model'   => 'models/text-embedding-004',
+				'content' => [
+					'parts' => [
+						[ 'text' => $text ],
+					],
+				],
+			];
 		}
-		$body = array( 'requests' => $requests );
+		$body = [ 'requests' => $requests ];
 
-		$response = wp_remote_post( $api_url, array(
-			'headers' => array( 'Content-Type'  => 'application/json' ),
-			'body'    => json_encode( $body ),
-			'timeout' => 60,
-		) );
+		$response = wp_remote_post(
+			$api_url,
+			[
+				'headers' => [ 'Content-Type' => 'application/json' ],
+				'body'    => json_encode( $body ),
+				'timeout' => 60,
+			]
+		);
 
 		// Calculate the duration in milliseconds.
 		$duration = round( ( microtime( true ) - $start_time ) * 1000 );
@@ -734,7 +774,7 @@ $this->is_license_active = true;
 		}
 
 		// The structure for extracting vector data from the response is different
-		$vectors = array();
+		$vectors = [];
 		if ( isset( $response_body['embeddings'] ) ) {
 			foreach ( $response_body['embeddings'] as $embedding_data ) {
 				$vectors[] = $embedding_data['values'];
@@ -742,9 +782,9 @@ $this->is_license_active = true;
 		}
 
 		// To align the response format with the OpenAI version, we format it ourselves and return it.
-		$formatted_response = array();
-		foreach( $vectors as $i => $vector ) {
-			$formatted_response['data'][$i]['embedding'] = $vector;
+		$formatted_response = [];
+		foreach ( $vectors as $i => $vector ) {
+			$formatted_response['data'][ $i ]['embedding'] = $vector;
 		}
 
 		$usage = $response_body['usage'] ?? [];
@@ -765,25 +805,27 @@ $this->is_license_active = true;
 
 	/**
 	 * Split text into keywords according to language.
+	 *
 	 * @param  string $text The text to split.
 	 * @return array  An array of keywords.
 	 */
 	/**
 	 * Split text into keywords according to language.
+	 *
 	 * @param  string $text The text to split.
 	 * @return array  An array of keywords.
 	 */
 	private function tokenize_text( $text ) {
-		error_log('--- tokenize_text: START ---');
-		error_log('1. Input text type: ' . gettype($text));
+		error_log( '--- tokenize_text: START ---' );
+		error_log( '1. Input text type: ' . gettype( $text ) );
 
 		// --- Step 1: Normalization ---
 		$text_normalized = mb_strtolower( (string) $text, 'UTF-8' );
 		// ★ BUG FIX 2: Use 'asHc' to also convert full-width spaces
 		$text_normalized = mb_convert_kana( $text_normalized, 'asHc', 'UTF-8' );
 		// Remove all symbols (including asterisk, which was causing issues)
-		$text_normalized = preg_replace('/[^\p{L}\p{N}\s]/u', ' ', $text_normalized);
-		error_log('2. Normalized text: ' . $text_normalized);
+		$text_normalized = preg_replace( '/[^\p{L}\p{N}\s]/u', ' ', $text_normalized );
+		error_log( '2. Normalized text: ' . $text_normalized );
 
 		$locale     = get_locale();
 		$lang_code  = strstr( $locale, '_', true ) ?: $locale;
@@ -795,7 +837,7 @@ $this->is_license_active = true;
 			$lang_file = fe_ai_search_PLUGIN_DIR . "includes/i18n/{$lang_code}.php";
 		}
 		if ( file_exists( $lang_file ) ) {
-			$lang_data  = include( $lang_file );
+			$lang_data  = include $lang_file;
 			$stop_words = $lang_data['stop_words'] ?? [];
 		}
 		$stop_words = apply_filters( 'fe_ai_search_stop_words', $stop_words, $locale );
@@ -804,18 +846,21 @@ $this->is_license_active = true;
 		if ( 'ja' === $lang_code ) {
 			if ( 'mecab' === $this->japanese_tokenizer ) {
 				try {
-					$mecab = new \Natto\MeCab();
+					$mecab          = new \Natto\MeCab();
 					$mecab_keywords = [];
-					$mecab->parse( $text_normalized, function( $node ) use ( &$mecab_keywords ) {
-						if ( $node->isNor() ) {
-							$features = explode( ',', $node->getFeature() );
-							$part_of_speech = $features[0];
-							if ( in_array( $part_of_speech, ['名詞', '動詞', '形容詞', '副詞'] )) {
-								$base_form = $features[6] !== '*' ? $features[6] : $node->getSurface();
-								$mecab_keywords[] = $base_form; // Already normalized
+					$mecab->parse(
+						$text_normalized,
+						function ( $node ) use ( &$mecab_keywords ) {
+							if ( $node->isNor() ) {
+								$features       = explode( ',', $node->getFeature() );
+								$part_of_speech = $features[0];
+								if ( in_array( $part_of_speech, [ '名詞', '動詞', '形容詞', '副詞' ] ) ) {
+									$base_form        = $features[6] !== '*' ? $features[6] : $node->getSurface();
+									$mecab_keywords[] = $base_form; // Already normalized
+								}
 							}
 						}
-					});
+					);
 					$words = $mecab_keywords;
 				} catch ( \Throwable $t ) {
 					$words = $this->segmenter->segment( $text_normalized );
@@ -834,10 +879,10 @@ $this->is_license_active = true;
 		if ( 'ja' !== $lang_code ) {
 			try {
 				$stemmerManager = new \Wamania\Snowball\StemmerManager();
-				if ( in_array($lang_code, $stemmerManager->getAvailableLanguages()) ) {
-					$stemmer = $stemmerManager->create( $lang_code );
+				if ( in_array( $lang_code, $stemmerManager->getAvailableLanguages() ) ) {
+					$stemmer       = $stemmerManager->create( $lang_code );
 					$stemmed_words = [];
-					foreach ( $words_after_diff as $word) {
+					foreach ( $words_after_diff as $word ) {
 						$stemmed_words[] = $stemmer->stem( $word );
 					}
 					$words_after_diff = $stemmed_words;
@@ -849,9 +894,12 @@ $this->is_license_active = true;
 		// --- Step 6: Final Cleanup ---
 		if ( ! empty( $words_after_diff ) ) {
 			// ★ BUG FIX 3: Use the correct variable '$word' in the anonymous function
-			$words_after_diff = array_filter( $words_after_diff, function( $word ) {
-				return ! empty( trim( $word ) );
-			} );
+			$words_after_diff = array_filter(
+				$words_after_diff,
+				function ( $word ) {
+					return ! empty( trim( $word ) );
+				}
+			);
 		}
 
 		// Make sure keywords are unique before returning
@@ -915,7 +963,7 @@ $this->is_license_active = true;
 		} else {
 			$status_text = '<span style="color:#a0a5aa;">' . esc_html__( 'Built-in (TinySegmenter)', 'fe-ai-search' ) . '</span>';
 			if ( class_exists( '\Natto\MeCab' ) ) {
-				 $status_text .= ' <span style="color:red;">(' . esc_html__( 'MeCab load failed', 'fe-ai-search' ) . ')</span>';
+				$status_text .= ' <span style="color:red;">(' . esc_html__( 'MeCab load failed', 'fe-ai-search' ) . ')</span>';
 			} else {
 				$status_text .= '<br><span class="description" style="font-size: 12px;">' . esc_html__( 'For higher search accuracy, install MeCab on your server and the "natto-php" library via Composer.', 'fe-ai-search' ) . '</span>';
 			}
@@ -924,5 +972,4 @@ $this->is_license_active = true;
 		$statuses[] = $status_label . ' ' . $status_text;
 		return $statuses;
 	}
-
 }

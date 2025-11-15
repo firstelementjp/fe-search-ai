@@ -12,7 +12,9 @@
 
 namespace FEAISearch\Core;
 
-if ( ! defined( 'ABSPATH' ) ) exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 
 /**
  * The license handler class for the Pro add-on.
@@ -57,41 +59,44 @@ class FE_AI_Search_License_Handler {
 	 * @return array An array containing the result of the request.
 	 */
 	private function send_request( string $action, string $license_key ): array {
-		if ( empty($license_key) ) {
-			return ['success' => false, 'message' => __( 'The license key has not been entered.', 'fe-ai-search' )];
+		if ( empty( $license_key ) ) {
+			return [ 'success' => false, 'message' => __( 'The license key has not been entered.', 'fe-ai-search' ) ];
 		}
 
 		// Build the API URL for the license server.
 		$api_url = FE_AI_SEARCH_PRO_STORE_URL . '/wp-json/lmfwc/v2/licenses/' . $action;
 
-		$response = wp_remote_post($api_url, [
-			'timeout' => 20,
-			'body'    => [
-				'license_key' => $license_key,
-				'instance'    => home_url(),
-				'product_id'  => FE_AI_SEARCH_PRO_PRODUCT_ID,
+		$response = wp_remote_post(
+			$api_url,
+			[
+				'timeout' => 20,
+				'body'    => [
+					'license_key' => $license_key,
+					'instance'    => home_url(),
+					'product_id'  => FE_AI_SEARCH_PRO_PRODUCT_ID,
+				],
 			]
-		]);
+		);
 
 		// Handle connection errors.
-		if ( is_wp_error($response) ) {
-			return ['success' => false, 'message' => __( 'Could not connect to the license server', 'fe-ai-search' ) . ': ' . $response->get_error_message()];
+		if ( is_wp_error( $response ) ) {
+			return [ 'success' => false, 'message' => __( 'Could not connect to the license server', 'fe-ai-search' ) . ': ' . $response->get_error_message() ];
 		}
 
-		$body = wp_remote_retrieve_body($response);
-		$data = json_decode($body, true);
+		$body = wp_remote_retrieve_body( $response );
+		$data = json_decode( $body, true );
 
 		// Handle invalid responses from the server.
-		if ( wp_remote_retrieve_response_code($response) >= 400 || empty($data) || ! isset($data['success']) ) {
+		if ( wp_remote_retrieve_response_code( $response ) >= 400 || empty( $data ) || ! isset( $data['success'] ) ) {
 			$error_message = $data['message'] ?? __( 'An invalid response was received from the license server.', 'fe-ai-search' );
-			return ['success' => false, 'message' => $error_message];
+			return [ 'success' => false, 'message' => $error_message ];
 		}
 
 		// Return a formatted result array.
 		return [
 			'success' => $data['success'],
-			'message' => $data['message'] ?? ($data['success'] ? __( 'The operation was successful.', 'fe-ai-search' ) : __( 'The operation failed.', 'fe-ai-search' ) ),
-			'status'  => ($data['success'] && ($data['data']['activated'] ?? false)) ? 'active' : 'inactive',
+			'message' => $data['message'] ?? ( $data['success'] ? __( 'The operation was successful.', 'fe-ai-search' ) : __( 'The operation failed.', 'fe-ai-search' ) ),
+			'status'  => ( $data['success'] && ( $data['data']['activated'] ?? false ) ) ? 'active' : 'inactive',
 		];
 	}
 }

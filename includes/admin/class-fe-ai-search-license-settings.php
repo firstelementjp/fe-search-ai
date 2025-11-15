@@ -32,7 +32,7 @@ class FE_AI_Search_License_Settings {
 	 *
 	 * @var array
 	 */
-	private $options = array();
+	private $options = [];
 
 	/**
 	 * Whether the license is active.
@@ -145,7 +145,7 @@ class FE_AI_Search_License_Settings {
 	 * @since 1.0.0
 	 */
 	public function field_html() {
-		$license_data = isset( $this->options['license'] ) ? $this->options['license'] : array();
+		$license_data = isset( $this->options['license'] ) ? $this->options['license'] : [];
 
 		$license_key    = isset( $license_data['key'] ) ? $license_data['key'] : '';
 		$license_status = isset( $license_data['status'] ) ? $license_data['status'] : 'inactive';

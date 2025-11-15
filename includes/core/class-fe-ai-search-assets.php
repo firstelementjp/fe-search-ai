@@ -13,7 +13,9 @@
 
 namespace FEAISearch\Core;
 
-if ( ! defined( 'ABSPATH' ) ) exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 
 /**
  * The assets handler class.
@@ -32,29 +34,29 @@ class FE_AI_Search_Assets {
 	public function __construct() {
 		$this->options = get_option( 'fe_ai_search_settings', [] );
 
-		add_action( 'wp_enqueue_scripts', [$this, 'enqueue_assets'] );
+		add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_assets' ] );
 	}
 
 	/**
 	 * Load scripts and styles for the front end.
 	 */
 	public function enqueue_assets() {
-		$ui_options          = $this->options['display']['ui'] ?? [];
-		$enable_css          = $ui_options['enable_css'] ?? true;
-		$enable_js           = $ui_options['enable_js'] ?? true;
-		$animation_speed     = $ui_options['animation_speed'] ?? 3;
-		$send_mode           = $ui_options['send_mode'] ?? 'enter';
+		$ui_options      = $this->options['display']['ui'] ?? [];
+		$enable_css      = $ui_options['enable_css'] ?? true;
+		$enable_js       = $ui_options['enable_js'] ?? true;
+		$animation_speed = $ui_options['animation_speed'] ?? 3;
+		$send_mode       = $ui_options['send_mode'] ?? 'enter';
 
-		$license_data        = $this->options['license'] ?? [];
-		$status              = $license_data['status'] ?? 'inactive';
-		$products            = $license_data['data']['products'] ?? [];
-		$is_license_active   = ( 'active' === $status && in_array( 'pro', $products, true ) );
+		$license_data      = $this->options['license'] ?? [];
+		$status            = $license_data['status'] ?? 'inactive';
+		$products          = $license_data['data']['products'] ?? [];
+		$is_license_active = ( 'active' === $status && in_array( 'pro', $products, true ) );
 
 		$ip_limit_count = 100; // Default
 		if ( $is_license_active && class_exists( '\FEAISearch\Pro\Admin\FE_AI_Search_Pro_Settings' ) ) {
-			$pro_options = get_option( 'fe_ai_search_pro_settings', [] );
+			$pro_options        = get_option( 'fe_ai_search_pro_settings', [] );
 			$rate_limit_options = $pro_options['rate_limit'] ?? [];
-			$ip_limit_count = $rate_limit_options['ip_limit_count'] ?? 100;
+			$ip_limit_count     = $rate_limit_options['ip_limit_count'] ?? 100;
 		}
 
 		if ( $enable_css ) {
@@ -89,15 +91,15 @@ class FE_AI_Search_Assets {
 			'fe-ai-search-frontend-scripts',
 			'fe_ai_search_ajax_obj',
 			[
-				'ajax_url'            => admin_url( 'admin-ajax.php' ),
-				'rest_url'            => rest_url( 'fe-ai-search/v1/stream' ),
-				'rest_nonce'          => wp_create_nonce( 'wp_rest' ),
-				'nonce'               => wp_create_nonce( 'fe_ai_search_ajax_nonce' ),
-				'animation_speed'     => (int) $animation_speed,
-				'is_pro_active'       => class_exists( '\FEAISearch\Pro\Admin\FE_AI_Search_Pro_Settings' ),
-				'is_license_active'   => $is_license_active,
-				'ip_limit_count'      => (int) $ip_limit_count,
-				'send_mode'           => $send_mode,
+				'ajax_url'          => admin_url( 'admin-ajax.php' ),
+				'rest_url'          => rest_url( 'fe-ai-search/v1/stream' ),
+				'rest_nonce'        => wp_create_nonce( 'wp_rest' ),
+				'nonce'             => wp_create_nonce( 'fe_ai_search_ajax_nonce' ),
+				'animation_speed'   => (int) $animation_speed,
+				'is_pro_active'     => class_exists( '\FEAISearch\Pro\Admin\FE_AI_Search_Pro_Settings' ),
+				'is_license_active' => $is_license_active,
+				'ip_limit_count'    => (int) $ip_limit_count,
+				'send_mode'         => $send_mode,
 			]
 		);
 	}
