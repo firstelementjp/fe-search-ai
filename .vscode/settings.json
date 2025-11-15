@@ -1,59 +1,32 @@
 {
-    "php.suggest.basic": false,
-    "phpcs.executablePath": "${workspaceFolder}/vendor/bin/phpcs",
-    "phpcbf.executablePath": "${workspaceFolder}/vendor/bin/phpcbf",
-    "phpcs.autoConfigSearch": true,
-    "phpcs.showWarnings": true,
-    "phpcs.showSources": true,
-    "phpcs.showNotices": true,
-    "phpcs.composerJsonPath": "${workspaceFolder}/composer.json",
-    "phpSniffer.run": "onSave",
-    "phpSniffer.standard": "phpcs.xml.dist",
-    "phpSniffer.executablesFolder": "${workspaceFolder}/vendor/bin"
+    // PHP Sniffer & Beautifier (PHPCS/PHPCBF)
+    "phpsab.autoDetect": false,
+    "phpsab.executablePathCS": "/Users/fe_miyazawa/Local Sites/4510m/app/public/wp-content/plugins/fe-ai-search/vendor/bin/phpcs",
+    "phpsab.executablePathCBF": "/Users/fe_miyazawa/Local Sites/4510m/app/public/wp-content/plugins/fe-ai-search/vendor/bin/phpcbf",
+    "phpsab.standard": "/Users/fe_miyazawa/Local Sites/4510m/app/public/wp-content/plugins/fe-ai-search/phpcs.xml.dist",
+    "phpsab.snifferEnable": true,
+    "phpsab.fixerEnable": true,
+    "phpsab.fixerEnableOnSave": true,
+
+    // Prettier (JS/JSON)
+    "prettier.requireConfig": true,
+
+    // ESLint (JavaScript)
+    "eslint.validate": ["javascript", "javascriptreact"],
+
+    // File type specific settings
+    "[javascript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true
+    },
+    "[json]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true
+    },
+
+    // Code actions on save
+    "editor.codeActionsOnSave": {
+        "source.fixAll.phpsab": "explicit",
+        "source.fixAll.eslint": "explicit"
+    }
 }
-<?xml version="1.0"?>
-<ruleset name="FE AI Search">
-  <description>WordPress plugin ruleset</description>
-
-  <!-- Scan scope -->
-  <file>./</file>
-
-  <!-- Exclusions -->
-  <exclude-pattern>vendor/*</exclude-pattern>
-  <exclude-pattern>node_modules/*</exclude-pattern>
-  <exclude-pattern>tests/*</exclude-pattern>
-  <exclude-pattern>*.min.js</exclude-pattern>
-  <exclude-pattern>*.min.css</exclude-pattern>
-  <exclude-pattern>languages/*</exclude-pattern>
-  <exclude-pattern>*.pot</exclude-pattern>
-  <exclude-pattern>*.po</exclude-pattern>
-  <exclude-pattern>*.mo</exclude-pattern>
-
-  <!-- Execution options -->
-  <arg value="p"/>
-  <arg name="basepath" value="./"/>
-  <arg name="parallel" value="8"/>
-
-  <!-- WordPress standard rulesets -->
-  <rule ref="WordPress"/>
-  <rule ref="WordPress-Core"/>
-  <rule ref="WordPress-Docs"/>
-  <rule ref="WordPress-Extra"/>
-
-  <!-- I18n: text_domain as array -->
-  <rule ref="WordPress.WP.I18n">
-    <properties>
-      <property name="text_domain" type="array">
-        <element value="fe-ai-search"/>
-      </property>
-    </properties>
-  </rule>
-
-  <!-- Require short array syntax [] (prohibit long array() syntax) -->
-  <rule ref="Generic.Arrays.DisallowLongArraySyntax"/>
-
-  <!-- Compatibility checks (optional) -->
-  <rule ref="PHPCompatibility"/>
-  <rule ref="PHPCompatibilityWP"/>
-
-</ruleset>

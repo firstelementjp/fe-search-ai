@@ -1,0 +1,25 @@
+{
+	"extends": ["plugin:@wordpress/eslint-plugin/recommended", "plugin:prettier/recommended"],
+	"rules": {
+		"prettier/prettier": "error",
+		"indent": "off",
+		"semi": "off",
+		"linebreak-style": ["error", "unix"],
+		"comma-dangle": ["error", "only-multiline"],
+		"object-curly-spacing": ["error", "always"],
+		"array-bracket-spacing": ["error", "never"],
+		"keyword-spacing": ["error", { "before": true, "after": true }],
+		"camelcase": "off",
+		"@wordpress/no-unused-vars-before-return": ["error", { "excludePattern": "^_" }],
+		"@wordpress/no-global-active-element": "warn",
+		"@wordpress/no-global-get-selection": "warn"
+	},
+	"globals": {
+		"jQuery": "readonly",
+		"wp": "readonly"
+	},
+	"env": {
+		"browser": true,
+		"jquery": true
+	}
+}

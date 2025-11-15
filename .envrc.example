@@ -1,0 +1,15 @@
+# .envrc
+export PATH=$PWD/vendor/bin:$PATH
+
+# aliases
+alias cdadmin="cd includes/admin"
+alias cdajax="cd includes/ajax"
+alias cdcore="cd includes/core"
+alias cdfrontend="cd includes/frontend"
+alias cdi18n="cd includes/i18n"
+
+# development environment variables
+export WP_DEBUG=true
+
+# show project name in prompt
+export PS1="(fe-ai-search) $PS1"

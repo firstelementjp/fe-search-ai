@@ -4,10 +4,16 @@ vendor/
 
 # Exclude copy files
 *-copy*
-* copy*      # matches 'filename copy' or 'filename copy.ext'
-* copy *     # matches 'filename copy .ext' or 'filename copy 2.ext'
-* copy.*     # matches 'filename copy.php'
+* copy*
+* copy *
+* copy.*
 
 # Exclude hidden files and backup language files
 _*
 *-backup-*.po~
+node_modules
+
+# Exclude environment files
+.env
+.env.*
+!.envrc.example
