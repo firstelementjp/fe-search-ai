@@ -195,9 +195,17 @@ class FE_AI_Search_Sync_Hooks {
 				}
 			}
 
-			$this->options['sync']['status']['last_sync_timestamp'] = current_time( 'timestamp' );
-			update_option( 'fe_ai_search_settings', $this->options );
-
+			// Update runtime sync status in the dedicated state option so it is not
+			// affected by main settings sanitization.
+			$state = get_option( 'fe_ai_search_sync_state', [] );
+			if ( ! is_array( $state ) ) {
+				$state = [];
+			}
+			if ( ! isset( $state['status'] ) || ! is_array( $state['status'] ) ) {
+				$state['status'] = [];
+			}
+			$state['status']['last_sync_timestamp'] = current_time( 'timestamp' );
+			update_option( 'fe_ai_search_sync_state', $state );
 		}
 	}
 

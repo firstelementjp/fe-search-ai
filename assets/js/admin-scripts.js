@@ -174,21 +174,41 @@ document.addEventListener('DOMContentLoaded', () => {
 			const response = JSON.parse(responseText);
 
 			if (response.success) {
-				if (currentPage < totalPages) {
+				// If the server reports there are no more posts, treat this as a
+				// normal completion regardless of currentPage / totalPages.
+				if (response.data && response.data.message === 'No more posts to process.') {
+					progressBar.style.width = '100%';
+					progressBar.textContent = '100%';
+					statusText.innerHTML = `<strong style="color:green;">${__('Synchronization complete!', 'fe-ai-search')} (${totalPosts} ${__('items', 'fe-ai-search')})</strong>`;
+					rebuildBtn.disabled = false;
+					smartSyncBtn.disabled = false;
+					statusSpinner.style.display = 'none';
+					await wpPost('fe_ai_search_update_sync_timestamp', {
+						nonce: fe_ai_search_sync_obj.nonce,
+					});
+					await wpPost('fe_ai_search_update_settings_hash', {
+						nonce: fe_ai_search_sync_obj.nonce,
+					});
+					// Reload the page so that the "Last Sync" label reflects the updated timestamp.
+					location.reload();
+				} else if (currentPage < totalPages) {
 					await processBatch(currentPage + 1, totalPages, totalPosts, batch_size);
 				} else {
 					// Final batch is complete.
 					progressBar.style.width = '100%';
 					progressBar.textContent = '100%';
 					statusText.innerHTML = `<strong style="color:green;">${__('Synchronization complete!', 'fe-ai-search')} (${totalPosts} ${__('items', 'fe-ai-search')})</strong>`;
-					startBtn.disabled = false;
+					rebuildBtn.disabled = false;
+					smartSyncBtn.disabled = false;
 					statusSpinner.style.display = 'none';
-					wpPost('fe_ai_search_update_sync_timestamp', {
+					await wpPost('fe_ai_search_update_sync_timestamp', {
 						nonce: fe_ai_search_sync_obj.nonce,
 					});
-					wpPost('fe_ai_search_update_settings_hash', {
+					await wpPost('fe_ai_search_update_settings_hash', {
 						nonce: fe_ai_search_sync_obj.nonce,
 					});
+					// Reload the page so that the "Last Sync" label reflects the updated timestamp.
+					location.reload();
 				}
 			} else {
 				throw new Error(response.data.message || 'Batch processing failed.');
@@ -200,7 +220,8 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 			statusText.innerHTML = `<span style="color:red;">${__('Error: A problem occurred while processing batch', 'fe-ai-search')} ${currentPage}.</span>`;
 			statusSpinner.style.display = 'none';
-			startBtn.disabled = false;
+			rebuildBtn.disabled = false;
+			smartSyncBtn.disabled = false;
 		}
 	}
 

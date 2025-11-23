@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: FE AI Search\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-10-07 13:37+0000\n"
-"PO-Revision-Date: 2025-11-03 05:16+0000\n"
+"PO-Revision-Date: 2025-11-23 09:32+0000\n"
 "Last-Translator: \n"
 "Language-Team: 日本語\n"
 "Language: ja\n"
@@ -15,360 +15,373 @@ msgstr ""
 "X-Loco-Version: 2.8.0; wp-6.8.1; php-8.3.8\n"
 "X-Domain: fe-ai-search"
 
-#: includes/admin/class-fe-ai-search-settings.php:790
+#: includes/admin/class-fe-ai-search-settings.php:839
 msgid ""
 "\"Sync Changes\" processes only new, updated, or deleted content. \"Rebuild "
 "Index\" syncs everything from scratch."
 msgstr "「変更を同期」は新規、更新、または削除されたコンテンツのみを処理します。「インデックスを再構築」はすべてを最初から同期します。"
 
-#: includes/ajax/class-fe-ai-search-chat-handler.php:995
+#: includes/ajax/class-fe-ai-search-chat-handler.php:1210
+#: includes/ajax/class-fe-ai-search-chat-handler.php:1259
 msgid "[REDACTED]"
-msgstr "[編集済み]"
+msgstr "[マスク済み]"
 
-#: includes/admin/class-fe-ai-search-license-settings.php:147
+#: includes/admin/class-fe-ai-search-license-settings.php:173
 msgid "Activate"
 msgstr "有効化"
 
-#: includes/admin/class-fe-ai-search-settings.php:1569
+#: includes/admin/class-fe-ai-search-settings.php:1723
 msgid "Adjust the typing animation speed of the AI's response."
-msgstr "AIの応答のタイピングアニメーション速度を調整する"
+msgstr "AI の応答のタイピングアニメーション速度を調整する"
 
-#: includes/admin/class-fe-ai-search-settings copy.php:882
+#: _tmp/class-fe-ai-search-settings copy.php:882
 msgid ""
 "Adjust the typing animation speed of the AI's response. This value "
 "represents the number of characters processed at once."
-msgstr "AIの応答におけるタイピングアニメーションの速度を調整します。この値は一度に処理される文字数を表します。"
+msgstr "AI の応答におけるタイピングアニメーションの速度を調整します。この値は一度に処理される文字数を表します。"
 
-#: includes/admin/class-fe-ai-search-settings.php:279
-msgid "Advanced Display"
-msgstr "上級者向け設定"
+#: includes/admin/class-fe-ai-search-settings.php:113
+msgid "Advanced"
+msgstr "詳細設定"
 
-#: includes/admin/class-fe-ai-search-settings.php:251
-#: includes/admin/class-fe-ai-search-settings copy.php:189
+#: includes/admin/class-fe-ai-search-settings.php:337
+msgid "Advanced Settings"
+msgstr "詳細設定"
+
+#: _tmp/class-fe-ai-search-settings copy.php:189
+#: includes/admin/class-fe-ai-search-settings.php:296
 #| msgid "Advanced Settings"
 msgid "Advanced Sync Settings"
 msgstr "上級者向け設定"
 
-#: includes/frontend/class-fe-ai-search-chat-ui copy.php:174
+#: _tmp/class-fe-ai-search-chat-ui copy.php:174
 #: includes/frontend/class-fe-ai-search-chat-ui.php:183
-#: includes/admin/class-fe-ai-search-settings.php:985
+#: includes/admin/class-fe-ai-search-settings.php:1068
 msgid "AI Search"
 msgstr "AI Search"
 
-#: includes/admin/class-fe-ai-search-settings.php:296
-#: includes/admin/class-fe-ai-search-settings copy.php:176
+#: _tmp/class-fe-ai-search-settings copy.php:176
+#: includes/admin/class-fe-ai-search-settings.php:323
 msgid "AI Site Name"
-msgstr "AIに伝えるサイト名"
+msgstr "AI に伝えるサイト名"
 
-#: includes/admin/class-fe-ai-search-settings.php:297
-#: includes/admin/class-fe-ai-search-settings copy.php:177
+#: _tmp/class-fe-ai-search-settings copy.php:177
+#: includes/admin/class-fe-ai-search-settings.php:324
 msgid "AI Site Purpose"
-msgstr "AIに伝えるサイトの目的"
+msgstr "AI に伝えるサイトの目的"
 
 #. Description of the plugin
 msgid "AI-powered search for WordPress."
-msgstr "WordPress向けのAI搭載検索。"
+msgstr "WordPress 向けの AI 搭載検索。"
 
-#: includes/ajax/class-fe-ai-search-sync-handler.php:354
+#: includes/ajax/class-fe-ai-search-sync-handler.php:542
 msgid "All sync data has been deleted."
 msgstr "すべての同期データが削除されました。"
 
-#: includes/core/class-fe-ai-search-license-handler.php:86
+#: includes/core/class-fe-ai-search-license-handler.php:94
 msgid "An invalid response was received from the license server."
 msgstr "ライセンスサーバーから無効な応答を受信しました。"
 
-#: includes/frontend/class-fe-ai-search-chat-ui copy.php:233
+#: _tmp/class-fe-ai-search-chat-ui copy.php:233
 #: includes/frontend/class-fe-ai-search-chat-ui.php:242
 msgid "and"
 msgstr "and"
 
-#: includes/admin/class-fe-ai-search-settings.php:319
-#: includes/admin/class-fe-ai-search-settings copy.php:216
+#: _tmp/class-fe-ai-search-settings copy.php:216
+#: includes/admin/class-fe-ai-search-settings.php:353
 msgid "Anthropic (Claude)"
 msgstr "Anthropic (Claude)"
 
-#: includes/ajax/class-fe-ai-search-sync-handler.php:645
-#: includes/ajax/class-fe-ai-search-sync-handler.php:733
+#: includes/ajax/class-fe-ai-search-sync-handler.php:885
+#: includes/ajax/class-fe-ai-search-sync-handler.php:997
 msgid "API Error"
-msgstr "APIエラー"
+msgstr "API エラー"
 
-#: includes/ajax/class-fe-ai-search-chat-handler.php:887
-#: includes/ajax/class-fe-ai-search-chat-handler.php:902
-#: includes/ajax/class-fe-ai-search-chat-handler.php:931
+#: includes/ajax/class-fe-ai-search-chat-handler.php:1094
+#: includes/ajax/class-fe-ai-search-chat-handler.php:1112
+#: includes/ajax/class-fe-ai-search-chat-handler.php:1131
 msgid "API key is missing."
-msgstr "APIキーが見つかりません。"
+msgstr "API キーが見つかりません。"
 
-#: includes/admin/class-fe-ai-search-settings.php:221
-#: includes/admin/class-fe-ai-search-settings copy.php:164
+#: _tmp/class-fe-ai-search-settings copy.php:164
+#: includes/admin/class-fe-ai-search-settings.php:275
 msgid "API Keys"
 msgstr "API キー"
 
-#: includes/admin/class-fe-ai-search-settings copy.php:163
+#: _tmp/class-fe-ai-search-settings copy.php:163
 msgid "API Settings"
-msgstr "API設定"
+msgstr "API 設定"
 
-#: includes/admin/class-fe-ai-search-settings.php:875
-#: includes/admin/class-fe-ai-search-settings copy.php:708
+#: _tmp/class-fe-ai-search-settings copy.php:708
+#: includes/admin/class-fe-ai-search-settings.php:946
 msgid "Archive"
 msgstr "アーカイブ"
 
-#: includes/admin/class-fe-ai-search-settings.php:987
+#: includes/admin/class-fe-ai-search-settings.php:1070
 msgid "Ask a question..."
 msgstr "質問する..."
 
-#: includes/ajax/class-fe-ai-search-chat-handler.php:896
-#: includes/ajax/class-fe-ai-search-chat-handler.php:921
-#: includes/ajax/class-fe-ai-search-chat-handler.php:940
+#: includes/admin/class-fe-ai-search-settings.php:338
+msgid "Assets Loading"
+msgstr "アセットの読み込み"
+
+#: includes/ajax/class-fe-ai-search-chat-handler.php:1106
+#: includes/ajax/class-fe-ai-search-chat-handler.php:1121
+#: includes/ajax/class-fe-ai-search-chat-handler.php:1155
 msgid "Authentication failed."
 msgstr "認証に失敗しました。"
 
 #. %s: Link to the Pro version.
-#: includes/admin/class-fe-ai-search-settings.php:667
+#: includes/admin/class-fe-ai-search-settings.php:713
 #, php-format
 msgid "Available in the %s version."
 msgstr "%s 版にて可能です。"
 
-#: includes/admin/class-fe-ai-search-settings.php:298
-#: includes/admin/class-fe-ai-search-settings copy.php:178
+#: _tmp/class-fe-ai-search-settings copy.php:178
+#: includes/admin/class-fe-ai-search-settings.php:325
 msgid "Base System Prompt"
 msgstr "基本システムプロンプト"
 
-#: includes/admin/class-fe-ai-search-settings.php:248
-#: includes/admin/class-fe-ai-search-settings copy.php:190
+#: _tmp/class-fe-ai-search-settings copy.php:190
+#: includes/admin/class-fe-ai-search-settings.php:293
 msgid "Batch Size"
 msgstr "バッチサイズ"
 
-#: includes/admin/class-fe-ai-search-settings.php:1369
-#: includes/admin/class-fe-ai-search-settings copy.php:1220
+#: _tmp/class-fe-ai-search-settings copy.php:1220
+#: includes/admin/class-fe-ai-search-settings.php:1460
 msgid ""
 "Briefly explain the purpose of this site to the AI. If left blank, the "
 "site's tagline will be used."
-msgstr "このサイトの目的をAIに簡潔に説明してください。空欄のままにすると、サイトのタグラインが使用されます。"
+msgstr "このサイトの目的を AI に簡潔に説明してください。空欄のままにすると、サイトのタグラインが使用されます。"
 
-#: includes/admin/class-fe-ai-search-settings copy.php:587
-#: includes/ajax/class-fe-ai-search-sync-handler.php:916
+#: _tmp/class-fe-ai-search-settings copy.php:587
+#: includes/ajax/class-fe-ai-search-sync-handler.php:1222
 msgid "Built-in (TinySegmenter)"
 msgstr "内蔵（TinySegmenter）"
 
-#: includes/frontend/class-fe-ai-search-chat-ui copy.php:232
+#: _tmp/class-fe-ai-search-chat-ui copy.php:232
 #: includes/frontend/class-fe-ai-search-chat-ui.php:241
 #, php-format
 msgid "By using this chat, you agree to our %s."
 msgstr "このチャットを利用することにより、当社の%sに同意したことになります。"
 
-#: includes/admin/class-fe-ai-search-settings.php:441
+#: _tmp/class-fe-ai-search-settings copy.php:317
+#: _tmp/class-fe-ai-search-settings copy.php:371
+#: _tmp/class-fe-ai-search-settings copy.php:425
 #: includes/admin/class-fe-ai-search-settings.php:495
-#: includes/admin/class-fe-ai-search-settings.php:549
-#: includes/admin/class-fe-ai-search-settings copy.php:317
-#: includes/admin/class-fe-ai-search-settings copy.php:371
-#: includes/admin/class-fe-ai-search-settings copy.php:425
+#: includes/admin/class-fe-ai-search-settings.php:550
+#: includes/admin/class-fe-ai-search-settings.php:605
 msgid "Change Model"
 msgstr "モデルを変更"
 
-#: includes/admin/class-fe-ai-search-settings.php:235
-#: includes/admin/class-fe-ai-search-settings copy.php:172
+#: _tmp/class-fe-ai-search-settings copy.php:172
+#: includes/admin/class-fe-ai-search-settings.php:268
 msgid "Chat AI"
-msgstr "チャットAI"
+msgstr "チャット AI"
 
-#: includes/admin/class-fe-ai-search-settings.php:234
-#: includes/admin/class-fe-ai-search-settings copy.php:171
+#: _tmp/class-fe-ai-search-settings copy.php:171
+#: includes/admin/class-fe-ai-search-settings.php:267
 msgid "Chat Model"
 msgstr "チャットモデル"
 
-#: includes/admin/class-fe-ai-search-settings.php:258
+#: includes/admin/class-fe-ai-search-settings.php:303
 msgid "Chat Text & Colors"
 msgstr "チャットテキスト＆色"
 
-#: includes/admin/class-fe-ai-search-settings copy.php:195
+#: _tmp/class-fe-ai-search-settings copy.php:195
 msgid "Chat Text & Labels"
 msgstr "チャットテキスト＆ラベル"
 
-#: includes/admin/class-fe-ai-search-settings.php:255
-#: includes/admin/class-fe-ai-search-settings copy.php:193
+#: _tmp/class-fe-ai-search-settings copy.php:193
+#: includes/admin/class-fe-ai-search-settings.php:302
 msgid "Chat UI Appearance"
-msgstr "チャットUI 外観"
+msgstr "チャット UI 外観"
 
-#: includes/admin/class-fe-ai-search-settings.php:1178
-#: includes/admin/class-fe-ai-search-settings copy.php:1030
+#: _tmp/class-fe-ai-search-settings copy.php:1030
+#: includes/admin/class-fe-ai-search-settings.php:1261
 msgid ""
 "Check this box if you want to stop using this plugin completely, rather than "
 "just temporarily disabling it."
 msgstr "このプラグインを一時的に無効にするのではなく、完全に使用を停止する場合は、このボックスをオンにします。"
 
-#: includes/frontend/class-fe-ai-search-chat-ui copy.php:255
+#: _tmp/class-fe-ai-search-chat-ui copy.php:255
 #: includes/frontend/class-fe-ai-search-chat-ui.php:264
 msgid "Cmd/Ctrl+Enter"
 msgstr "Cmd/Ctrl + Enter"
 
-#: includes/admin/class-fe-ai-search-settings.php:1583
+#: includes/admin/class-fe-ai-search-settings.php:1737
 msgid "Cmd/Ctrl+Enter (Enter for newline)"
-msgstr "Cmd/Ctrl + Enter (エンターで改行)"
+msgstr "Cmd/Ctrl + Enter (Enter で改行)"
 
-#: includes/admin/class-fe-ai-search-settings.php:1174
-#: includes/admin/class-fe-ai-search-settings copy.php:1026
+#: _tmp/class-fe-ai-search-settings copy.php:1026
+#: includes/admin/class-fe-ai-search-settings.php:1257
 msgid ""
 "Completely remove all database tables and settings when removing "
 "(uninstalling) a plugin."
 msgstr "プラグインを削除（アンインストール）する際に、すべてのデータベーステーブルと設定を完全に削除する。"
 
-#: includes/admin/class-fe-ai-search-settings.php:861
-#: includes/admin/class-fe-ai-search-settings copy.php:694
+#: includes/admin/class-fe-ai-search-settings.php:932
+msgid "Conditions for Displaying the Chat"
+msgstr "チャット表示条件"
+
+#: _tmp/class-fe-ai-search-settings copy.php:694
 msgid "Conditions for Displaying the Page"
 msgstr "ページを表示する条件"
 
-#: includes/ajax/class-fe-ai-search-chat-handler.php:957
+#: includes/ajax/class-fe-ai-search-chat-handler.php:1172
 msgid "Connection failed"
 msgstr "接続に失敗しました"
 
-#: includes/ajax/class-fe-ai-search-chat-handler.php:955
+#: includes/ajax/class-fe-ai-search-chat-handler.php:1170
 msgid "Connection successful"
 msgstr "接続に成功しました"
 
-#: includes/admin/class-fe-ai-search-settings.php:427
-#: includes/admin/class-fe-ai-search-settings.php:481
-#: includes/admin/class-fe-ai-search-settings.php:535
-#: includes/admin/class-fe-ai-search-settings copy.php:303
-#: includes/admin/class-fe-ai-search-settings copy.php:357
-#: includes/admin/class-fe-ai-search-settings copy.php:411
+#: _tmp/class-fe-ai-search-settings copy.php:303
+#: _tmp/class-fe-ai-search-settings copy.php:357
+#: _tmp/class-fe-ai-search-settings copy.php:411
+#: includes/admin/class-fe-ai-search-settings.php:466
+#: includes/admin/class-fe-ai-search-settings.php:521
+#: includes/admin/class-fe-ai-search-settings.php:576
 msgid "Connection Test"
 msgstr "接続テスト"
 
-#: includes/admin/class-fe-ai-search-settings.php:243
-#: includes/admin/class-fe-ai-search-settings copy.php:185
+#: _tmp/class-fe-ai-search-settings copy.php:185
+#: includes/admin/class-fe-ai-search-settings.php:288
 msgid "Content to Sync"
 msgstr "同期するコンテンツ"
 
-#: includes/ajax/class-fe-ai-search-sync-handler.php:880
+#: includes/ajax/class-fe-ai-search-sync-handler.php:1191
 msgid "Contribute on GitHub"
-msgstr "GitHubで貢献する"
+msgstr "GitHub で貢献する"
 
-#: includes/core/class-fe-ai-search-license-handler.php:78
+#: includes/core/class-fe-ai-search-license-handler.php:86
 msgid "Could not connect to the license server"
 msgstr "ライセンスサーバーに接続できませんでした。"
 
-#: includes/admin/class-fe-ai-search-settings.php:1300
-#: includes/admin/class-fe-ai-search-settings copy.php:1151
+#: _tmp/class-fe-ai-search-settings copy.php:1151
+#: includes/admin/class-fe-ai-search-settings.php:1387
 msgid ""
 "Customize the instructions (system prompts) for the AI assistant. If left "
 "blank, the standard prompt will be used."
 msgstr "AIアシスタントへの指示（システムプロンプト）をカスタマイズします。空にすると、標準のプロンプトが使用されます。"
 
-#: includes/admin/class-fe-ai-search-settings.php:90
-#: includes/admin/class-fe-ai-search-settings copy.php:70
+#: _tmp/class-fe-ai-search-settings copy.php:70
 msgid "Data"
 msgstr "データ"
 
-#: includes/admin/class-fe-ai-search-settings.php:301
-#: includes/admin/class-fe-ai-search-settings copy.php:198
+#: _tmp/class-fe-ai-search-settings copy.php:198
+#: includes/admin/class-fe-ai-search-settings.php:330
 msgid "Data Management"
 msgstr "データ管理"
 
-#: includes/admin/class-fe-ai-search-license-settings.php:142
+#: includes/admin/class-fe-ai-search-license-settings.php:168
 msgid "Deactivate"
 msgstr "無効化"
 
-#: includes/admin/class-fe-ai-search-settings.php:305
-#: includes/admin/class-fe-ai-search-settings copy.php:202
+#: includes/admin/class-fe-ai-search-settings.php:339
+msgid "Debug Mode"
+msgstr "デバッグモード"
+
+#: _tmp/class-fe-ai-search-settings copy.php:202
 msgid "Debugging"
 msgstr "デバッグ"
 
-#: includes/admin/class-fe-ai-search-settings.php:802
-#: includes/admin/class-fe-ai-search-settings copy.php:635
+#: _tmp/class-fe-ai-search-settings copy.php:635
+#: includes/admin/class-fe-ai-search-settings.php:851
 msgid "Delete all synced data"
 msgstr "同期データをすべて削除する"
 
-#: includes/admin/class-fe-ai-search-settings.php:303
-#: includes/admin/class-fe-ai-search-settings copy.php:199
+#: _tmp/class-fe-ai-search-settings copy.php:199
+#: includes/admin/class-fe-ai-search-settings.php:332
 msgid "Delete Data on Uninstall"
 msgstr "アンインストール時にデータを削除"
 
-#: includes/admin/class-fe-ai-search-settings.php:302
+#: includes/admin/class-fe-ai-search-settings.php:331
 #| msgid "Deleting Synced Data"
 msgid "Delete Synced Data"
 msgstr "同期データを削除する"
 
-#: includes/admin/class-fe-ai-search-settings.php:88
-#: includes/admin/class-fe-ai-search-settings copy.php:68
+#: _tmp/class-fe-ai-search-settings copy.php:68
+#: includes/admin/class-fe-ai-search-settings.php:108
 msgid "Display"
 msgstr "表示"
 
-#: includes/admin/class-fe-ai-search-settings.php:842
-#: includes/admin/class-fe-ai-search-settings copy.php:675
+#: _tmp/class-fe-ai-search-settings copy.php:675
+#: includes/admin/class-fe-ai-search-settings.php:913
 msgid "Display device"
 msgstr "表示デバイス"
 
-#: includes/admin/class-fe-ai-search-settings.php:888
-#: includes/admin/class-fe-ai-search-settings copy.php:721
+#: _tmp/class-fe-ai-search-settings copy.php:721
+#: includes/admin/class-fe-ai-search-settings.php:966
 msgid "Display on individual pages of the following post types"
 msgstr "以下の投稿タイプの個別ページに表示"
 
-#: includes/admin/class-fe-ai-search-settings.php:911
-#: includes/admin/class-fe-ai-search-settings copy.php:744
+#: _tmp/class-fe-ai-search-settings copy.php:744
+#: includes/admin/class-fe-ai-search-settings.php:989
 msgid "Display only with these post IDs"
-msgstr "これらの投稿IDでのみ表示"
+msgstr "これらの投稿 ID でのみ表示"
 
-#: includes/admin/class-fe-ai-search-settings copy.php:194
+#: _tmp/class-fe-ai-search-settings copy.php:194
 msgid "Display Options"
 msgstr "表示オプション"
 
-#: includes/admin/class-fe-ai-search-settings.php:287
+#: includes/admin/class-fe-ai-search-settings.php:309
 msgid "Display Rules"
 msgstr "表示ルール"
 
-#: includes/admin/class-fe-ai-search-settings.php:923
-#: includes/admin/class-fe-ai-search-settings copy.php:756
+#: _tmp/class-fe-ai-search-settings copy.php:756
+#: includes/admin/class-fe-ai-search-settings.php:1001
 msgid "Do not display with these post IDs."
-msgstr "これらの投稿IDでは表示しない"
+msgstr "これらの投稿 ID では表示しない"
 
-#: includes/admin/class-fe-ai-search-settings.php:918
-#: includes/admin/class-fe-ai-search-settings.php:930
-#: includes/admin/class-fe-ai-search-settings copy.php:751
-#: includes/admin/class-fe-ai-search-settings copy.php:763
+#: _tmp/class-fe-ai-search-settings copy.php:751
+#: _tmp/class-fe-ai-search-settings copy.php:763
+#: includes/admin/class-fe-ai-search-settings.php:996
+#: includes/admin/class-fe-ai-search-settings.php:1008
 msgid "e.g."
 msgstr "例："
 
-#: includes/admin/class-fe-ai-search-settings.php:291
+#: includes/admin/class-fe-ai-search-settings.php:312
 msgid "Embed Mode"
 msgstr "エンベッドモード"
 
-#: includes/admin/class-fe-ai-search-settings.php:306
-#: includes/admin/class-fe-ai-search-settings copy.php:203
+#: _tmp/class-fe-ai-search-settings copy.php:203
 msgid "Enable Debug Mode"
 msgstr "デバッグモードを有効化"
 
-#: includes/admin/class-fe-ai-search-settings.php:836
-#: includes/admin/class-fe-ai-search-settings copy.php:669
+#: _tmp/class-fe-ai-search-settings copy.php:669
+#: includes/admin/class-fe-ai-search-settings.php:888
 msgid "Enable floating chat"
 msgstr "フローティングチャットを有効にする"
 
-#: includes/admin/class-fe-ai-search-settings.php:1345
-#: includes/admin/class-fe-ai-search-settings copy.php:1196
+#: _tmp/class-fe-ai-search-settings copy.php:1196
+#: includes/admin/class-fe-ai-search-settings.php:1436
 msgid "Enable the recording of detailed system logs for debugging purposes."
 msgstr "デバッグ用に詳細なシステムログの記録を有効にする。"
 
-#: includes/frontend/class-fe-ai-search-chat-ui copy.php:249
+#: _tmp/class-fe-ai-search-chat-ui copy.php:249
 #: includes/frontend/class-fe-ai-search-chat-ui.php:258
 msgid "Enter"
 msgstr "Enter"
 
-#: includes/admin/class-fe-ai-search-settings.php:1577
+#: includes/admin/class-fe-ai-search-settings.php:1731
 msgid "Enter (Shift+Enter for newline)"
-msgstr "Shift + Enterで改行"
+msgstr "Enter（Shift + Enter で改行）"
 
-#: includes/admin/class-fe-ai-search-settings.php:689
-#: includes/admin/class-fe-ai-search-settings copy.php:536
+#: _tmp/class-fe-ai-search-settings copy.php:536
+#: includes/admin/class-fe-ai-search-settings.php:736
 msgid ""
 "Enter the keys of the custom fields you want to include, separated by commas."
 msgstr "含めたいカスタムフィールドのキーをカンマ区切りで入力します。"
 
-#: includes/admin/class-fe-ai-search-license-settings.php:149
+#: includes/admin/class-fe-ai-search-license-settings.php:175
 msgid ""
 "Enter the license key you received at the time of purchase and press the "
 "\"Activate\" button."
 msgstr "購入時に受け取ったライセンスキーを入力し、「有効化」ボタンを押します。"
 
-#: includes/admin/class-fe-ai-search-settings.php:1323
-#: includes/admin/class-fe-ai-search-settings copy.php:1174
+#: _tmp/class-fe-ai-search-settings copy.php:1174
+#: includes/admin/class-fe-ai-search-settings.php:1414
 msgid ""
 "Enter the number of posts to process in one batch during synchronization. A "
 "smaller number is less likely to cause timeouts on shared servers. (Default: "
@@ -377,39 +390,39 @@ msgstr ""
 "同期中に一度に処理する投稿数を入力します。数値が小さいほど、共有サーバーでタイムアウトが発生する可能性が低くなります。(デフォルト: 10、推奨: "
 "10～100)"
 
-#: includes/admin/class-fe-ai-search-settings.php:540
-#: includes/admin/class-fe-ai-search-settings copy.php:416
+#: _tmp/class-fe-ai-search-settings copy.php:416
+#: includes/admin/class-fe-ai-search-settings.php:581
 msgid "Enter your Anthropic (Claude) API key."
-msgstr "Anthropic (Claude) のAPIキーを入力してください。"
+msgstr "Anthropic (Claude) の API キーを入力してください。"
 
-#: includes/admin/class-fe-ai-search-settings.php:486
-#: includes/admin/class-fe-ai-search-settings copy.php:362
+#: _tmp/class-fe-ai-search-settings copy.php:362
+#: includes/admin/class-fe-ai-search-settings.php:526
 msgid "Enter your Google Cloud API key."
-msgstr "Google CloudのAPIキーを入力してください。"
+msgstr "Google Cloud の API キーを入力してください。"
 
-#: includes/admin/class-fe-ai-search-settings.php:432
-#: includes/admin/class-fe-ai-search-settings copy.php:308
+#: _tmp/class-fe-ai-search-settings copy.php:308
+#: includes/admin/class-fe-ai-search-settings.php:471
 msgid "Enter your OpenAI API key."
-msgstr "OpenAIのAPIキーを入力してください。"
+msgstr "OpenAI の API キーを入力してください。"
 
-#: includes/ajax/class-fe-ai-search-chat-handler.php:551
+#: includes/ajax/class-fe-ai-search-chat-handler.php:657
 msgid "Error: Anthropic API key not set."
-msgstr "エラー: AnthropicのAPIキーが設定されていません。"
+msgstr "エラー:  Anthropic の API キーが設定されていません。"
 
-#: includes/ajax/class-fe-ai-search-chat-handler.php:398
+#: includes/ajax/class-fe-ai-search-chat-handler.php:481
 msgid "Error: Google API key is not set."
-msgstr "エラー: GoogleのAPIキーが設定されていません。"
+msgstr "エラー:  Google の API キーが設定されていません。"
 
-#: includes/ajax/class-fe-ai-search-chat-handler.php:264
+#: includes/ajax/class-fe-ai-search-chat-handler.php:326
 msgid "Error: OpenAI API key not set."
-msgstr "エラー: OpenAIのAPIキーが設定されていません。"
+msgstr "エラー:  OpenAI の API キーが設定されていません。"
 
-#: includes/admin/class-fe-ai-search-settings.php:246
+#: includes/admin/class-fe-ai-search-settings.php:291
 msgid "Exclude Specific Posts"
 msgstr "特定の記事を除外"
 
-#: includes/admin/class-fe-ai-search-settings.php:1562
-#: includes/admin/class-fe-ai-search-settings copy.php:876
+#: _tmp/class-fe-ai-search-settings copy.php:876
+#: includes/admin/class-fe-ai-search-settings.php:1716
 msgid "Fast"
 msgstr "高速"
 
@@ -417,8 +430,8 @@ msgstr "高速"
 msgid "FE AI Search"
 msgstr "FE AI Search"
 
-#: includes/admin/class-fe-ai-search-settings.php:1011
-#: includes/admin/class-fe-ai-search-settings copy.php:819
+#: _tmp/class-fe-ai-search-settings copy.php:819
+#: includes/admin/class-fe-ai-search-settings.php:1094
 msgid "First greeting"
 msgstr "最初の挨拶文"
 
@@ -426,41 +439,42 @@ msgstr "最初の挨拶文"
 msgid "FirstElement, Inc."
 msgstr "FirstElement, Inc."
 
-#: includes/admin/class-fe-ai-search-settings.php:286
+#: includes/admin/class-fe-ai-search-settings.php:308
 msgid "Floating Mode Settings"
 msgstr "フローティングモードの設定"
 
-#: includes/admin/class-fe-ai-search-settings copy.php:602
-#: includes/ajax/class-fe-ai-search-sync-handler.php:920
+#: _tmp/class-fe-ai-search-settings copy.php:602
 msgid ""
 "For higher search accuracy, install MeCab on your server and the \"natto-"
 "php\" library via Composer."
 msgstr ""
 "検索精度を高めるには、サーバーに MeCab をインストールし、Composer 経由で「natto-php」ライブラリをインストールします。"
 
-#: includes/admin/class-fe-ai-search-settings.php:288
-#| msgid "Full Screen Mode"
-msgid "Fullscreen Page"
-msgstr "全画面ページ"
+#: includes/admin/class-fe-ai-search-settings.php:316
+msgid "Fullscreen Mode Settings"
+msgstr "全画面モード設定"
 
-#: includes/admin/class-fe-ai-search-settings.php:318
-#: includes/admin/class-fe-ai-search-settings copy.php:215
+#: includes/admin/class-fe-ai-search-settings.php:317
+msgid "Fullscreen Page"
+msgstr "全画面表示するページ"
+
+#: _tmp/class-fe-ai-search-settings copy.php:215
+#: includes/admin/class-fe-ai-search-settings.php:352
 msgid "Google (Gemini)"
 msgstr "Google (Gemini)"
 
-#: includes/frontend/class-fe-ai-search-chat-ui copy.php:175
+#: _tmp/class-fe-ai-search-chat-ui copy.php:175
 #: includes/frontend/class-fe-ai-search-chat-ui.php:184
-#: includes/admin/class-fe-ai-search-settings.php:986
+#: includes/admin/class-fe-ai-search-settings.php:1069
 msgid "Hello! Please ask me anything about the information on this site."
 msgstr "こんにちは！このサイトの情報について、何でも質問してください。"
 
-#: includes/admin/class-fe-ai-search-settings copy.php:593
-#: includes/ajax/class-fe-ai-search-sync-handler.php:914
+#: _tmp/class-fe-ai-search-settings copy.php:593
 msgid "High-Accuracy (MeCab)"
 msgstr "高精度（MeCab）"
 
-#: includes/admin/class-fe-ai-search-settings.php:868
-#: includes/admin/class-fe-ai-search-settings copy.php:701
+#: _tmp/class-fe-ai-search-settings copy.php:701
+#: includes/admin/class-fe-ai-search-settings.php:939
 msgid "Home"
 msgstr "ホーム"
 
@@ -472,39 +486,39 @@ msgstr "https://fe-advanced-search.com/"
 msgid "https://www.firstelement.co.jp/"
 msgstr "https://www.firstelement.co.jp/"
 
-#: includes/admin/class-fe-ai-search-settings.php:1620
-#: includes/admin/class-fe-ai-search-settings copy.php:928
+#: _tmp/class-fe-ai-search-settings copy.php:928
+#: includes/admin/class-fe-ai-search-settings.php:1778
 msgid ""
 "If not selected, the page set in WordPress's standard privacy settings will "
 "be used."
-msgstr "選択されていない場合、WordPressの標準プライバシー設定で指定されたページが使用されます。"
+msgstr "選択されていない場合、WordPress の標準プライバシー設定で指定されたページが使用されます。"
 
-#: includes/admin/class-fe-ai-search-settings.php:920
-#: includes/admin/class-fe-ai-search-settings copy.php:753
+#: _tmp/class-fe-ai-search-settings copy.php:753
+#: includes/admin/class-fe-ai-search-settings.php:998
 msgid "If you enter the ID here, other display rules will be ignored."
-msgstr "ここにIDを入力すると、他の表示ルールは無視されます。"
+msgstr "ここに ID を入力すると、他の表示ルールは無視されます。"
 
-#: includes/admin/class-fe-ai-search-settings.php:1179
-#: includes/admin/class-fe-ai-search-settings copy.php:1031
+#: _tmp/class-fe-ai-search-settings copy.php:1031
+#: includes/admin/class-fe-ai-search-settings.php:1262
 msgid ""
 "If you leave this box unchecked, your previous settings and sync data will "
 "be restored when you reinstall the plugin."
 msgstr "このボックスのチェックを外しておくと、プラグインを再インストールした際に、以前の設定と同期データが復元されます。"
 
-#: includes/admin/class-fe-ai-search-settings copy.php:950
+#: _tmp/class-fe-ai-search-settings copy.php:950
 msgid ""
 "If you want to design the chat UI with your own theme's CSS, uncheck this."
-msgstr "独自のテーマCSSでチャットUIをデザインしたい場合は、このチェックを外してください。"
+msgstr "独自のテーマ CSS でチャット UI をデザインしたい場合は、このチェックを外してください。"
 
-#: includes/admin/class-fe-ai-search-settings.php:1131
-#: includes/admin/class-fe-ai-search-settings copy.php:984
+#: _tmp/class-fe-ai-search-settings copy.php:984
+#: includes/admin/class-fe-ai-search-settings.php:1214
 msgid ""
 "If you want to exclude posts from synchronization, enter the post IDs "
 "separated by commas (e.g., 15, 30)."
-msgstr "同期から除外したい投稿がある場合は、投稿IDをカンマ区切りで入力します（例: 15, 30）。"
+msgstr "同期から除外したい投稿がある場合は、投稿 ID をカンマ区切りで入力します（例: 15, 30）。"
 
-#: includes/admin/class-fe-ai-search-settings.php:1114
-#: includes/admin/class-fe-ai-search-settings copy.php:967
+#: _tmp/class-fe-ai-search-settings copy.php:967
+#: includes/admin/class-fe-ai-search-settings.php:1197
 msgid ""
 "If you want to sync only certain posts, enter the post IDs separated by "
 "commas (e.g. 10, 25, 103).<br><strong>Note:</strong> If you enter any here, "
@@ -514,309 +528,324 @@ msgstr ""
 "特定の投稿のみを同期する場合は、投稿 ID をカンマで区切って入力します (例: 10, 25, 103)。<br><strong>注:</strong>"
 " ここで入力すると、「同期する投稿タイプ」設定は無視され、その ID を持つ投稿のみが同期されます。"
 
-#: includes/admin/class-fe-ai-search-settings.php:639
-#: includes/admin/class-fe-ai-search-settings copy.php:515
+#: _tmp/class-fe-ai-search-settings copy.php:515
+#: includes/admin/class-fe-ai-search-settings.php:682
 #, php-format
 msgid "Include %s"
-msgstr "%s を含む"
+msgstr "%s を含める"
 
-#: includes/admin/class-fe-ai-search-settings.php:663
-#: includes/admin/class-fe-ai-search-settings copy.php:524
+#: _tmp/class-fe-ai-search-settings copy.php:524
+#: includes/admin/class-fe-ai-search-settings.php:707
 msgid "Include Custom Fields"
 msgstr "カスタムフィールドを含める"
 
-#: includes/admin/class-fe-ai-search-settings.php:625
-#: includes/admin/class-fe-ai-search-settings copy.php:501
+#: _tmp/class-fe-ai-search-settings copy.php:501
+#: includes/admin/class-fe-ai-search-settings.php:668
 msgid "Include Post Author (nickname)"
 msgstr "投稿者（ニックネーム）を含める"
 
-#: includes/admin/class-fe-ai-search-settings.php:617
-#: includes/admin/class-fe-ai-search-settings copy.php:493
+#: _tmp/class-fe-ai-search-settings copy.php:493
+#: includes/admin/class-fe-ai-search-settings.php:660
 msgid "Include Post Content"
 msgstr "本文を含める"
 
-#: includes/admin/class-fe-ai-search-settings.php:621
-#: includes/admin/class-fe-ai-search-settings copy.php:497
+#: _tmp/class-fe-ai-search-settings copy.php:497
+#: includes/admin/class-fe-ai-search-settings.php:664
 msgid "Include Post Date"
 msgstr "投稿日を含める"
 
-#: includes/admin/class-fe-ai-search-settings.php:613
-#: includes/admin/class-fe-ai-search-settings copy.php:489
+#: _tmp/class-fe-ai-search-settings copy.php:489
+#: includes/admin/class-fe-ai-search-settings.php:656
 msgid "Include Post Title"
 msgstr "タイトルを含める"
 
-#: includes/admin/class-fe-ai-search-settings.php:738
+#: includes/admin/class-fe-ai-search-settings.php:787
 msgid "Indexed Posts"
 msgstr "同期済みの記事"
 
-#: includes/admin/class-fe-ai-search-settings.php:1021
-#: includes/admin/class-fe-ai-search-settings copy.php:828
+#: _tmp/class-fe-ai-search-settings copy.php:828
+#: includes/admin/class-fe-ai-search-settings.php:1104
 msgid "Input field placeholders"
 msgstr "入力欄のプレースホルダー"
 
-#: includes/admin/class-fe-ai-search-settings.php:265
+#: includes/admin/class-fe-ai-search-settings.php:304
 msgid "Interaction"
 msgstr "対話"
 
-#: includes/admin/class-fe-ai-search-settings copy.php:585
-#: includes/ajax/class-fe-ai-search-sync-handler.php:910
+#: _tmp/class-fe-ai-search-settings copy.php:585
+#: includes/ajax/class-fe-ai-search-sync-handler.php:1221
 msgid "Japanese Tokenizer Status"
-msgstr "日本語トークナイザーの状態"
+msgstr "現在の日本語トークナイザー"
 
-#: includes/admin/class-fe-ai-search-settings.php:1044
-#: includes/admin/class-fe-ai-search-settings copy.php:848
+#: _tmp/class-fe-ai-search-settings copy.php:848
+#: includes/admin/class-fe-ai-search-settings.php:1127
 msgid "Key Color"
 msgstr "キーカラー"
 
-#: includes/admin/class-fe-ai-search-settings.php:732
+#: includes/admin/class-fe-ai-search-settings.php:781
 msgid "Last Sync"
 msgstr "最終同期"
 
-#: includes/admin/class-fe-ai-search-settings copy.php:571
+#: _tmp/class-fe-ai-search-settings copy.php:571
 msgid "Last Sync Date and Time"
 msgstr "最終同期日時"
 
-#: includes/admin/class-fe-ai-search-settings.php:272
+#: includes/admin/class-fe-ai-search-settings.php:305
 msgid "Legal Links"
 msgstr "法的リンク"
 
-#: includes/admin/class-fe-ai-search-license-settings.php:73
+#: includes/admin/class-fe-ai-search-license-settings.php:99
 msgid "License"
 msgstr "ライセンス"
 
-#: includes/admin/class-fe-ai-search-license-settings.php:101
+#: includes/admin/class-fe-ai-search-license-settings.php:127
 msgid "License Activation"
 msgstr "ライセンスを有効化"
 
-#: includes/admin/class-fe-ai-search-license-settings.php:113
+#: includes/admin/class-fe-ai-search-license-settings.php:139
 msgid "License Key"
 msgstr "ライセンスキー"
 
-#: includes/admin/class-fe-ai-search-settings.php:1151
-#: includes/admin/class-fe-ai-search-settings copy.php:1003
+#: _tmp/class-fe-ai-search-settings copy.php:1003
+#: includes/admin/class-fe-ai-search-settings.php:1234
 msgid ""
 "Limits the number of posts to be synchronized to the specified number, "
 "starting from the most recent."
 msgstr "同期する投稿の数を、最新のものから指定された数に制限します。"
 
-#: includes/admin/class-fe-ai-search-settings copy.php:947
+#: _tmp/class-fe-ai-search-settings copy.php:947
 msgid "Load CSS included with the plugin"
-msgstr "プラグインに同梱のCSSを読み込む"
+msgstr "プラグインに同梱の CSS を読み込む"
 
-#: includes/admin/class-fe-ai-search-settings.php:1081
+#: includes/admin/class-fe-ai-search-settings.php:1164
 msgid "Load default plugin CSS"
-msgstr "デフォルトのプラグインCSSを読み込む"
+msgstr "デフォルトのプラグイン CSS を読み込む"
 
-#: includes/admin/class-fe-ai-search-settings.php:1094
+#: includes/admin/class-fe-ai-search-settings.php:1177
 msgid "Load default plugin JavaScript"
-msgstr "デフォルトのプラグインJavaScriptを読み込む"
+msgstr "デフォルトのプラグイン JavaScript を読み込む"
 
-#: includes/admin/class-fe-ai-search-settings copy.php:596
-#: includes/ajax/class-fe-ai-search-sync-handler.php:918
+#: includes/admin/class-fe-ai-search-settings.php:892
+msgid "Login status"
+msgstr "ログイン状態"
+
+#: _tmp/class-fe-ai-search-settings copy.php:596
 msgid "MeCab load failed"
 msgstr "MeCabのロードに失敗しました"
 
-#: includes/admin/class-fe-ai-search-settings.php:855
-#: includes/admin/class-fe-ai-search-settings copy.php:688
+#: _tmp/class-fe-ai-search-settings copy.php:688
+#: includes/admin/class-fe-ai-search-settings.php:926
 msgid "Mobile"
 msgstr "モバイル"
 
-#: includes/admin/class-fe-ai-search-settings.php:437
-#: includes/admin/class-fe-ai-search-settings.php:491
-#: includes/admin/class-fe-ai-search-settings.php:545
-#: includes/admin/class-fe-ai-search-settings copy.php:313
-#: includes/admin/class-fe-ai-search-settings copy.php:367
-#: includes/admin/class-fe-ai-search-settings copy.php:421
+#: _tmp/class-fe-ai-search-settings copy.php:313
+#: _tmp/class-fe-ai-search-settings copy.php:367
+#: _tmp/class-fe-ai-search-settings copy.php:421
+#: includes/admin/class-fe-ai-search-settings.php:476
+#: includes/admin/class-fe-ai-search-settings.php:531
+#: includes/admin/class-fe-ai-search-settings.php:586
 msgid "Model"
 msgstr "モデル"
 
 #. %s: Link to the Pro version.
-#: includes/admin/class-fe-ai-search-settings.php:449
-#: includes/admin/class-fe-ai-search-settings.php:503
-#: includes/admin/class-fe-ai-search-settings.php:557
-#: includes/admin/class-fe-ai-search-settings copy.php:325
-#: includes/admin/class-fe-ai-search-settings copy.php:379
-#: includes/admin/class-fe-ai-search-settings copy.php:433
+#: _tmp/class-fe-ai-search-settings copy.php:325
+#: _tmp/class-fe-ai-search-settings copy.php:379
+#: _tmp/class-fe-ai-search-settings copy.php:433
+#: includes/admin/class-fe-ai-search-settings.php:482
+#: includes/admin/class-fe-ai-search-settings.php:537
+#: includes/admin/class-fe-ai-search-settings.php:592
 #, php-format
 msgid "Model selection is available in the %s version."
 msgstr "モデルの選択は %s 版で利用可能です。"
 
-#: includes/admin/class-fe-ai-search-settings.php:1304
-#: includes/admin/class-fe-ai-search-settings copy.php:1155
+#: _tmp/class-fe-ai-search-settings copy.php:1155
+#: includes/admin/class-fe-ai-search-settings.php:1394
 msgid ""
 "Model-specific prompts can be set in the Pro version, which will override "
 "this basic setting."
-msgstr "モデル別のプロンプトはPro版で設定でき、この基本設定を上書きします。"
+msgstr "モデル別のプロンプトは Pro 版で設定でき、この基本設定を上書きします。"
 
-#: includes/admin/class-fe-ai-search-settings.php:1602
-#: includes/admin/class-fe-ai-search-settings.php:1614
-#: includes/admin/class-fe-ai-search-settings copy.php:911
-#: includes/admin/class-fe-ai-search-settings copy.php:923
+#: includes/ajax/class-fe-ai-search-sync-handler.php:268
+msgid ""
+"No previous sync baseline found. Please run \"Rebuild Index\" once before "
+"using \"Sync Changes\"."
+msgstr "以前の同期ベースラインが見つかりません。「変更分のみ同期」を使用する前に、一度「インデックスを再構築」を実行してください。"
+
+#: _tmp/class-fe-ai-search-settings copy.php:911
+#: _tmp/class-fe-ai-search-settings copy.php:923
+#: includes/admin/class-fe-ai-search-settings.php:1757
+#: includes/admin/class-fe-ai-search-settings.php:1771
 msgid "Not selected"
 msgstr "選択されていません"
 
-#: includes/admin/class-fe-ai-search-settings.php:1303
-#: includes/admin/class-fe-ai-search-settings copy.php:1154
+#: _tmp/class-fe-ai-search-settings copy.php:1154
+#: includes/admin/class-fe-ai-search-settings.php:1393
 msgid "Note:"
 msgstr "注意："
 
-#: includes/admin/class-fe-ai-search-settings copy.php:577
+#: _tmp/class-fe-ai-search-settings copy.php:577
 msgid "Number of indexed articles"
 msgstr "インデックス登録済み記事数"
 
-#: includes/admin/class-fe-ai-search-settings.php:245
+#: includes/admin/class-fe-ai-search-settings.php:290
 msgid "Only Sync Specific Posts"
 msgstr "特定の投稿のみを同期する"
 
-#: includes/admin/class-fe-ai-search-settings.php:317
-#: includes/admin/class-fe-ai-search-settings copy.php:214
+#: _tmp/class-fe-ai-search-settings copy.php:214
+#: includes/admin/class-fe-ai-search-settings.php:351
 msgid "OpenAI（GPT）"
 msgstr "OpenAI (GPT)"
 
-#: includes/admin/class-fe-ai-search-settings.php:910
-#: includes/admin/class-fe-ai-search-settings copy.php:743
+#: _tmp/class-fe-ai-search-settings copy.php:743
+#: includes/admin/class-fe-ai-search-settings.php:988
 msgid "Overwrite rules by individual ID"
-msgstr "個別のIDによる上書きルール"
+msgstr "個別の ID による上書きルール"
 
-#: includes/admin/class-fe-ai-search-settings.php:848
-#: includes/admin/class-fe-ai-search-settings copy.php:681
+#: _tmp/class-fe-ai-search-settings copy.php:681
+#: includes/admin/class-fe-ai-search-settings.php:919
 msgid "PC"
 msgstr "PC"
 
-#: includes/frontend/class-fe-ai-search-chat-ui copy.php:176
+#: _tmp/class-fe-ai-search-chat-ui copy.php:176
 #: includes/frontend/class-fe-ai-search-chat-ui.php:185
 msgid "Please enter a question..."
 msgstr "質問を入力してください..."
 
-#: includes/admin/class-fe-ai-search-settings.php:964
-#: includes/admin/class-fe-ai-search-settings copy.php:796
+#: _tmp/class-fe-ai-search-settings copy.php:796
+#: includes/admin/class-fe-ai-search-settings.php:1020
 msgid ""
 "Please paste the following shortcode into the content of the page where you "
 "want to display the chat."
 msgstr "チャットを表示したいページのコンテンツに、以下のショートコードを貼り付けてください。"
 
-#: includes/admin/class-fe-ai-search-settings.php:740
-#: includes/admin/class-fe-ai-search-settings.php:1148
-#: includes/admin/class-fe-ai-search-settings.php:1321
-#: includes/admin/class-fe-ai-search-settings copy.php:579
-#: includes/admin/class-fe-ai-search-settings copy.php:1000
-#: includes/admin/class-fe-ai-search-settings copy.php:1172
+#: _tmp/class-fe-ai-search-settings copy.php:579
+#: _tmp/class-fe-ai-search-settings copy.php:1000
+#: _tmp/class-fe-ai-search-settings copy.php:1172
+#: includes/admin/class-fe-ai-search-settings.php:789
+#: includes/admin/class-fe-ai-search-settings.php:1231
+#: includes/admin/class-fe-ai-search-settings.php:1412
 msgid "posts"
 msgstr "件"
 
-#: includes/admin/class-fe-ai-search-settings copy.php:623
+#: _tmp/class-fe-ai-search-settings copy.php:623
 msgid ""
 "Prepare and index your data so that your posts and pages can be searched by "
 "AI."
-msgstr "AIが投稿やページを検索できるように、データを準備・索引化します。"
+msgstr "AI が投稿やページを検索できるように、データを準備・索引化します。"
 
-#: includes/frontend/class-fe-ai-search-chat-ui copy.php:227
+#: _tmp/class-fe-ai-search-chat-ui copy.php:227
 #: includes/frontend/class-fe-ai-search-chat-ui.php:236
 msgid "Privacy Policy"
 msgstr "プライバシーポリシー"
 
-#: includes/admin/class-fe-ai-search-settings.php:1609
-#: includes/admin/class-fe-ai-search-settings copy.php:918
+#: _tmp/class-fe-ai-search-settings copy.php:918
+#: includes/admin/class-fe-ai-search-settings.php:1765
 msgid "Privacy Policy Page"
 msgstr "プライバシーポリシーのページ"
 
-#: includes/admin/class-fe-ai-search-settings.php:453
-#: includes/admin/class-fe-ai-search-settings.php:507
-#: includes/admin/class-fe-ai-search-settings.php:561
-#: includes/admin/class-fe-ai-search-settings.php:671
-#: includes/admin/class-fe-ai-search-settings copy.php:329
-#: includes/admin/class-fe-ai-search-settings copy.php:383
-#: includes/admin/class-fe-ai-search-settings copy.php:437
+#: _tmp/class-fe-ai-search-settings copy.php:329
+#: _tmp/class-fe-ai-search-settings copy.php:383
+#: _tmp/class-fe-ai-search-settings copy.php:437
+#: includes/admin/class-fe-ai-search-settings.php:486
+#: includes/admin/class-fe-ai-search-settings.php:541
+#: includes/admin/class-fe-ai-search-settings.php:596
+#: includes/admin/class-fe-ai-search-settings.php:717
 msgid "Pro"
 msgstr "Pro"
 
-#: includes/admin/class-fe-ai-search-settings.php:89
-#: includes/admin/class-fe-ai-search-settings copy.php:69
+#: _tmp/class-fe-ai-search-settings copy.php:69
+#: includes/admin/class-fe-ai-search-settings.php:107
 msgid "Prompt"
 msgstr "プロンプト"
 
-#: includes/admin/class-fe-ai-search-settings.php:295
-#: includes/admin/class-fe-ai-search-settings copy.php:175
+#: _tmp/class-fe-ai-search-settings copy.php:175
+#: includes/admin/class-fe-ai-search-settings.php:322
 msgid "Prompt Settings"
 msgstr "プロンプト設定"
 
-#: includes/admin/class-fe-ai-search-settings.php:86
-#: includes/admin/class-fe-ai-search-settings copy.php:66
+#: _tmp/class-fe-ai-search-settings copy.php:66
+#: includes/admin/class-fe-ai-search-settings.php:102
 msgid "Provider"
 msgstr "プロバイダー"
 
-#: includes/ajax/class-fe-ai-search-chat-handler.php:858
+#: includes/ajax/class-fe-ai-search-chat-handler.php:1065
 msgid "Provider missing."
 msgstr "プロバイダーが見つかりません。"
 
-#: includes/admin/class-fe-ai-search-settings.php:774
-#: includes/admin/class-fe-ai-search-settings copy.php:610
+#: _tmp/class-fe-ai-search-settings copy.php:610
+#: includes/admin/class-fe-ai-search-settings.php:823
 msgid "Rebuild Index"
 msgstr "インデックスを再構築"
 
-#: includes/admin/class-fe-ai-search-settings copy.php:901
+#: _tmp/class-fe-ai-search-settings copy.php:901
 msgid ""
 "Recommended for languages that require IME, such as Japanese and Chinese."
 msgstr "日本語や中国語など、IME を必要とする言語に推奨されます。"
 
-#: includes/admin/class-fe-ai-search-settings.php:196
-#: includes/admin/class-fe-ai-search-settings copy.php:143
+#: _tmp/class-fe-ai-search-settings copy.php:143
+#: includes/admin/class-fe-ai-search-settings.php:240
 msgid "Save Settings"
 msgstr "設定を保存"
 
-#: includes/admin/class-fe-ai-search-settings.php:882
-#: includes/admin/class-fe-ai-search-settings copy.php:715
+#: includes/admin/class-fe-ai-search-settings.php:953
+msgid "Search result page"
+msgstr "検索結果ページ"
+
+#: _tmp/class-fe-ai-search-settings copy.php:715
 msgid "Search Results"
 msgstr "検索結果"
 
-#: includes/admin/class-fe-ai-search-settings.php:383
-#: includes/admin/class-fe-ai-search-settings copy.php:280
+#: _tmp/class-fe-ai-search-settings copy.php:280
+#: includes/admin/class-fe-ai-search-settings.php:422
 msgid ""
 "Select an AI that will vectorize (convert) your site content into a format "
 "that AI can understand."
-msgstr "サイトのコンテンツを、AIが理解できる形式にベクトル化（変換）するAIを選択します。"
+msgstr "サイトのコンテンツを、AI が理解できる形式にベクトル化（変換）する AI を選択します。"
 
-#: includes/admin/class-fe-ai-search-settings.php:943
-#: includes/admin/class-fe-ai-search-settings copy.php:776
+#: _tmp/class-fe-ai-search-settings copy.php:776
+#: includes/admin/class-fe-ai-search-settings.php:1030
 msgid "Select Chat-Only Page"
 msgstr "チャット専用ページを選択"
 
-#: includes/admin/class-fe-ai-search-settings.php:345
-#: includes/admin/class-fe-ai-search-settings copy.php:242
+#: _tmp/class-fe-ai-search-settings copy.php:242
+#: includes/admin/class-fe-ai-search-settings.php:379
 msgid "Select the AI that generates answers for the user."
 msgstr "ユーザーへの回答を生成するAIを選択します。"
 
-#: includes/admin/class-fe-ai-search-settings.php:1052
-#: includes/admin/class-fe-ai-search-settings copy.php:856
+#: _tmp/class-fe-ai-search-settings copy.php:856
+#: includes/admin/class-fe-ai-search-settings.php:1135
 msgid "Select the basic colors for chat bubbles and user speech balloons."
 msgstr "チャットバブルやユーザーの吹き出しの基本色を選択します。"
 
-#: includes/admin/class-fe-ai-search-settings.php:1214
-#: includes/admin/class-fe-ai-search-settings copy.php:1066
+#: _tmp/class-fe-ai-search-settings copy.php:1066
+#: includes/admin/class-fe-ai-search-settings.php:1297
 msgid "Select the post types you want to include in AI search."
-msgstr "AI検索に含める投稿タイプを選択します。"
+msgstr "AI 検索に含める投稿タイプを選択します。"
 
-#: includes/admin/class-fe-ai-search-settings.php:579
-#: includes/admin/class-fe-ai-search-settings copy.php:455
+#: _tmp/class-fe-ai-search-settings copy.php:455
+#: includes/admin/class-fe-ai-search-settings.php:622
 msgid ""
 "Select the post types you want to include in your AI search and the metadata "
 "you want to include in chunks for each post type."
-msgstr "AI検索に含める投稿タイプと、各投稿タイプのチャンクに含めるメタデータを選択します。"
+msgstr "AI 検索に含める投稿タイプと、各投稿タイプのチャンクに含めるメタデータを選択します。"
 
-#: includes/admin/class-fe-ai-search-settings.php:988
+#: includes/admin/class-fe-ai-search-settings.php:1071
 msgid "Send"
 msgstr "送信"
 
-#: includes/admin/class-fe-ai-search-settings.php:1574
-msgid "Send Message Shortcut"
-msgstr "メッセージ送信ショートカット"
+#: includes/admin/class-fe-ai-search-settings.php:1728
+msgid "Send Key Settings (Default)"
+msgstr "送信キーの設定（初期値）"
 
-#: includes/frontend/class-fe-ai-search-chat-ui copy.php:245
 #: includes/frontend/class-fe-ai-search-chat-ui.php:254
+msgid "Send Key Settings:"
+msgstr "送信ボタン設定"
+
+#: _tmp/class-fe-ai-search-chat-ui copy.php:245
 msgid "Send shortcut:"
 msgstr "ショートカットを送信:"
 
-#: includes/admin/class-fe-ai-search-settings.php:1152
+#: includes/admin/class-fe-ai-search-settings.php:1235
 msgid ""
 "Set this if you are trying to synchronize on a trial basis or want to reduce "
 "API costs.<br><strong>-1</strong> will synchronize all eligible posts."
@@ -824,7 +853,7 @@ msgstr ""
 "試験的に同期しようとしている場合、または API コストを削減したい場合はこれを設定します。<br><strong>-1</strong> "
 "は、対象となるすべての投稿を同期します。"
 
-#: includes/admin/class-fe-ai-search-settings copy.php:1004
+#: _tmp/class-fe-ai-search-settings copy.php:1004
 msgid ""
 "Set this if you are trying to synchronize on a trial basis or want to reduce "
 "API costs.<br><strong>0</strong> will synchronize all eligible posts."
@@ -832,186 +861,201 @@ msgstr ""
 "試験的に同期しようとしている場合、または API コストを削減したい場合はこれを設定します。<br><strong>0</strong> "
 "にすると、対象となるすべての投稿を同期します。"
 
-#: includes/frontend/class-fe-ai-search-chat-ui copy.php:240
+#: _tmp/class-fe-ai-search-chat-ui copy.php:240
 #: includes/frontend/class-fe-ai-search-chat-ui.php:249
 msgid "Settings"
 msgstr "設定"
 
-#: includes/frontend/class-fe-ai-search-chat-ui copy.php:252
+#: _tmp/class-fe-ai-search-chat-ui copy.php:252
 #: includes/frontend/class-fe-ai-search-chat-ui.php:261
 msgid "Shift+Enter"
-msgstr "Shift+Enter"
+msgstr "Shift + Enter"
 
-#: includes/admin/class-fe-ai-search-settings.php:1580
+#: includes/admin/class-fe-ai-search-settings.php:1734
 msgid "Shift+Enter (Enter for newline)"
-msgstr "Shift + Enter (Enterで改行)"
+msgstr "Shift + Enter (Enter で改行)"
 
-#: includes/admin/class-fe-ai-search-settings.php:292
+#: includes/admin/class-fe-ai-search-settings.php:313
 msgid "Shortcode"
 msgstr "ショートコード"
 
-#: includes/admin/class-fe-ai-search-settings.php:1554
-#: includes/admin/class-fe-ai-search-settings copy.php:866
+#: includes/admin/class-fe-ai-search-settings.php:960
+msgid "Show on 404 page"
+msgstr "404ページで表示"
+
+#: includes/admin/class-fe-ai-search-settings.php:899
+msgid "Show to logged-in users"
+msgstr "ログインユーザーに表示"
+
+#: includes/admin/class-fe-ai-search-settings.php:907
+msgid "Show to non-logged-in users"
+msgstr "未ログインユーザーに表示"
+
+#: _tmp/class-fe-ai-search-settings copy.php:866
+#: includes/admin/class-fe-ai-search-settings.php:1708
 msgid "Smooth"
 msgstr "滑らか"
 
-#: includes/frontend/class-fe-ai-search-chat-ui copy.php:177
+#: _tmp/class-fe-ai-search-chat-ui copy.php:177
 #: includes/frontend/class-fe-ai-search-chat-ui.php:186
 msgid "Submit"
 msgstr "送信"
 
-#: includes/admin/class-fe-ai-search-settings.php:1032
-#: includes/admin/class-fe-ai-search-settings copy.php:838
+#: _tmp/class-fe-ai-search-settings copy.php:838
+#: includes/admin/class-fe-ai-search-settings.php:1115
 msgid "Submit button text"
 msgstr "送信ボタンのテキスト"
 
-#: includes/admin/class-fe-ai-search-settings.php:87
-#: includes/admin/class-fe-ai-search-settings copy.php:67
+#: _tmp/class-fe-ai-search-settings copy.php:67
+#: includes/admin/class-fe-ai-search-settings.php:106
 msgid "Sync"
 msgstr "同期"
 
-#: includes/admin/class-fe-ai-search-settings.php:771
-#: includes/admin/class-fe-ai-search-settings copy.php:607
+#: _tmp/class-fe-ai-search-settings copy.php:607
+#: includes/admin/class-fe-ai-search-settings.php:820
 msgid "Sync Changes (Recommended)"
 msgstr "変更を同期（推奨）"
 
-#: includes/admin/class-fe-ai-search-settings.php:240
-#: includes/admin/class-fe-ai-search-settings copy.php:182
+#: _tmp/class-fe-ai-search-settings copy.php:182
+#: includes/admin/class-fe-ai-search-settings.php:285
 msgid "Sync Controls"
 msgstr "同期コントロール"
 
-#: includes/admin/class-fe-ai-search-settings.php:247
+#: includes/admin/class-fe-ai-search-settings.php:292
 msgid "Sync Limit"
 msgstr "同期上限"
 
-#: includes/ajax/class-fe-ai-search-sync-handler.php:166
+#: includes/ajax/class-fe-ai-search-sync-handler.php:230
 msgid ""
 "Sync settings have changed. Please use \"Rebuild All\" to apply the new "
 "settings."
 msgstr "同期設定が変更されました。新しい設定を適用するには「インデックスを再構築」を使用してください。"
 
-#: includes/admin/class-fe-ai-search-settings.php:244
-#: includes/admin/class-fe-ai-search-settings copy.php:186
+#: _tmp/class-fe-ai-search-settings copy.php:186
+#: includes/admin/class-fe-ai-search-settings.php:289
 msgid "Sync Targets"
 msgstr "同期ターゲット"
 
-#: includes/admin/class-fe-ai-search-settings.php:239
-#: includes/admin/class-fe-ai-search-settings copy.php:181
+#: _tmp/class-fe-ai-search-settings copy.php:181
+#: includes/admin/class-fe-ai-search-settings.php:284
 msgid "Synchronization"
 msgstr "同期"
 
-#: includes/frontend/class-fe-ai-search-chat-ui copy.php:224
+#: _tmp/class-fe-ai-search-chat-ui copy.php:224
 #: includes/frontend/class-fe-ai-search-chat-ui.php:233
 msgid "Terms of Service"
 msgstr "利用規約"
 
-#: includes/admin/class-fe-ai-search-settings.php:1597
-#: includes/admin/class-fe-ai-search-settings copy.php:906
+#: _tmp/class-fe-ai-search-settings copy.php:906
+#: includes/admin/class-fe-ai-search-settings.php:1751
 msgid "Terms of Service Page"
 msgstr "利用規約のページ"
 
-#: includes/ajax/class-fe-ai-search-sync-handler.php:672
+#: includes/ajax/class-fe-ai-search-sync-handler.php:933
 msgid "The Google Cloud API key is not configured."
-msgstr "Google CloudのAPIキーが設定されていません。"
+msgstr "Google Cloud の API キーが設定されていません。"
 
-#: includes/admin/class-fe-ai-search-license-settings.php:143
+#: includes/admin/class-fe-ai-search-license-settings.php:169
 msgid "The license is valid."
 msgstr "ライセンスは有効です。"
 
-#: includes/core/class-fe-ai-search-license-handler.php:61
+#: includes/core/class-fe-ai-search-license-handler.php:66
 msgid "The license key has not been entered."
 msgstr "ライセンスキーが入力されていません。"
 
-#: includes/admin/class-fe-ai-search-settings.php:1359
-#: includes/admin/class-fe-ai-search-settings copy.php:1210
+#: _tmp/class-fe-ai-search-settings copy.php:1210
+#: includes/admin/class-fe-ai-search-settings.php:1450
 msgid ""
 "The name of the site you want the AI to recognize. If left blank, the site "
 "title will be used."
-msgstr "AIに認識させたいサイト名。空白のままにした場合は、サイトのタイトルが使用されます。"
+msgstr "AI に認識させたいサイト名。空白のままにした場合は、サイトのタイトルが使用されます。"
 
-#: includes/ajax/class-fe-ai-search-sync-handler.php:584
+#: includes/ajax/class-fe-ai-search-sync-handler.php:821
 msgid "The OpenAI API key is not configured."
-msgstr "OpenAIのAPIキーが設定されていません。"
+msgstr "OpenAI の API キーが設定されていません。"
 
-#: includes/core/class-fe-ai-search-license-handler.php:93
+#: includes/core/class-fe-ai-search-license-handler.php:101
 msgid "The operation failed."
 msgstr "操作は失敗しました。"
 
-#: includes/core/class-fe-ai-search-license-handler.php:93
+#: includes/core/class-fe-ai-search-license-handler.php:101
 msgid "The operation was successful."
 msgstr "操作は成功しました。"
 
-#: includes/ajax/class-fe-ai-search-chat-handler.php:115
+#: includes/ajax/class-fe-ai-search-chat-handler.php:136
 msgid "The site-wide request limit for today has been reached."
 msgstr "本日のサイト全体のリクエスト制限に達しました。"
 
-#: includes/admin/class-fe-ai-search-settings copy.php:542
+#: _tmp/class-fe-ai-search-settings copy.php:542
 #, php-format
 msgid ""
 "This is a Pro feature. <a href=\"%s\" target=\"_blank\">Upgrade to Pro</a>"
-msgstr "Pro版の機能です。<a href=\"%s\" target=\"_blank\">プロ版にアップグレード &raquo;</a>"
+msgstr "Pro 版の機能です。<a href=\"%s\" target=\"_blank\">プロ版にアップグレード &raquo;</a>"
 
-#: includes/admin/class-fe-ai-search-settings.php:799
-#: includes/admin/class-fe-ai-search-settings copy.php:632
+#: _tmp/class-fe-ai-search-settings copy.php:632
+#: includes/admin/class-fe-ai-search-settings.php:848
 msgid ""
 "This will delete all synced vector data and keyword indexes. AI search will "
 "no longer work until you sync again."
-msgstr "同期されたすべてのベクトルデータとキーワードインデックスが削除されます。再度同期するまで、AI検索は機能しなくなります。"
+msgstr "同期されたすべてのベクトルデータとキーワードインデックスが削除されます。再度同期するまで、AI 検索は機能しなくなります。"
 
-#: includes/admin/class-fe-ai-search-settings.php:1552
+#: includes/admin/class-fe-ai-search-settings.php:1706
 msgid "Typing Animation Speed"
 msgstr "タイピングアニメーションの速度"
 
-#: includes/admin/class-fe-ai-search-settings.php:1084
+#: includes/admin/class-fe-ai-search-settings.php:1167
 msgid ""
 "Uncheck this if you want to style the chat UI entirely with your own theme's "
 "CSS."
 msgstr "チャット UI のスタイルを独自のテーマ CSS で完全に設定する場合は、このチェックを外します。"
 
-#: includes/admin/class-fe-ai-search-settings.php:1097
+#: includes/admin/class-fe-ai-search-settings.php:1180
 msgid ""
 "Uncheck this only if you are completely replacing the chat UI HTML and "
 "handling the API communication with your own JavaScript."
-msgstr "チャット UI HTML を完全に置き換え、API 通信を独自の JavaScript で処理する場合にのみ、このチェックを外してください。"
+msgstr ""
+"チャット UI の HTML を完全に置き換え、API 通信を独自の JavaScript で処理する場合にのみ、このチェックを外してください。"
 
-#: includes/admin/class-fe-ai-search-settings.php:1165
-#: includes/admin/class-fe-ai-search-settings copy.php:1017
+#: _tmp/class-fe-ai-search-settings copy.php:1017
+#: includes/admin/class-fe-ai-search-settings.php:1248
 msgid "Uninstallation settings"
 msgstr "アンインストール設定"
 
-#: includes/ajax/class-fe-ai-search-sync-handler.php:632
-#: includes/ajax/class-fe-ai-search-sync-handler.php:720
+#: includes/ajax/class-fe-ai-search-sync-handler.php:872
+#: includes/ajax/class-fe-ai-search-sync-handler.php:984
 msgid "Unknown API Error"
-msgstr "不明なAPIエラー"
+msgstr "不明な API エラー"
 
-#: includes/ajax/class-fe-ai-search-chat-handler.php:949
+#: includes/ajax/class-fe-ai-search-chat-handler.php:1164
 msgid "Unknown provider."
 msgstr "不明なプロバイダーです。"
 
-#: includes/admin/class-fe-ai-search-settings copy.php:898
+#: _tmp/class-fe-ai-search-settings copy.php:898
 msgid "Use Shift + Enter to send messages (Enter for new line)"
-msgstr "メッセージを送信するにはShift + Enterを使用します（改行するにはEnterを押します）"
+msgstr "メッセージを送信するには Shift + Enter を使用します（改行するには Enter を押します）"
 
-#: includes/admin/class-fe-ai-search-settings.php:231
-#: includes/admin/class-fe-ai-search-settings copy.php:168
+#: _tmp/class-fe-ai-search-settings copy.php:168
+#: includes/admin/class-fe-ai-search-settings.php:272
 msgid "Vectorization AI"
-msgstr "ベクトル化AI"
+msgstr "ベクトル化 AI"
 
-#: includes/admin/class-fe-ai-search-settings.php:230
-#: includes/admin/class-fe-ai-search-settings copy.php:167
+#: _tmp/class-fe-ai-search-settings copy.php:167
+#: includes/admin/class-fe-ai-search-settings.php:271
 msgid "Vectorization Model"
 msgstr "ベクトル化モデル"
 
-#: includes/admin/class-fe-ai-search-settings.php:1348
+#: includes/admin/class-fe-ai-search-settings.php:1439
 msgid ""
-"When enabled, detailed operational logs will be saved to the database (in "
-"the `wp_fe_ai_search_system_logs` table). Only enable this when "
-"troubleshooting issues, as it can impact performance."
+"When enabled, detailed operational logs will be saved to the `{prefix}"
+"fe_ai_search_system_logs` table (e.g. wp_fe_ai_search_system_logs if your "
+"table prefix is wp_). Only enable this when troubleshooting issues, as it "
+"can impact performance."
 msgstr ""
-"有効にすると、詳細な操作ログがデータベース（`wp_fe_ai_search_system_logs` "
-"テーブル）に保存されます。パフォーマンスに影響を与える可能性があるため、問題のトラブルシューティングを行う場合にのみ有効にしてください。"
+"有効にすると、詳細な動作ログが `{prefix}fe_ai_search_system_logs` テーブルに保存されます（例: テーブル接頭辞が "
+"`wp_` の場合は `wp_fe_ai_search_system_logs`）。  \n"
+"パフォーマンスに影響する可能性があるため、問題のトラブルシューティング時にのみ有効化してください。"
 
-#: includes/admin/class-fe-ai-search-settings copy.php:1199
+#: _tmp/class-fe-ai-search-settings copy.php:1199
 #| msgid ""
 #| "When enabled, detailed operational logs will be saved to the database (in "
 #| "the `wp_feas_ai_system_logs` table). Only enable this when "
@@ -1024,29 +1068,29 @@ msgstr ""
 "有効にすると、詳細な操作ログがデータベース（wp_feas_ai_system_logs "
 "テーブル）に保存されます。パフォーマンスに影響を与える可能性があるため、問題のトラブルシューティング時のみ有効にしてください。"
 
-#: includes/admin/class-fe-ai-search-settings.php:954
-#: includes/admin/class-fe-ai-search-settings copy.php:786
+#: _tmp/class-fe-ai-search-settings copy.php:786
+#: includes/admin/class-fe-ai-search-settings.php:1046
 msgid ""
 "When you access the selected static page here, the full-screen chat UI will "
 "be displayed directly."
-msgstr "ここで選択した固定ページにアクセスすると、全画面のチャットUIが直接表示されます。"
+msgstr "ここで選択した固定ページにアクセスすると、全画面のチャット UI が直接表示されます。"
 
-#: includes/admin/class-fe-ai-search-settings.php:1000
-#: includes/admin/class-fe-ai-search-settings copy.php:809
+#: _tmp/class-fe-ai-search-settings copy.php:809
+#: includes/admin/class-fe-ai-search-settings.php:1083
 msgid "Window title"
 msgstr "ウィンドウのタイトル"
 
-#: includes/ajax/class-fe-ai-search-chat-handler.php:103
+#: includes/ajax/class-fe-ai-search-chat-handler.php:124
 msgid "You have exceeded the request limit. Please try again later."
 msgstr "リクエストの制限を超えました。しばらくしてからもう一度お試しください。"
 
-#: includes/ajax/class-fe-ai-search-sync-handler.php:879
+#: includes/ajax/class-fe-ai-search-sync-handler.php:1190
 msgid ""
 "Your site language is not fully optimized for keyword search. We welcome "
 "contributions for new languages!"
 msgstr "あなたのサイトの言語は、キーワード検索に完全には最適化されていません。新しい言語への貢献を歓迎します！"
 
-#: includes/admin/class-fe-ai-search-settings.php:948
-#: includes/admin/class-fe-ai-search-settings copy.php:781
+#: _tmp/class-fe-ai-search-settings copy.php:781
+#: includes/admin/class-fe-ai-search-settings.php:1038
 msgid "— Don't use a dedicated page —"
 msgstr "-- 専用ページを使用しない --"

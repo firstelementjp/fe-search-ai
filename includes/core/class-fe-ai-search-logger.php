@@ -42,7 +42,7 @@ class FE_AI_Search_Logger {
 	public static function log( string $level, string $message, array $data = [] ) {
 		// Read the latest settings directly because this is a static method.
 		$options    = get_option( 'fe_ai_search_settings', [] );
-		$is_enabled = $options['data']['debug_options']['is_enabled'] ?? false;
+		$is_enabled = $options['advanced']['debug_mode'] ?? false;
 		if ( ! $is_enabled ) {
 			return;
 		}

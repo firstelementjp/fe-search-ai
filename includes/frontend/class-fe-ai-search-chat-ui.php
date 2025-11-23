@@ -79,27 +79,17 @@ class FE_AI_Search_Chat_UI {
 		// Get the correct settings from the master options array
 		$floating_options = $this->options['display']['floating'] ?? [];
 
-		// Check for Fullscreen Page mode
-		$fullscreen_page_id = (int) ( $floating_options['fullscreen_page_id'] ?? 0 );
-		$is_fullscreen_page = ( $fullscreen_page_id > 0 && is_page( $fullscreen_page_id ) );
-
-		if ( $is_fullscreen_page ) {
-			self::$is_rendered = true;
-			$this->assets_handler->enqueue_assets();
-			// We modify the class of the 'float' mode to turn it into 'fullscreen'
-			echo str_replace(
-				'class="fe-ai-search-mode-float"',
-				'class="fe-ai-search-mode-float is-fullscreen"',
-				$this->get_chat_ui_html( 'float' )
-			);
-			return;
-		}
-
 		// Check basic floating mode conditions
 		if ( empty( $floating_options['enable_floating_mode'] ) ) {
 			return;
 		}
-		if ( ! empty( $floating_options['require_login'] ) && ! is_user_logged_in() ) {
+		$is_logged_in            = is_user_logged_in();
+		$show_to_logged_in_users = ! empty( $floating_options['show_to_logged_in_users'] );
+		$show_to_guests          = ! empty( $floating_options['show_to_guests'] );
+		if ( $is_logged_in && ! $show_to_logged_in_users ) {
+			return;
+		}
+		if ( ! $is_logged_in && ! $show_to_guests ) {
 			return;
 		}
 
@@ -112,6 +102,11 @@ class FE_AI_Search_Chat_UI {
 		// Check display rules
 		$rules          = $floating_options['display_rules'] ?? [];
 		$should_display = false;
+
+		// Optional: hide on 404 pages when configured via show_on_404 flag.
+		if ( is_404() && empty( $rules['show_on_404'] ) ) {
+			return;
+		}
 
 		$include_ids = array_filter( array_map( 'intval', explode( ',', $rules['include_ids'] ?? '' ) ) );
 		$exclude_ids = array_filter( array_map( 'intval', explode( ',', $rules['exclude_ids'] ?? '' ) ) );
@@ -256,7 +251,7 @@ class FE_AI_Search_Chat_UI {
 							</button>
 							<div id="fe_ai_search_options_menu" class="hidden">
 								<label for="fe_ai_search_send_mode_toggle">
-									<?php esc_html_e( 'Send shortcut:', 'fe-ai-search' ); ?>
+									<?php esc_html_e( 'Send Key Settings:', 'fe-ai-search' ); ?>
 								</label>
 								<select id="fe_ai_search_send_mode_toggle">
 									<option value="enter">

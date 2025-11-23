@@ -59,7 +59,7 @@ class FE_AI_Search_Assets {
 		$ip_limit_count = 100; // Default
 		if ( $is_license_active && class_exists( '\FEAISearch\Pro\Admin\FE_AI_Search_Pro_Settings' ) ) {
 			$pro_options        = get_option( 'fe_ai_search_pro_settings', [] );
-			$rate_limit_options = $pro_options['rate_limit'] ?? [];
+			$rate_limit_options = $pro_options['security']['rate_limit'] ?? [];
 			$ip_limit_count     = $rate_limit_options['ip_limit_count'] ?? 100;
 		}
 

@@ -78,7 +78,7 @@ function fe_ai_search_run_plugin() {
 	$sync_handler   = new FEAISearch\Ajax\FE_AI_Search_Sync_Handler();
 
 	add_filter(
-		'fe_ai_get_sync_handler_instance',
+		'fe_ai_search_get_sync_handler_instance',
 		function () use ( $sync_handler ) {
 			return $sync_handler;
 		}

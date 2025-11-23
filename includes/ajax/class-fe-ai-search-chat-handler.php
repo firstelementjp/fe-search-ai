@@ -58,6 +58,7 @@ class FE_AI_Search_Chat_Handler {
 		add_action( 'wp_ajax_fe_ai_search_log_query', [ $this, 'ajax_log_query' ] );
 		add_action( 'wp_ajax_fe_ai_search_test_api_key', [ $this, 'ajax_test_api_key' ] );
 		add_action( 'wp_ajax_fe_ai_search_manage_license', [ $this, 'ajax_manage_license' ] );
+		add_filter( 'fe_ai_search_filter_user_question', [ $this, 'filter_personal_data' ], 10 );
 		add_filter( 'fe_ai_search_filter_user_question', [ $this, 'filter_basic_injection_phrases' ], 20 );
 		add_filter( 'fe_ai_search_filter_model_response', [ $this, 'filter_basic_injection_phrases' ], 20 );
 	}
@@ -78,11 +79,19 @@ class FE_AI_Search_Chat_Handler {
 	}
 
 	/**
-	 * Stream handler for processing REST API requests
+	 * Handles streaming chat completion requests via the REST API.
+	 *
+	 * Applies per-IP and global rate limiting, validates security nonces,
+	 * retrieves relevant context chunks from the sync handler, and then
+	 * streams the model's response back to the client using Server-Sent
+	 * Events (SSE) compatible output.
+	 *
+	 * @param \WP_REST_Request $request The incoming REST API request containing
+	 *                                  the user's question, chat history, and
+	 *                                  provider settings.
+	 * @return void Outputs streamed response directly and terminates.
 	 */
 	public function stream_handler( \WP_REST_Request $request ) {
-		error_log('[fe-ai] stream_handler START');
-
 		$default_limits = [
 			'ip_limit_count'     => 100,  // 100 requests per hour per IP
 			'global_limit_count' => 1000, // 1000 requests per day for the whole site
@@ -91,19 +100,20 @@ class FE_AI_Search_Chat_Handler {
 		];
 
 		/**
-		* Filters the rate-limiting settings.
-		*
-		* This allows the Pro version or other plugins to override the default rate limits
-		* with values from the settings page.
-		*
-		* @param array $default_limits The default hardcoded limits.
-		*/
+		 * Filters the rate-limiting settings.
+		 *
+		 * This allows the Pro version or other plugins to override the default rate limits
+		 * with values from the settings page.
+		 *
+		 * @param array $default_limits The default hardcoded limits.
+		 */
 		$rate_limit_options = apply_filters( 'fe_ai_search_rate_limit_settings', $default_limits );
+		$rate_limit_options = wp_parse_args( $rate_limit_options, $default_limits );
 
-		$ip_limit_count     = (int) ( $rate_limit_options['ip_limit_count'] ?? 100 );
-		$global_limit_count = (int) ( $rate_limit_options['global_limit_count'] ?? 1000 );
-		$threshold_percent  = (int) ( $rate_limit_options['notify_threshold'] ?? 80 );
-		$notify_email       = $rate_limit_options['notify_email'] ?? get_option( 'admin_email' );
+		$ip_limit_count     = (int) $rate_limit_options['ip_limit_count'];
+		$global_limit_count = (int) $rate_limit_options['global_limit_count'];
+		$threshold_percent  = (int) $rate_limit_options['notify_threshold'];
+		$notify_email       = $rate_limit_options['notify_email'];
 
 		if ( $ip_limit_count > 0 ) {
 			$ip_transient_key = 'fe_ai_search_rl_ip_' . md5( $_SERVER['REMOTE_ADDR'] );
@@ -159,21 +169,19 @@ class FE_AI_Search_Chat_Handler {
 		header( 'Connection: keep-alive' );
 		header( 'X-Accel-Buffering: no' ); // Nginx
 
+		$similar_chunks = [];
+
 		try {
 			$nonce = $request->get_header( 'X-WP-Nonce' );
 			if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
 				throw new \Exception( 'Nonce verification failed.' );
 			}
 
-			error_log('[fe-ai] stream_handler after nonce, before question');
-
 			// Provider is selected from the provider.chat setting (e.g. openai/google/anthropic).
 			$provider = $this->options['provider']['chat'] ?? 'openai';
 
 			$question = sanitize_text_field( $request->get_param( 'question' ) );
 			$history  = json_decode( stripslashes( $request->get_param( 'history' ) ?? '[]' ), true );
-
-			error_log('[fe-ai] stream_handler question = ' . $question);
 
 			/**
 			 * Filters the user's question right before it is processed.
@@ -191,28 +199,40 @@ class FE_AI_Search_Chat_Handler {
 				return;
 			}
 
-			//$similar_chunks = $this->sync_handler->find_similar_chunks( $question );
-			error_log('[fe-ai] stream_handler after find_similar_chunks, count=' . ( is_array( $similar_chunks ) ? count( $similar_chunks ) : -1 ) );
+			// Context retrieval (keyword/vector search)
+			try {
+				$similar_chunks = $this->sync_handler->find_similar_chunks( $question );
 
+				/**
+				 * Filters the array of retrieved context chunks.
+				 *
+				 * This hook is applied after the database search (both keyword and vector)
+				 * is complete, but before the chunks are passed to the AI. It allows for
+				 * advanced manipulation of the context, such as re-ranking, filtering,
+				 * or adding external data.
+				 *
+				 * @since 1.0.0
+				 *
+				 * @param array  $similar_chunks An array of the retrieved chunk items.
+				 * @param string $question       The original user's question.
+				 */
+				$similar_chunks = apply_filters( 'fe_ai_search_retrieved_chunks', $similar_chunks, $question );
 
-			/**
-			 * Filters the array of retrieved context chunks.
-			 *
-			 * This hook is applied after the database search (both keyword and vector)
-			 * is complete, but before the chunks are passed to the AI. It allows for
-			 * advanced manipulation of the context, such as re-ranking, filtering,
-			 * or adding external data.
-			 *
-			 * @since 1.0.0
-			 *
-			 * @param array  $similar_chunks An array of the retrieved chunk items.
-			 * @param string $question       The original user's question.
-			 */
-			//$similar_chunks = apply_filters( 'fe_ai_search_retrieved_chunks', $similar_chunks, $question );
-			error_log('[fe-ai] stream_handler after retrieved_chunks filter');
+			} catch ( \Throwable $t ) {
+				// Fail safely: log the error and continue without context.
+				\FEAISearch\Core\FE_AI_Search_Logger::log(
+					'ERROR',
+					'Context retrieval failed in stream_handler.',
+					[
+						'error_message' => $t->getMessage(),
+						'file'          => $t->getFile(),
+						'line'          => $t->getLine(),
+					]
+				);
+				$similar_chunks = [];
+			}
 
 			$context_found = ! empty( $similar_chunks );
-			error_log('[fe-ai] stream_handler before meta echo, context_found=' . ( $context_found ? '1' : '0' ));
 
 			echo 'data: ' . json_encode(
 				[
@@ -224,11 +244,7 @@ class FE_AI_Search_Chat_Handler {
 			) . "\n\n";
 			flush();
 
-			error_log('[fe-ai] stream_handler after meta echo, before stream_chat_completion');
-
 			$this->stream_chat_completion( $question, $similar_chunks, $history, $provider );
-
-			error_log('[fe-ai] stream_handler after stream_chat_completion');
 
 		} catch ( \Exception $e ) {
 			echo 'data: ' . json_encode( [ 'error' => 'An error occurred during processing.' ] ) . "\n\n";
@@ -269,7 +285,23 @@ class FE_AI_Search_Chat_Handler {
 	}
 
 	/**
-	 * Streaming processing dedicated to OpenAI
+	 * Streams chat completions from the OpenAI (or compatible) API.
+	 *
+	 * Resolves the appropriate API endpoint and model based on the selected
+	 * provider and license status, builds the prompt messages (including
+	 * retrieved context and chat history), and then opens a streaming
+	 * connection to the OpenAI-compatible chat completions endpoint.
+	 *
+	 * The response is streamed back to the caller via Server-Sent Events (SSE)
+	 * format, and key events (start, errors, etc.) are recorded using
+	 * FE_AI_Search_Logger when debug logging is enabled.
+	 *
+	 * @param string $question        The end user's original question.
+	 * @param array  $context_chunks  Retrieved context chunks to be added to the prompt.
+	 * @param array  $history         Prior chat messages used to maintain conversation state.
+	 * @param string $provider        The provider slug ('openai' or 'openai_compatible').
+	 *
+	 * @return void Outputs streamed SSE responses directly and terminates.
 	 */
 	private function stream_completion_for_openai( $question, $context_chunks, $history, $provider ) {
 		// Start the timer for System Log.
@@ -416,7 +448,23 @@ class FE_AI_Search_Chat_Handler {
 	}
 
 	/**
-	 * Streaming processing dedicated to Gemini
+	 * Streams chat completions from the Gemini API.
+	 *
+	 * Resolves the Gemini model and endpoint based on the current settings
+	 * and license status, builds the prompt messages (including retrieved
+	 * context and chat history), and then opens a streaming connection to
+	 * the Gemini chat endpoint.
+	 *
+	 * The response is streamed back to the caller via Server-Sent Events (SSE)
+	 * compatible output, and key events (start, errors, etc.) are recorded
+	 * using FE_AI_Search_Logger when debug logging is enabled.
+	 *
+	 * @param string $question        The end user's original question.
+	 * @param array  $context_chunks  Retrieved context chunks to be added to the prompt.
+	 * @param array  $history         Prior chat messages used to maintain conversation state.
+	 * @param string $provider        The provider slug for Gemini (e.g. 'google').
+	 *
+	 * @return void Outputs streamed SSE responses directly and terminates.
 	 */
 	private function stream_completion_for_gemini( $question, $context_chunks, $history, $provider ) {
 		$start_time = microtime( true );
@@ -574,7 +622,23 @@ class FE_AI_Search_Chat_Handler {
 	}
 
 	/**
-	 * Streaming processing dedicated to Claude
+	 * Streams chat completions from the Anthropic Claude API.
+	 *
+	 * Resolves the Claude model and endpoint based on the current settings
+	 * and license status, builds the prompt messages (including retrieved
+	 * context and chat history), and then opens a streaming connection to
+	 * the Claude messages endpoint.
+	 *
+	 * The response is streamed back to the caller via Server-Sent Events (SSE)
+	 * compatible output, and key events (start, errors, etc.) are recorded
+	 * using FE_AI_Search_Logger when debug logging is enabled.
+	 *
+	 * @param string $question        The end user's original question.
+	 * @param array  $context_chunks  Retrieved context chunks to be added to the prompt.
+	 * @param array  $history         Prior chat messages used to maintain conversation state.
+	 * @param string $provider        The provider slug for Claude (e.g. 'anthropic').
+	 *
+	 * @return void Outputs streamed SSE responses directly and terminates.
 	 */
 	private function stream_completion_for_claude( $question, $context_chunks, $history, $provider ) {
 		// Start the timer.
@@ -720,7 +784,20 @@ class FE_AI_Search_Chat_Handler {
 	}
 
 	/**
-	 * A common function to assemble prompts and messages array
+	 * Builds a provider-agnostic messages array for chat completion APIs.
+	 *
+	 * Assembles the system prompt (including site-specific rules and language
+	 * instructions), attaches retrieved context chunks, and merges prior chat
+	 * history with the current user question into a unified messages structure.
+	 * This structure is then consumed by provider-specific streaming methods
+	 * (OpenAI, Gemini, Claude, etc.).
+	 *
+	 * @param string $question       The end user's original question.
+	 * @param array  $context_chunks Retrieved context chunks to be injected into the prompt.
+	 * @param array  $history        Prior conversation history messages.
+	 * @param bool   $for_claude     Whether to format messages for Claude's API shape.
+	 *
+	 * @return array The messages payload ready to be sent to the chat API.
 	 */
 	public function build_prompt_messages( $question, $context_chunks, $history, $for_claude = false ) {
 		$context_str = '';
@@ -752,6 +829,36 @@ class FE_AI_Search_Chat_Handler {
 
 		$system_prompt = str_replace( '{site_name}', $site_name, $system_prompt );
 		$system_prompt = str_replace( '{site_purpose}', $site_purpose, $system_prompt );
+
+		// Detect the language that should be used for answers, based on the current
+		// WordPress locale and, if available, the active multilingual plugin.
+		$answer_locale = get_locale();
+		if ( function_exists( 'pll_current_language' ) ) {
+			// Polylang: try to get the current locale (e.g. ja, en_US, etc.).
+			$pll_locale = pll_current_language( 'locale' );
+			if ( ! empty( $pll_locale ) ) {
+				$answer_locale = $pll_locale;
+			}
+		} elseif ( function_exists( 'wpml_get_language_information' ) && defined( 'ICL_LANGUAGE_CODE' ) ) {
+			// WPML: language code like 'en', 'ja'. Map it to a pseudo-locale.
+			$lang_code = ICL_LANGUAGE_CODE;
+			if ( ! empty( $lang_code ) ) {
+				$answer_locale = $lang_code;
+			}
+		} elseif ( function_exists( 'bogo_get_locale' ) ) {
+			// Bogo: site locale per request.
+			$bogo_locale = bogo_get_locale();
+			if ( ! empty( $bogo_locale ) ) {
+				$answer_locale = $bogo_locale;
+			}
+		}
+
+		$answer_lang_code = strstr( $answer_locale, '_', true ) ?: $answer_locale; // e.g. ja_JP -> ja
+
+		// Append a language rule so the model knows which language to use
+		// for this particular request.
+		$system_prompt .= "\n\n## Language Rule\n" .
+			"All of your responses must be written in the language corresponding to the current WordPress locale code '{$answer_lang_code}'. ";
 
 		/**
 		 * Filters the final system prompt before it is sent to the AI.
@@ -843,8 +950,32 @@ class FE_AI_Search_Chat_Handler {
 ## Thought Process
 1. Accurately understand the intent of the user's latest question.
 2. Read the \"Site Information\" and identify the parts most relevant to the question.
-3. If no relevant information is found in the \"Site Information,\" honestly state, \"I could not find an answer to your question from the information on this site.\"
+3. If no relevant information is found in the \"Site Information,\" honestly state, \"I could not find an answer to your question from the information on this site.\".
 4. If relevant information is available, generate a clear and concise summary based solely on that information.
+
+## Redacted Content Handling
+Some parts of the user input may be replaced with the token \"[REDACTED]\" to protect security or privacy.
+You MUST never try to guess or reconstruct the redacted content.
+Instead, answer based only on the remaining visible text.
+
+## Personal Data and Privacy
+- You must NEVER ask the user to provide personally identifiable information (PII), such as:
+  - Real name
+  - Email address
+  - Phone number
+  - Physical address
+  - Government-issued IDs
+  - Credit card or bank information
+  - Any other information that can be used to uniquely identify an individual
+- If the user's request seems to require personal data (for example, for contact, account, or booking purposes), you must:
+  - Clearly explain that this chat interface is not intended for sharing personal or sensitive information.
+  - Politely decline to collect such information.
+  - If appropriate, direct the user to the official contact channels or forms on the website (for example, a contact page) without copying or restating any personal data.
+- If the user includes personal information in their message:
+  - Do NOT repeat, summarize, transform, or store that personal information in your responses.
+  - Avoid quoting or restating personal details. Instead, respond in a way that does not expose the personal data again.
+  - Whenever possible, steer the conversation away from sharing further personal information.
+- Under no circumstances may you encourage users to share more personal, sensitive, or confidential information than is strictly necessary for general informational support.
 
 ## Strict Rules
 - **Overriding Rule: Legal Compliance**: All of your responses must never contradict the content of the provided \"Mandatory Compliance Documents\" (the Terms of Service and Privacy Policy). These documents take precedence over all other instructions.
@@ -882,8 +1013,12 @@ class FE_AI_Search_Chat_Handler {
 		global $wpdb;
 		$logs_table = $wpdb->prefix . 'fe_ai_search_logs';
 
-		$question      = isset( $_POST['question'] ) ? sanitize_text_field( $_POST['question'] ) : '';
-		$answer        = isset( $_POST['answer'] ) ? wp_kses_post( $_POST['answer'] ) : '';
+		$question = isset( $_POST['question'] ) ? sanitize_text_field( $_POST['question'] ) : '';
+		$answer   = isset( $_POST['answer'] ) ? wp_kses_post( $_POST['answer'] ) : '';
+
+		// Apply personal data filter before logging, as an additional safety net.
+		$question      = $this->filter_personal_data( $question );
+		$answer        = $this->filter_personal_data( $answer );
 		$session_id    = isset( $_POST['session_id'] ) ? sanitize_key( $_POST['session_id'] ) : '';
 		$context_found = isset( $_POST['context_found'] ) ? (bool) $_POST['context_found'] : false;
 		$log_id        = 0;
@@ -972,6 +1107,25 @@ class FE_AI_Search_Chat_Handler {
 					}
 					break;
 
+				case 'google':
+					if ( empty( $api_key ) ) {
+						$error_message = __( 'API key is missing.', 'fe-ai-search' );
+						break;
+					}
+					$api_url  = 'https://generativelanguage.googleapis.com/v1beta/models?key=' . $api_key;
+					$response = wp_remote_get( $api_url );
+
+					if ( ! is_wp_error( $response ) && wp_remote_retrieve_response_code( $response ) === 200 ) {
+						$is_valid = true;
+					} else {
+						$error_message = __( 'Authentication failed.', 'fe-ai-search' );
+						if ( ! is_wp_error( $response ) ) {
+							$body          = json_decode( wp_remote_retrieve_body( $response ), true );
+							$error_message = $body['error']['message'] ?? $error_message;
+						}
+					}
+					break;
+
 				case 'anthropic':
 					if ( empty( $api_key ) ) {
 						$error_message = __( 'API key is missing.', 'fe-ai-search' );
@@ -994,25 +1148,6 @@ class FE_AI_Search_Chat_Handler {
 							),
 						]
 					);
-
-					if ( ! is_wp_error( $response ) && wp_remote_retrieve_response_code( $response ) === 200 ) {
-						$is_valid = true;
-					} else {
-						$error_message = __( 'Authentication failed.', 'fe-ai-search' );
-						if ( ! is_wp_error( $response ) ) {
-							$body          = json_decode( wp_remote_retrieve_body( $response ), true );
-							$error_message = $body['error']['message'] ?? $error_message;
-						}
-					}
-					break;
-
-				case 'google':
-					if ( empty( $api_key ) ) {
-						$error_message = __( 'API key is missing.', 'fe-ai-search' );
-						break;
-					}
-					$api_url  = 'https://generativelanguage.googleapis.com/v1beta/models?key=' . $api_key;
-					$response = wp_remote_get( $api_url );
 
 					if ( ! is_wp_error( $response ) && wp_remote_retrieve_response_code( $response ) === 200 ) {
 						$is_valid = true;
@@ -1084,6 +1219,51 @@ class FE_AI_Search_Chat_Handler {
 		}
 
 		return $filtered_text;
+	}
+
+	/**
+	 * Filters basic personal data patterns (email, phone numbers, postal codes) from text.
+	 *
+	 * This is a best-effort, pattern-based filter intended to reduce the chance of
+	 * accidentally storing or forwarding personally identifiable information (PII)
+	 * such as email addresses or phone numbers. It does not guarantee perfect
+	 * coverage for all formats.
+	 *
+	 * @param string $text The text to filter.
+	 * @return string The filtered text with detected PII masked.
+	 */
+	public function filter_personal_data( $text ) {
+		if ( ! is_string( $text ) || '' === $text ) {
+			return $text;
+		}
+
+		$patterns = [
+			// Email addresses (simple pattern).
+			'/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i',
+			// Phone numbers (international or domestic, allowing spaces, dashes, parentheses).
+			'/\+?\d[0-9\-()\s]{7,}\d/',
+		];
+
+		/**
+		 * Filters the regex patterns used to detect personal data.
+		 *
+		 * Developers can override or extend the default patterns by returning
+		 * a custom array of regular expressions.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $patterns Default regex patterns for personal data.
+		 */
+		$patterns = apply_filters( 'fe_ai_search_personal_data_patterns', $patterns );
+
+		$filtered = preg_replace( $patterns, __( '[REDACTED]', 'fe-ai-search' ), $text );
+
+		if ( null === $filtered ) {
+			// If a regex error occurs, fail safely by returning the original text.
+			return $text;
+		}
+
+		return $filtered;
 	}
 
 	/**

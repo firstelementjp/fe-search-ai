@@ -37,7 +37,7 @@ code {
 	display: block;
 	margin: 0.5em 0;
 	padding: 0.5em;
-	background-color: #d4dbe6;
+	/* background-color: #d4dbe6; */
 	border-radius: 5px;
 }
 
@@ -282,17 +282,35 @@ a.nav-tab:last-of-type {
 	margin-bottom: 1em;
 	padding: 10px;
 	background-color: #f0f0f1;
-	border: 1px solid #ddd;
+	border-radius: 5px;
+	/* border: 1px solid #ddd; */
 }
 #fe-ai-search-tokenizer-status {
 	border: 1px solid #c3c4c7;
-	background: #f6f7f7;
-	padding: 10px 15px;
-	margin-bottom: 1em;
-	border-radius: 4px;
+    /* background: #f6f7f7; */
+    padding: 10px 10px;
+    margin-bottom: 1em;
+    border-radius: 4px;
 }
 #fe-ai-search-tokenizer-status p {
 	margin: 0;
+}
+#fe_ai_search_condition_for_displaying_the_chat {
+	border-radius: 5px;
+    padding: 1em;
+    background: #f0f0f1;
+}
+#fe_ai_search_settings_display_floating {
+	padding: 0 1em;
+}
+#fe_ai_search_settings_display_floating_enable_floating_mode {
+	padding: 1em;
+    border: 1px solid silver;
+    border-radius: 5px;
+    margin: 0 auto 1em -1em;
+}
+#fe_ai_search_settings_display_floating_enable_floating_mode label {
+	margin: 0 !important;
 }
 #fe_ai_search_animation_speed_value {
 	display: inline-block;
@@ -337,13 +355,14 @@ a:has(.dashicons-warning) span {
 /* --- Sync UI Styles --- */
 
 #fe-ai-search-progress-container {
-	display: none; /* ★ デフォルトではコンテナ全体を非表示にする */
-	width: 100%;
-	background-color: #eee;
-	border: 1px solid #ccc;
-	border-radius: 4px;
-	margin-top: 1em;
-	overflow: hidden; /* 角丸をキレイに保つため */
+	display: none;
+    width: 100%;
+    background-color: #eee;
+    /* border: 1px solid #ccc; */
+    border-radius: 4px;
+    margin-top: 1em;
+	margin-bottom: 0.5em;
+    overflow: hidden;
 }
 
 #fe-ai-search-progress-bar {
@@ -357,6 +376,11 @@ a:has(.dashicons-warning) span {
 	border-radius: 3px;
 	/* JSが幅を変更する際に、滑らかなアニメーションを追加 */
 	transition: width 0.3s ease-in-out;
+}
+
+#fe-ai-search-progress-container .status-text {
+	padding: 5px 10px;
+    display: block;
 }
 
 /* ==========================================================================
