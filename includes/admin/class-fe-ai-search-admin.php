@@ -90,6 +90,12 @@ class FE_AI_Search_Admin {
 			true
 		);
 
+		wp_set_script_translations(
+			'fe-ai-search-admin-sync',
+			'fe-ai-search',
+			plugin_dir_path( FE_AI_SEARCH_PLUGIN_FILE ) . 'languages'
+		);
+
 		wp_localize_script(
 			'fe-ai-search-admin-sync',
 			'fe_ai_search_sync_obj',

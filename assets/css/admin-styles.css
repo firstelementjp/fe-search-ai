@@ -212,7 +212,7 @@ a.nav-tab:last-of-type {
 }
 
 .option-header {
-	/* margin: 1em 0 0.5em; */
+	margin: 0 0 0.5em;
 	font-weight: bold;
 }
 
@@ -245,11 +245,11 @@ a.nav-tab:last-of-type {
 	border-top: 1px solid #ddd;
 }
 
-#fe-ai-search-prompt-accordion .accordion-inner {
+#fe_ai_search_prompt_accordion .accordion-inner {
 	padding: 0;
 }
 
-#fe-ai-search-prompt-accordion .accordion-content {
+#fe_ai_search_prompt_accordion .accordion-content {
 	border: none;
 	margin-top: -1px;
 }
@@ -263,7 +263,7 @@ a.nav-tab:last-of-type {
 }
 
 .form-table td .accordion-title label {
-	margin: 0;
+	margin: 0 !important;
 }
 .fe-ai-search-wrapper {
 	margin: 10px 0;
@@ -275,7 +275,7 @@ a.nav-tab:last-of-type {
 	margin-bottom: 1.5em;
 	border-radius: 4px;
 }
-#fe-ai-search-sync-wrapper button {
+#fe_ai_search_sync_wrapper button {
 	margin-right: 10px;
 }
 .sync-status {
@@ -285,23 +285,37 @@ a.nav-tab:last-of-type {
 	border-radius: 5px;
 	/* border: 1px solid #ddd; */
 }
-#fe-ai-search-tokenizer-status {
+#fe_ai_search_tokenizer_status {
 	border: 1px solid #c3c4c7;
     /* background: #f6f7f7; */
     padding: 10px 10px;
     margin-bottom: 1em;
     border-radius: 4px;
 }
-#fe-ai-search-tokenizer-status p {
+#fe_ai_search_tokenizer_status p {
 	margin: 0;
 }
 #fe_ai_search_condition_for_displaying_the_chat {
-	border-radius: 5px;
     padding: 1em;
     background: #f0f0f1;
+	margin: 0 -1em;
+	/* position: relative; */
 }
-#fe_ai_search_settings_display_floating {
-	padding: 0 1em;
+/* #fe_ai_search_condition_for_displaying_the_chat::before {
+	display: block;
+	left: 20px;
+    border: solid 8px transparent;
+    content: " ";
+    height: 0;
+    width: 0;
+    position: absolute;
+    pointer-events: none;
+    border-right-color: #f0f0f1;
+    top: 0;
+    margin-top: -8px;
+} */
+#fe_ai_search_floating_display_accordion .accordion-inner {
+	padding-bottom: 0;
 }
 #fe_ai_search_settings_display_floating_enable_floating_mode {
 	padding: 1em;
@@ -344,7 +358,7 @@ a:has(.dashicons-warning) span {
 	vertical-align: middle;
 }
 
-#fe-ai-search-sync-status .spin {
+#fe_ai_search_sync_status .spin {
 	display: none;
 	float: none;
 	vertical-align: middle;
@@ -354,7 +368,7 @@ a:has(.dashicons-warning) span {
 
 /* --- Sync UI Styles --- */
 
-#fe-ai-search-progress-container {
+#fe_ai_search_progress_container {
 	display: none;
     width: 100%;
     background-color: #eee;
@@ -365,7 +379,7 @@ a:has(.dashicons-warning) span {
     overflow: hidden;
 }
 
-#fe-ai-search-progress-bar {
+#fe_ai_search_progress_bar {
 	width: 0%; /* 初期幅は0% */
 	height: 20px;
 	line-height: 20px;
@@ -378,7 +392,7 @@ a:has(.dashicons-warning) span {
 	transition: width 0.3s ease-in-out;
 }
 
-#fe-ai-search-progress-container .status-text {
+#fe_ai_search_progress_container .status-text {
 	padding: 5px 10px;
     display: block;
 }

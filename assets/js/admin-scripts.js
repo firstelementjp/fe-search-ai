@@ -9,7 +9,7 @@
  * @since   1.0.0
  */
 
-/* global ajaxurl, fe_ai_search_sync_obj */
+/* global ajaxurl, fe_ai_search_sync_obj, CodeMirror */
 
 document.addEventListener('DOMContentLoaded', () => {
 	// Initialize WordPress internationalization functions.
@@ -18,14 +18,13 @@ document.addEventListener('DOMContentLoaded', () => {
 	// ==========================================================================
 	// DOM Element Caching
 	// ==========================================================================
-	const startBtn = document.querySelector('#fe-ai-start-sync');
-	const progressContainer = document.querySelector('#fe-ai-search-progress-container');
-	const progressBar = document.querySelector('#fe-ai-search-progress-bar');
-	const statusDiv = document.querySelector('#fe-ai-search-sync-status');
+	const progressContainer = document.querySelector('#fe_ai_search_progress_container');
+	const progressBar = document.querySelector('#fe_ai_search_progress_bar');
+	const statusDiv = document.querySelector('#fe_ai_search_sync_status');
 	const statusSpinner = statusDiv?.querySelector('.spin');
 	const statusText = statusDiv?.querySelector('.status-text');
-	const deleteButton = document.querySelector('#fe-ai-search-delete-vectors-button');
-	const deleteStatus = document.querySelector('#fe-ai-search-delete-status');
+	const deleteButton = document.querySelector('#fe_ai_search_delete_vectors_button');
+	const deleteStatus = document.querySelector('#fe_ai_search_delete_status');
 	const tabsWrapper = document.querySelector('.nav-tab-wrapper');
 
 	// ==========================================================================
@@ -59,8 +58,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	// Manual Synchronization
 	// ==========================================================================
 
-	const rebuildBtn = document.querySelector('#fe-ai-search-start-sync');
-	const smartSyncBtn = document.querySelector('#fe-ai-search-smart-sync');
+	const rebuildBtn = document.querySelector('#fe_ai_search_start_sync');
+	const smartSyncBtn = document.querySelector('#fe_ai_search_smart_sync');
 
 	/**
 	 * Initiates a sync process (either full rebuild or smart sync).
@@ -70,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	 * @return {void}
 	 */
 	async function startSyncProcess(action, confirmationMessage) {
+		// eslint-disable-next-line no-alert
 		if (!confirm(confirmationMessage)) {
 			return;
 		}
@@ -87,6 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			const response = await wpPost(action, {
 				nonce: fe_ai_search_sync_obj.nonce,
 			});
+
 			if (!response.success) {
 				// If the backend sends an error (like settings changed), display it.
 				throw new Error(response.data.message || 'Failed to start sync.');
@@ -122,6 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		);
 		startSyncProcess('fe_ai_search_start_sync', message);
 	});
+
 	// Handler for the "Sync Changes" button
 	smartSyncBtn?.addEventListener('click', e => {
 		e.preventDefault();
@@ -131,6 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		);
 		startSyncProcess('fe_ai_search_start_smart_sync', message);
 	});
+
 	/**
 	 * Recursively processes one batch of posts at a time.
 	 *
@@ -149,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		statusText.textContent = `${__('Processing posts…', 'fe-ai-search')} (${processed} / ${totalPosts})`;
 		statusSpinner.style.display = 'inline-block';
 
-		// サーバーからの生テキストを保持する変数
+		// Holds the raw text response from the server
 		let responseText = '';
 
 		try {
@@ -160,17 +163,14 @@ document.addEventListener('DOMContentLoaded', () => {
 				post_ids: JSON.stringify(postIDsToSync),
 			});
 
-			// 1. fetchを直接使い、応答をまずテキストとして受け取る
+			// Use fetch directly and first receive the response as plain text
 			const rawResponse = await fetch(ajaxurl, {
 				method: 'POST',
 				body: formData,
 			});
 			responseText = await rawResponse.text();
 
-			// ★ コンソールに、サーバーからの生の応答を出力
-			console.log(`Raw server response for batch ${currentPage}:`, responseText);
-
-			// 2. 受け取ったテキストをJSONとして解析してみる
+			// Parse the received text as JSON
 			const response = JSON.parse(responseText);
 
 			if (response.success) {
@@ -179,16 +179,23 @@ document.addEventListener('DOMContentLoaded', () => {
 				if (response.data && response.data.message === 'No more posts to process.') {
 					progressBar.style.width = '100%';
 					progressBar.textContent = '100%';
-					statusText.innerHTML = `<strong style="color:green;">${__('Synchronization complete!', 'fe-ai-search')} (${totalPosts} ${__('items', 'fe-ai-search')})</strong>`;
+					statusText.innerHTML = `<strong style="color:green;">${__(
+						'Synchronization complete!',
+						'fe-ai-search'
+					)} (${totalPosts} ${__('items', 'fe-ai-search')})</strong>`;
+
 					rebuildBtn.disabled = false;
 					smartSyncBtn.disabled = false;
 					statusSpinner.style.display = 'none';
+
 					await wpPost('fe_ai_search_update_sync_timestamp', {
 						nonce: fe_ai_search_sync_obj.nonce,
 					});
+
 					await wpPost('fe_ai_search_update_settings_hash', {
 						nonce: fe_ai_search_sync_obj.nonce,
 					});
+
 					// Reload the page so that the "Last Sync" label reflects the updated timestamp.
 					location.reload();
 				} else if (currentPage < totalPages) {
@@ -197,16 +204,23 @@ document.addEventListener('DOMContentLoaded', () => {
 					// Final batch is complete.
 					progressBar.style.width = '100%';
 					progressBar.textContent = '100%';
-					statusText.innerHTML = `<strong style="color:green;">${__('Synchronization complete!', 'fe-ai-search')} (${totalPosts} ${__('items', 'fe-ai-search')})</strong>`;
+					statusText.innerHTML = `<strong style="color:green;">${__(
+						'Synchronization complete!',
+						'fe-ai-search'
+					)} (${totalPosts} ${__('items', 'fe-ai-search')})</strong>`;
+
 					rebuildBtn.disabled = false;
 					smartSyncBtn.disabled = false;
 					statusSpinner.style.display = 'none';
+
 					await wpPost('fe_ai_search_update_sync_timestamp', {
 						nonce: fe_ai_search_sync_obj.nonce,
 					});
+
 					await wpPost('fe_ai_search_update_settings_hash', {
 						nonce: fe_ai_search_sync_obj.nonce,
 					});
+
 					// Reload the page so that the "Last Sync" label reflects the updated timestamp.
 					location.reload();
 				}
@@ -214,11 +228,16 @@ document.addEventListener('DOMContentLoaded', () => {
 				throw new Error(response.data.message || 'Batch processing failed.');
 			}
 		} catch (error) {
-			// JSONの解析に失敗した場合、コンソールにエラーを出力
+			// If JSON parsing fails, log an error to the console
 			if (error instanceof SyntaxError) {
+				// eslint-disable-next-line no-console
 				console.error('Failed to parse JSON. See the raw response above for details.');
 			}
-			statusText.innerHTML = `<span style="color:red;">${__('Error: A problem occurred while processing batch', 'fe-ai-search')} ${currentPage}.</span>`;
+			statusText.innerHTML = `<span style="color:red;">${__(
+				'Error: A problem occurred while processing batch',
+				'fe-ai-search'
+			)} ${currentPage}.</span>`;
+
 			statusSpinner.style.display = 'none';
 			rebuildBtn.disabled = false;
 			smartSyncBtn.disabled = false;
@@ -233,28 +252,34 @@ document.addEventListener('DOMContentLoaded', () => {
 	document.querySelectorAll('.fe-ai-search-test-api').forEach(button => {
 		button.addEventListener('click', async () => {
 			const provider = button.dataset.provider;
-			const apiKeyId = button.dataset.apiKeyId || `fe_ai_search_${provider}_api_key`; // デフォルトのIDを構築
+			const apiKeyId = button.dataset.apiKeyId || `fe_ai_search_${provider}_api_key`; // Build the default input ID
 			const endpointId = button.dataset.endpointId;
 			const apiKeyInput = document.getElementById(apiKeyId);
 			const apiKey = apiKeyInput ? apiKeyInput.value : '';
-			const spinner = button.parentElement.querySelector('.spinner');
-			const status = button.parentElement.querySelector('.fe-ai-search-api-status');
+
 			if (!apiKey) {
-				// APIキーが空でも、エンドポイントテストの場合は警告しない（キーが不要な場合もあるため）
+				// Even if the API key is empty, do not warn for endpoint tests (the key may not be required)
 				if (!endpointId) {
+					// eslint-disable-next-line no-alert
 					alert(__('Please enter an API key.', 'fe-ai-search'));
 					return;
 				}
 			}
+
+			const spinner = button.parentElement.querySelector('.spinner');
+			const status = button.parentElement.querySelector('.fe-ai-search-api-status');
+
 			spinner.style.visibility = 'visible';
 			status.textContent = '';
-			// AJAXで送信するデータを準備
+
+			// Prepare the data to send via AJAX
 			const postData = {
 				nonce: fe_ai_search_sync_obj.nonce,
 				provider,
 				api_key: apiKey,
 			};
-			// エンドポイントIDがあれば、その値もデータに追加
+
+			// If an endpoint ID is provided, also include its value in the data
 			if (endpointId) {
 				const endpointInput = document.getElementById(endpointId);
 				if (endpointInput) {
@@ -272,9 +297,11 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 		});
 	});
+
 	// Delete Synced Data Button
 	deleteButton?.addEventListener('click', async () => {
 		if (
+			// eslint-disable-next-line no-alert
 			!confirm(
 				__(
 					'Are you sure you want to delete all synced data? This action cannot be undone.',
@@ -307,6 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			spinner.style.visibility = 'hidden';
 		}
 	});
+
 	// "Change Model" Link Handler
 	document.querySelectorAll('.fe-ai-search-change-model-link').forEach(link => {
 		link.addEventListener('click', e => {
@@ -320,6 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 		});
 	});
+
 	// --- Animation Speed Slider UI ---
 	const animationSpeedSlider = document.querySelector('#fe_ai_search_animation_speed_slider');
 	if (animationSpeedSlider) {
@@ -329,6 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			animationSpeedValue.textContent = animationSpeedSlider.value;
 		});
 	}
+
 	// ==========================================================================
 	// Accordion UI Logic (FINAL & COMPLETE VERSION)
 	// ==========================================================================
@@ -340,7 +370,9 @@ document.addEventListener('DOMContentLoaded', () => {
 	 * @param {HTMLElement} container - The element to search within.
 	 * @param               textarea
 	 */
+
 	// --- CodeMirror Initialization ---
+
 	// This function is now called specifically when its container becomes visible.
 	function initializeCodeMirror(textarea) {
 		if (!textarea || textarea.dataset.codemirrorInitialized) {
@@ -361,6 +393,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
 	// --- Accordion Click Handler (Event Delegation) ---
+
 	// We listen on the entire settings page for clicks.
 	const settingsWrapper = document.querySelector('.wrap');
 	if (settingsWrapper) {
@@ -397,7 +430,9 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 		});
 	}
+
 	// --- Tab Navigation Logic ---
+
 	if (tabsWrapper) {
 		const tabContents = document.querySelectorAll('.tab-content');
 		tabContents.forEach(content => (content.style.display = 'none'));
@@ -488,9 +523,14 @@ document.addEventListener('DOMContentLoaded', () => {
 				license_action: action,
 			});
 
+			if (!response.success) {
+				throw new Error(response.data?.message || 'License operation failed.');
+			}
+
 			// Always reload the page to show the new status.
 			location.reload();
 		} catch (error) {
+			// eslint-disable-next-line no-alert
 			alert(__('An error occurred during activation. Please try again.', 'fe-ai-search'));
 			button.disabled = false;
 			spinner.style.visibility = 'hidden';

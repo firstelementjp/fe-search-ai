@@ -621,7 +621,7 @@ class FE_AI_Search_Settings {
 
 		$string = __( 'Select the post types you want to include in your AI search and the metadata you want to include in chunks for each post type.', 'fe-ai-search' );
 		echo '<p class="description">' . wp_kses_post( $string ) . '</p>';
-		echo '<div id="fe-ai-search-sync-options-accordion" class="fe-ai-search-accordion-wrapper">';
+		echo '<div id="fe_ai_search_sync_options_accordion" class="fe-ai-search-accordion-wrapper">';
 
 		foreach ( $post_types as $post_type ) {
 			if ( in_array( $post_type->name, $excluded_post_types, true ) ) {
@@ -791,7 +791,7 @@ class FE_AI_Search_Settings {
 				?>
 			</p>
 
-			<div id="fe-ai-search-sync-wrapper">
+			<div id="fe_ai_search_sync_wrapper">
 				<?php
 				/**
 				 * Filters the array of status messages to display on the Sync tab.
@@ -806,7 +806,7 @@ class FE_AI_Search_Settings {
 
 				if ( ! empty( $tokenizer_statuses ) ) :
 					?>
-					<div id="fe-ai-search-tokenizer-status">
+					<div id="fe_ai_search_tokenizer_status">
 						<?php
 						foreach ( $tokenizer_statuses as $status_html ) {
 							echo '<p>' . wp_kses_post( $status_html ) . '</p>';
@@ -816,19 +816,19 @@ class FE_AI_Search_Settings {
 				<?php endif; ?>
 
 				<div class="fe-ai-search-wrapper">
-					<button id="fe-ai-search-smart-sync" class="button button-primary">
+					<button id="fe_ai_search_smart_sync" class="button button-primary">
 						<?php esc_html_e( 'Sync Changes (Recommended)', 'fe-ai-search' ); ?>
 					</button>
-					<button id="fe-ai-search-start-sync" class="button button-secondary">
+					<button id="fe_ai_search_start_sync" class="button button-secondary">
 						<?php esc_html_e( 'Rebuild Index', 'fe-ai-search' ); ?>
 					</button>
 				</div>
 
-				<div id="fe-ai-search-progress-container">
-					<div id="fe-ai-search-progress-bar-wrapper">
-						<div id="fe-ai-search-progress-bar">0%</div>
+				<div id="fe_ai_search_progress_container">
+					<div id="fe_ai_search_progress_bar_wrapper">
+						<div id="fe_ai_search_progress_bar">0%</div>
 					</div>
-					<div id="fe-ai-search-sync-status">
+					<div id="fe_ai_search_sync_status">
 						<span class="dashicons dashicons-update-alt spin"></span>
 						<span class="status-text"></span>
 					</div>
@@ -847,11 +847,11 @@ class FE_AI_Search_Settings {
 		<p class="description">
 			<?php esc_html_e( 'This will delete all synced vector data and keyword indexes. AI search will no longer work until you sync again.', 'fe-ai-search' ); ?>
 		</p>
-		<button type="button" id="fe-ai-search-delete-vectors-button" class="button button-secondary">
+		<button type="button" id="fe_ai_search_delete_vectors_button" class="button button-secondary">
 			<?php esc_html_e( 'Delete all synced data', 'fe-ai-search' ); ?>
 		</button>
 		<span class="spinner"></span>
-		<p id="fe-ai-search-delete-status"></p>
+		<p id="fe_ai_search_delete_status"></p>
 		<?php
 	}
 
@@ -870,7 +870,7 @@ class FE_AI_Search_Settings {
 				'show_on_archives'   => true,
 				'show_on_search'     => true,
 				'show_on_404'        => true,
-				'post_types'         => [ 'post' => true, 'page' => true ],
+				'show_on_singular'   => true,
 				'include_ids'        => '',
 				'exclude_ids'        => '',
 			],
@@ -878,129 +878,150 @@ class FE_AI_Search_Settings {
 		$floating_options = wp_parse_args( $floating_options, $defaults );
 		?>
 		<fieldset id="fe_ai_search_settings_display_floating">
-			<p id="fe_ai_search_settings_display_floating_enable_floating_mode">
-				<label>
-					<input
-						type="checkbox"
-						name="fe_ai_search_settings[display][floating][enable_floating_mode]"
-						value="1" <?php checked( $floating_options['enable_floating_mode'] ); ?>
-					>
-					<strong><?php esc_html_e( 'Enable floating chat', 'fe-ai-search' ); ?></strong>
-				</label>
-			</p>
-			<p>
-				<div class="option-header"><?php esc_html_e( 'Login status', 'fe-ai-search' ); ?>:</div>
-				<label>
-					<input
-						type="checkbox"
-						name="fe_ai_search_settings[display][floating][show_to_logged_in_users]"
-						value="1" <?php checked( ! empty( $floating_options['show_to_logged_in_users'] ) ); ?>
-					>
-					<?php esc_html_e( 'Show to logged-in users', 'fe-ai-search' ); ?>
-				</label>
-				<label>
-					<input
-						type="checkbox"
-						name="fe_ai_search_settings[display][floating][show_to_guests]"
-						value="1" <?php checked( ! empty( $floating_options['show_to_guests'] ) ); ?>
-					>
-					<?php esc_html_e( 'Show to non-logged-in users', 'fe-ai-search' ); ?>
-				</label>
-			</p>
+			<div id="fe_ai_search_floating_display_accordion" class="fe-ai-search-accordion-wrapper">
+				<div class="post-type-accordion-item">
+					<h4 class="accordion-title">
+						<label>
+							<input
+								type="checkbox"
+								name="fe_ai_search_settings[display][floating][enable_floating_mode]"
+								value="1" <?php checked( $floating_options['enable_floating_mode'] ); ?>
+							>
+							<strong><?php esc_html_e( 'Enable floating chat', 'fe-ai-search' ); ?></strong>
+						</label>
+					</h4>
 
-			<div>
-				<p>
-					<div class="option-header"><?php esc_html_e( 'Display device', 'fe-ai-search' ); ?>:</div>
-					<label>
-						<input
-							type="checkbox"
-							name="fe_ai_search_settings[display][floating][display_on_pc]"
-							value="1" <?php checked( $floating_options['display_on_pc'] ); ?>
-						> <?php esc_html_e( 'PC', 'fe-ai-search' ); ?>
-					</label>
-					<label>
-						<input
-							type="checkbox"
-							name="fe_ai_search_settings[display][floating][display_on_mobile]"
-							value="1" <?php checked( $floating_options['display_on_mobile'] ); ?>
-						> <?php esc_html_e( 'Mobile', 'fe-ai-search' ); ?>
-					</label>
-				</p>
+					<div class="accordion-content">
+						<div class="accordion-inner">
 
-				<div id="fe_ai_search_condition_for_displaying_the_chat">
-					<div class="option-header">
-						<?php esc_html_e( 'Conditions for Displaying the Chat', 'fe-ai-search' ); ?>:
-					</div>
-					<label>
-						<input
-							type="checkbox"
-								name="fe_ai_search_settings[display][floating][display_rules][show_on_front_page]"
-								value="1" <?php checked( $floating_options['display_rules']['show_on_front_page'] ); ?>
-							> <?php esc_html_e( 'Home', 'fe-ai-search' ); ?>
-					</label>
-					<label>
-							<input
-								type="checkbox"
-								name="fe_ai_search_settings[display][floating][display_rules][show_on_archives]"
-								value="1" <?php checked( $floating_options['display_rules']['show_on_archives'] ); ?>
-							> <?php esc_html_e( 'Archive', 'fe-ai-search' ); ?>
-					</label>
-					<label>
-							<input
-								type="checkbox"
-								name="fe_ai_search_settings[display][floating][display_rules][show_on_search]"
-								value="1" <?php checked( $floating_options['display_rules']['show_on_search'] ); ?>
-							> <?php esc_html_e( 'Search result page', 'fe-ai-search' ); ?>
-					</label>
-					<label>
-							<input
-								type="checkbox"
-								name="fe_ai_search_settings[display][floating][display_rules][show_on_404]"
-								value="1" <?php checked( ! empty( $floating_options['display_rules']['show_on_404'] ) ); ?>
-							> <?php esc_html_e( 'Show on 404 page', 'fe-ai-search' ); ?>
-					</label>
-					<div class="option-header">
-						<?php esc_html_e( 'Display on individual pages of the following post types', 'fe-ai-search' ); ?>:
-					</div>
-					<?php
-						$all_post_types = get_post_types( [ 'public' => true ], 'objects' );
-					foreach ( $all_post_types as $pt ) {
-						if ( 'attachment' === $pt->name ) {
-							continue;
-						}
-						echo '<label>
+							<div class="fe-ai-search-floating-login-status">
+								<div class="option-header"><?php esc_html_e( 'Login status', 'fe-ai-search' ); ?>:</div>
+								<p>
+									<label>
+										<input
+											type="checkbox"
+											name="fe_ai_search_settings[display][floating][show_to_logged_in_users]"
+											value="1" <?php checked( ! empty( $floating_options['show_to_logged_in_users'] ) ); ?>
+										>
+										<?php esc_html_e( 'Show to logged-in users', 'fe-ai-search' ); ?>
+									</label>
+									<label>
+										<input
+											type="checkbox"
+											name="fe_ai_search_settings[display][floating][show_to_guests]"
+											value="1" <?php checked( ! empty( $floating_options['show_to_guests'] ) ); ?>
+										>
+										<?php esc_html_e( 'Show to non-logged-in users', 'fe-ai-search' ); ?>
+									</label>
+								</p>
+							</div>
+
+							<div class="fe-ai-search-floating-devices">
+								<div class="option-header"><?php esc_html_e( 'Display device', 'fe-ai-search' ); ?>:</div>
+								<p>
+									<label>
+										<input
+											type="checkbox"
+											name="fe_ai_search_settings[display][floating][display_on_pc]"
+											value="1" <?php checked( $floating_options['display_on_pc'] ); ?>
+										> <?php esc_html_e( 'PC', 'fe-ai-search' ); ?>
+									</label>
+									<label>
+										<input
+											type="checkbox"
+											name="fe_ai_search_settings[display][floating][display_on_mobile]"
+											value="1" <?php checked( $floating_options['display_on_mobile'] ); ?>
+										> <?php esc_html_e( 'Mobile', 'fe-ai-search' ); ?>
+									</label>
+								</p>
+							</div>
+
+							<div id="fe_ai_search_condition_for_displaying_the_chat">
+								<div class="option-header">
+									<?php esc_html_e( 'Conditions for Displaying the Chat', 'fe-ai-search' ); ?>:
+								</div>
+								<p>
+									<label>
+										<input
+											type="checkbox"
+											name="fe_ai_search_settings[display][floating][display_rules][show_on_front_page]"
+											value="1" <?php checked( $floating_options['display_rules']['show_on_front_page'] ); ?>
+										>
+										<?php esc_html_e( 'Home', 'fe-ai-search' ); ?>
+									</label>
+									<label>
+										<input
+											type="checkbox"
+											name="fe_ai_search_settings[display][floating][display_rules][show_on_archives]"
+											value="1" <?php checked( $floating_options['display_rules']['show_on_archives'] ); ?>
+										>
+										<?php esc_html_e( 'Archive', 'fe-ai-search' ); ?>
+									</label>
+									<label>
+										<input
+											type="checkbox"
+											name="fe_ai_search_settings[display][floating][display_rules][show_on_search]"
+											value="1" <?php checked( $floating_options['display_rules']['show_on_search'] ); ?>
+										>
+										<?php esc_html_e( 'Search result page', 'fe-ai-search' ); ?>
+									</label>
+									<label>
+										<input
+											type="checkbox"
+											name="fe_ai_search_settings[display][floating][display_rules][show_on_404]"
+											value="1" <?php checked( ! empty( $floating_options['display_rules']['show_on_404'] ) ); ?>
+										>
+										<?php esc_html_e( 'Show on 404 page', 'fe-ai-search' ); ?>
+									</label>
+									<label>
+										<input
+											type="checkbox"
+											name="fe_ai_search_settings[display][floating][display_rules][show_on_singular]"
+											value="1" <?php checked( ! empty( $floating_options['display_rules']['show_on_singular'] ) ); ?>
+										>
+										<?php esc_html_e( 'Single pages', 'fe-ai-search' ); ?>
+									</label>
+								</p>
+
+								<div class="option-header">
+									<?php esc_html_e( 'Overwrite rules by individual ID', 'fe-ai-search' ); ?>:
+								</div>
+								<p>
+									<label for="fe_ai_search_include_ids">
+										<?php esc_html_e( 'Display only with these post IDs', 'fe-ai-search' ); ?>:
+									</label>
 									<input
-									type="checkbox"
-									name="fe_ai_search_settings[display][floating][display_rules][post_types][' . esc_attr( $pt->name ) . ']"
-									value="1" '
-								. checked( ! empty( $floating_options['display_rules']['post_types'][ $pt->name ] ), true, false )
-								. '> ' . esc_html( $pt->label )
-								. '</label>';
-					}
-					?>
-					<div class="option-header"><?php esc_html_e( 'Overwrite rules by individual ID', 'fe-ai-search' ); ?>:</div>
-					<label for="fe_ai_search_include_ids"><?php esc_html_e( 'Display only with these post IDs', 'fe-ai-search' ); ?>:</label>
-					<input
-						type="text"
-						id="fe_ai_search_include_ids"
-						name="fe_ai_search_settings[display][floating][display_rules][include_ids]"
-						value="<?php echo esc_attr( $floating_options['display_rules']['include_ids'] ); ?>"
-						class="regular-text"
-						placeholder="<?php esc_attr_e( 'e.g.', 'fe-ai-search' ); ?> 10, 25, 103"
-					>
-					<p class="description"><?php esc_html_e( 'If you enter the ID here, other display rules will be ignored.', 'fe-ai-search' ); ?></p>
+										type="text"
+										id="fe_ai_search_include_ids"
+										name="fe_ai_search_settings[display][floating][display_rules][include_ids]"
+										value="<?php echo esc_attr( $floating_options['display_rules']['include_ids'] ); ?>"
+										class="regular-text"
+										placeholder="<?php esc_attr_e( 'e.g.', 'fe-ai-search' ); ?> 10, 25, 103"
+									>
+									<span class="description">
+										<?php esc_html_e( 'If you enter the ID here, other display rules will be ignored.', 'fe-ai-search' ); ?>
+									</span>
+								</p>
 
-					<label for="fe_ai_search_exclude_ids"><?php esc_html_e( 'Do not display with these post IDs.', 'fe-ai-search' ); ?>:</label>
-					<input
-						type="text"
-						id="fe_ai_search_exclude_ids"
-						name="fe_ai_search_settings[display][floating][display_rules][exclude_ids]"
-						value="<?php echo esc_attr( $floating_options['display_rules']['exclude_ids'] ); ?>"
-						class="regular-text"
-						placeholder="<?php esc_attr_e( 'e.g.', 'fe-ai-search' ); ?> 15, 30"
-					>
-				</div>
-			</div>
+								<p>
+									<label for="fe_ai_search_exclude_ids">
+										<?php esc_html_e( 'Do not display with these post IDs.', 'fe-ai-search' ); ?>:
+									</label>
+									<input
+										type="text"
+										id="fe_ai_search_exclude_ids"
+										name="fe_ai_search_settings[display][floating][display_rules][exclude_ids]"
+										value="<?php echo esc_attr( $floating_options['display_rules']['exclude_ids'] ); ?>"
+										class="regular-text"
+										placeholder="<?php esc_attr_e( 'e.g.', 'fe-ai-search' ); ?> 15, 30"
+									>
+								</p>
+							</div><!-- #fe_ai_search_condition_for_displaying_the_chat -->
+
+						</div><!-- .accordion-inner -->
+					</div><!-- .accordion-content -->
+				</div><!-- .post-type-accordion-item -->
+			</div><!-- #fe-ai-search-floating-display-accordion -->
 		</fieldset>
 		<?php
 	}
@@ -1669,18 +1690,10 @@ class FE_AI_Search_Settings {
 		$new_input['display_rules']['show_on_front_page'] = ! empty( $rules['show_on_front_page'] );
 		$new_input['display_rules']['show_on_archives']   = ! empty( $rules['show_on_archives'] );
 		$new_input['display_rules']['show_on_search']     = ! empty( $rules['show_on_search'] );
+		$new_input['display_rules']['show_on_404']        = ! empty( $rules['show_on_404'] );
+		$new_input['display_rules']['show_on_singular']   = ! empty( $rules['show_on_singular'] );
 		$new_input['display_rules']['include_ids']        = $this->sanitize_numeric_string( $rules['include_ids'] ?? '' );
 		$new_input['display_rules']['exclude_ids']        = $this->sanitize_numeric_string( $rules['exclude_ids'] ?? '' );
-
-		// Post Types
-		$new_input['display_rules']['post_types'] = [];
-		$all_post_types                           = get_post_types( [ 'public' => true ], 'objects' );
-		foreach ( $all_post_types as $pt ) {
-			if ( 'attachment' === $pt->name ) {
-				continue;
-			}
-			$new_input['display_rules']['post_types'][ $pt->name ] = ! empty( $rules['post_types'][ $pt->name ] );
-		}
 
 		return $new_input;
 	}
