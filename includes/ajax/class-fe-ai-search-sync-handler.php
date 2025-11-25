@@ -52,7 +52,7 @@ class FE_AI_Search_Sync_Handler {
 		$this->options   = get_option( 'fe_ai_search_settings', [] );
 		$this->segmenter = new TinySegmenter();
 
-		$license_data = $this->options['license'] ?? [];
+		$license_data = get_option( 'fe_ai_search_license', [] );
 		$status       = $license_data['status'] ?? 'inactive';
 		$products     = $license_data['data']['products'] ?? [];
 

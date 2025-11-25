@@ -43,14 +43,14 @@ class FE_AI_Search_Settings {
 		$this->options = get_option( 'fe_ai_search_settings', [] );
 
 		/**
-		 * Check the status of the license
+		 * Check the status of the license (stored in its own option).
 		 */
-		$license_data = $this->options['license'] ?? [];
+		$license_data = get_option( 'fe_ai_search_license', [] );
 		$status       = $license_data['status'] ?? 'inactive';
 		$products     = $license_data['data']['products'] ?? [];
 
 		$this->is_license_active = ( 'active' === $status && in_array( 'pro', $products, true ) );
-		$this->is_license_active = false; // -------------------------- DEBUG ----------------------------------
+		$this->is_license_active = true; // -------------------------- DEBUG ----------------------------------
 
 		if ( class_exists( '\FEAISearch\Pro\Admin\FE_AI_Search_Pro_Settings' ) && ! $this->is_license_active ) {
 			$this->license_alert_icon = '<a href="' . admin_url( 'admin.php' )
@@ -75,24 +75,22 @@ class FE_AI_Search_Settings {
 		<div class="wrap">
 			<div id="feas-head">
 				<div id="feas-head-upper">
-					<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
+					<h1>FE AI Search</h1>
 					<a href="https://www.firstelement.co.jp/" id="feas-logo" target="_blank" title="開発会社HPへ移動"><img src="<?php echo plugin_dir_url( FE_AI_SEARCH_PLUGIN_FILE ); ?>/assets/images/logo-feas-white-shadow-s@2x-min.png" width="106" height="27"></a>
 				</div>
 				<div id="feas-version">version <?php echo FE_AI_SEARCH_VERSION; ?></div>
 				<div id="feas-support">
 					<a href="https://fe-advanced-search.com/manual/" target="_blank" title="使用説明書へ移動">使用説明書</a>
 					<a href="https://fe-advanced-search.com/support/forum/how-to-and-troubleshooting/" target="_blank" title="フォーラムへ移動">フォーラム </a>
-					<a href="https://chatwork.com/feas" target="_blank" title="チャットワークへ移動">チャットワーク</a>
 					<a href="https://fe-advanced-search.com/contact/" target="_blank" title="メールフォームへ移動" class="icon icon_mail"></a>
-					<a href="https://www.facebook.com/firstelementjp/" target="_blank" title="Facbookページへ移動" class="icon icon_fb"></a>
 					<a href="https://x.com/feas_wp/" target="_blank" title="Xへ移動" class="icon icon_tw"><svg id="fi_5968958" enable-background="new 0 0 1226.37 1226.37" viewBox="0 0 1226.37 1226.37" xmlns="http://www.w3.org/2000/svg"><path d="m727.348 519.284 446.727-519.284h-105.86l-387.893 450.887-309.809-450.887h-357.328l468.492 681.821-468.492 544.549h105.866l409.625-476.152 327.181 476.152h357.328l-485.863-707.086zm-144.998 168.544-47.468-67.894-377.686-540.24h162.604l304.797 435.991 47.468 67.894 396.2 566.721h-162.604l-323.311-462.446z"></path><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g></svg></a>
+					<a href="https://www.facebook.com/firstelementjp/" target="_blank" title="Facbookページへ移動" class="icon icon_fb"></a>
 				</div>
 			</div>
 
 			<?php
 			// Determine if the Pro license is active (same logic as in the constructor).
-			$options      = get_option( 'fe_ai_search_settings', [] );
-			$license_data = $options['license'] ?? [];
+			$license_data = get_option( 'fe_ai_search_license', [] );
 			$status       = $license_data['status'] ?? 'inactive';
 			$products     = $license_data['data']['products'] ?? [];
 			$is_pro       = ( 'active' === $status && in_array( 'pro', $products, true ) );
@@ -101,14 +99,14 @@ class FE_AI_Search_Settings {
 			<h2 class="nav-tab-wrapper">
 				<a href="#tab-provider" class="nav-tab"><?php esc_html_e( 'Provider', 'fe-ai-search' ); ?></a>
 				<?php if ( $is_pro ) : ?>
-					<a href="#tab-pro-models" class="nav-tab"><?php esc_html_e( 'Model', 'fe-ai-search-pro' ); ?></a>
+					<a href="#tab_models" class="nav-tab"><?php esc_html_e( 'Model', 'fe-ai-search-pro' ); ?></a>
 				<?php endif; ?>
 				<a href="#tab-sync" class="nav-tab"><?php esc_html_e( 'Sync', 'fe-ai-search' ); ?></a>
 				<a href="#tab-prompt" class="nav-tab"><?php esc_html_e( 'Prompt', 'fe-ai-search' ); ?></a>
 				<a href="#tab-display" class="nav-tab"><?php esc_html_e( 'Display', 'fe-ai-search' ); ?></a>
 				<?php if ( $is_pro ) : ?>
-					<a href="#tab-security" class="nav-tab"><?php esc_html_e( 'Security', 'fe-ai-search-pro' ); ?></a>
-					<a href="#tab-feas" class="nav-tab"><?php esc_html_e( 'Hybrid Search', 'fe-ai-search-pro' ); ?></a>
+					<a href="#tab_security" class="nav-tab"><?php esc_html_e( 'Security', 'fe-ai-search-pro' ); ?></a>
+					<a href="#tab_hybrid" class="nav-tab"><?php esc_html_e( 'Hybrid Search', 'fe-ai-search-pro' ); ?></a>
 				<?php endif; ?>
 				<a href="#tab-advanced" class="nav-tab"><?php esc_html_e( 'Advanced', 'fe-ai-search' ); ?></a>
 				<?php
@@ -491,7 +489,7 @@ class FE_AI_Search_Settings {
 				<?php else : ?>
 					<div>
 						<?php echo $this->license_alert_icon; ?>
-						<a href="#tab-pro-models" class="fe-ai-search-change-model-link">
+						<a href="#tab_models" class="fe-ai-search-change-model-link">
 							<?php esc_html_e( 'Change Model', 'fe-ai-search' ); ?> &raquo;
 						</a>
 					</div>
@@ -546,7 +544,7 @@ class FE_AI_Search_Settings {
 				<?php else : ?>
 					<div>
 						<?php echo $this->license_alert_icon; ?>
-						<a href="#tab-pro-models" class="fe-ai-search-change-model-link">
+						<a href="#tab_models" class="fe-ai-search-change-model-link">
 							<?php esc_html_e( 'Change Model', 'fe-ai-search' ); ?> &raquo;
 						</a>
 					</div>
@@ -601,7 +599,7 @@ class FE_AI_Search_Settings {
 				<?php else : ?>
 					<div>
 						<?php echo $this->license_alert_icon; ?>
-						<a href="#tab-pro-models" class="fe-ai-search-change-model-link">
+						<a href="#tab-models" class="fe-ai-search-change-model-link">
 							<?php esc_html_e( 'Change Model', 'fe-ai-search' ); ?> &raquo;
 						</a>
 					</div>
@@ -1547,9 +1545,7 @@ class FE_AI_Search_Settings {
 		$new_input['advanced']['delete_on_uninstall'] = ! empty( $input['advanced']['delete_on_uninstall'] );
 		$new_input['advanced']['debug_mode']          = ! empty( $input['advanced']['debug_mode'] );
 
-		// License data is handled by ajax_manage_license, not here.
-		// We just make sure it persists from the old settings.
-		$new_input['license'] = $this->options['license'] ?? [];
+		// License data is managed by a dedicated option (fe_ai_search_license).
 		// DB version is handled by the activator, not here.
 		$new_input['advanced']['db_version'] = $this->options['advanced']['db_version'] ?? '1.0';
 

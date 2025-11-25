@@ -66,17 +66,21 @@ class FE_AI_Search_License_Handler {
 			return [ 'success' => false, 'message' => __( 'The license key has not been entered.', 'fe-ai-search' ) ];
 		}
 
-		// Build the API URL for the license server.
-		$api_url = FE_AI_SEARCH_PRO_STORE_URL . '/wp-json/lmfwc/v2/licenses/' . $action;
+		$base_url = trailingslashit( FE_AI_SEARCH_PRO_STORE_URL ) . 'wp-json/lmfwc/v2/licenses/' . $action . '/' . rawurlencode( $license_key );
+		$api_url  = add_query_arg(
+			[
+				'instance'  => home_url(),
+				'productId' => FE_AI_SEARCH_PRO_PRODUCT_ID,
+			],
+			$base_url
+		);
 
-		$response = wp_remote_post(
+		$response = wp_remote_get(
 			$api_url,
 			[
 				'timeout' => 20,
-				'body'    => [
-					'license_key' => $license_key,
-					'instance'    => home_url(),
-					'product_id'  => FE_AI_SEARCH_PRO_PRODUCT_ID,
+				'headers' => [
+					'Authorization' => 'Basic ' . base64_encode( FE_AI_SEARCH_LMFWC_CONSUMER_KEY . ':' . FE_AI_SEARCH_LMFWC_CONSUMER_SECRET ),
 				],
 			]
 		);
@@ -95,11 +99,16 @@ class FE_AI_Search_License_Handler {
 			return [ 'success' => false, 'message' => $error_message ];
 		}
 
-		// Return a formatted result array.
+		$license_status = 'inactive';
+		if ( ! empty( $data['success'] ) && ! empty( $data['data'] ) && isset( $data['data']['status'] ) ) {
+			$license_status = ( 2 === (int) $data['data']['status'] ) ? 'active' : 'inactive';
+		}
+
 		return [
 			'success' => $data['success'],
 			'message' => $data['message'] ?? ( $data['success'] ? __( 'The operation was successful.', 'fe-ai-search' ) : __( 'The operation failed.', 'fe-ai-search' ) ),
-			'status'  => ( $data['success'] && ( $data['data']['activated'] ?? false ) ) ? 'active' : 'inactive',
+			'status'  => $license_status,
+			'data'    => $data['data'] ?? [],
 		];
 	}
 }

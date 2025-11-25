@@ -51,7 +51,7 @@ class FE_AI_Search_Assets {
 		$animation_speed = $ui_options['animation_speed'] ?? 3;
 		$send_mode       = $ui_options['send_mode'] ?? 'enter';
 
-		$license_data      = $this->options['license'] ?? [];
+		$license_data      = get_option( 'fe_ai_search_license', [] );
 		$status            = $license_data['status'] ?? 'inactive';
 		$products          = $license_data['data']['products'] ?? [];
 		$is_license_active = ( 'active' === $status && in_array( 'pro', $products, true ) );

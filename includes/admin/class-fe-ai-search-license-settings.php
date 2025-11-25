@@ -65,13 +65,14 @@ class FE_AI_Search_License_Settings {
 		$this->options = get_option( 'fe_ai_search_settings', [] );
 
 		/**
-		 * Check the status of the license
+		 * Check the status of the license (stored in its own option).
 		 */
-		$license_data = $this->options['license'] ?? [];
+		$license_data = get_option( 'fe_ai_search_license', [] );
 		$status       = $license_data['status'] ?? 'inactive';
 		$products     = $license_data['data']['products'] ?? [];
 
 		$this->is_license_active = ( 'active' === $status && in_array( 'pro', $products, true ) );
+		$this->is_license_active = true; // -------------------------- DEBUG ----------------------------------
 
 		if ( ! $this->is_license_active ) {
 			$this->license_alert_icon = '<a href="' . admin_url( 'admin.php' )
@@ -149,7 +150,7 @@ class FE_AI_Search_License_Settings {
 	 * @since 1.0.0
 	 */
 	public function field_html() {
-		$license_data = isset( $this->options['license'] ) ? $this->options['license'] : [];
+		$license_data = get_option( 'fe_ai_search_license', [] );
 
 		$license_key    = isset( $license_data['key'] ) ? $license_data['key'] : '';
 		$license_status = isset( $license_data['status'] ) ? $license_data['status'] : 'inactive';
@@ -157,7 +158,7 @@ class FE_AI_Search_License_Settings {
 		<input
 			type="text"
 			id="fe_ai_search_license_key_input"
-			name="fe_ai_search_settings[license][key]"
+			name="fe_ai_search_license_key_input"
 			value="<?php echo esc_attr( $license_key ); ?>"
 			class="regular-text"
 			style="width: 300px;"
@@ -166,7 +167,56 @@ class FE_AI_Search_License_Settings {
 		<?php if ( 'active' === $license_status ) : ?>
 
 			<button type="button" id="fe_ai_search_license_deactivate" class="button button-secondary"><?php esc_html_e( 'Deactivate', 'fe-ai-search' ); ?></button>
-			<p class="description" style="color: green; font-weight: bold;">✔ <?php esc_html_e( 'The license is valid.', 'fe-ai-search' ); ?></p>
+			<p class="description" style="color: green; font-weight: bold;">
+				<?php esc_html_e( 'The license is valid.', 'fe-ai-search' ); ?>
+			</p>
+			<?php
+				$expires_at          = $license_data['data']['expiresAt'] ?? '';
+				$times_activated     = $license_data['data']['timesActivated'] ?? null;
+				$times_activated_max = $license_data['data']['timesActivatedMax'] ?? null;
+				$remaining_days      = '';
+
+			if ( ! empty( $expires_at ) ) {
+				try {
+					$expires_ts     = strtotime( $expires_at );
+					$today_midnight = strtotime( 'today midnight' );
+					if ( $expires_ts ) {
+						$diff_days      = (int) floor( ( $expires_ts - $today_midnight ) / DAY_IN_SECONDS );
+						$remaining_days = $diff_days;
+					}
+				} catch ( \Throwable $e ) {
+					$remaining_days = '';
+				}
+			}
+
+				$expires_text = '';
+			if ( ! empty( $expires_at ) ) {
+				// Format as Y-m-d for display.
+				$expires_text = sprintf(
+					/* translators: 1: expiration date, 2: remaining days */
+					__( 'License expiration date: %1$s (remaining %2$s days)', 'fe-ai-search' ),
+					esc_html( date_i18n( 'Y-m-d', strtotime( $expires_at ) ) ),
+					$remaining_days !== '' ? esc_html( (string) $remaining_days ) : '600'
+				);
+			}
+
+				$max_text = is_null( $times_activated_max ) ? __( 'Unlimited', 'fe-ai-search' ) : (string) (int) $times_activated_max;
+			?>
+			<?php if ( ! empty( $expires_text ) ) : ?>
+				<p class="description">
+					<?php echo esc_html( $expires_text ); ?>
+				</p>
+			<?php endif; ?>
+			<p class="description">
+				<?php
+				printf(
+					/* translators: 1: times activated, 2: max activations */
+					esc_html__( 'Activation count: %1$s / %2$s', 'fe-ai-search' ),
+					esc_html( (string) ( $times_activated ?? 0 ) ),
+					esc_html( $max_text )
+				);
+				?>
+			</p>
 
 		<?php else : ?>
 

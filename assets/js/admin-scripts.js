@@ -510,7 +510,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			return;
 		}
 
-		const licenseKeyInput = document.getElementById('fe_ai_search_pro_license_key_input');
+		const licenseKeyInput = document.getElementById('fe_ai_search_license_key_input');
 		const licenseKey = licenseKeyInput ? licenseKeyInput.value : '';
 		const spinner = button.parentElement.querySelector('.spinner');
 		button.disabled = true;

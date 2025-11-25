@@ -44,9 +44,9 @@ class FE_AI_Search_Chat_Handler {
 		$this->options = get_option( 'fe_ai_search_settings', [] );
 
 		/**
-		 * Check the status of the license
+		 * Check the status of the license (stored in its own option).
 		 */
-		$license_data = $this->options['license'] ?? [];
+		$license_data = get_option( 'fe_ai_search_license', [] );
 		$status       = $license_data['status'] ?? 'inactive';
 		$products     = $license_data['data']['products'] ?? [];
 
@@ -1278,6 +1278,7 @@ Instead, answer based only on the remaining visible text.
 	 */
 	public function ajax_manage_license() {
 		check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
+
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( [ 'message' => 'Permission denied.' ] );
 		}
@@ -1292,26 +1293,26 @@ Instead, answer based only on the remaining visible text.
 		// Perform the license action.
 		$handler = new \FEAISearch\Core\FE_AI_Search_License_Handler();
 		$result  = ( 'activate' === $action ) ? $handler->activate( $license_key ) : $handler->deactivate( $license_key );
-
 		if ( $result && $result['success'] ) {
-			$this->options['license']['key']    = $license_key;
-			$this->options['license']['status'] = $result['status']; // e.g., 'active'
-			$this->options['license']['data']   = $result['data'] ?? []; // e.g., {'products': ['pro'], ...}
-
+			$license = [
+				'key'    => $license_key,
+				'status' => $result['status'],
+				'data'   => $result['data'] ?? [],
+			];
+			update_option( 'fe_ai_search_license', $license );
 			delete_transient( 'fe_ai_search_license_error' );
 			$send_response = 'wp_send_json_success';
 
 		} else {
-			$this->options['license']['key']    = $license_key;
-			$this->options['license']['status'] = 'inactive';
-			$this->options['license']['data']   = [];
-
+			$license = [
+				'key'    => $license_key,
+				'status' => 'inactive',
+				'data'   => $result['data'] ?? [],
+			];
+			update_option( 'fe_ai_search_license', $license );
 			set_transient( 'fe_ai_search_license_error', $result['message'], 60 );
 			$send_response = 'wp_send_json_error';
 		}
-
-		// Save the entire master options array back to the database.
-		update_option( 'fe_ai_search_settings', $this->options );
 
 		// Send the final JSON response.
 		$send_response( [ 'message' => $result['message'] ] );
