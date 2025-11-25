@@ -492,6 +492,19 @@ document.addEventListener('DOMContentLoaded', () => {
 	// License Activation & Deactivation
 	// ==========================================================================
 
+	// License key visibility toggle (Show/Hide password).
+	const licenseInput = document.getElementById('fe_ai_search_license_key_input');
+	const licenseToggle = document.getElementById('fe_ai_search_license_toggle_visibility');
+	if (licenseInput && licenseToggle) {
+		licenseToggle.addEventListener('click', () => {
+			const isPassword = licenseInput.type === 'password';
+			licenseInput.type = isPassword ? 'text' : 'password';
+			licenseToggle.textContent = isPassword
+				? __('Hide', 'fe-ai-search')
+				: __('Show', 'fe-ai-search');
+		});
+	}
+
 	// We must use event delegation on the document body, because the license tab
 	// is part of the main settings form, not a separate Pro feature.
 	document.body.addEventListener('click', async e => {

@@ -19,6 +19,8 @@ define( 'FE_AI_SEARCH_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FE_AI_SEARCH_PLUGIN_FILE', __FILE__ );
 define( 'FE_AI_SEARCH_PRO_URL', 'https://fe-ai-search.com/pro' );
 
+
+
 if ( file_exists( FE_AI_SEARCH_PLUGIN_DIR . 'vendor/autoload.php' ) ) {
 	require_once FE_AI_SEARCH_PLUGIN_DIR . 'vendor/autoload.php';
 }

@@ -66,21 +66,21 @@ class FE_AI_Search_License_Handler {
 			return [ 'success' => false, 'message' => __( 'The license key has not been entered.', 'fe-ai-search' ) ];
 		}
 
-		$base_url = trailingslashit( FE_AI_SEARCH_PRO_STORE_URL ) . 'wp-json/lmfwc/v2/licenses/' . $action . '/' . rawurlencode( $license_key );
-		$api_url  = add_query_arg(
-			[
-				'instance'  => home_url(),
-				'productId' => FE_AI_SEARCH_PRO_PRODUCT_ID,
-			],
-			$base_url
-		);
+		// Call the vendor's proxy API instead of the LMFWC REST API directly so that
+		// sensitive consumer keys remain on the server side only.
+		if ( ! defined( 'FE_AI_SEARCH_LICENSE_API_URL' ) || empty( FE_AI_SEARCH_LICENSE_API_URL ) ) {
+			return [ 'success' => false, 'message' => __( 'The license API endpoint is not configured.', 'fe-ai-search' ) ];
+		}
 
-		$response = wp_remote_get(
-			$api_url,
+		$response = wp_remote_post(
+			FE_AI_SEARCH_LICENSE_API_URL,
 			[
 				'timeout' => 20,
-				'headers' => [
-					'Authorization' => 'Basic ' . base64_encode( FE_AI_SEARCH_LMFWC_CONSUMER_KEY . ':' . FE_AI_SEARCH_LMFWC_CONSUMER_SECRET ),
+				'body'    => [
+					'action'      => $action,
+					'license_key' => $license_key,
+					'instance'    => home_url(),
+					'product_id'  => FE_AI_SEARCH_PRO_PRODUCT_ID,
 				],
 			]
 		);

@@ -156,13 +156,22 @@ class FE_AI_Search_License_Settings {
 		$license_status = isset( $license_data['status'] ) ? $license_data['status'] : 'inactive';
 		?>
 		<input
-			type="text"
+			type="password"
+			autocomplete="off"
 			id="fe_ai_search_license_key_input"
 			name="fe_ai_search_license_key_input"
 			value="<?php echo esc_attr( $license_key ); ?>"
 			class="regular-text"
 			style="width: 300px;"
 		>
+		<button
+			type="button"
+			id="fe_ai_search_license_toggle_visibility"
+			class="button button-secondary"
+			style="margin-left: 8px;"
+		>
+			<?php esc_html_e( 'Show', 'fe-ai-search' ); ?>
+		</button>
 
 		<?php if ( 'active' === $license_status ) : ?>
 
