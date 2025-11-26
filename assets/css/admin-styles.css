@@ -118,7 +118,7 @@ textarea {
 	height: 2.5rem;
 	background-color: white;
 	display: grid;
-	grid-template: 100% / 5em 5em 7em 25px 25px 25px;
+	grid-template: 100% / 5em 5em 22px 20px 20px 17px;
 	grid-gap: 1.5em;
 	justify-content: end;
 	align-items: center;
@@ -144,14 +144,19 @@ textarea {
 	-webkit-font-smoothing: antialiased;
 	font: normal 17px / 1 'dashicons';
 	color: #46aae6;
+	text-align: center;
 }
 #feas-head .icon_tw.icon {
 	content: '';
 	display: grid;
 	justify-content: center;
 }
+#feas-head .icon_yt.icon svg {
+	width: 18px;
+	fill: #46aae6;
+}
 #feas-head .icon_tw.icon svg {
-	width: 13px;
+	width: 12px;
 	fill: #46aae6;
 }
 #feas-head .icon_fb.icon:before {
@@ -180,6 +185,7 @@ textarea {
 	color: #0071a1;
 	margin-bottom: 2px;
 	background: #f9f9f9;
+	font-size: 13px;
 }
 .nav-tab.nav-tab-active {
 	color: #1d2327;

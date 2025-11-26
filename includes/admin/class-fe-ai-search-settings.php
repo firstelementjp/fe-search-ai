@@ -49,8 +49,7 @@ class FE_AI_Search_Settings {
 		$status       = $license_data['status'] ?? 'inactive';
 		$products     = $license_data['data']['products'] ?? [];
 
-		$this->is_license_active = ( 'active' === $status && in_array( 'pro', $products, true ) );
-		$this->is_license_active = true; // -------------------------- DEBUG ----------------------------------
+		$this->is_license_active = ( 'active' === $status );
 
 		if ( class_exists( '\FEAISearch\Pro\Admin\FE_AI_Search_Pro_Settings' ) && ! $this->is_license_active ) {
 			$this->license_alert_icon = '<a href="' . admin_url( 'admin.php' )
@@ -82,9 +81,10 @@ class FE_AI_Search_Settings {
 				<div id="feas-support">
 					<a href="https://fe-advanced-search.com/manual/" target="_blank" title="使用説明書へ移動">使用説明書</a>
 					<a href="https://fe-advanced-search.com/support/forum/how-to-and-troubleshooting/" target="_blank" title="フォーラムへ移動">フォーラム </a>
-					<a href="https://fe-advanced-search.com/contact/" target="_blank" title="メールフォームへ移動" class="icon icon_mail"></a>
+					<a href="https://www.youtube.com/@firstelementjp" target="_blank" title="YouTubeへ移動" class="icon icon_yt"><svg width="32px" height="32px" viewBox="0 0 32 32" id="icon" xmlns="http://www.w3.org/2000/svg"><defs><style>.cls-1{fill:none;}</style></defs><title>logo--youtube</title><path d="M29.41,9.26a3.5,3.5,0,0,0-2.47-2.47C24.76,6.2,16,6.2,16,6.2s-8.76,0-10.94.59A3.5,3.5,0,0,0,2.59,9.26,36.13,36.13,0,0,0,2,16a36.13,36.13,0,0,0,.59,6.74,3.5,3.5,0,0,0,2.47,2.47C7.24,25.8,16,25.8,16,25.8s8.76,0,10.94-.59a3.5,3.5,0,0,0,2.47-2.47A36.13,36.13,0,0,0,30,16,36.13,36.13,0,0,0,29.41,9.26ZM13.2,20.2V11.8L20.47,16Z"/><rect id="_Transparent_Rectangle_" data-name="&lt;Transparent Rectangle&gt;" class="cls-1" width="32" height="32"/></svg></a>
 					<a href="https://x.com/feas_wp/" target="_blank" title="Xへ移動" class="icon icon_tw"><svg id="fi_5968958" enable-background="new 0 0 1226.37 1226.37" viewBox="0 0 1226.37 1226.37" xmlns="http://www.w3.org/2000/svg"><path d="m727.348 519.284 446.727-519.284h-105.86l-387.893 450.887-309.809-450.887h-357.328l468.492 681.821-468.492 544.549h105.866l409.625-476.152 327.181 476.152h357.328l-485.863-707.086zm-144.998 168.544-47.468-67.894-377.686-540.24h162.604l304.797 435.991 47.468 67.894 396.2 566.721h-162.604l-323.311-462.446z"></path><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g></svg></a>
 					<a href="https://www.facebook.com/firstelementjp/" target="_blank" title="Facbookページへ移動" class="icon icon_fb"></a>
+					<a href="https://fe-advanced-search.com/contact/" target="_blank" title="メールフォームへ移動" class="icon icon_mail"></a>
 				</div>
 			</div>
 
@@ -106,7 +106,7 @@ class FE_AI_Search_Settings {
 				<a href="#tab-display" class="nav-tab"><?php esc_html_e( 'Display', 'fe-ai-search' ); ?></a>
 				<?php if ( $is_pro ) : ?>
 					<a href="#tab_security" class="nav-tab"><?php esc_html_e( 'Security', 'fe-ai-search-pro' ); ?></a>
-					<a href="#tab_hybrid" class="nav-tab"><?php esc_html_e( 'Hybrid Search', 'fe-ai-search-pro' ); ?></a>
+					<!-- <a href="#tab_hybrid" class="nav-tab"><?php //esc_html_e( 'Hybrid Search', 'fe-ai-search-pro' ); ?></a> -->
 				<?php endif; ?>
 				<a href="#tab-advanced" class="nav-tab"><?php esc_html_e( 'Advanced', 'fe-ai-search' ); ?></a>
 				<?php
@@ -1077,7 +1077,7 @@ class FE_AI_Search_Settings {
 		$defaults = [
 			'window_title'       => __( 'AI Search', 'fe-ai-search' ),
 			'greeting_message'   => __( 'Hello! Please ask me anything about the information on this site.', 'fe-ai-search' ),
-			'placeholder_text'   => __( 'Ask a question...', 'fe-ai-search' ),
+			'placeholder_text'   => __( 'Please enter a question...', 'fe-ai-search' ),
 			'submit_button_text' => __( 'Send', 'fe-ai-search' ),
 		];
 
@@ -1556,8 +1556,6 @@ class FE_AI_Search_Settings {
 		// over from the existing saved options.
 		$existing_options = get_option( 'fe_ai_search_settings', [] );
 
-		error_log( '---------- sanitize_existing_options ' . print_r( $existing_options, true ) );
-
 		$existing_sync = $existing_options['sync'] ?? [];
 		if ( is_array( $existing_sync ) ) {
 			if ( isset( $existing_sync['status'] ) && is_array( $existing_sync['status'] ) ) {
@@ -1679,6 +1677,9 @@ class FE_AI_Search_Settings {
 		$new_input['require_login']        = ! empty( $input['require_login'] );
 		$new_input['display_on_pc']        = ! empty( $input['display_on_pc'] );
 		$new_input['display_on_mobile']    = ! empty( $input['display_on_mobile'] );
+		// Login status visibility flags.
+		$new_input['show_to_logged_in_users'] = ! empty( $input['show_to_logged_in_users'] );
+		$new_input['show_to_guests']          = ! empty( $input['show_to_guests'] );
 		$new_input['fullscreen_page_id']   = absint( $input['fullscreen_page_id'] ?? 0 );
 
 		// Rules

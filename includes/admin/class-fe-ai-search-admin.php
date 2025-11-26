@@ -122,8 +122,8 @@ class FE_AI_Search_Admin {
 		);
 		add_submenu_page(
 			$parent_slug,
-			'Settings',
-			'Settings',
+			__( 'Settings', 'fe-ai-search' ),
+			__( 'Settings', 'fe-ai-search' ),
 			'manage_options',
 			$parent_slug,
 			[ FE_AI_Search_Settings::class, 'render_page' ]

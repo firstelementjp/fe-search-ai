@@ -86,6 +86,7 @@ class FE_AI_Search_Chat_UI {
 		$is_logged_in            = is_user_logged_in();
 		$show_to_logged_in_users = ! empty( $floating_options['show_to_logged_in_users'] );
 		$show_to_guests          = ! empty( $floating_options['show_to_guests'] );
+
 		if ( $is_logged_in && ! $show_to_logged_in_users ) {
 			return;
 		}
@@ -100,7 +101,7 @@ class FE_AI_Search_Chat_UI {
 		}
 
 		// Check display rules
-		$rules          = $floating_options['display_rules'] ?? [];
+		$rules          = $this->options['display']['floating']['display_rules'] ?? [];
 		$should_display = false;
 
 		// Optional: hide on 404 pages when configured via show_on_404 flag.
@@ -126,8 +127,16 @@ class FE_AI_Search_Chat_UI {
 			if ( is_search() && ! empty( $rules['show_on_search'] ) ) {
 				$should_display = true;
 			}
-			if ( is_singular() && ! empty( $rules['post_types'][ get_post_type() ] ) ) {
-				$should_display = true;
+			if ( is_singular() ) {
+				// First, honor per-post-type rules when defined.
+				$post_type = get_post_type();
+				if ( ! empty( $rules['post_types'][ $post_type ] ) ) {
+					$should_display = true;
+				} elseif ( ! empty( $rules['show_on_singular'] ) ) {
+					// Fallback: use the global "show_on_singular" flag when no
+					// explicit post type rule is configured.
+					$should_display = true;
+				}
 			}
 		}
 
@@ -177,13 +186,34 @@ class FE_AI_Search_Chat_UI {
 		$terms_page_id       = $links_options['terms_page_id'] ?? 0;
 		$privacy_page_id     = $links_options['privacy_page_id'] ?? 0;
 
+		// Ensure text fields fall back to defaults when empty or not set.
+		$window_title = trim( $text_options['window_title'] ?? '' );
+		if ( '' === $window_title ) {
+			$window_title = __( 'AI Search', 'fe-ai-search' );
+		}
+
+		$greeting_message = trim( $text_options['greeting_message'] ?? '' );
+		if ( '' === $greeting_message ) {
+			$greeting_message = __( 'Hello! Please ask me anything about the information on this site.', 'fe-ai-search' );
+		}
+
+		$placeholder_text = trim( $text_options['placeholder_text'] ?? '' );
+		if ( '' === $placeholder_text ) {
+			$placeholder_text = __( 'Please enter a question...', 'fe-ai-search' );
+		}
+
+		$submit_button_text = trim( $text_options['submit_button_text'] ?? '' );
+		if ( '' === $submit_button_text ) {
+			$submit_button_text = __( 'Submit', 'fe-ai-search' );
+		}
+
 		// --- 2. Build the $args array for passing to the filter ---
 		$args = [
 			'mode'                => $mode,
-			'window_title'        => $text_options['window_title'] ?? __( 'AI Search', 'fe-ai-search' ),
-			'greeting_message'    => $text_options['greeting_message'] ?? __( 'Hello! Please ask me anything about the information on this site.', 'fe-ai-search' ),
-			'placeholder_text'    => $text_options['placeholder_text'] ?? __( 'Please enter a question...', 'fe-ai-search' ),
-			'submit_button_text'  => $text_options['submit_button_text'] ?? __( 'Submit', 'fe-ai-search' ),
+			'window_title'        => $window_title,
+			'greeting_message'    => $greeting_message,
+			'placeholder_text'    => $placeholder_text,
+			'submit_button_text'  => $submit_button_text,
 			'send_on_shift_enter' => (bool) $send_on_shift_enter,
 			'terms_url'           => $terms_page_id ? get_permalink( $terms_page_id ) : '',
 			'privacy_url'         => $privacy_page_id ? get_permalink( $privacy_page_id ) : get_privacy_policy_url(),

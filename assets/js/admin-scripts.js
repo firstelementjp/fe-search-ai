@@ -460,6 +460,13 @@ document.addEventListener('DOMContentLoaded', () => {
 				});
 			}
 
+			// Remember the last active tab so that it can be restored after saving settings.
+			try {
+				window.localStorage.setItem('fe_ai_search_active_tab', targetId);
+			} catch (e) {
+				// Silently ignore storage errors.
+			}
+
 			if (history.pushState) {
 				history.pushState(null, '', targetId);
 			} else {
@@ -477,11 +484,28 @@ document.addEventListener('DOMContentLoaded', () => {
 		// On initial page load, activate the correct tab.
 		setTimeout(() => {
 			const hash = window.location.hash;
-			const initialTabAnchor = tabsWrapper.querySelector(`a[href = "${hash}"]`);
-			const initialTabId =
-				hash && initialTabAnchor
-					? hash
-					: tabsWrapper.querySelector('.nav-tab')?.getAttribute('href');
+			const initialTabAnchor = hash
+				? tabsWrapper.querySelector(`a[href = "${hash}"]`)
+				: null;
+			let initialTabId = null;
+			if (hash && initialTabAnchor) {
+				// 1) URL のハッシュが有効なら、それを優先
+				initialTabId = hash;
+			} else {
+				// 2) ハッシュが無ければ、localStorage に保存されたタブIDを試す
+				let storedTabId = null;
+				try {
+					storedTabId = window.localStorage.getItem('fe_ai_search_active_tab');
+				} catch (e) {
+					storedTabId = null;
+				}
+				if (storedTabId && tabsWrapper.querySelector(`a[href = "${storedTabId}"]`)) {
+					initialTabId = storedTabId;
+				} else {
+					// 3) それも無ければ、先頭のタブをフォールバックとして使用
+					initialTabId = tabsWrapper.querySelector('.nav-tab')?.getAttribute('href');
+				}
+			}
 			if (initialTabId) {
 				activateTab(initialTabId);
 			}

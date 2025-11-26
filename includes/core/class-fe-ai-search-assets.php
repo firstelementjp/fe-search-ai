@@ -55,12 +55,47 @@ class FE_AI_Search_Assets {
 		$status            = $license_data['status'] ?? 'inactive';
 		$products          = $license_data['data']['products'] ?? [];
 		$is_license_active = ( 'active' === $status && in_array( 'pro', $products, true ) );
-
-		$ip_limit_count = 100; // Default
-		if ( $is_license_active && class_exists( '\FEAISearch\Pro\Admin\FE_AI_Search_Pro_Settings' ) ) {
+		$pro_options       = [];
+		$ip_limit_count    = 50; // Default (per-IP, per-hour limit)
+		$privacy_config    = [
+			'enable_consent'  => false,
+			'consent_message' => '',
+		];
+		if ( class_exists( '\\FEAISearch\\Pro\\Admin\\FE_AI_Search_Pro_Settings' ) ) {
 			$pro_options        = get_option( 'fe_ai_search_pro_settings', [] );
 			$rate_limit_options = $pro_options['security']['rate_limit'] ?? [];
-			$ip_limit_count     = $rate_limit_options['ip_limit_count'] ?? 100;
+			$ip_limit_count     = $rate_limit_options['ip_limit_count'] ?? 50;
+		}
+
+		// Normalize the per-IP limit using the same filter as the streaming handler
+		// so that Free/Pro overrides and defaults are consistent across backend and frontend.
+		$default_limits    = [
+			'ip_limit_count'     => (int) $ip_limit_count,
+			'global_limit_count' => 1000,
+			'notify_threshold'   => 80,
+			'notify_email'       => get_option( 'admin_email' ),
+		];
+		$rate_limit_config = apply_filters( 'fe_ai_search_rate_limit_settings', $default_limits );
+		$rate_limit_config = wp_parse_args( $rate_limit_config, $default_limits );
+		$ip_limit_count    = (int) $rate_limit_config['ip_limit_count'];
+
+		if ( ! empty( $pro_options ) ) {
+			$privacy_options = $pro_options['privacy'] ?? [];
+			$enable_consent  = ! empty( $privacy_options['enable_consent'] );
+			$consent_tpl     = $privacy_options['consent_message'] ?? '';
+
+			if ( $enable_consent && ! empty( $consent_tpl ) ) {
+				$links           = $this->options['display']['links'] ?? [];
+				$terms_page_id   = $links['terms_page_id'] ?? 0;
+				$privacy_page_id = $links['privacy_page_id'] ?? 0;
+				$terms_url       = $terms_page_id ? get_permalink( $terms_page_id ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				$privacy_url     = $privacy_page_id ? get_permalink( $privacy_page_id ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				$consent_message = sprintf( $consent_tpl, esc_url( $terms_url ), esc_url( $privacy_url ) );
+				$privacy_config  = [
+					'enable_consent'  => true,
+					'consent_message' => wp_kses_post( $consent_message ),
+				];
+			}
 		}
 
 		if ( $enable_css ) {
@@ -91,19 +126,26 @@ class FE_AI_Search_Assets {
 		);
 
 		// Pass data to JavaScript.
+		$rate_limit_message = apply_filters(
+			'fe_ai_search_rate_limit_message',
+			__( '(You have reached the request limit. Please wait a while before trying again.)', 'fe-ai-search' )
+		);
+
 		wp_localize_script(
 			'fe-ai-search-frontend-scripts',
 			'fe_ai_search_ajax_obj',
 			[
-				'ajax_url'          => admin_url( 'admin-ajax.php' ),
-				'rest_url'          => rest_url( 'fe-ai-search/v1/stream' ),
-				'rest_nonce'        => wp_create_nonce( 'wp_rest' ),
-				'nonce'             => wp_create_nonce( 'fe_ai_search_ajax_nonce' ),
-				'animation_speed'   => (int) $animation_speed,
-				'is_pro_active'     => class_exists( '\FEAISearch\Pro\Admin\FE_AI_Search_Pro_Settings' ),
-				'is_license_active' => $is_license_active,
-				'ip_limit_count'    => (int) $ip_limit_count,
-				'send_mode'         => $send_mode,
+				'ajax_url'           => admin_url( 'admin-ajax.php' ),
+				'rest_url'           => rest_url( 'fe-ai-search/v1/stream' ),
+				'rest_nonce'         => wp_create_nonce( 'wp_rest' ),
+				'nonce'              => wp_create_nonce( 'fe_ai_search_ajax_nonce' ),
+				'animation_speed'    => (int) $animation_speed,
+				'is_pro_active'      => class_exists( '\\FEAISearch\\Pro\\Admin\\FE_AI_Search_Pro_Settings' ),
+				'is_license_active'  => $is_license_active,
+				'ip_limit_count'     => (int) $ip_limit_count,
+				'send_mode'          => $send_mode,
+				'privacy'            => $privacy_config,
+				'rate_limit_message' => $rate_limit_message,
 			]
 		);
 	}

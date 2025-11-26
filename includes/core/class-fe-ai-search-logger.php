@@ -55,6 +55,15 @@ class FE_AI_Search_Logger {
 			return;
 		}
 
+		// If a session identifier is provided via HTTP header, attach it to the log data
+		// so that all chat-related system logs can be correlated by session.
+		if ( ! isset( $data['session_id'] ) && ! empty( $_SERVER['HTTP_X_FE_AI_SESSION'] ) ) {
+			$session_id = sanitize_key( wp_unslash( $_SERVER['HTTP_X_FE_AI_SESSION'] ) );
+			if ( ! empty( $session_id ) ) {
+				$data['session_id'] = $session_id;
+			}
+		}
+
 		$wpdb->insert(
 			$table_name,
 			[

@@ -72,6 +72,8 @@ function initFEAIChat() {
 	let renderInterval;
 	let currentAiMessageElement = null;
 	let fullResponse = '';
+	const privacyConfig = fe_ai_search_ajax_obj.privacy || {};
+	const consentStorageKey = 'fe_ai_search_user_consented';
 
 	// --- 3. Initialize Settings (send mode) ---
 	// The chat window uses the site-wide default send_mode as the
@@ -91,10 +93,83 @@ function initFEAIChat() {
 
 	// --- 4. Event Listeners ---
 
+	// --- 4-a. Privacy Consent Handling ---
+
+	function hasUserConsented() {
+		try {
+			return localStorage.getItem(consentStorageKey) === '1';
+		} catch (e) {
+			return false;
+		}
+	}
+
+	function setUserConsented() {
+		try {
+			localStorage.setItem(consentStorageKey, '1');
+		} catch (e) {
+			// Silently ignore storage errors.
+		}
+	}
+
+	function ensureConsentUI() {
+		if (!privacyConfig.enable_consent || hasUserConsented()) {
+			return;
+		}
+
+		// Lock the form until consent is given.
+		disableForm();
+
+		// Avoid duplicating the consent UI.
+		if (container.querySelector('.fe-ai-search-consent')) {
+			return;
+		}
+
+		const consentWrapper = document.createElement('div');
+		consentWrapper.className = 'fe-ai-search-consent';
+		consentWrapper.innerHTML = `
+			<div class="fe-ai-search-consent-message">
+				${privacyConfig.consent_message || ''}
+			</div>
+			<label class="fe-ai-search-consent-check">
+				<input type="checkbox" class="fe-ai-search-consent-checkbox">
+				<span>${__('I agree to the Terms of Service and Privacy Policy.', 'fe-ai-search')}</span>
+			</label>
+			<button type="button" class="fe-ai-search-consent-accept">
+				${__('Start chat', 'fe-ai-search')}
+			</button>
+		`;
+
+		// Insert consent UI as an overlay inside the chat window.
+		windowEl.appendChild(consentWrapper);
+
+		const checkbox = consentWrapper.querySelector('.fe-ai-search-consent-checkbox');
+		const acceptBtn = consentWrapper.querySelector('.fe-ai-search-consent-accept');
+		acceptBtn.addEventListener('click', () => {
+			if (!checkbox.checked) {
+				// Simple inline warning.
+				checkbox.focus();
+				return;
+			}
+			setUserConsented();
+			try {
+				wpPost('fe_ai_search_log_consent', {
+					nonce: fe_ai_search_ajax_obj.nonce,
+					session_id: sessionId,
+					source: 'chat_overlay',
+				});
+			} catch (e) {
+				// Ignore logging failures to avoid impacting the UI.
+			}
+			consentWrapper.remove();
+			enableForm();
+		});
+	}
+
 	// Toggle chat window
 	bubble.addEventListener('click', () => {
 		windowEl.classList.remove('hidden');
 		bubble.classList.add('hidden');
+		ensureConsentUI();
 	});
 
 	closeBtn.addEventListener('click', () => {
@@ -174,6 +249,12 @@ function initFEAIChat() {
 	form.addEventListener('submit', function (e) {
 		e.preventDefault();
 
+		// If privacy consent is required but not yet given, block submission.
+		if (privacyConfig.enable_consent && !hasUserConsented()) {
+			ensureConsentUI();
+			return;
+		}
+
 		// Check session message limit
 		const SESSION_LIMIT = fe_ai_search_ajax_obj.ip_limit_count;
 		if (SESSION_LIMIT > 0 && sessionHistory.length > SESSION_LIMIT * 2) {
@@ -216,7 +297,10 @@ function initFEAIChat() {
 
 		fetch(fe_ai_search_ajax_obj.rest_url, {
 			method: 'POST',
-			headers: { 'X-WP-Nonce': fe_ai_search_ajax_obj.rest_nonce },
+			headers: {
+				'X-WP-Nonce': fe_ai_search_ajax_obj.rest_nonce,
+				'X-FE-AI-Session': sessionId,
+			},
 			body: new URLSearchParams({
 				question,
 				history: JSON.stringify(recentHistory),
@@ -224,7 +308,13 @@ function initFEAIChat() {
 		})
 			.then(response => {
 				if (!response.ok) {
-					throw new Error('Network response was not ok.');
+					// Handle HTTP errors explicitly so the UI is not stuck.
+					if (response.status === 429) {
+						handleError(new Error('rate_limit'));
+					} else {
+						handleError(new Error('network_error'));
+					}
+					return;
 				}
 				const reader = response.body.getReader();
 				const decoder = new TextDecoder();
@@ -250,30 +340,29 @@ function initFEAIChat() {
 									);
 
 									// Log conversation and get the log ID back
-									logConversation(question, fullResponse, contextFound).then(
-										logId => {
+									logConversation(question, fullResponse, contextFound)
+										.then(logId => {
 											currentLogId = logId;
-											if (
-												fe_ai_search_ajax_obj.is_license_active &&
-												currentLogId
-											) {
+											if (currentLogId) {
 												const feedbackWrapper =
 													document.createElement('div');
 												feedbackWrapper.className = 'fe-ai-search-feedback';
 												feedbackWrapper.innerHTML = `
-										<button class="feedback-btn good" data-log-id="${currentLogId}" data-rating="1" title="Good">
-											<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none"/><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
-										</button>
-										<button class="feedback-btn bad" data-log-id="${currentLogId}" data-rating="-1" title="Bad">
-											<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none"/><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
-										</button>
-									`;
+											<button class="feedback-btn good" data-log-id="${currentLogId}" data-rating="1" title="Good">
+												<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none"/><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+											</button>
+											<button class="feedback-btn bad" data-log-id="${currentLogId}" data-rating="-1" title="Bad">
+												<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none"/><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
+											</button>
+										`;
 												aiMessageWrapperForFeedback.appendChild(
 													feedbackWrapper
 												);
 											}
-										}
-									);
+										})
+										.catch(error => {
+											// Swallow logging errors to avoid impacting the chat UI.
+										});
 
 									enableForm();
 								});
@@ -306,13 +395,15 @@ function initFEAIChat() {
 							processStream();
 						})
 						.catch(error => {
-							// Silently ignore stream errors.
+							// Handle stream errors gracefully.
+							handleError(error);
 						});
 				}
 				processStream();
 			})
 			.catch(error => {
-				// Silently ignore fetch errors.
+				// Handle fetch errors gracefully.
+				handleError(error);
 			});
 	});
 
@@ -342,7 +433,7 @@ function initFEAIChat() {
 			});
 			const thanksMessage = document.createElement('span');
 			thanksMessage.className = 'fe-ai-search-feedback-thanks';
-			thanksMessage.textContent = 'Thank you for your feedback!';
+			thanksMessage.textContent = __('Thank you for your feedback!', 'fe-ai-search');
 			feedbackWrapper.replaceWith(thanksMessage);
 		}
 	});
@@ -372,15 +463,14 @@ function initFEAIChat() {
 	 * @return {Promise<number|null>} The ID of the newly created log entry.
 	 */
 	async function logConversation(question, answer, contextFound) {
-		if (!fe_ai_search_ajax_obj.is_license_active) {
-			return null;
-		}
+		const questionLength = typeof question === 'string' ? question.length : 0;
 
 		try {
 			const response = await wpPost('fe_ai_search_log_query', {
 				nonce: fe_ai_search_ajax_obj.nonce,
 				session_id: sessionId,
-				question,
+				question: '',
+				question_length: questionLength,
 				answer,
 				context_found: contextFound ? '1' : '0',
 			});
@@ -463,8 +553,21 @@ function initFEAIChat() {
 	function handleError(error) {
 		clearInterval(renderInterval);
 		if (currentAiMessageElement) {
-			currentAiMessageElement.innerHTML =
-				'<p>' + __('An error occurred. Please try again.', 'fe-ai-search') + '</p>';
+			let message = __('An error occurred. Please try again.', 'fe-ai-search');
+			if (error && error.message === 'rate_limit') {
+				if (
+					typeof fe_ai_search_ajax_obj !== 'undefined' &&
+					fe_ai_search_ajax_obj.rate_limit_message
+				) {
+					message = fe_ai_search_ajax_obj.rate_limit_message;
+				} else {
+					message = __(
+						'(You have reached the request limit. Please wait a while before trying again.)',
+						'fe-ai-search'
+					);
+				}
+			}
+			currentAiMessageElement.innerHTML = '<p>' + message + '</p>';
 		}
 		enableForm();
 	}

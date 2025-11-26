@@ -56,6 +56,8 @@ class FE_AI_Search_Chat_Handler {
 		add_action( 'rest_api_init', [ $this, 'register_endpoints' ] );
 		add_action( 'wp_ajax_nopriv_fe_ai_search_log_query', [ $this, 'ajax_log_query' ] );
 		add_action( 'wp_ajax_fe_ai_search_log_query', [ $this, 'ajax_log_query' ] );
+		add_action( 'wp_ajax_nopriv_fe_ai_search_log_consent', [ $this, 'ajax_log_consent' ] );
+		add_action( 'wp_ajax_fe_ai_search_log_consent', [ $this, 'ajax_log_consent' ] );
 		add_action( 'wp_ajax_fe_ai_search_test_api_key', [ $this, 'ajax_test_api_key' ] );
 		add_action( 'wp_ajax_fe_ai_search_manage_license', [ $this, 'ajax_manage_license' ] );
 		add_filter( 'fe_ai_search_filter_user_question', [ $this, 'filter_personal_data' ], 10 );
@@ -93,7 +95,7 @@ class FE_AI_Search_Chat_Handler {
 	 */
 	public function stream_handler( \WP_REST_Request $request ) {
 		$default_limits = [
-			'ip_limit_count'     => 100,  // 100 requests per hour per IP
+			'ip_limit_count'     => 50,  // 50 requests per hour per IP (default)
 			'global_limit_count' => 1000, // 1000 requests per day for the whole site
 			'notify_threshold'   => 80,   // Notify at 80%
 			'notify_email'       => get_option( 'admin_email' ), // Default email
@@ -1003,7 +1005,12 @@ Instead, answer based only on the remaining visible text.
 	 * @hook     wp_ajax_nopriv_feas_ai_log_query
 	 */
 	public function ajax_log_query() {
-		if ( ! class_exists( 'FEAISearch\Pro\Admin\FE_AI_Search_Pro_Settings' ) || ! get_option( 'fe_ai_search_enable_logging' ) ) {
+		// Use the same "Debug Mode" flag as the system logs (stored in fe_ai_search_settings[advanced][debug_mode]).
+		$settings       = get_option( 'fe_ai_search_settings', [] );
+		$advanced       = $settings['advanced'] ?? [];
+		$debug_mode_on  = ! empty( $advanced['debug_mode'] );
+		$is_pro_active  = class_exists( 'FEAISearch\Pro\Admin\FE_AI_Search_Pro_Settings' );
+		if ( ! $is_pro_active || ! $debug_mode_on ) {
 			wp_send_json_success( [ 'log_id' => 0 ] );
 			return;
 		}
@@ -1021,14 +1028,16 @@ Instead, answer based only on the remaining visible text.
 		$answer        = $this->filter_personal_data( $answer );
 		$session_id    = isset( $_POST['session_id'] ) ? sanitize_key( $_POST['session_id'] ) : '';
 		$context_found = isset( $_POST['context_found'] ) ? (bool) $_POST['context_found'] : false;
+		$question_len  = isset( $_POST['question_length'] ) ? intval( $_POST['question_length'] ) : 0;
 		$log_id        = 0;
 
-		if ( ! empty( $question ) && ! empty( $session_id ) ) {
+		// 質問テキストはプライバシー保護のため保存しない。セッションIDと回答があればログを作成する。
+		if ( ! empty( $session_id ) && ! empty( $answer ) ) {
 			$wpdb->insert(
 				$logs_table,
 				[
 					'session_id'    => $session_id,
-					'question'      => $question,
+					'question'      => sprintf( 'User question is not logged. (length: %d chars)', max( 0, $question_len ) ),
 					'answer'        => $answer,
 					'context_found' => $context_found,
 					'created_at'    => current_time( 'mysql' ),
@@ -1038,6 +1047,33 @@ Instead, answer based only on the remaining visible text.
 		}
 
 		wp_send_json_success( [ 'log_id' => $log_id ] );
+	}
+
+	/**
+	 * AJAX handler: Logs the user's privacy consent decision to the system logs.
+
+	 * Records a simple INFO-level event in the {prefix}fe_ai_search_system_logs table
+	 * when the user accepts the privacy consent overlay in the frontend chat UI.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public function ajax_log_consent() {
+		check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
+
+		$session_id = isset( $_POST['session_id'] ) ? sanitize_key( wp_unslash( $_POST['session_id'] ) ) : '';
+		$source     = isset( $_POST['source'] ) ? sanitize_text_field( wp_unslash( $_POST['source'] ) ) : 'chat_overlay';
+
+		\FEAISearch\Core\FE_AI_Search_Logger::log(
+			'INFO',
+			'User accepted privacy consent for AI chat.',
+			[
+				'session_id' => $session_id,
+				'source'     => $source,
+			]
+		);
+
+		wp_send_json_success();
 	}
 
 	/**

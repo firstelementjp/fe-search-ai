@@ -71,8 +71,7 @@ class FE_AI_Search_License_Settings {
 		$status       = $license_data['status'] ?? 'inactive';
 		$products     = $license_data['data']['products'] ?? [];
 
-		$this->is_license_active = ( 'active' === $status && in_array( 'pro', $products, true ) );
-		$this->is_license_active = true; // -------------------------- DEBUG ----------------------------------
+		$this->is_license_active = ( 'active' === $status );
 
 		if ( ! $this->is_license_active ) {
 			$this->license_alert_icon = '<a href="' . admin_url( 'admin.php' )
