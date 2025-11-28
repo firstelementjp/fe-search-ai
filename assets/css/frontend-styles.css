@@ -17,7 +17,7 @@
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
-	background: #fff;
+	background: linear-gradient(25deg, var(--feais-bg-top, var(--feais-bg)) 0%, var(--feais-bg-bottom, var(--feais-bg)) 55%);
 	position: relative; /* For consent overlay positioning */
 }
 
@@ -41,12 +41,12 @@
 	justify-content: center;
 	width: 60px;
 	height: 60px;
-	background-color: #0073aa;
-	color: white;
+	background-color: var(--feais-accent);
+	color: var(--feais-text);
 	border-radius: 50%;
 	box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 	cursor: pointer;
-	background-color: var(--fe-ai-search-key-color);
+	background-color: var(--feais-accent);
 }
 .fe-ai-search-mode-float #fe_ai_search_chat_bubble.hidden {
 	display: none;
@@ -68,12 +68,12 @@
 	justify-content: flex-end;
 	align-items: center;
 	padding: 5px;
-	border-left: 1px solid #dddddd;
+	border-left: 1px solid var(--feais-border);
 }
 #fe_ai_search_privacy_notice {
 	font-size: 11px;
 	text-align: center;
-	color: #777;
+	color: var(--feais-text);
 	text-align: left;
 	padding: 5px 10px;
 	display: flex;
@@ -89,8 +89,9 @@
 	border: none;
 	padding: 5px;
 	cursor: pointer;
+	color: var(--feais-text);
 	opacity: 0.2;
-	transition: opacity 0.2s;
+	/* transition: opacity 0.2s; */
 }
 #fe_ai_search_options_toggle:hover {
 	opacity: 1;
@@ -103,8 +104,8 @@
 	position: absolute;
 	bottom: 100%;
 	right: 3px;
-	background: #fff;
-	border: 1px solid #ccc;
+	background: var(--feais-bg);
+	border: 1px solid var(--feais-border);
 	border-radius: 8px;
 	padding: 10px;
 	margin-bottom: 5px;
@@ -117,6 +118,7 @@
 #fe_ai_search_options_menu label {
 	display: flex;
 	flex-direction: row;
+	color: var(--feais-text);
 }
 #fe_ai_search_options_menu label [type=checkbox] {
 	margin: 0 0.5em 0 0;
@@ -136,7 +138,7 @@
 }
 
 .feedback-btn:hover {
-	color: #333;
+	color: var(--feais-text);
 }
 
 .feedback-btn:disabled {
@@ -165,7 +167,7 @@
 .fe-ai-search-mode-embed #fe_ai_search_chat_window {
 	width: 100%;
 	height: 100%;
-	border: 1px solid #ddd;
+	border: 1px solid var(--feais-border);
 	border-radius: 8px;
 	box-shadow: none;
 }
@@ -230,14 +232,14 @@
 	justify-content: space-between;
 	align-items: center;
 	padding: 10px 15px;
-	background: #f0f0f0;
-	border-bottom: 1px solid #ddd;
+	/* background: var(--feais-bg); */
+	border-bottom: 1px solid var(--feais-border);
 }
 
 #fe_ai_search_chat_header h3 {
 	margin: 0;
 	font-size: 16px;
-	color: #333;
+	color: var(--feais-text);
 }
 
 .fe-ai-search-header-buttons {
@@ -252,14 +254,14 @@
 	margin-left: 10px;
 	background: none;
 	border: none;
-	color: #555;
+	color: var(--feais-text);
 	font-size: 24px;
 	line-height: 1;
 	cursor: pointer;
 }
 
 .fe-ai-search-header-icon:hover {
-	color: #000;
+	color: var(--feais-text);
 }
 
 #fe_ai_search_chat_home_link { display: none; margin-right: 10px; }
@@ -280,7 +282,7 @@
 #fe_ai_search_chat_messages {
 	flex-grow: 1;
 	padding: 15px;
-	background: #fff;
+	/* background: var(--feais-bg); */
 	overflow-y: auto;
 	display: flex;
 	flex-direction: column;
@@ -309,8 +311,8 @@
 .fe-ai-search-message-ai ul,
 .fe-ai-search-message-ai ol,
 .fe-ai-search-message-ai h3 {
-	background: #e9e9eb;
-	color: #000;
+	/* background: #e9e9eb; */
+	color: var(--feais-text);
 	border-top-left-radius: 4px;
 }
 .fe-ai-search-message-ai p::before {
@@ -341,6 +343,9 @@
 	font-size: 1.1em;
 	font-weight: 600;
 }
+#fe_ai_search_send_mode_toggle {
+	width: fit-content;
+}
 
 /* ==========================================================================
 	Chat Message Bubbles
@@ -350,17 +355,18 @@
 	position: relative;
 	padding: 10px 15px;
 	border-radius: 12px;
-	max-width: 90%;
+	/* max-width: 90%; */
 	word-wrap: break-word;
+	width: fit-content;
 }
 
 .fe-ai-search-message-ai p {
-	background: #f0f0f1;
-	color: #333;
+	/* background: #f0f0f1; */
+	color: var(--feais-text);
 	align-self: flex-start;
 }
 
-.fe-ai-search-message-ai p::after {
+/* .fe-ai-search-message-ai p::after {
 	content: '';
 	position: absolute;
 	top: 15px;
@@ -370,11 +376,11 @@
 	border: 8px solid transparent;
 	border-right-color: #f0f0f1;
 	border-left: 0;
-}
+} */
 
 .fe-ai-search-message-user p {
-	background: #0073aa;
-	color: #fff;
+	background: var(--feais-user-bubble-bg);
+	color: var(--feais-text);
 	align-self: flex-end;
 }
 
@@ -386,7 +392,7 @@
 	width: 0;
 	height: 0;
 	border: 8px solid transparent;
-	border-left-color: #0073aa;
+	border-left-color: var(--feais-user-bubble-bg);
 	border-right: 0;
 }
 
@@ -453,8 +459,8 @@
 	========================================================================== */
 
 #fe_ai_search_chat_footer {
-	border-top: 1px solid #ddd;
-	background: #f9f9f9;
+	border-top: 1px solid var(--feais-border);
+	/* background: var(--feais-bg); */
 }
 #fe_ai_search_chat_form {
 	display: flex;
@@ -464,20 +470,27 @@
 #fe_ai_search_chat_input {
 	flex-grow: 1;
 	padding: 8px 12px;
-	border: 1px solid #ccc;
-	border-radius: 18px;
+	border: none;
+	border-radius: 12px;
 	margin: 0;
+	background: var(--feais-input-bg);
+	color: var(--feais-text);
+	caret-color: var(--feais-text);
+	box-shadow: none;
+}
+#fe_ai_search_chat_input::placeholder {
+	color: var(--feais-text);
+	opacity: 0.7;
 }
 #fe_ai_search_chat_form button {
 	opacity: 0.7;
 	padding: 8px 15px;
-	background: #0073aa;
-	color: white;
+	background: linear-gradient(25deg, var(--feais-accent-top, var(--feais-accent)) 0%, var(--feais-accent-bottom, var(--feais-accent)) 55%);
+	color: var(--feais-text);
 	border: none;
 	border-radius: 18px;
 	white-space: nowrap;
 	cursor: pointer;
-	background: var(--fe-ai-search-key-color);
 }
 #fe_ai_search_chat_form button:hover {
 	opacity: 1;
@@ -490,7 +503,7 @@
 	display: flex;
 	flex-direction: row;
 	justify-content: space-between;
-	border-top: 1px solid #dfdfdf;
+	border-top: 1px solid var(--feais-border);
 }
 
 /* ==========================================================================
@@ -503,7 +516,7 @@
 	height: 20px;
 	border: 3px solid rgba(0, 0, 0, 0.1);
 	border-radius: 50%;
-	border-top-color: #333;
+	border-top-color: var(--feais-text);
 	animation: spin 1s ease-in-out infinite;
 	margin: 5px;
 }

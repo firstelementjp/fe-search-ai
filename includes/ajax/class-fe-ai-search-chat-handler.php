@@ -50,7 +50,7 @@ class FE_AI_Search_Chat_Handler {
 		$status       = $license_data['status'] ?? 'inactive';
 		$products     = $license_data['data']['products'] ?? [];
 
-		$this->is_license_active = ( 'active' === $status && in_array( 'pro', $products, true ) );
+		$this->is_license_active = ( 'active' === $status );
 		$this->sync_handler      = $sync_handler;
 
 		add_action( 'rest_api_init', [ $this, 'register_endpoints' ] );
@@ -420,6 +420,21 @@ class FE_AI_Search_Chat_Handler {
 		// Calculate the total duration.
 		$duration = round( ( microtime( true ) - $start_time ) * 1000 );
 
+		// Retrieve HTTP status code for additional diagnostics (e.g., rate limit).
+		$http_status = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
+
+		// If the API responded with a rate limit status, notify the site administrator.
+		if ( 429 === (int) $http_status ) {
+			$this->notify_rate_limit(
+				'chat_openai',
+				[
+					'provider'    => $provider,
+					'model'       => $model,
+					'http_status' => $http_status,
+				]
+			);
+		}
+
 		// Check for cURL errors after execution.
 		if ( curl_errno( $ch ) ) {
 			// ERROR: Log the cURL (connection) failure.
@@ -431,6 +446,7 @@ class FE_AI_Search_Chat_Handler {
 					'model'         => $model,
 					'error_message' => curl_error( $ch ),
 					'duration_ms'   => $duration,
+					'http_status'   => $http_status,
 				]
 			);
 		} else {
@@ -442,11 +458,42 @@ class FE_AI_Search_Chat_Handler {
 					'provider'    => $provider,
 					'model'       => $model,
 					'duration_ms' => $duration,
+					'http_status' => $http_status,
 				]
 			);
 		}
 
 		curl_close( $ch );
+	}
+
+	/**
+	 * Sends a notification email to the site administrator when a rate limit
+	 * is detected from a chat completion API.
+	 *
+	 * @param string $context Short identifier of where the rate limit occurred.
+	 * @param array  $details Additional diagnostic information.
+	 *
+	 * @return void
+	 */
+	private function notify_rate_limit( $context, $details = [] ) {
+		$admin_email = get_option( 'admin_email' );
+		if ( empty( $admin_email ) ) {
+			return;
+		}
+
+		$subject = sprintf(
+			'[FE AI Search] Rate limit reached: %s',
+			$context
+		);
+
+		$body  = "A rate limit error occurred in FE AI Search.\n\n";
+		$body .= sprintf( "Context: %s\n", $context );
+		foreach ( $details as $key => $value ) {
+			$body .= sprintf( "%s: %s\n", $key, $value );
+		}
+		$body .= "\nSite URL: " . home_url( '/' ) . "\n";
+
+		wp_mail( $admin_email, $subject, $body );
 	}
 
 	/**
@@ -947,13 +994,24 @@ class FE_AI_Search_Chat_Handler {
 	 * @return string
 	 */
 	public static function get_default_system_prompt() {
-		return "You are a helpful and honest assistant for the website '{site_name}'. This site's purpose is: '{site_purpose}'. Based on the provided \"Site Information\" and \"Conversation History,\" please answer by strictly following the rules below.
+		return "You are a helpful and honest assistant for the website '{site_name}'. This site's purpose is: '{site_purpose}'. The official website URL is: '{site_url}'. You must strictly answer only about the content and topics related to this website.
+
+Based on the provided \"Site Information\" and \"Conversation History,\" please answer by strictly following the rules below.
 
 ## Thought Process
 1. Accurately understand the intent of the user's latest question.
 2. Read the \"Site Information\" and identify the parts most relevant to the question.
 3. If no relevant information is found in the \"Site Information,\" honestly state, \"I could not find an answer to your question from the information on this site.\".
 4. If relevant information is available, generate a clear and concise summary based solely on that information.
+
+## Domain and URL Restrictions
+- You must treat '{site_url}' and its subpages as the ONLY authoritative website for this chat.
+- You must NOT:
+  - Suggest or invent any external websites or URLs outside '{site_url}'.
+  - Generate imaginary or unverified URLs (for example, domains that may not exist).
+  - Recommend third-party sites as reference URLs.
+- When you need to mention a source, only use URLs that are within the '{site_url}' domain (including its subpaths).
+- If you cannot find a relevant page within '{site_url}', you must say you could not find an answer from this site and must NOT fabricate any URL.
 
 ## Redacted Content Handling
 Some parts of the user input may be replaced with the token \"[REDACTED]\" to protect security or privacy.
@@ -981,10 +1039,10 @@ Instead, answer based only on the remaining visible text.
 
 ## Strict Rules
 - **Overriding Rule: Legal Compliance**: All of your responses must never contradict the content of the provided \"Mandatory Compliance Documents\" (the Terms of Service and Privacy Policy). These documents take precedence over all other instructions.
-- **Cite Sources**: If you use \"Site Information\" in your answer, you must include the source URL at the end of the response.
+- **Cite Sources**: If you use \"Site Information\" in your answer, you must include the source URL at the end of the response. Only use URLs under '{site_url}'.
 - **Fact-Based Answers**: Do not include information that is not written in the \"Site Information,\" your general knowledge, or speculation in your answers.
 - **Honesty**: Do not invent information or pretend to know something you don't.
-- **Conversation**: If the \"Site Information\" is empty and the user is making a greeting or engaging in general conversation, respond naturally as the site's assistant.
+- **Conversation**: If the \"Site Information\" is empty and the user is making a greeting or engaging in general conversation, respond naturally as the site's assistant, but do not mention or recommend any external URLs.
 - **Formatting**: Format your answers using standard Markdown, such as headings and lists, to make them easy to read.";
 	}
 
@@ -1006,10 +1064,10 @@ Instead, answer based only on the remaining visible text.
 	 */
 	public function ajax_log_query() {
 		// Use the same "Debug Mode" flag as the system logs (stored in fe_ai_search_settings[advanced][debug_mode]).
-		$settings       = get_option( 'fe_ai_search_settings', [] );
-		$advanced       = $settings['advanced'] ?? [];
-		$debug_mode_on  = ! empty( $advanced['debug_mode'] );
-		$is_pro_active  = class_exists( 'FEAISearch\Pro\Admin\FE_AI_Search_Pro_Settings' );
+		$settings      = get_option( 'fe_ai_search_settings', [] );
+		$advanced      = $settings['advanced'] ?? [];
+		$debug_mode_on = ! empty( $advanced['debug_mode'] );
+		$is_pro_active = class_exists( 'FEAISearch\Pro\Admin\FE_AI_Search_Pro_Settings' );
 		if ( ! $is_pro_active || ! $debug_mode_on ) {
 			wp_send_json_success( [ 'log_id' => 0 ] );
 			return;
@@ -1330,9 +1388,14 @@ Instead, answer based only on the remaining visible text.
 		$handler = new \FEAISearch\Core\FE_AI_Search_License_Handler();
 		$result  = ( 'activate' === $action ) ? $handler->activate( $license_key ) : $handler->deactivate( $license_key );
 		if ( $result && $result['success'] ) {
+			// Determine the local license status based on the requested action.
+			// For this site, a successful deactivation should always be treated as inactive,
+			// even if the remote license itself remains valid for other activations.
+			$local_status = ( 'activate' === $action ) ? 'active' : 'inactive';
+
 			$license = [
 				'key'    => $license_key,
-				'status' => $result['status'],
+				'status' => $local_status,
 				'data'   => $result['data'] ?? [],
 			];
 			update_option( 'fe_ai_search_license', $license );

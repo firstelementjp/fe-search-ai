@@ -69,7 +69,7 @@ class FE_AI_Search_License_Handler {
 		// Call the vendor's proxy API instead of the LMFWC REST API directly so that
 		// sensitive consumer keys remain on the server side only.
 		if ( ! defined( 'FE_AI_SEARCH_LICENSE_API_URL' ) || empty( FE_AI_SEARCH_LICENSE_API_URL ) ) {
-			return [ 'success' => false, 'message' => __( 'The license API endpoint is not configured.', 'fe-ai-search' ) ];
+			return [ 'success' => false, 'message' => __( 'FE Search AI Pro is not installed or activated, so the license management feature is not available.', 'fe-ai-search' ) ];
 		}
 
 		$response = wp_remote_post(

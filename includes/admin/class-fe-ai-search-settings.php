@@ -51,7 +51,7 @@ class FE_AI_Search_Settings {
 
 		$this->is_license_active = ( 'active' === $status );
 
-		if ( class_exists( '\FEAISearch\Pro\Admin\FE_AI_Search_Pro_Settings' ) && ! $this->is_license_active ) {
+		if ( class_exists( '\\FEAISearch\\Pro\\Admin\\FE_AI_Search_Pro_Settings' ) && ! $this->is_license_active ) {
 			$this->license_alert_icon = '<a href="' . admin_url( 'admin.php' )
 			. '?page=fe-ai-search#tab-license">'
 			. '<span class="dashicons dashicons-warning"></span></a>';
@@ -74,41 +74,41 @@ class FE_AI_Search_Settings {
 		<div class="wrap">
 			<div id="feas-head">
 				<div id="feas-head-upper">
-					<h1>FE AI Search</h1>
+					<h1>FE Search <span>AI</span></h1>
 					<a href="https://www.firstelement.co.jp/" id="feas-logo" target="_blank" title="開発会社HPへ移動"><img src="<?php echo plugin_dir_url( FE_AI_SEARCH_PLUGIN_FILE ); ?>/assets/images/logo-feas-white-shadow-s@2x-min.png" width="106" height="27"></a>
 				</div>
 				<div id="feas-version">version <?php echo FE_AI_SEARCH_VERSION; ?></div>
 				<div id="feas-support">
-					<a href="https://fe-advanced-search.com/manual/" target="_blank" title="使用説明書へ移動">使用説明書</a>
-					<a href="https://fe-advanced-search.com/support/forum/how-to-and-troubleshooting/" target="_blank" title="フォーラムへ移動">フォーラム </a>
+					<a href="https://fe-search.com/ai/manual/" target="_blank" title="使用説明書へ移動">使用説明書</a>
+					<a href="https://fe-search.com/ai/support/forum/" target="_blank" title="フォーラムへ移動">フォーラム </a>
 					<a href="https://www.youtube.com/@firstelementjp" target="_blank" title="YouTubeへ移動" class="icon icon_yt"><svg width="32px" height="32px" viewBox="0 0 32 32" id="icon" xmlns="http://www.w3.org/2000/svg"><defs><style>.cls-1{fill:none;}</style></defs><title>logo--youtube</title><path d="M29.41,9.26a3.5,3.5,0,0,0-2.47-2.47C24.76,6.2,16,6.2,16,6.2s-8.76,0-10.94.59A3.5,3.5,0,0,0,2.59,9.26,36.13,36.13,0,0,0,2,16a36.13,36.13,0,0,0,.59,6.74,3.5,3.5,0,0,0,2.47,2.47C7.24,25.8,16,25.8,16,25.8s8.76,0,10.94-.59a3.5,3.5,0,0,0,2.47-2.47A36.13,36.13,0,0,0,30,16,36.13,36.13,0,0,0,29.41,9.26ZM13.2,20.2V11.8L20.47,16Z"/><rect id="_Transparent_Rectangle_" data-name="&lt;Transparent Rectangle&gt;" class="cls-1" width="32" height="32"/></svg></a>
 					<a href="https://x.com/feas_wp/" target="_blank" title="Xへ移動" class="icon icon_tw"><svg id="fi_5968958" enable-background="new 0 0 1226.37 1226.37" viewBox="0 0 1226.37 1226.37" xmlns="http://www.w3.org/2000/svg"><path d="m727.348 519.284 446.727-519.284h-105.86l-387.893 450.887-309.809-450.887h-357.328l468.492 681.821-468.492 544.549h105.866l409.625-476.152 327.181 476.152h357.328l-485.863-707.086zm-144.998 168.544-47.468-67.894-377.686-540.24h162.604l304.797 435.991 47.468 67.894 396.2 566.721h-162.604l-323.311-462.446z"></path><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g></svg></a>
 					<a href="https://www.facebook.com/firstelementjp/" target="_blank" title="Facbookページへ移動" class="icon icon_fb"></a>
-					<a href="https://fe-advanced-search.com/contact/" target="_blank" title="メールフォームへ移動" class="icon icon_mail"></a>
+					<a href="https://fe-search.com/contact/" target="_blank" title="メールフォームへ移動" class="icon icon_mail"></a>
 				</div>
 			</div>
+
+			<h2>設定</h2>
 
 			<?php
 			// Determine if the Pro license is active (same logic as in the constructor).
 			$license_data = get_option( 'fe_ai_search_license', [] );
 			$status       = $license_data['status'] ?? 'inactive';
 			$products     = $license_data['data']['products'] ?? [];
-			$is_pro       = ( 'active' === $status && in_array( 'pro', $products, true ) );
-			$is_pro       = true; // -------------------------- DEBUG ----------------------------------
+			$is_pro       = ( 'active' === $status );
 			?>
 			<h2 class="nav-tab-wrapper">
-				<a href="#tab-provider" class="nav-tab"><?php esc_html_e( 'Provider', 'fe-ai-search' ); ?></a>
+				<a href="#tab-provider" class="nav-tab"><?php esc_html_e( 'Providers', 'fe-ai-search' ); ?></a>
 				<?php if ( $is_pro ) : ?>
-					<a href="#tab_models" class="nav-tab"><?php esc_html_e( 'Model', 'fe-ai-search-pro' ); ?></a>
+					<a href="#tab_models" class="nav-tab"><?php esc_html_e( 'Models', 'fe-ai-search' ); ?></a>
 				<?php endif; ?>
 				<a href="#tab-sync" class="nav-tab"><?php esc_html_e( 'Sync', 'fe-ai-search' ); ?></a>
-				<a href="#tab-prompt" class="nav-tab"><?php esc_html_e( 'Prompt', 'fe-ai-search' ); ?></a>
+				<a href="#tab-prompt" class="nav-tab"><?php esc_html_e( 'Prompts', 'fe-ai-search' ); ?></a>
 				<a href="#tab-display" class="nav-tab"><?php esc_html_e( 'Display', 'fe-ai-search' ); ?></a>
 				<?php if ( $is_pro ) : ?>
-					<a href="#tab_security" class="nav-tab"><?php esc_html_e( 'Security', 'fe-ai-search-pro' ); ?></a>
-					<!-- <a href="#tab_hybrid" class="nav-tab"><?php //esc_html_e( 'Hybrid Search', 'fe-ai-search-pro' ); ?></a> -->
+					<a href="#tab_security" class="nav-tab"><?php esc_html_e( 'Security', 'fe-ai-search' ); ?></a>
 				<?php endif; ?>
-				<a href="#tab-advanced" class="nav-tab"><?php esc_html_e( 'Advanced', 'fe-ai-search' ); ?></a>
+				<a href="#tab-advanced" class="nav-tab"><?php esc_html_e( 'Advanced settings', 'fe-ai-search' ); ?></a>
 				<?php
 				/**
 				 * Fires within the settings page's tab wrapper to add custom navigation tabs.
@@ -123,6 +123,12 @@ class FE_AI_Search_Settings {
 				?>
 			</h2>
 
+			<?php
+			// Show Settings API errors for the Free plugin settings group.
+			// Pro-specific errors are rendered inside their own tabs (e.g., Security).
+			// settings_errors();
+			?>
+
 			<form action="options.php" method="post">
 				<?php
 				// Use the correct settings group name defined in settings_init()
@@ -130,6 +136,33 @@ class FE_AI_Search_Settings {
 				?>
 
 				<div id="tab-provider" class="tab-content">
+					<details>
+						<summary>
+							<?php esc_html_e( 'API 利用上限値とコストについて', 'fe-ai-search' ); ?>
+						</summary>
+						<div>
+							<p>
+								<?php echo esc_html( 'ご利用になる各 AI プロバイダーの管理画面で API キーを発行し、下の入力欄に設定してください。これらの API の利用には費用が発生します。ご利用前に、必ず各社の料金表をご確認ください。なお、設定ミスや不正利用などによる想定外のトークン消費を防ぐため、本プラグインではレートリミットを設けています。' ); ?>
+							</p>
+							<p class="fe-ai-subheading"><?php esc_html_e( 'API 利用上限（初期値）', 'fe-ai-search' ); ?></p>
+							<ul>
+								<li><?php echo esc_html( 'IP アドレスごと：1 時間あたり 50 リクエスト' ); ?></li>
+								<li><?php echo esc_html( 'サイト全体：1 日あたり 1000 リクエスト' ); ?></li>
+							</ul>
+							<p>
+								<?php
+									/* translators: 1: opening code tag, 2: closing code tag, 3: opening link tag, 4: closing link tag */
+									printf(
+										esc_html__( 'これらの上限値は、フィルターフック %1$sfe_ai_search_rate_limit_settings%2$s を利用してテーマやプラグインから変更できます。開発者向けの詳細なサンプルコードは、%3$sドキュメント%4$sをご参照ください。', 'fe-ai-search' ),
+										'<code>',
+										'</code>',
+										'<a href="https://fe-search.com/ai/manual/" target="_blank" rel="noopener noreferrer">',
+										'</a>'
+									);
+								?>
+							</p>
+						</div>
+					</details>
 					<?php do_settings_sections( 'fe_ai_search_chat_provider_section' ); ?>
 					<table class="form-table">
 						<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_chat_provider_section' ); ?>
@@ -477,13 +510,14 @@ class FE_AI_Search_Settings {
 						<?php
 						printf(
 							/* translators: %s: Link to the Pro version. */
-							wp_kses_post( __( 'Model selection is available in the %s version.', 'fe-ai-search' ) ),
+							wp_kses_post( __( 'Available in the %s version.', 'fe-ai-search' ) ),
 							sprintf(
-								'<a href="%s" target="_blank">%s</a>',
-								esc_url( FE_AI_SEARCH_PRO_URL ),
+								'<a href="%s" class="%s">%s</a>',
+								'#tab-license',
+								'fe-ai-search-change-model-link',
 								esc_html__( 'Pro', 'fe-ai-search' )
 							)
-						);
+						)
 						?>
 					</div>
 				<?php else : ?>
@@ -532,13 +566,14 @@ class FE_AI_Search_Settings {
 						<?php
 						printf(
 							/* translators: %s: Link to the Pro version. */
-							wp_kses_post( __( 'Model selection is available in the %s version.', 'fe-ai-search' ) ),
+							wp_kses_post( __( 'Available in the %s version.', 'fe-ai-search' ) ),
 							sprintf(
-								'<a href="%s" target="_blank">%s</a>',
-								esc_url( FE_AI_SEARCH_PRO_URL ),
+								'<a href="%s" class="%s">%s</a>',
+								'#tab-license',
+								'fe-ai-search-change-model-link',
 								esc_html__( 'Pro', 'fe-ai-search' )
 							)
-						);
+						)
 						?>
 					</div>
 				<?php else : ?>
@@ -587,13 +622,14 @@ class FE_AI_Search_Settings {
 						<?php
 						printf(
 							/* translators: %s: Link to the Pro version. */
-							wp_kses_post( __( 'Model selection is available in the %s version.', 'fe-ai-search' ) ),
+							wp_kses_post( __( 'Available in the %s version.', 'fe-ai-search' ) ),
 							sprintf(
-								'<a href="%s" target="_blank">%s</a>',
-								esc_url( FE_AI_SEARCH_PRO_URL ),
+								'<a href="%s" class="%s">%s</a>',
+								'#tab-license',
+								'fe-ai-search-change-model-link',
 								esc_html__( 'Pro', 'fe-ai-search' )
 							)
-						);
+						)
 						?>
 					</div>
 				<?php else : ?>
@@ -710,8 +746,9 @@ class FE_AI_Search_Settings {
 											/* translators: %s: Link to the Pro version. */
 											wp_kses_post( __( 'Available in the %s version.', 'fe-ai-search' ) ),
 											sprintf(
-												'<a href="%s" target="_blank">%s</a>',
-												esc_url( FE_AI_SEARCH_PRO_URL ),
+												'<a href="%s" class="%s">%s</a>',
+												'#tab-license',
+												'fe-ai-search-change-model-link',
 												esc_html__( 'Pro', 'fe-ai-search' )
 											)
 										);
@@ -922,14 +959,14 @@ class FE_AI_Search_Settings {
 											type="checkbox"
 											name="fe_ai_search_settings[display][floating][display_on_pc]"
 											value="1" <?php checked( $floating_options['display_on_pc'] ); ?>
-										> <?php esc_html_e( 'PC', 'fe-ai-search' ); ?>
+										> <?php esc_html_e( 'Show on PC', 'fe-ai-search' ); ?>
 									</label>
 									<label>
 										<input
 											type="checkbox"
 											name="fe_ai_search_settings[display][floating][display_on_mobile]"
 											value="1" <?php checked( $floating_options['display_on_mobile'] ); ?>
-										> <?php esc_html_e( 'Mobile', 'fe-ai-search' ); ?>
+										> <?php esc_html_e( 'Show on Mobile', 'fe-ai-search' ); ?>
 									</label>
 								</p>
 							</div>
@@ -969,7 +1006,7 @@ class FE_AI_Search_Settings {
 											name="fe_ai_search_settings[display][floating][display_rules][show_on_404]"
 											value="1" <?php checked( ! empty( $floating_options['display_rules']['show_on_404'] ) ); ?>
 										>
-										<?php esc_html_e( 'Show on 404 page', 'fe-ai-search' ); ?>
+										<?php esc_html_e( '404 page', 'fe-ai-search' ); ?>
 									</label>
 									<label>
 										<input
@@ -1035,28 +1072,62 @@ class FE_AI_Search_Settings {
 
 	public function display_fullscreen_field_html() {
 		$display_options = $this->options['display'] ?? [];
+		$should_disable  = ! ( class_exists( '\FEAISearch\Pro\Admin\FE_AI_Search_Pro_Settings' ) && $this->is_license_active );
+
 		?>
 		<fieldset>
-			<label for="fe_ai_search_fullscreen_page_id"><?php esc_html_e( 'Select Chat-Only Page', 'fe-ai-search' ); ?></label>
+			<label for="fe_ai_search_fullscreen_page_id">
+				<?php esc_html_e( 'Select Chat-Only Page', 'fe-ai-search' ); ?>
+			</label>
 			<?php
-			wp_dropdown_pages(
+			$dropdown_html = wp_dropdown_pages(
 				[
 					'name'              => 'fe_ai_search_settings[display][fullscreen_page_id]',
 					'id'                => 'fe_ai_search_fullscreen_page_id',
-					'echo'              => 1,
-					'selected'          => $display_options['fullscreen_page_id'],
+					'echo'              => 0,
+					'selected'          => $display_options['fullscreen_page_id'] ?? 0,
 					'show_option_none'  => __( '— Don\'t use a dedicated page —', 'fe-ai-search' ),
 					'option_none_value' => '0',
-					'disabled'          => $this->is_license_active ? false : true,
 				]
 			);
+
+			if ( $should_disable ) {
+				$dropdown_html = preg_replace(
+					'/<select\b/',
+					'<select disabled="disabled"',
+					$dropdown_html,
+					1
+				);
+			}
+
+			echo $dropdown_html;
 			?>
+			<?php if ( ! class_exists( '\FEAISearch\Pro\Admin\FE_AI_Search_Pro_Settings' ) ) : ?>
+				<span class="description">(
+					<?php
+					printf(
+						/* translators: %s: Link to the Pro version. */
+						wp_kses_post( __( 'Available in the %s version.', 'fe-ai-search' ) ),
+						sprintf(
+							'<a href="%s" class="%s">%s</a>',
+							'#tab-license',
+							'fe-ai-search-change-model-link',
+							esc_html__( 'Pro', 'fe-ai-search' )
+						)
+					)
+					?>
+				)</span>
+			<?php endif; ?>
 			<br />
 			<span class="description">
-				<?php esc_html_e( 'When you access the selected static page here, the full-screen chat UI will be displayed directly.', 'fe-ai-search' ); ?>
+				<?php
+				esc_html_e(
+					'When you access the selected static page here, the full-screen chat UI will be displayed directly.',
+					'fe-ai-search'
+				);
+				?>
 			</span>
 		</fieldset>
-
 		<?php
 	}
 
@@ -1075,7 +1146,7 @@ class FE_AI_Search_Settings {
 
 		// Define all translated default values in one place
 		$defaults = [
-			'window_title'       => __( 'AI Search', 'fe-ai-search' ),
+			'window_title'       => __( 'FE Search AI', 'fe-ai-search' ),
 			'greeting_message'   => __( 'Hello! Please ask me anything about the information on this site.', 'fe-ai-search' ),
 			'placeholder_text'   => __( 'Please enter a question...', 'fe-ai-search' ),
 			'submit_button_text' => __( 'Send', 'fe-ai-search' ),
@@ -1087,6 +1158,8 @@ class FE_AI_Search_Settings {
 		$placeholder_text   = $text_options['placeholder_text'] ?? $defaults['placeholder_text'];
 		$submit_button_text = $text_options['submit_button_text'] ?? $defaults['submit_button_text'];
 		$key_color          = $ui_options['key_color'] ?? '#0073aa';
+		$background_color   = $ui_options['background_color'] ?? '#f5f5f5';
+		$text_color         = $ui_options['text_color'] ?? '#111111';
 
 		?>
 		<p>
@@ -1143,6 +1216,28 @@ class FE_AI_Search_Settings {
 				class="fe-ai-search-color-picker"
 			><br />
 			<span class="description"><?php esc_html_e( 'Select the basic colors for chat bubbles and user speech balloons.', 'fe-ai-search' ); ?></span>
+		</p>
+		<p>
+			<label for="fe_ai_search_background_color"><?php esc_html_e( 'Chat window background color', 'fe-ai-search' ); ?></label>
+			<input
+				type="text"
+				id="fe_ai_search_background_color"
+				name="fe_ai_search_settings[display][ui][background_color]"
+				value="<?php echo esc_attr( $background_color ); ?>"
+				class="fe-ai-search-color-picker"
+			><br />
+			<span class="description"><?php esc_html_e( 'Background color for the chat window and message area.', 'fe-ai-search' ); ?></span>
+		</p>
+		<p>
+			<label for="fe_ai_search_text_color"><?php esc_html_e( 'Base text color', 'fe-ai-search' ); ?></label>
+			<input
+				type="text"
+				id="fe_ai_search_text_color"
+				name="fe_ai_search_settings[display][ui][text_color]"
+				value="<?php echo esc_attr( $text_color ); ?>"
+				class="fe-ai-search-color-picker"
+			><br />
+			<span class="description"><?php esc_html_e( 'Default text color used for chat content and labels.', 'fe-ai-search' ); ?></span>
 		</p>
 
 		<script>
@@ -1397,14 +1492,6 @@ class FE_AI_Search_Settings {
 			<?php esc_html_e( 'Customize the instructions (system prompts) for the AI assistant. If left blank, the standard prompt will be used.', 'fe-ai-search' ); ?>
 		</p>
 		<?php
-		if ( ! class_exists( '\FEAISearch\Pro\Admin\FE_AI_Search_Pro_Settings' ) ) :
-			?>
-			<p class="description">
-				<strong><?php esc_html_e( 'Note:', 'fe-ai-search' ); ?></strong>
-				<?php esc_html_e( 'Model-specific prompts can be set in the Pro version, which will override this basic setting.', 'fe-ai-search' ); ?>
-			</p>
-			<?php
-		endif;
 	}
 
 	public function batch_size_field_html() {
@@ -1595,11 +1682,12 @@ class FE_AI_Search_Settings {
 				continue;
 			}
 
-			$new_input[ $pt_name ]['enabled']         = ! empty( $input[ $pt_name ]['enabled'] );
-			$new_input[ $pt_name ]['include_title']   = ! empty( $input[ $pt_name ]['include_title'] );
-			$new_input[ $pt_name ]['include_content'] = ! empty( $input[ $pt_name ]['include_content'] );
-			$new_input[ $pt_name ]['include_date']    = ! empty( $input[ $pt_name ]['include_date'] );
-			$new_input[ $pt_name ]['include_author']  = ! empty( $input[ $pt_name ]['include_author'] );
+			$new_input[ $pt_name ]['enabled']              = ! empty( $input[ $pt_name ]['enabled'] );
+			$new_input[ $pt_name ]['include_title']        = ! empty( $input[ $pt_name ]['include_title'] );
+			$new_input[ $pt_name ]['include_content']      = ! empty( $input[ $pt_name ]['include_content'] );
+			$new_input[ $pt_name ]['include_date']         = ! empty( $input[ $pt_name ]['include_date'] );
+			$new_input[ $pt_name ]['include_author']       = ! empty( $input[ $pt_name ]['include_author'] );
+			$new_input[ $pt_name ]['enable_custom_fields'] = ! empty( $input[ $pt_name ]['enable_custom_fields'] );
 
 			// Taxonomies
 			if ( isset( $input[ $pt_name ]['taxonomies'] ) && is_array( $input[ $pt_name ]['taxonomies'] ) ) {
@@ -1623,9 +1711,11 @@ class FE_AI_Search_Settings {
 	 * @return array Sanitized array.
 	 */
 	private function sanitize_display_ui( $input ) {
-		$new_input                    = [];
-		$new_input['key_color']       = sanitize_hex_color( $input['key_color'] ?? '#0073aa' );
-		$new_input['animation_speed'] = absint( $input['animation_speed'] ?? 3 );
+		$new_input                     = [];
+		$new_input['key_color']        = sanitize_hex_color( $input['key_color'] ?? '#0073aa' );
+		$new_input['background_color'] = sanitize_hex_color( $input['background_color'] ?? '#f5f5f5' );
+		$new_input['text_color']       = sanitize_hex_color( $input['text_color'] ?? '#111111' );
+		$new_input['animation_speed']  = absint( $input['animation_speed'] ?? 3 );
 		// Validate send_mode string (enter / shift_enter / cmd_enter).
 		$send_mode = $input['send_mode'] ?? 'enter';
 		if ( ! in_array( $send_mode, [ 'enter', 'shift_enter', 'cmd_enter' ], true ) ) {
@@ -1680,7 +1770,7 @@ class FE_AI_Search_Settings {
 		// Login status visibility flags.
 		$new_input['show_to_logged_in_users'] = ! empty( $input['show_to_logged_in_users'] );
 		$new_input['show_to_guests']          = ! empty( $input['show_to_guests'] );
-		$new_input['fullscreen_page_id']   = absint( $input['fullscreen_page_id'] ?? 0 );
+		$new_input['fullscreen_page_id']      = absint( $input['fullscreen_page_id'] ?? 0 );
 
 		// Rules
 		$rules = $input['display_rules'] ?? [];

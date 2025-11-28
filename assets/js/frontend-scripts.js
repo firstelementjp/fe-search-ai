@@ -72,6 +72,10 @@ function initFEAIChat() {
 	let renderInterval;
 	let currentAiMessageElement = null;
 	let fullResponse = '';
+	// Typing animation configuration, derived from PHP setting animation_speed (1-10).
+	let typingCharsPerTick = 3;
+	let typingInterval = 50;
+	let typingImmediate = false; // true の場合、チャンク到着時に即レンダリングを試みる
 	const privacyConfig = fe_ai_search_ajax_obj.privacy || {};
 	const consentStorageKey = 'fe_ai_search_user_consented';
 
@@ -485,6 +489,72 @@ function initFEAIChat() {
 	}
 
 	/**
+	 * Configure typing animation speed based on the PHP setting.
+	 *
+	 * animation_speed (1-10) を、
+	 * - 1: 1文字ずつ、かなりゆっくり
+	 * - 10: 大きなブロック単位でほぼ一瞬
+	 * に近い体感になるよう、1 tick あたりの文字数と
+	 * tick 間隔の両方にマッピングする。
+	 */
+	function configureTypingSpeed() {
+		let speed = fe_ai_search_ajax_obj.animation_speed || 3;
+		if (typeof speed !== 'number') {
+			speed = parseInt(speed, 10) || 3;
+		}
+		// Clamp to [1, 10]
+		speed = Math.max(1, Math.min(10, speed));
+
+		// デフォルトは通常モード（キューを小分けに描画）
+		typingImmediate = false;
+
+		// --- Interval 設定 ---
+		// 1〜3: 手作業でメリハリを付ける（すべて1文字ずつだがテンポを変える）
+		//  1 => ~160ms, 2 => ~110ms, 3 => ~70ms
+		// 4〜9: 3の値から9の高速値(~25ms)までリニアに補間
+		if (speed <= 3) {
+			const intervals = {
+				1: 160,
+				2: 110,
+				3: 70,
+			};
+			typingInterval = intervals[speed];
+		} else if (speed < 10) {
+			// speed: 4..9 を 0..1 に正規化し、70ms -> 25ms へ補間
+			// ただし最初はゆっくり、後半で一気に速くなるように緩やかなカーブを付ける
+			const fastRatioLinear = (speed - 3) / 6; // 4..9 => 1/6..1
+			const fastRatio = Math.pow(fastRatioLinear, 1.5); // 4,5,6 はややゆっくり、7〜9 で急速に速く
+			const startInterval = 70; // speed=3 相当
+			const endInterval = 25; // speed=9 相当
+			typingInterval = Math.round(startInterval - (startInterval - endInterval) * fastRatio);
+		} else {
+			// speed=10: 即モード側で扱うが、保険として最小値を入れておく
+			typingInterval = 20;
+		}
+
+		// --- Chars per tick 設定 ---
+		// 1〜3: 常に1文字ずつ
+		// 4〜9: 2文字から 9 の高速値(約15文字)までリニアに増やす
+		// 10: 即モード（キュー全体を一気に吐き出す）
+		if (speed === 10) {
+			typingImmediate = true;
+			typingCharsPerTick = 10000;
+		} else if (speed <= 3) {
+			typingCharsPerTick = 1;
+		} else {
+			// speed 4..9 を 0..1 に正規化し、2文字から15文字までリニアに増やす
+			const charsRatio = (speed - 4) / 5; // 4..9 => 0..1
+			const minChars = 2; // speed=4 で約2文字
+			const maxChars = 15;
+			const rawChars = minChars + (maxChars - minChars) * charsRatio;
+			typingCharsPerTick = Math.max(1, Math.round(rawChars));
+		}
+	}
+
+	// 初期化時に一度だけ設定値から速度テーブルを構成
+	configureTypingSpeed();
+
+	/**
 	 * Renders the typing animation queue.
 	 */
 	function renderQueue() {
@@ -497,9 +567,9 @@ function initFEAIChat() {
 		}
 		if (charQueue.length === 0) return;
 
-		const charsToRender = charQueue
-			.splice(0, fe_ai_search_ajax_obj.animation_speed || 3)
-			.join('');
+		// 最高速モードでは、キュー内を一気に描画
+		const takeCount = typingImmediate ? charQueue.length : typingCharsPerTick;
+		const charsToRender = charQueue.splice(0, takeCount).join('');
 		fullResponse += charsToRender;
 
 		currentAiMessageElement.innerHTML = marked.parse(fullResponse);
@@ -511,7 +581,7 @@ function initFEAIChat() {
 	 */
 	function startRenderingQueue() {
 		clearInterval(renderInterval);
-		renderInterval = setInterval(renderQueue, 25);
+		renderInterval = setInterval(renderQueue, typingInterval);
 	}
 
 	/**

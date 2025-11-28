@@ -55,6 +55,10 @@ class FE_AI_Search_Admin {
 			return;
 		}
 
+		$use_unminified = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG;
+		$admin_css      = $use_unminified ? 'assets/css/admin-styles.css' : 'assets/css/admin-styles.min.css';
+		$admin_js       = $use_unminified ? 'assets/js/admin-scripts.js' : 'assets/js/admin-scripts.min.js';
+
 		wp_enqueue_style( 'wp-color-picker' );
 		wp_enqueue_style(
 			'codemirror-css',
@@ -62,7 +66,7 @@ class FE_AI_Search_Admin {
 		);
 		wp_enqueue_style(
 			'fe-ai-search-admin-style',
-			plugin_dir_url( FE_AI_SEARCH_PLUGIN_FILE ) . 'assets/css/admin-styles.css',
+			plugin_dir_url( FE_AI_SEARCH_PLUGIN_FILE ) . $admin_css,
 			[],
 			FE_AI_SEARCH_VERSION
 		);
@@ -84,7 +88,7 @@ class FE_AI_Search_Admin {
 		);
 		wp_enqueue_script(
 			'fe-ai-search-admin-sync',
-			plugin_dir_url( FE_AI_SEARCH_PLUGIN_FILE ) . 'assets/js/admin-scripts.js',
+			plugin_dir_url( FE_AI_SEARCH_PLUGIN_FILE ) . $admin_js,
 			[ 'wp-i18n', 'codemirror-js', 'wp-color-picker' ],
 			FE_AI_SEARCH_VERSION,
 			true
@@ -104,6 +108,8 @@ class FE_AI_Search_Admin {
 				'nonce'    => wp_create_nonce( 'fe_ai_search_ajax_nonce' ),
 			]
 		);
+
+		error_log( 'FREE enqueue_admin_assets: ' . $hook_suffix );
 	}
 
 	/**
@@ -111,13 +117,14 @@ class FE_AI_Search_Admin {
 	 */
 	public function add_admin_menu() {
 		$parent_slug = 'fe-ai-search';
+		$icon_url    = plugin_dir_url( FE_AI_SEARCH_PLUGIN_FILE ) . 'assets/images/fesai-logo.png';
 		add_menu_page(
-			'FE AI Search',
-			'FE AI Search',
+			'FE Search AI',
+			'FE Search AI',
 			'manage_options',
 			$parent_slug,
 			[ FE_AI_Search_Settings::class, 'render_page' ],
-			'dashicons-search',
+			$icon_url,
 			80
 		);
 		add_submenu_page(

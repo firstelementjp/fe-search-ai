@@ -93,7 +93,7 @@ class FE_AI_Search_License_Settings {
 	 */
 	public function add_tab() {
 		$icon = '';
-		if ( ! $this->is_license_active ) {
+		if ( class_exists( '\\FEAISearch\\Pro\\Admin\\FE_AI_Search_Pro_Settings' ) && ! $this->is_license_active ) {
 			$icon = '<span class="dashicons dashicons-warning" style="color: #f59e0b;"></span>';
 		}
 		echo '<a href="#tab-license" class="nav-tab">' . esc_html__( 'License', 'fe-ai-search' ) . ' ' . wp_kses_post( $icon ) . '</a>';
@@ -112,6 +112,161 @@ class FE_AI_Search_License_Settings {
 				do_settings_fields( 'fe-ai-search', 'fe_ai_search_license_section' );
 				?>
 			</table>
+			<?php if ( ! class_exists( '\\FEAISearch\\Pro\\Admin\\FE_AI_Search_Pro_Settings' ) || ! $this->is_license_active ) : ?>
+				<div class="fe-ai-search-pro-promo">
+					<hr>
+					<h3>
+						<?php esc_html_e( 'Unlock more with FE Search AI Pro', 'fe-ai-search' ); ?>
+					</h3>
+					<p>
+						<?php esc_html_e( 'With a Pro license, you can:', 'fe-ai-search' ); ?>
+					</p>
+					<ul>
+						<li>
+							<h4><?php esc_html_e( 'Providers', 'fe-ai-search' ); ?></h4>
+							<ul>
+								<li><?php esc_html_e( 'Support for additional AI providers such as DeepSeek and Qwen (planned)', 'fe-ai-search' ); ?></li>
+								<li>
+									<?php esc_html_e( 'Configurable custom endpoints', 'fe-ai-search' ); ?>
+									<ul>
+										<li><?php esc_html_e( 'Connect to OSS-based providers such as local LLMs (LocalAI, Llama) and BGE-based embedding models', 'fe-ai-search' ); ?></li>
+									</ul>
+								</li>
+								<li>
+									<?php esc_html_e( 'Failover feature (planned)', 'fe-ai-search' ); ?>
+									<ul>
+										<li><?php esc_html_e( 'Automatically route requests to another provider when the primary AI provider is unavailable', 'fe-ai-search' ); ?></li>
+									</ul>
+								</li>
+							</ul>
+						</li>
+
+						<li>
+							<h4><?php esc_html_e( 'Models', 'fe-ai-search' ); ?></h4>
+							<ul>
+								<li><?php esc_html_e( 'Choose which model to use for each AI provider', 'fe-ai-search' ); ?>
+									<ul>
+										<li><?php esc_html_e( 'For each provider, choose models that fit your needs, from the latest GPT, Gemini, and Claude Sonnet models to lightweight, cost-efficient options', 'fe-ai-search' ); ?></li>
+										<li><?php esc_html_e( 'Add and select embedding models as well', 'fe-ai-search' ); ?></li>
+									</ul>
+								</li>
+							</ul>
+						</li>
+
+						<li>
+							<h4><?php esc_html_e( 'Sync', 'fe-ai-search' ); ?></h4>
+							<ul>
+								<li><?php esc_html_e( 'Edit stop words', 'fe-ai-search' ); ?>
+									<ul>
+										<li><?php esc_html_e( 'Exclude noisy terms to improve search accuracy', 'fe-ai-search' ); ?></li>
+									</ul>
+								</li>
+								<li><?php esc_html_e( 'Add custom fields to the search index', 'fe-ai-search' ); ?></li>
+							</ul>
+						</li>
+
+						<li>
+							<h4><?php esc_html_e( 'Prompts', 'fe-ai-search' ); ?></h4>
+							<ul>
+								<li><?php esc_html_e( 'Configure custom prompts for each AI provider', 'fe-ai-search' ); ?></li>
+							</ul>
+						</li>
+
+						<li>
+							<h4><?php esc_html_e( 'Display', 'fe-ai-search' ); ?></h4>
+							<ul>
+								<li><?php esc_html_e( 'Configure detailed display rules for the chat window (by post type, page type, etc.)', 'fe-ai-search' ); ?></li>
+								<li><?php esc_html_e( 'Configure a dedicated page for full-screen chat view', 'fe-ai-search' ); ?></li>
+								<li>
+									<?php esc_html_e( 'User consent opt-in feature', 'fe-ai-search' ); ?>
+									<ul>
+										<li><?php esc_html_e( 'Collect consent to Terms of Use and Privacy Policy directly in the chat', 'fe-ai-search' ); ?></li>
+									</ul>
+								</li>
+							</ul>
+						</li>
+
+						<li>
+							<h4><?php esc_html_e( 'Security', 'fe-ai-search' ); ?></h4>
+							<ul>
+								<li>
+									<?php esc_html_e( 'Edit blocked words', 'fe-ai-search' ); ?>
+									<ul>
+										<li><?php esc_html_e( 'Mask specific words and add extra protection against prompt injection', 'fe-ai-search' ); ?></li>
+									</ul>
+								</li>
+								<li>
+									<?php esc_html_e( 'API usage limits (rate limiting)', 'fe-ai-search' ); ?>
+									<ul>
+										<li><?php esc_html_e( 'Limit the number of requests per IP address per hour', 'fe-ai-search' ); ?></li>
+										<li><?php esc_html_e( 'Limit the total number of requests per site per day', 'fe-ai-search' ); ?></li>
+									</ul>
+								</li>
+								<li>
+									<?php esc_html_e( 'Notification settings', 'fe-ai-search' ); ?>
+									<ul>
+										<li><?php esc_html_e( 'Configure thresholds for sending notifications to administrators', 'fe-ai-search' ); ?></li>
+										<li><?php esc_html_e( 'Configure notification email addresses', 'fe-ai-search' ); ?></li>
+									</ul>
+								</li>
+							</ul>
+						</li>
+
+						<li>
+							<h4><?php esc_html_e( 'Advanced settings', 'fe-ai-search' ); ?></h4>
+							<ul>
+								<li>
+									<?php esc_html_e( 'MCP server feature', 'fe-ai-search' ); ?>
+									<ul>
+										<li><?php esc_html_e( 'Provide a set of tools for AI agents to use', 'fe-ai-search' ); ?></li>
+									</ul>
+								</li>
+								<li>
+									<?php esc_html_e( 'API token management', 'fe-ai-search' ); ?>
+									<ul>
+										<li><?php esc_html_e( 'Enable use from external clients such as headless CMS or mobile apps', 'fe-ai-search' ); ?></li>
+									</ul>
+								</li>
+								<li>
+									<?php esc_html_e( 'Detailed logging', 'fe-ai-search' ); ?>
+									<ul>
+										<li><?php esc_html_e( 'Log not only API communication but also AI responses and user feedback', 'fe-ai-search' ); ?></li>
+										<li><?php esc_html_e( 'Provide a log viewer with list view, filtering, and CSV export', 'fe-ai-search' ); ?></li>
+									</ul>
+								</li>
+							</ul>
+						</li>
+
+						<li>
+							<h4><?php esc_html_e( '“FE Search Advanced” included (planned)', 'fe-ai-search' ); ?></h4>
+							<ul>
+								<li><?php esc_html_e( 'A full license for the high‑performance faceted search plugin used by over 1,300 companies is included at no additional cost.', 'fe-ai-search' ); ?></li>
+								<li><?php esc_html_e( 'Build advanced faceted search forms with an intuitive UI', 'fe-ai-search' ); ?></li>
+								<li><?php esc_html_e( 'Real-time faceted search with instant results without page reloads', 'fe-ai-search' ); ?></li>
+								<li><?php esc_html_e( 'Can be used on its own as a traditional, non-AI faceted search', 'fe-ai-search' ); ?></li>
+								<li>
+									<?php
+									printf(
+										/* translators: %s: "AI hybrid search" */
+										__( 'Achieve %s that combines traditional faceted search with AI-powered natural language search (planned)', 'fe-ai-search' ),
+										'<strong>' . esc_html__( 'AI hybrid search', 'fe-ai-search' ) . '</strong>'
+									);
+									?>
+								</li>
+							</ul>
+						</li>
+					</ul>
+					<p>
+						<a
+							href="<?php echo esc_url( FE_AI_SEARCH_PRO_URL ); ?>"
+							target="_blank"
+							class="button button-primary"
+						>
+							<?php esc_html_e( 'View FE Search AI Pro', 'fe-ai-search' ); ?>
+						</a>
+					</p>
+				</div>
+			<?php endif; ?>
 		</div>
 		<?php
 	}

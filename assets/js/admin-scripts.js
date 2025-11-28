@@ -112,6 +112,45 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 	}
 
+	// ==========================================================================
+	// Client-side validation for Privacy Opt-in (Pro)
+	// ==========================================================================
+
+	// Before submitting the settings form, ensure that if the Pro opt-in checkbox
+	// is enabled, both Terms of Service and Privacy Policy pages are selected.
+	const settingsForm = document.querySelector('form[action="options.php"]');
+	if (settingsForm) {
+		settingsForm.addEventListener('submit', e => {
+			const consentCheckbox = document.querySelector(
+				'input[name="fe_ai_search_pro_settings[privacy][enable_consent]"]'
+			);
+			if (!consentCheckbox || !consentCheckbox.checked) {
+				return;
+			}
+
+			const termsSelect = document.querySelector(
+				'select[name="fe_ai_search_settings[display][links][terms_page_id]"]'
+			);
+			const privacySelect = document.querySelector(
+				'select[name="fe_ai_search_settings[display][links][privacy_page_id]"]'
+			);
+
+			const termsVal = termsSelect ? termsSelect.value : '0';
+			const privacyVal = privacySelect ? privacySelect.value : '0';
+
+			if (termsVal === '0' || privacyVal === '0') {
+				e.preventDefault();
+				// eslint-disable-next-line no-alert
+				alert(
+					__(
+						'To enable user consent (opt-in), please select both the Terms of Service Page and Privacy Policy Page in the Display > Text/Links settings.',
+						'fe-ai-search'
+					)
+				);
+			}
+		});
+	}
+
 	// --- Event Listeners for Sync Buttons ---
 
 	// Handler for the "Rebuild Index" button
@@ -397,6 +436,15 @@ document.addEventListener('DOMContentLoaded', () => {
 	// We listen on the entire settings page for clicks.
 	const settingsWrapper = document.querySelector('.wrap');
 	if (settingsWrapper) {
+		// 初期状態で .accordion-content.open があれば表示し、タイトルにクラスを付与
+		settingsWrapper.querySelectorAll('.accordion-content.open').forEach(content => {
+			content.style.display = 'block';
+			const title = content.previousElementSibling;
+			if (title && title.classList.contains('accordion-title')) {
+				title.classList.add('is-open');
+			}
+		});
+
 		settingsWrapper.addEventListener('click', e => {
 			// Check if an accordion title was the target of the click.
 			const title = e.target.closest('.accordion-title');
@@ -414,6 +462,12 @@ document.addEventListener('DOMContentLoaded', () => {
 				// Simply toggle the display property. No animations, but always reliable.
 				const isOpen = content.style.display === 'block';
 				content.style.display = isOpen ? 'none' : 'block';
+				// タイトルの開閉状態クラスを更新（CSSの矢印向きに利用）
+				if (isOpen) {
+					title.classList.remove('is-open');
+				} else {
+					title.classList.add('is-open');
+				}
 
 				// If it was just opened, initialize any CodeMirror instances inside.
 				if (!isOpen) {
@@ -484,9 +538,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		// On initial page load, activate the correct tab.
 		setTimeout(() => {
 			const hash = window.location.hash;
-			const initialTabAnchor = hash
-				? tabsWrapper.querySelector(`a[href = "${hash}"]`)
-				: null;
+			const initialTabAnchor = hash ? tabsWrapper.querySelector(`a[href = "${hash}"]`) : null;
 			let initialTabId = null;
 			if (hash && initialTabAnchor) {
 				// 1) URL のハッシュが有効なら、それを優先
@@ -561,6 +613,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			});
 
 			if (!response.success) {
+				// Throw an error so that the catch block can show the backend message.
 				throw new Error(response.data?.message || 'License operation failed.');
 			}
 
@@ -568,7 +621,10 @@ document.addEventListener('DOMContentLoaded', () => {
 			location.reload();
 		} catch (error) {
 			// eslint-disable-next-line no-alert
-			alert(__('An error occurred during activation. Please try again.', 'fe-ai-search'));
+			alert(
+				error.message ||
+					__('An error occurred during activation. Please try again.', 'fe-ai-search')
+			);
 			button.disabled = false;
 			spinner.style.visibility = 'hidden';
 		}

@@ -1,25 +1,38 @@
 {
-  "name": "fe-ai-search",
-  "version": "1.0.0",
-  "description": "AI Search functionality for WordPress",
-  "main": "index.js",
-  "scripts": {
-    "lint": "eslint . --ext .js",
-    "lint:fix": "eslint . --ext .js --fix"
-  },
-  "keywords": [
-    "wordpress",
-    "ai",
-    "search"
-  ],
-  "author": "Daijiro Miyazawa",
-  "license": "GPL-2.0-or-later",
-  "devDependencies": {
-    "@wordpress/eslint-plugin": "^16.0.0",
-    "@wordpress/scripts": "^27.0.0",
-    "eslint": "^8.0.0",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.4",
-    "prettier": "^3.6.2"
-  }
+	"name": "fe-ai-search",
+	"version": "1.0.0",
+	"description": "AI Search functionality for WordPress",
+	"main": "index.js",
+	"scripts": {
+		"lint": "eslint . --ext .js",
+		"lint:fix": "eslint . --ext .js --fix",
+		"build:css": "esbuild assets/css/frontend-styles.css --minify --outfile=assets/css/frontend-styles.min.css",
+		"build:js": "esbuild assets/js/frontend-scripts.js --minify --outfile=assets/js/frontend-scripts.min.js",
+		"build": "npm run build:css && npm run build:js",
+		"watch:css": "esbuild assets/css/frontend-styles.css --minify --outfile=assets/css/frontend-styles.min.css --watch",
+		"watch:js": "esbuild assets/js/frontend-scripts.js --minify --outfile=assets/js/frontend-scripts.min.js --watch",
+		"build:admin:css": "esbuild assets/css/admin-styles.css --minify --outfile=assets/css/admin-styles.min.css",
+		"build:admin:js": "esbuild assets/js/admin-scripts.js --minify --outfile=assets/js/admin-scripts.min.js",
+		"build:admin": "npm run build:admin:css && npm run build:admin:js && npm run build:admin:pro:js",
+		"watch:admin:css": "esbuild assets/css/admin-styles.css --minify --outfile=assets/css/admin-styles.min.css --watch",
+		"watch:admin:js": "esbuild assets/js/admin-scripts.js --minify --outfile=assets/js/admin-scripts.min.js --watch",
+		"build:admin:pro:js": "esbuild ../fe-ai-search-pro/assets/js/admin-pro-scripts.js --minify --outfile=../fe-ai-search-pro/assets/js/admin-pro-scripts.min.js",
+		"watch:admin:pro:js": "esbuild ../fe-ai-search-pro/assets/js/admin-pro-scripts.js --minify --outfile=../fe-ai-search-pro/assets/js/admin-pro-scripts.min.js --watch"
+	},
+	"keywords": [
+		"wordpress",
+		"ai",
+		"search"
+	],
+	"author": "Daijiro Miyazawa",
+	"license": "GPL-2.0-or-later",
+	"devDependencies": {
+		"@wordpress/eslint-plugin": "^16.0.0",
+		"@wordpress/scripts": "^27.0.0",
+		"eslint": "^8.0.0",
+		"eslint-config-prettier": "^10.1.8",
+		"eslint-plugin-prettier": "^5.5.4",
+		"prettier": "^3.6.2",
+		"esbuild": "^0.24.0"
+	}
 }

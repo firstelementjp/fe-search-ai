@@ -17,9 +17,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 define( 'FE_AI_SEARCH_VERSION', '1.0.0' );
 define( 'FE_AI_SEARCH_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FE_AI_SEARCH_PLUGIN_FILE', __FILE__ );
-define( 'FE_AI_SEARCH_PRO_URL', 'https://fe-ai-search.com/pro' );
+define( 'FE_AI_SEARCH_PRO_URL', 'https://fe-search.com/ai/pro' );
 
-
+add_action(
+	'plugins_loaded',
+	static function () {
+		load_plugin_textdomain(
+			'fe-ai-search',
+			false,
+			dirname( plugin_basename( __FILE__ ) ) . '/languages/'
+		);
+	},
+	5
+);
 
 if ( file_exists( FE_AI_SEARCH_PLUGIN_DIR . 'vendor/autoload.php' ) ) {
 	require_once FE_AI_SEARCH_PLUGIN_DIR . 'vendor/autoload.php';

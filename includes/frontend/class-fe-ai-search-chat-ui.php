@@ -189,7 +189,7 @@ class FE_AI_Search_Chat_UI {
 		// Ensure text fields fall back to defaults when empty or not set.
 		$window_title = trim( $text_options['window_title'] ?? '' );
 		if ( '' === $window_title ) {
-			$window_title = __( 'AI Search', 'fe-ai-search' );
+			$window_title = __( 'FE Search AI', 'fe-ai-search' );
 		}
 
 		$greeting_message = trim( $text_options['greeting_message'] ?? '' );

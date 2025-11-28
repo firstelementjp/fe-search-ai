@@ -12,7 +12,7 @@
 	========================================================================== */
 
 h4 {
-	margin: 1em 0 0.5em;
+	/* margin: 1em 0 0.5em; */
 	font-size: 1.1em;
 }
 
@@ -41,9 +41,9 @@ code {
 	border-radius: 5px;
 }
 
-hr {
+/* hr {
 	margin: 2em 0 1em;
-}
+} */
 
 .tab-content select,
 .tab-content input[type="text"],
@@ -169,6 +169,9 @@ textarea {
 	width: 13px;
 	fill: #46aae6;
 }
+#feas-head h1 span {
+	color: #6d6ddb;
+}
 /* ==========================================================================
 	Specific Components
 	========================================================================== */
@@ -232,6 +235,26 @@ a.nav-tab:last-of-type {
 	cursor: pointer;
 	font-size: 14px;
 	background: #f6f7f7;
+	position: relative;
+	padding-right: 35px; /* Space reserved for arrow icon */
+}
+
+.accordion-title::after {
+	content: '';
+	position: absolute;
+	top: 50%;
+	right: 12px;
+	width: 0;
+	height: 0;
+	border-left: 5px solid transparent;
+	border-right: 5px solid transparent;
+	border-top: 7px solid #555; /* Downward triangle when collapsed */
+	transform: translateY(-50%);
+}
+
+.accordion-title.is-open::after {
+	border-top: 0;
+	border-bottom: 7px solid #555; /* Upward triangle when expanded */
 }
 
 .accordion-content {
@@ -386,15 +409,15 @@ a:has(.dashicons-warning) span {
 }
 
 #fe_ai_search_progress_bar {
-	width: 0%; /* 初期幅は0% */
+	width: 0%; /* Initial width is 0% */
 	height: 20px;
 	line-height: 20px;
 	text-align: center;
 	font-size: 12px;
 	color: #fff;
-	background-color: #0073aa; /* WordPressの標準的な青 */
+	background-color: #0073aa; /* Standard WordPress blue */
 	border-radius: 3px;
-	/* JSが幅を変更する際に、滑らかなアニメーションを追加 */
+	/* Add smooth animation when JS changes the width */
 	transition: width 0.3s ease-in-out;
 }
 
@@ -414,4 +437,171 @@ a:has(.dashicons-warning) span {
 	to {
 		transform: rotate(360deg);
 	}
+}
+#tab-provider details {
+	margin-bottom: 1em;
+}
+
+#tab-provider details strong {
+	color: #0071a1;
+}
+#tab-provider details summary {
+	cursor: pointer;
+	color: #0071a1;
+}
+#tab-provider details>div {
+	background: #f9f9f9;
+	border: 1px solid #ddd;
+	padding: 10px;
+	margin-top: 5px;
+	border-radius: 4px;
+}
+#tab-provider details p {
+	margin: 0;
+}
+#tab-provider details .fe-ai-subheading {
+	font-weight: 600;
+    margin: 1em 0 0.5em;
+}
+#tab-provider details b {
+	font-weight: bold;
+	margin: 1em;
+}
+#tab-provider details ul {
+	list-style: square;
+	list-style-position: inside;
+}
+
+/* ==========================================================================
+	License Tab Pro promotion section
+	========================================================================== */
+/* License tab Pro promotion wrapper */
+#tab-license .fe-ai-search-pro-promo {
+  /* Keep existing inline styles: margin-top, padding, border, background as is */
+}
+#tab-license .fe-ai-search-pro-promo hr {
+	width: 80%;
+    margin: auto;
+    border-top: 0;
+    border-bottom: 1px solid silver;
+}
+#tab-license .fe-ai-search-pro-promo h3 {
+	display: block;
+    text-align: center;
+    margin: -0.65em auto 1em;
+    background: white;
+    padding: 0em 2em;
+    width: fit-content;
+    line-height: 1;
+    font-size: 1.3em;
+}
+
+#tab-license .fe-ai-search-pro-promo p {
+	text-align: center;
+}
+
+/* Layout for the Pro feature list */
+#tab-license .fe-ai-search-pro-promo > ul {
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none; /* Remove default bullets from parent UL */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+/* Individual feature blocks (cards) */
+#tab-license .fe-ai-search-pro-promo > ul > li {
+  margin: 0;
+  padding: 16px 18px;
+  border-radius: 6px;
+  border: 1px solid #6d6ddb;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+/* Card heading */
+#tab-license .fe-ai-search-pro-promo > ul > li > h4 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* Keep inner UL (feature list) as regular bullet list */
+#tab-license .fe-ai-search-pro-promo > ul > li > ul {
+  margin: 0;
+  padding-left: 1.2em;
+  list-style: disc;
+}
+
+/* Spacing for nested UL (sub bullet list) */
+#tab-license .fe-ai-search-pro-promo > ul > li ul ul {
+  margin-top: 4px;
+}
+
+/* Line height and font size for text items */
+#tab-license .fe-ai-search-pro-promo > ul > li li {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Second-level list: remove bullets and indent by about one character */
+#tab-license .fe-ai-search-pro-promo > ul > li ul ul {
+	list-style: none;
+	padding-left: 1em; /* Approximate indent width of one character */
+	margin: 4px 0 0;
+}
+
+/* Add a hyphen at the start of each second-level li */
+#tab-license .fe-ai-search-pro-promo > ul > li ul ul > li {
+	position: relative;
+}
+
+/* Hyphen marker */
+#tab-license .fe-ai-search-pro-promo > ul > li ul ul > li::before {
+	content: "- ";
+	position: absolute;
+	left: -1em;
+}
+
+#tab-license .fe-ai-search-pro-promo .button {
+	margin: 2em auto;
+	background: linear-gradient(139deg, #602fba, #0082ff);
+    border: none;
+    padding: 0.2em;
+    width: 60%;
+    font-size: 1.4em;
+	opacity: 0.8;
+	transition: opacity 0.3s ease;
+	min-width: fit-content;
+}
+
+/* External link icon */
+#tab-license .fe-ai-search-pro-promo .button::after {
+    content: "\f504";              /* Code point for dashicons-external */
+    font-family: "dashicons";
+    display: inline-block;
+    margin-left: 0.4em;
+    font-size: 1em;
+    position: relative;
+    top: 0.08em;                   /* Slightly shift down for vertical alignment */
+}
+
+#tab-license .fe-ai-search-pro-promo .button:hover {
+    opacity: 1;
+}
+
+#fe-ai-search-tool-manifest,
+#fe-ai-search-api-guide {
+	margin: 1em 0;
+	cursor: pointer;
+}
+
+#fe-ai-search-tool-manifest summary,
+#fe-ai-search-api-guide summary {
+	font-weight: bold;
+}
+.toplevel_page_fe-ai-search .dashicons-before img {
+	width: 16px;
 }

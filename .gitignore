@@ -1,6 +1,7 @@
 _tmp/
 .DS_Store
 vendor/
+.vscode/
 
 # Exclude copy files
 *-copy*
