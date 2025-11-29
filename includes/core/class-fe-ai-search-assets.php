@@ -53,6 +53,7 @@ class FE_AI_Search_Assets {
 		$key_color        = $ui_options['key_color'] ?? '#0073aa';
 		$background_color = $ui_options['background_color'] ?? '#f5f5f5';
 		$text_color       = $ui_options['text_color'] ?? '#111111';
+		$use_gradient     = isset( $ui_options['use_gradient'] ) ? (bool) $ui_options['use_gradient'] : true;
 
 		$key_color        = sanitize_hex_color( $key_color ) ?: '#0073aa';
 		$background_color = sanitize_hex_color( $background_color ) ?: '#f5f5f5';
@@ -116,6 +117,13 @@ class FE_AI_Search_Assets {
 		$bg_bottom_hex     = sanitize_hex_color( sprintf( '#%02x%02x%02x', $bg_bot_r, $bg_bot_g, $bg_bot_b ) ) ?: $background_color;
 		$accent_top_hex    = sanitize_hex_color( sprintf( '#%02x%02x%02x', $accent_top_r, $accent_top_g, $accent_top_b ) ) ?: $key_color;
 		$accent_bottom_hex = sanitize_hex_color( sprintf( '#%02x%02x%02x', $accent_bot_r, $accent_bot_g, $accent_bot_b ) ) ?: $key_color;
+
+		if ( ! $use_gradient ) {
+			$bg_top_hex        = $background_color;
+			$bg_bottom_hex     = $background_color;
+			$accent_top_hex    = $key_color;
+			$accent_bottom_hex = $key_color;
+		}
 
 		$license_data      = get_option( 'fe_ai_search_license', [] );
 		$status            = $license_data['status'] ?? 'inactive';

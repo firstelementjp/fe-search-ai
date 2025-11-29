@@ -88,6 +88,7 @@ textarea {
 	background-color: white;
 	margin-bottom: 15px;
 }
+
 #plugin_header_upper {
 	grid-column: span 2;
 	display: grid;
@@ -95,10 +96,12 @@ textarea {
 	align-items: center;
 	padding: 0 1em;
 }
+
 #plugin_header .plugin-title {
 	font-size: 23px;
 	font-weight: 400;
 }
+
 #plugin_header #plugin_version {
 	padding: 0 1em;
 	background-color: white;
@@ -107,6 +110,7 @@ textarea {
 	grid-template: 100% / 1fr;
 	align-items: center;
 }
+
 #plugin_support {
 	font-size: 12px;
 	padding: 0 1em;
@@ -121,19 +125,23 @@ textarea {
 #plugin_support a {
 	text-align: right;
 }
+
 #plugin_header #plugin_logo {
 	display: grid;
 	margin-left: auto;
 	justify-content: center;
 	align-items: center;
 }
+
 #plugin_header #plugin_logo img {
 	width: 106px;
 	height: 27px;
 }
+
 #plugin_header a {
 	text-decoration: none;
 }
+
 #plugin_header .icon {
 	-webkit-font-smoothing: antialiased;
 	font: normal 17px / 1 'dashicons';
@@ -176,6 +184,7 @@ textarea {
 #plugin_header .icon_gh.icon svg {
 	width: 16px;
 }
+
 #plugin_header h1 span {
 	color: #6d6ddb;
 }
@@ -188,9 +197,11 @@ textarea {
 	background: white;
 	padding: 1rem;
 }
+
 .wrap .nav-tab-wrapper {
 	border-bottom: none;
 }
+
 .nav-tab {
 	border: none;
 	padding: 0.5em 1em;
@@ -199,15 +210,18 @@ textarea {
 	background: #f9f9f9;
 	font-size: 13px;
 }
+
 .nav-tab.nav-tab-active {
 	color: #1d2327;
 	background: #fff;
 	margin-bottom: -2px;
 	line-height: 1.9;
 }
+
 a.nav-tab:last-of-type {
 	border-right: none !important;
 }
+
 /* CodeMirror Editor */
 .CodeMirror {
 	height: 500px;
@@ -303,9 +317,11 @@ a.nav-tab:last-of-type {
 .form-table td .accordion-title label {
 	margin: 0 !important;
 }
+
 .fe-ai-search-wrapper {
 	margin: 10px 0;
 }
+
 .japanese-tokenizer-status {
 	border: 1px solid #c3c4c7;
 	background: #f6f7f7;
@@ -313,24 +329,29 @@ a.nav-tab:last-of-type {
 	margin-bottom: 1.5em;
 	border-radius: 4px;
 }
+
 #fe_ai_search_sync_wrapper button {
 	margin-right: 10px;
 }
+
 .sync-status {
 	margin-bottom: 1em;
 	padding: 10px;
 	background-color: #f0f0f1;
 	border-radius: 5px;
 }
+
 #fe_ai_search_tokenizer_status {
 	border: 1px solid #c3c4c7;
 	padding: 10px 10px;
 	margin-bottom: 1em;
 	border-radius: 4px;
 }
+
 #fe_ai_search_tokenizer_status p {
 	margin: 0;
 }
+
 #fe_ai_search_condition_for_displaying_the_chat {
 	padding: 1em;
 	background: #f0f0f1;
@@ -345,9 +366,11 @@ a.nav-tab:last-of-type {
 	border-radius: 5px;
 	margin: 0 auto 1em -1em;
 }
+
 #fe_ai_search_settings_display_floating_enable_floating_mode label {
 	margin: 0 !important;
 }
+
 #fe_ai_search_animation_speed_value {
 	display: inline-block;
 	vertical-align: middle;
@@ -355,12 +378,14 @@ a.nav-tab:last-of-type {
 	text-align: right;
 	font-weight: bold;
 }
+
 .fe-ai-search-wrapper.slider {
 	padding: 1em;
 	border: 1px solid silver;
 	border-radius: 5px;
 	display: inline-flex;
 }
+
 .form-table td > div {
 	margin: 0 0 1em;
 }
@@ -430,6 +455,7 @@ a:has(.dashicons-warning) span {
 		transform: rotate(360deg);
 	}
 }
+
 #tab_provider details {
 	margin-bottom: 1em;
 }
@@ -437,10 +463,12 @@ a:has(.dashicons-warning) span {
 #tab_provider details strong {
 	color: #0071a1;
 }
+
 #tab_provider details summary {
 	cursor: pointer;
 	color: #0071a1;
 }
+
 #tab_provider details>div {
 	background: #f9f9f9;
 	border: 1px solid #ddd;
@@ -448,17 +476,21 @@ a:has(.dashicons-warning) span {
 	margin-top: 5px;
 	border-radius: 4px;
 }
+
 #tab_provider details p {
 	margin: 0;
 }
+
 #tab_provider details .fe-ai-subheading {
 	font-weight: 600;
     margin: 1em 0 0.5em;
 }
+
 #tab_provider details b {
 	font-weight: bold;
 	margin: 1em;
 }
+
 #tab_provider details ul {
 	list-style: square;
 	list-style-position: inside;
@@ -468,10 +500,6 @@ a:has(.dashicons-warning) span {
 	License Tab Pro promotion section
 	========================================================================== */
 
-/* License tab Pro promotion wrapper */
-#tab_license .fe-ai-search-pro-promo {
-  /* Keep existing inline styles: margin-top, padding, border, background as is */
-}
 #tab_license .fe-ai-search-pro-promo hr {
 	width: 80%;
     margin: auto;
@@ -572,13 +600,13 @@ a:has(.dashicons-warning) span {
 
 /* External link icon */
 #tab_license .fe-ai-search-pro-promo .button::after {
-    content: "\f504";              /* Code point for dashicons-external */
+    content: "\f504"; /* dashicons-external */
     font-family: "dashicons";
     display: inline-block;
     margin-left: 0.4em;
     font-size: 1em;
     position: relative;
-    top: 0.08em;                   /* Slightly shift down for vertical alignment */
+    top: 0.08em;
 }
 
 #tab_license .fe-ai-search-pro-promo .button:hover {

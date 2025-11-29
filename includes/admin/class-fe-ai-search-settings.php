@@ -83,12 +83,12 @@ class FE_AI_Search_Settings {
 					version <?php echo FE_AI_SEARCH_VERSION; ?>
 				</div>
 				<div id="plugin_support">
-					<a href="https://fe-search.com/ai/manual/"
+					<a href="https://fe-search.com/docs/ai/"
 						target="_blank"
 						title="<?php esc_attr_e( 'Go to the instruction manual', 'fe-ai-search' ); ?>">
 						<?php esc_html_e( 'Docs', 'fe-ai-search' ); ?>
 					</a>
-					<a href="https://fe-search.com/ai/support/forum/"
+					<a href="https://fe-search.com/support/forum/"
 						target="_blank"
 						title="<?php esc_attr_e( 'Go to a forum', 'fe-ai-search' ); ?>">
 						<?php esc_html_e( 'Forums', 'fe-ai-search' ); ?>
@@ -203,22 +203,22 @@ class FE_AI_Search_Settings {
 				<div id="tab_provider" class="tab-content">
 					<details>
 						<summary>
-							<?php esc_html_e( 'API 利用上限値とコストについて', 'fe-ai-search' ); ?>
+							<?php esc_html_e( 'API usage limits and costs', 'fe-ai-search' ); ?>
 						</summary>
 						<div>
 							<p>
-								<?php echo esc_html( 'ご利用になる各 AI プロバイダーの管理画面で API キーを発行し、下の入力欄に設定してください。これらの API の利用には費用が発生します。ご利用前に、必ず各社の料金表をご確認ください。なお、設定ミスや不正利用などによる想定外のトークン消費を防ぐため、本プラグインではレートリミットを設けています。' ); ?>
+								<?php esc_html_e( 'Generate an API key in the dashboard of each AI provider you plan to use, and enter it in the fields below. Using these APIs incurs usage-based charges. Before enabling the chat, please review each provider\'s pricing carefully. To help prevent unexpected token usage due to misconfiguration or abuse, this plugin applies built-in rate limits.', 'fe-ai-search' ); ?>
 							</p>
-							<p class="fe-ai-subheading"><?php esc_html_e( 'API 利用上限（初期値）', 'fe-ai-search' ); ?></p>
+							<p class="fe-ai-subheading"><?php esc_html_e( 'Default API usage limits', 'fe-ai-search' ); ?></p>
 							<ul>
-								<li><?php echo esc_html( 'IP アドレスごと：1 時間あたり 50 リクエスト' ); ?></li>
-								<li><?php echo esc_html( 'サイト全体：1 日あたり 1000 リクエスト' ); ?></li>
+								<li><?php esc_html_e( 'Per IP address: 50 requests per hour', 'fe-ai-search' ); ?></li>
+								<li><?php esc_html_e( 'Per site (total): 1,000 requests per day', 'fe-ai-search' ); ?></li>
 							</ul>
 							<p>
 								<?php
 									/* translators: 1: opening code tag, 2: closing code tag, 3: opening link tag, 4: closing link tag */
 									printf(
-										esc_html__( 'これらの上限値は、フィルターフック %1$sfe_ai_search_rate_limit_settings%2$s を利用してテーマやプラグインから変更できます。開発者向けの詳細なサンプルコードは、%3$sドキュメント%4$sをご参照ください。', 'fe-ai-search' ),
+										esc_html__( 'You can change these limits from your theme or another plugin using the %1$sfe_ai_search_rate_limit_settings%2$s filter hook. For full sample code, please refer to the %3$sdocumentation%4$s.', 'fe-ai-search' ),
 										'<code>',
 										'</code>',
 										'<a href="https://fe-search.com/ai/manual/" target="_blank" rel="noopener noreferrer">',
@@ -747,7 +747,7 @@ class FE_AI_Search_Settings {
 						<?php echo esc_html( $post_type->label ); ?> (<?php echo esc_html( $post_type->name ); ?>)
 					</label>
 				</h4>
-				<div class="accordion-content <?php echo $is_enabled ? 'open' : ''; ?>">
+				<div class="accordion-content">
 					<div class="accordion-inner">
 						<fieldset>
 							<label>
@@ -1236,35 +1236,34 @@ class FE_AI_Search_Settings {
 	 * Renders the HTML for the "Chat Text & Colors" settings.
 	 *
 	 * This method renders the input fields for all chat UI text, labels,
-	 * key color, animation speed, and privacy page links.
-	 *
-	 * @since 1.0.0
+	 * and color options used by the frontend chat UI.
 	 */
 	public function display_text_color_field_html() {
-		// Get the saved settings for each group
-		$ui_options   = $this->options['display']['ui'] ?? [];
-		$text_options = $this->options['display']['text'] ?? [];
+		$display_options = $this->options['display']['text'] ?? [];
+		$ui_options      = $this->options['display']['ui'] ?? [];
 
-		// Define all translated default values in one place
 		$defaults = [
 			'window_title'       => __( 'FE Search AI', 'fe-ai-search' ),
-			'greeting_message'   => __( 'Hello! Please ask me anything about the information on this site.', 'fe-ai-search' ),
-			'placeholder_text'   => __( 'Please enter a question...', 'fe-ai-search' ),
+			'greeting_message'   => __( 'Hello! I am FE Search AI. How can I help you today?', 'fe-ai-search' ),
+			'placeholder_text'   => __( 'Ask a question about this site…', 'fe-ai-search' ),
 			'submit_button_text' => __( 'Send', 'fe-ai-search' ),
+			'key_color'          => '#0073aa',
+			'background_color'   => '#f5f5f5',
+			'text_color'         => '#111111',
 		];
 
-		// Get the saved value, or use the translated default
-		$window_title       = $text_options['window_title'] ?? $defaults['window_title'];
-		$greeting_message   = $text_options['greeting_message'] ?? $defaults['greeting_message'];
-		$placeholder_text   = $text_options['placeholder_text'] ?? $defaults['placeholder_text'];
-		$submit_button_text = $text_options['submit_button_text'] ?? $defaults['submit_button_text'];
-		$key_color          = $ui_options['key_color'] ?? '#0073aa';
-		$background_color   = $ui_options['background_color'] ?? '#f5f5f5';
-		$text_color         = $ui_options['text_color'] ?? '#111111';
+		$window_title       = $display_options['window_title'] ?? $defaults['window_title'];
+		$greeting_message   = $display_options['greeting_message'] ?? $defaults['greeting_message'];
+		$placeholder_text   = $display_options['placeholder_text'] ?? $defaults['placeholder_text'];
+		$submit_button_text = $display_options['submit_button_text'] ?? $defaults['submit_button_text'];
 
+		$key_color        = $ui_options['key_color'] ?? $defaults['key_color'];
+		$background_color = $ui_options['background_color'] ?? $defaults['background_color'];
+		$text_color       = $ui_options['text_color'] ?? $defaults['text_color'];
+		$use_gradient     = $ui_options['use_gradient'] ?? true;
 		?>
 		<p>
-			<label for="fe_ai_search_window_title"><?php esc_html_e( 'Window title', 'fe-ai-search' ); ?></label>
+			<label for="fe_ai_search_window_title"><?php esc_html_e( 'Chat window title', 'fe-ai-search' ); ?></label>
 			<input
 				type="text"
 				id="fe_ai_search_window_title"
@@ -1339,6 +1338,18 @@ class FE_AI_Search_Settings {
 				class="fe-ai-search-color-picker"
 			><br />
 			<span class="description"><?php esc_html_e( 'Default text color used for chat content and labels.', 'fe-ai-search' ); ?></span>
+		</p>
+		<p>
+			<label>
+				<input
+					type="checkbox"
+					name="fe_ai_search_settings[display][ui][use_gradient]"
+					value="1"
+					<?php checked( (bool) $use_gradient ); ?>
+				>
+				<?php esc_html_e( 'Display chat background and key color with gradients', 'fe-ai-search' ); ?>
+			</label><br />
+			<span class="description"><?php esc_html_e( 'When unchecked, the chat UI will use flat colors without gradients.', 'fe-ai-search' ); ?></span>
 		</p>
 
 		<script>
@@ -1914,9 +1925,11 @@ class FE_AI_Search_Settings {
 		if ( ! in_array( $send_mode, [ 'enter', 'shift_enter', 'cmd_enter' ], true ) ) {
 			$send_mode = 'enter';
 		}
-		$new_input['send_mode']  = $send_mode;
-		$new_input['enable_css'] = ! empty( $input['enable_css'] );
-		$new_input['enable_js']  = ! empty( $input['enable_js'] );
+		$new_input['send_mode']    = $send_mode;
+		$new_input['enable_css']   = ! empty( $input['enable_css'] );
+		$new_input['enable_js']    = ! empty( $input['enable_js'] );
+		$new_input['use_gradient'] = ! empty( $input['use_gradient'] );
+
 		return $new_input;
 	}
 
