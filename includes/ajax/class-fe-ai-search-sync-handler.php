@@ -54,10 +54,12 @@ class FE_AI_Search_Sync_Handler {
 
 		$license_data = get_option( 'fe_ai_search_license', [] );
 		$status       = $license_data['status'] ?? 'inactive';
-		$products     = $license_data['data']['products'] ?? [];
+		$data         = $license_data['data'] ?? [];
+		$product_id   = isset( $data['productId'] ) ? (int) $data['productId'] : 0;
 
 		// Set license status for use in various methods.
-		$this->is_license_active = ( 'active' === $status && in_array( 'pro', $products, true ) );
+		// Active when the status is "active" and the product ID matches the Pro add-on.
+		$this->is_license_active = ( 'active' === $status && 65 === $product_id );
 
 		// $this->is_license_active = true; // Debug override
 

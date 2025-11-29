@@ -125,34 +125,57 @@ class FE_AI_Search_Assets {
 			$accent_bottom_hex = $key_color;
 		}
 
-		$license_data      = get_option( 'fe_ai_search_license', [] );
-		$status            = $license_data['status'] ?? 'inactive';
-		$products          = $license_data['data']['products'] ?? [];
-		$is_license_active = ( 'active' === $status && in_array( 'pro', $products, true ) );
-		$pro_options       = [];
-		$ip_limit_count    = 50; // Default (per-IP, per-hour limit)
-		$privacy_config    = [
+		$license_data = get_option( 'fe_ai_search_license', [] );
+		$status       = $license_data['status'] ?? 'inactive';
+		$data         = $license_data['data'] ?? [];
+		$product_id   = isset( $data['productId'] ) ? (int) $data['productId'] : 0;
+		// Treat the license as active when the status is "active" and the product ID
+		// matches the Pro add-on (productId = 65 in License Manager for WooCommerce).
+		$is_license_active = ( 'active' === $status && 65 === $product_id );
+
+		// Prepare initial defaults for rate limiting.
+		// In the Free version, these values act as the base. When the Pro version is active,
+		// they can be overridden by the values stored in fe_ai_search_pro_settings.
+		$pro_options    = [];
+		$ip_limit_count = 50; // Default: 50 requests per IP address per hour
+
+		// Prepare initial defaults for privacy consent banner.
+		$privacy_config = [
 			'enable_consent'  => false,
 			'consent_message' => '',
 		];
+
 		if ( class_exists( '\\FEAISearch\\Pro\\Admin\\FE_AI_Search_Pro_Settings' ) ) {
 			$pro_options        = get_option( 'fe_ai_search_pro_settings', [] );
 			$rate_limit_options = $pro_options['security']['rate_limit'] ?? [];
-			$ip_limit_count     = $rate_limit_options['ip_limit_count'] ?? 50;
+			// If the Pro settings define an IP-based limit, override the Free default here.
+			$ip_limit_count = $rate_limit_options['ip_limit_count'] ?? 50;
 		}
 
-		// Normalize the per-IP limit using the same filter as the streaming handler
-		// so that Free/Pro overrides and defaults are consistent across backend and frontend.
-		$default_limits    = [
+		// Use the same filter (fe_ai_search_rate_limit_settings) as the streaming handler
+		// to determine the final rate limit configuration.
+		// This allows Free/Pro and site-specific customizations to override the limits
+		// through a single shared interface.
+		$default_limits = [
 			'ip_limit_count'     => (int) $ip_limit_count,
 			'global_limit_count' => 1000,
 			'notify_threshold'   => 80,
 			'notify_email'       => get_option( 'admin_email' ),
 		];
+
+		/**
+		 * Filter the final rate limit configuration.
+		 *
+		 * Allows external code (themes/plugins) to adjust the rate limit settings
+		 * using $default_limits as the base configuration.
+		 */
 		$rate_limit_config = apply_filters( 'fe_ai_search_rate_limit_settings', $default_limits );
+
+		// Ensure any missing keys are filled with defaults to avoid notices/warnings.
 		$rate_limit_config = wp_parse_args( $rate_limit_config, $default_limits );
 		$ip_limit_count    = (int) $rate_limit_config['ip_limit_count'];
 
+		// Build the privacy consent configuration from Pro settings, if available.
 		if ( ! empty( $pro_options ) ) {
 			$privacy_options = $pro_options['privacy'] ?? [];
 			$enable_consent  = ! empty( $privacy_options['enable_consent'] );
@@ -246,6 +269,7 @@ class FE_AI_Search_Assets {
 			}
 		}
 
+		// If default plugin JavaScript is disabled, do not enqueue any frontend script.
 		if ( ! $enable_js ) {
 			return;
 		}
@@ -270,6 +294,7 @@ class FE_AI_Search_Assets {
 			__( '(You have reached the request limit. Please wait a while before trying again.)', 'fe-ai-search' )
 		);
 
+		// Expose configuration and runtime data to the frontend chat script.
 		wp_localize_script(
 			'fe-ai-search-frontend-scripts',
 			'fe_ai_search_ajax_obj',

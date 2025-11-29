@@ -48,9 +48,12 @@ class FE_AI_Search_Chat_Handler {
 		 */
 		$license_data = get_option( 'fe_ai_search_license', [] );
 		$status       = $license_data['status'] ?? 'inactive';
-		$products     = $license_data['data']['products'] ?? [];
+		$data         = $license_data['data'] ?? [];
+		$product_id   = isset( $data['productId'] ) ? (int) $data['productId'] : 0;
 
-		$this->is_license_active = ( 'active' === $status );
+		// Treat the license as active when the status is "active" and the product ID
+		// matches the Pro add-on (productId = 65 in License Manager for WooCommerce).
+		$this->is_license_active = ( 'active' === $status && 65 === $product_id );
 		$this->sync_handler      = $sync_handler;
 
 		add_action( 'rest_api_init', [ $this, 'register_endpoints' ] );
