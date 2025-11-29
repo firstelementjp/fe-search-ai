@@ -53,7 +53,7 @@ class FE_AI_Search_Settings {
 
 		if ( class_exists( '\\FEAISearch\\Pro\\Admin\\FE_AI_Search_Pro_Settings' ) && ! $this->is_license_active ) {
 			$this->license_alert_icon = '<a href="' . admin_url( 'admin.php' )
-			. '?page=fe-ai-search#tab-license">'
+			. '?page=fe-ai-search#tab_license">'
 			. '<span class="dashicons dashicons-warning"></span></a>';
 		}
 
@@ -72,23 +72,88 @@ class FE_AI_Search_Settings {
 	public static function render_page() {
 		?>
 		<div class="wrap">
-			<div id="feas-head">
-				<div id="feas-head-upper">
+			<div id="plugin_header">
+				<div id="plugin_header_upper">
 					<h1>FE Search <span>AI</span></h1>
-					<a href="https://www.firstelement.co.jp/" id="feas-logo" target="_blank" title="開発会社HPへ移動"><img src="<?php echo plugin_dir_url( FE_AI_SEARCH_PLUGIN_FILE ); ?>/assets/images/logo-feas-white-shadow-s@2x-min.png" width="106" height="27"></a>
+					<a href="https://www.firstelement.co.jp/" id="plugin_logo" target="_blank" title="<?php esc_attr_e( 'Go to the developer\'s website', 'fe-ai-search' ); ?>">
+						<img src="<?php echo plugin_dir_url( FE_AI_SEARCH_PLUGIN_FILE ); ?>/assets/images/logo-feas-white-shadow-s@2x-min.png" width="106" height="27">
+					</a>
 				</div>
-				<div id="feas-version">version <?php echo FE_AI_SEARCH_VERSION; ?></div>
-				<div id="feas-support">
-					<a href="https://fe-search.com/ai/manual/" target="_blank" title="使用説明書へ移動">使用説明書</a>
-					<a href="https://fe-search.com/ai/support/forum/" target="_blank" title="フォーラムへ移動">フォーラム </a>
-					<a href="https://www.youtube.com/@firstelementjp" target="_blank" title="YouTubeへ移動" class="icon icon_yt"><svg width="32px" height="32px" viewBox="0 0 32 32" id="icon" xmlns="http://www.w3.org/2000/svg"><defs><style>.cls-1{fill:none;}</style></defs><title>logo--youtube</title><path d="M29.41,9.26a3.5,3.5,0,0,0-2.47-2.47C24.76,6.2,16,6.2,16,6.2s-8.76,0-10.94.59A3.5,3.5,0,0,0,2.59,9.26,36.13,36.13,0,0,0,2,16a36.13,36.13,0,0,0,.59,6.74,3.5,3.5,0,0,0,2.47,2.47C7.24,25.8,16,25.8,16,25.8s8.76,0,10.94-.59a3.5,3.5,0,0,0,2.47-2.47A36.13,36.13,0,0,0,30,16,36.13,36.13,0,0,0,29.41,9.26ZM13.2,20.2V11.8L20.47,16Z"/><rect id="_Transparent_Rectangle_" data-name="&lt;Transparent Rectangle&gt;" class="cls-1" width="32" height="32"/></svg></a>
-					<a href="https://x.com/feas_wp/" target="_blank" title="Xへ移動" class="icon icon_tw"><svg id="fi_5968958" enable-background="new 0 0 1226.37 1226.37" viewBox="0 0 1226.37 1226.37" xmlns="http://www.w3.org/2000/svg"><path d="m727.348 519.284 446.727-519.284h-105.86l-387.893 450.887-309.809-450.887h-357.328l468.492 681.821-468.492 544.549h105.866l409.625-476.152 327.181 476.152h357.328l-485.863-707.086zm-144.998 168.544-47.468-67.894-377.686-540.24h162.604l304.797 435.991 47.468 67.894 396.2 566.721h-162.604l-323.311-462.446z"></path><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g></svg></a>
-					<a href="https://www.facebook.com/firstelementjp/" target="_blank" title="Facbookページへ移動" class="icon icon_fb"></a>
-					<a href="https://fe-search.com/contact/" target="_blank" title="メールフォームへ移動" class="icon icon_mail"></a>
+				<div id="plugin_version">
+					version <?php echo FE_AI_SEARCH_VERSION; ?>
+				</div>
+				<div id="plugin_support">
+					<a href="https://fe-search.com/ai/manual/"
+						target="_blank"
+						title="<?php esc_attr_e( 'Go to the instruction manual', 'fe-ai-search' ); ?>">
+						<?php esc_html_e( 'Docs', 'fe-ai-search' ); ?>
+					</a>
+					<a href="https://fe-search.com/ai/support/forum/"
+						target="_blank"
+						title="<?php esc_attr_e( 'Go to a forum', 'fe-ai-search' ); ?>">
+						<?php esc_html_e( 'Forums', 'fe-ai-search' ); ?>
+					</a>
+					<a href="https://github.com/firstelementjp/fe-ai-search"
+						target="_blank"
+						title="<?php esc_attr_e( 'Go to GitHub repository', 'fe-ai-search' ); ?>"
+						class="icon icon_gh">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							viewBox="0 0 20 20"
+							width="16"
+							height="16"
+						>
+							<g transform="translate(-140 -7559)" fill="currentColor" fill-rule="evenodd">
+								<g transform="translate(56 160)">
+									<path d="M94,7399 C99.523,7399 104,7403.59 104,7409.253 C104,7413.782 101.138,7417.624 97.167,7418.981 C96.66,7419.082 96.48,7418.762 96.48,7418.489 C96.48,7418.151 96.492,7417.047 96.492,7415.675 C96.492,7414.719 96.172,7414.095 95.813,7413.777 C98.04,7413.523 100.38,7412.656 100.38,7408.718 C100.38,7407.598 99.992,7406.684 99.35,7405.966 C99.454,7405.707 99.797,7404.664 99.252,7403.252 C99.252,7403.252 98.414,7402.977 96.505,7404.303 C95.706,7404.076 94.85,7403.962 94,7403.958 C93.15,7403.962 92.295,7404.076 91.497,7404.303 C89.586,7402.977 88.746,7403.252 88.746,7403.252 C88.203,7404.664 88.546,7405.707 88.649,7405.966 C88.01,7406.684 87.619,7407.598 87.619,7408.718 C87.619,7412.646 89.954,7413.526 92.175,7413.785 C91.889,7414.041 91.63,7414.493 91.54,7415.156 C90.97,7415.418 89.522,7415.871 88.63,7414.304 C88.63,7414.304 88.101,7413.319 87.097,7413.247 C87.097,7413.247 86.122,7413.234 87.029,7413.87 C87.029,7413.87 87.684,7414.185 88.139,7415.37 C88.139,7415.37 88.726,7417.2 91.508,7416.58 C91.513,7417.437 91.522,7418.245 91.522,7418.489 C91.522,7418.76 91.338,7419.077 90.839,7418.982 C86.865,7417.627 84,7413.783 84,7409.253 C84,7403.59 88.478,7399 94,7399" />
+								</g>
+							</g>
+						</svg>
+					</a>
+					<a href="https://www.youtube.com/@firstelementjp"
+						target="_blank"
+						title="<?php esc_attr_e( 'Go to a YouTube channel', 'fe-ai-search' ); ?>"
+						class="icon icon_yt">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							viewBox="0 0 32 32"
+							width="20"
+							height="20"
+						>
+							<path
+								fill="currentColor"
+								d="M29.41,9.26a3.5,3.5,0,0,0-2.47-2.47C24.76,6.2,16,6.2,16,6.2s-8.76,0-10.94.59A3.5,3.5,0,0,0,2.59,9.26,36.13,36.13,0,0,0,2,16a36.13,36.13,0,0,0,.59,6.74,3.5,3.5,0,0,0,2.47,2.47C7.24,25.8,16,25.8,16,25.8s8.76,0,10.94-.59a3.5,3.5,0,0,0,2.47-2.47A36.13,36.13,0,0,0,30,16,36.13,36.13,0,0,0,29.41,9.26ZM13.2,20.2V11.8L20.47,16Z"
+							/>
+						</svg>
+					</a>
+					<a href="https://x.com/feas_wp/"
+						target="_blank"
+						title="<?php esc_attr_e( 'Go to X', 'fe-ai-search' ); ?>"
+						class="icon icon_tw">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							viewBox="0 0 1226.37 1226.37"
+							width="20"
+							height="20"
+						>
+							<path
+								fill="currentColor"
+								d="m727.348 519.284 446.727-519.284h-105.86l-387.893 450.887-309.809-450.887h-357.328l468.492 681.821-468.492 544.549h105.866l409.625-476.152 327.181 476.152h357.328l-485.863-707.086zm-144.998 168.544-47.468-67.894-377.686-540.24h162.604l304.797 435.991 47.468 67.894 396.2 566.721h-162.604l-323.311-462.446z"
+							/>
+						</svg>
+					</a>
+					<a href="https://www.facebook.com/firstelementjp/"
+						target="_blank"
+						title="<?php esc_attr_e( 'Go to Facebook page', 'fe-ai-search' ); ?>"
+						class="icon icon_fb">
+					</a>
+					<a href="https://fe-search.com/contact/"
+						target="_blank"
+						title="<?php esc_attr_e( 'Go to contact form', 'fe-ai-search' ); ?>"
+						class="icon icon_mail">
+					</a>
 				</div>
 			</div>
-
-			<h2>設定</h2>
 
 			<?php
 			// Determine if the Pro license is active (same logic as in the constructor).
@@ -97,18 +162,18 @@ class FE_AI_Search_Settings {
 			$products     = $license_data['data']['products'] ?? [];
 			$is_pro       = ( 'active' === $status );
 			?>
-			<h2 class="nav-tab-wrapper">
-				<a href="#tab-provider" class="nav-tab"><?php esc_html_e( 'Providers', 'fe-ai-search' ); ?></a>
+			<div class="nav-tab-wrapper">
+				<a href="#tab_provider" class="nav-tab"><?php esc_html_e( 'Providers', 'fe-ai-search' ); ?></a>
 				<?php if ( $is_pro ) : ?>
 					<a href="#tab_models" class="nav-tab"><?php esc_html_e( 'Models', 'fe-ai-search' ); ?></a>
 				<?php endif; ?>
-				<a href="#tab-sync" class="nav-tab"><?php esc_html_e( 'Sync', 'fe-ai-search' ); ?></a>
-				<a href="#tab-prompt" class="nav-tab"><?php esc_html_e( 'Prompts', 'fe-ai-search' ); ?></a>
-				<a href="#tab-display" class="nav-tab"><?php esc_html_e( 'Display', 'fe-ai-search' ); ?></a>
+				<a href="#tab_sync" class="nav-tab"><?php esc_html_e( 'Sync', 'fe-ai-search' ); ?></a>
+				<a href="#tab_prompt" class="nav-tab"><?php esc_html_e( 'Prompts', 'fe-ai-search' ); ?></a>
+				<a href="#tab_display" class="nav-tab"><?php esc_html_e( 'Display', 'fe-ai-search' ); ?></a>
 				<?php if ( $is_pro ) : ?>
 					<a href="#tab_security" class="nav-tab"><?php esc_html_e( 'Security', 'fe-ai-search' ); ?></a>
 				<?php endif; ?>
-				<a href="#tab-advanced" class="nav-tab"><?php esc_html_e( 'Advanced settings', 'fe-ai-search' ); ?></a>
+				<a href="#tab_advanced" class="nav-tab"><?php esc_html_e( 'Advanced settings', 'fe-ai-search' ); ?></a>
 				<?php
 				/**
 				 * Fires within the settings page's tab wrapper to add custom navigation tabs.
@@ -121,7 +186,7 @@ class FE_AI_Search_Settings {
 				 */
 				do_action( 'fe_ai_search_settings_tabs' );
 				?>
-			</h2>
+			</div>
 
 			<?php
 			// Show Settings API errors for the Free plugin settings group.
@@ -135,7 +200,7 @@ class FE_AI_Search_Settings {
 				settings_fields( 'fe-ai-search-settings-group' );
 				?>
 
-				<div id="tab-provider" class="tab-content">
+				<div id="tab_provider" class="tab-content">
 					<details>
 						<summary>
 							<?php esc_html_e( 'API 利用上限値とコストについて', 'fe-ai-search' ); ?>
@@ -181,7 +246,7 @@ class FE_AI_Search_Settings {
 					<?php do_action( 'fe_ai_search_after_api_settings_fields' ); ?>
 				</div>
 
-				<div id="tab-sync" class="tab-content">
+				<div id="tab_sync" class="tab-content">
 					<?php do_settings_sections( 'fe_ai_search_sync_options_section' ); ?>
 					<table class="form-table">
 						<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_sync_options_section' ); ?>
@@ -203,7 +268,7 @@ class FE_AI_Search_Settings {
 					</table>
 				</div>
 
-				<div id="tab-display" class="tab-content">
+				<div id="tab_display" class="tab-content">
 					<?php do_settings_sections( 'fe_ai_search_display_floating_section' ); ?>
 					<table class="form-table">
 						<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_display_floating_section' ); ?>
@@ -230,7 +295,7 @@ class FE_AI_Search_Settings {
 					</table>
 				</div>
 
-				<div id="tab-prompt" class="tab-content">
+				<div id="tab_prompt" class="tab-content">
 					<?php do_settings_sections( 'fe_ai_search_prompt_section' ); ?>
 					<table class="form-table">
 						<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_prompt_section' ); ?>
@@ -238,7 +303,7 @@ class FE_AI_Search_Settings {
 					<?php do_action( 'fe_ai_search_after_prompt_settings_fields' ); ?>
 				</div>
 
-				<div id="tab-advanced" class="tab-content">
+				<div id="tab_advanced" class="tab-content">
 					<?php do_settings_sections( 'fe_ai_search_advanced_section' ); ?>
 					<table class="form-table">
 						<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_advanced_section' ); ?>
@@ -261,7 +326,7 @@ class FE_AI_Search_Settings {
 				 *
 				 * This action is intended to be used in conjunction with the
 				 * 'fe_ai_search_settings_tabs' action. It allows other plugins to render the
-				 * content (the <div id="tab-...">) for the custom tabs they have added.
+				 * content (the <div id="tab_...">) for the custom tabs they have added.
 				 *
 				 * @since 1.0.0
 				 */
@@ -513,7 +578,7 @@ class FE_AI_Search_Settings {
 							wp_kses_post( __( 'Available in the %s version.', 'fe-ai-search' ) ),
 							sprintf(
 								'<a href="%s" class="%s">%s</a>',
-								'#tab-license',
+								'#tab_license',
 								'fe-ai-search-change-model-link',
 								esc_html__( 'Pro', 'fe-ai-search' )
 							)
@@ -569,7 +634,7 @@ class FE_AI_Search_Settings {
 							wp_kses_post( __( 'Available in the %s version.', 'fe-ai-search' ) ),
 							sprintf(
 								'<a href="%s" class="%s">%s</a>',
-								'#tab-license',
+								'#tab_license',
 								'fe-ai-search-change-model-link',
 								esc_html__( 'Pro', 'fe-ai-search' )
 							)
@@ -625,7 +690,7 @@ class FE_AI_Search_Settings {
 							wp_kses_post( __( 'Available in the %s version.', 'fe-ai-search' ) ),
 							sprintf(
 								'<a href="%s" class="%s">%s</a>',
-								'#tab-license',
+								'#tab_license',
 								'fe-ai-search-change-model-link',
 								esc_html__( 'Pro', 'fe-ai-search' )
 							)
@@ -635,7 +700,7 @@ class FE_AI_Search_Settings {
 				<?php else : ?>
 					<div>
 						<?php echo $this->license_alert_icon; ?>
-						<a href="#tab-models" class="fe-ai-search-change-model-link">
+						<a href="#tab_models" class="fe-ai-search-change-model-link">
 							<?php esc_html_e( 'Change Model', 'fe-ai-search' ); ?> &raquo;
 						</a>
 					</div>
@@ -747,7 +812,7 @@ class FE_AI_Search_Settings {
 											wp_kses_post( __( 'Available in the %s version.', 'fe-ai-search' ) ),
 											sprintf(
 												'<a href="%s" class="%s">%s</a>',
-												'#tab-license',
+												'#tab_license',
 												'fe-ai-search-change-model-link',
 												esc_html__( 'Pro', 'fe-ai-search' )
 											)
@@ -877,6 +942,15 @@ class FE_AI_Search_Settings {
 		<?php
 	}
 
+	/**
+	 * Renders the UI for deleting all synced vector and keyword index data.
+	 *
+	 * This displays a button that triggers an AJAX-based delete process and
+	 * a status area for feedback messages.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
 	public function delete_vectors_ui_field_html() {
 		?>
 		<p class="description">
@@ -890,6 +964,15 @@ class FE_AI_Search_Settings {
 		<?php
 	}
 
+	/**
+	 * Renders the settings for the floating chat widget display rules.
+	 *
+	 * Controls login status visibility, device targeting, and per-template
+	 * display conditions including include/exclude post ID rules.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
 	public function display_floating_field_html() {
 		$floating_options = $this->options['display']['floating'] ?? [];
 
@@ -1061,6 +1144,15 @@ class FE_AI_Search_Settings {
 		<?php
 	}
 
+	/**
+	 * Renders the UI for the embed mode shortcode.
+	 *
+	 * Outputs a simple description and the shortcode that can be pasted into
+	 * a fixed page or post to embed the chat UI.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
 	public function display_embed_field_html() {
 		?>
 		<p class="description">
@@ -1070,6 +1162,15 @@ class FE_AI_Search_Settings {
 		<?php
 	}
 
+	/**
+	 * Renders the settings for the full-screen chat page.
+	 *
+	 * Uses a page dropdown to select the dedicated page and conditionally
+	 * disables the control when the Pro add-on is not active.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
 	public function display_fullscreen_field_html() {
 		$display_options = $this->options['display'] ?? [];
 		$should_disable  = ! ( class_exists( '\FEAISearch\Pro\Admin\FE_AI_Search_Pro_Settings' ) && $this->is_license_active );
@@ -1110,7 +1211,7 @@ class FE_AI_Search_Settings {
 						wp_kses_post( __( 'Available in the %s version.', 'fe-ai-search' ) ),
 						sprintf(
 							'<a href="%s" class="%s">%s</a>',
-							'#tab-license',
+							'#tab_license',
 							'fe-ai-search-change-model-link',
 							esc_html__( 'Pro', 'fe-ai-search' )
 						)
@@ -1288,6 +1389,15 @@ class FE_AI_Search_Settings {
 		<?php
 	}
 
+	/**
+	 * Renders the input field for limiting sync to specific post IDs.
+	 *
+	 * When any IDs are provided here, general post-type based sync rules
+	 * are ignored and only the specified posts are synchronized.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
 	public function include_post_ids_field_html() {
 		$sync_options = $this->options['sync'] ?? [];
 		$ids          = $sync_options['include']['ids'] ?? '';
@@ -1304,6 +1414,15 @@ class FE_AI_Search_Settings {
 		<?php
 	}
 
+	/**
+	 * Renders the input field for excluding specific post IDs from sync.
+	 *
+	 * Posts whose IDs are entered here will be skipped even if they match
+	 * the post-type based inclusion rules.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
 	public function exclude_post_ids_field_html() {
 		$sync_options = $this->options['sync'] ?? [];
 		$ids          = $sync_options['exclude']['ids'] ?? '';
@@ -1322,6 +1441,15 @@ class FE_AI_Search_Settings {
 		<?php
 	}
 
+	/**
+	 * Renders the numeric input for limiting the total number of posts to sync.
+	 *
+	 * A positive value limits synchronization to the most recent N posts,
+	 * while -1 indicates that all eligible posts should be synchronized.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
 	public function sync_limit_field_html() {
 		$sync_options = $this->options['sync'] ?? [];
 		$limit        = $sync_options['limit'] ?? 100;
@@ -1344,6 +1472,15 @@ class FE_AI_Search_Settings {
 		<?php
 	}
 
+	/**
+	 * Renders the checkbox that controls data deletion on plugin uninstall.
+	 *
+	 * When enabled, all plugin-related tables and options are removed during
+	 * uninstallation; otherwise data is preserved for potential re-use.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
 	public function delete_on_uninstall_field_html() {
 		$advanced_options    = $this->options['advanced'] ?? [];
 		$delete_on_uninstall = $advanced_options['delete_on_uninstall'] ?? false;
@@ -1372,6 +1509,15 @@ class FE_AI_Search_Settings {
 		<?php
 	}
 
+	/**
+	 * Renders the legacy UI for selecting post types to sync.
+	 *
+	 * This method is retained for backward compatibility and provides a
+	 * simple post-type checkbox list used by older sync configurations.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
 	public function sync_post_types_field_html() {
 		$post_types          = get_post_types( [ 'public' => true ], 'objects' );
 		$excluded_post_types = [ 'attachment' ];
@@ -1440,10 +1586,15 @@ class FE_AI_Search_Settings {
 	}
 
 	/**
-	 * Convert full-width numbers and other characters in the input value to half-width, and remove unnecessary characters.
+	 * Normalizes a numeric string by converting full-width characters and stripping non-digits.
 	 *
-	 * @param string $input Value before being saved
-	 * @return string Value after sanitization
+	 * Converts full-width numerals, spaces, and commas to their half-width
+	 * equivalents, then removes any character that is not a digit or comma.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $input Value before being saved.
+	 * @return string Value after sanitization.
 	 */
 	public function sanitize_numeric_string( $input ) {
 		// Convert full-width numbers, spaces, and commas to half-width.
@@ -1455,10 +1606,16 @@ class FE_AI_Search_Settings {
 	}
 
 	/**
-	 * Sanitize before saving display settings options
+	 * Sanitizes the display options array before saving.
 	 *
-	 * @param array $input Option array before being saved
-	 * @return array Option array after sanitization
+	 * Currently normalizes the include/exclude ID lists by converting
+	 * full-width numbers to half-width, while preserving the rest of the
+	 * structure as-is.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $input Option array before being saved.
+	 * @return array Option array after sanitization.
 	 */
 	public function sanitize_display_options( $input ) {
 		$new_input = $input;
@@ -1475,6 +1632,15 @@ class FE_AI_Search_Settings {
 		return $new_input;
 	}
 
+	/**
+	 * Renders the main system prompt editor field.
+	 *
+	 * If no custom prompt is saved, it falls back to the shared default
+	 * system prompt from the chat handler class.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
 	public function system_prompt_field_html() {
 		$prompt_options = $this->options['prompt'] ?? [];
 		$prompt         = $prompt_options['system_prompt'] ?? '';
@@ -1494,6 +1660,15 @@ class FE_AI_Search_Settings {
 		<?php
 	}
 
+	/**
+	 * Renders the numeric input for the sync batch size.
+	 *
+	 * Controls how many posts are processed per batch during synchronization
+	 * to balance performance and timeout risk on shared hosting.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
 	public function batch_size_field_html() {
 		$options    = $this->options['sync'] ?? [];
 		$batch_size = $options['batch_size'] ?? 10;
@@ -1539,6 +1714,15 @@ class FE_AI_Search_Settings {
 		<?php
 	}
 
+	/**
+	 * Renders the input field for the AI-visible site name.
+	 *
+	 * This value is injected into the system prompt in place of the
+	 * {site_name} placeholder; defaults to the WordPress site title.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
 	public function site_name_field_html() {
 		$prompt_options = $this->options['prompt'] ?? [];
 		$site_name      = $prompt_options['site_name'] ?? get_bloginfo( 'name' );
@@ -1548,6 +1732,15 @@ class FE_AI_Search_Settings {
 		<?php
 	}
 
+	/**
+	 * Renders the textarea input for the AI-visible site purpose.
+	 *
+	 * This value is injected into the system prompt in place of the
+	 * {site_purpose} placeholder; defaults to the site tagline.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
 	public function site_purpose_field_html() {
 		$prompt_options = $this->options['prompt'] ?? [];
 		$site_purpose   = $prompt_options['site_purpose'] ?? get_bloginfo( 'description' );

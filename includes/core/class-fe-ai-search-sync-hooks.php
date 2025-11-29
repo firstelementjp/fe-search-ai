@@ -231,7 +231,7 @@ class FE_AI_Search_Sync_Hooks {
 			// Delete keyword index entries.
 			$wpdb->query( $wpdb->prepare( "DELETE FROM `{$index_table}` WHERE `vector_id` IN ( {$placeholders} )", $vector_ids ) );
 			// Delete vectors.
-			$wpdb->query( $wpdb->prepare( "DELETE FROM `{$vectors_table}` WHERE `id` IN ( {$placeholders} )", $vector_ids ) ); // ★ Minor fix: Delete by vector ID for safety
+			$wpdb->query( $wpdb->prepare( "DELETE FROM `{$vectors_table}` WHERE `id` IN ( {$placeholders} )", $vector_ids ) );
 		}
 	}
 }

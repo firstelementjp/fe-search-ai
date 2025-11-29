@@ -12,7 +12,6 @@
 	========================================================================== */
 
 h4 {
-	/* margin: 1em 0 0.5em; */
 	font-size: 1.1em;
 }
 
@@ -37,13 +36,8 @@ code {
 	display: block;
 	margin: 0.5em 0;
 	padding: 0.5em;
-	/* background-color: #d4dbe6; */
 	border-radius: 5px;
 }
-
-/* hr {
-	margin: 2em 0 1em;
-} */
 
 .tab-content select,
 .tab-content input[type="text"],
@@ -82,7 +76,8 @@ textarea {
 /* ==========================================================================
 	Header
 	========================================================================== */
-#feas-head {
+
+#plugin_header {
 	display: grid;
 	grid-template: 60px 2.5rem / 1fr 1fr;
 	align-items: center;
@@ -93,18 +88,18 @@ textarea {
 	background-color: white;
 	margin-bottom: 15px;
 }
-#feas-head-upper {
+#plugin_header_upper {
 	grid-column: span 2;
 	display: grid;
 	grid-template: 60px / 1fr 1fr;
 	align-items: center;
 	padding: 0 1em;
 }
-#feas-head .plugin-title {
+#plugin_header .plugin-title {
 	font-size: 23px;
 	font-weight: 400;
 }
-#feas-head #feas-version {
+#plugin_header #plugin_version {
 	padding: 0 1em;
 	background-color: white;
 	height: 2.5rem;
@@ -112,74 +107,88 @@ textarea {
 	grid-template: 100% / 1fr;
 	align-items: center;
 }
-#feas-support {
+#plugin_support {
 	font-size: 12px;
 	padding: 0 1em;
 	height: 2.5rem;
 	background-color: white;
 	display: grid;
-	grid-template: 100% / 5em 5em 22px 20px 20px 17px;
+	grid-template: 100% / 3em 4em 22px 20px 20px 17px 17px;
 	grid-gap: 1.5em;
 	justify-content: end;
 	align-items: center;
 }
-#feas-support a {
+#plugin_support a {
 	text-align: right;
 }
-#feas-head #feas-logo {
+#plugin_header #plugin_logo {
 	display: grid;
 	margin-left: auto;
 	justify-content: center;
 	align-items: center;
 }
-#feas-head #feas-logo img {
+#plugin_header #plugin_logo img {
 	width: 106px;
 	height: 27px;
 }
-#feas-head a {
+#plugin_header a {
 	text-decoration: none;
 }
-#feas-head .icon {
-	content: '\f465';
+#plugin_header .icon {
 	-webkit-font-smoothing: antialiased;
 	font: normal 17px / 1 'dashicons';
 	color: #46aae6;
 	text-align: center;
 }
-#feas-head .icon_tw.icon {
+
+/* Dashicons-based header icons */
+#plugin_header .icon_fb.icon:before {
+	content: '\f305';
+}
+
+#plugin_header .icon_mail.icon:before {
+	content: '\f465';
+}
+
+/* SVG-based header icons (use currentColor) */
+#plugin_header .icon svg {
+	fill: currentColor;
+}
+
+#plugin_header .icon_tw.icon {
 	content: '';
 	display: grid;
 	justify-content: center;
 }
-#feas-head .icon_yt.icon svg {
+
+#plugin_header .icon_yt.icon svg {
 	width: 18px;
-	fill: #46aae6;
 }
-#feas-head .icon_tw.icon svg {
+
+#plugin_header .icon_tw.icon svg {
 	width: 12px;
-	fill: #46aae6;
 }
-#feas-head .icon_fb.icon:before {
-	content: '\f305';
-}
-#feas-head .icon_mail.icon:before {
-	content: '\f465';
-}
-#feas-head .icon_mail.icon svg {
+
+#plugin_header .icon_mail.icon svg {
 	width: 13px;
-	fill: #46aae6;
 }
-#feas-head h1 span {
+
+#plugin_header .icon_gh.icon svg {
+	width: 16px;
+}
+#plugin_header h1 span {
 	color: #6d6ddb;
 }
+
 /* ==========================================================================
 	Specific Components
 	========================================================================== */
+
 .wrap form:has(.tab-content) {
 	background: white;
 	padding: 1rem;
 }
-.wrap h2.nav-tab-wrapper {
+.wrap .nav-tab-wrapper {
 	border-bottom: none;
 }
 .nav-tab {
@@ -312,45 +321,29 @@ a.nav-tab:last-of-type {
 	padding: 10px;
 	background-color: #f0f0f1;
 	border-radius: 5px;
-	/* border: 1px solid #ddd; */
 }
 #fe_ai_search_tokenizer_status {
 	border: 1px solid #c3c4c7;
-    /* background: #f6f7f7; */
-    padding: 10px 10px;
-    margin-bottom: 1em;
-    border-radius: 4px;
+	padding: 10px 10px;
+	margin-bottom: 1em;
+	border-radius: 4px;
 }
 #fe_ai_search_tokenizer_status p {
 	margin: 0;
 }
 #fe_ai_search_condition_for_displaying_the_chat {
-    padding: 1em;
-    background: #f0f0f1;
+	padding: 1em;
+	background: #f0f0f1;
 	margin: 0 -1em;
-	/* position: relative; */
 }
-/* #fe_ai_search_condition_for_displaying_the_chat::before {
-	display: block;
-	left: 20px;
-    border: solid 8px transparent;
-    content: " ";
-    height: 0;
-    width: 0;
-    position: absolute;
-    pointer-events: none;
-    border-right-color: #f0f0f1;
-    top: 0;
-    margin-top: -8px;
-} */
 #fe_ai_search_floating_display_accordion .accordion-inner {
 	padding-bottom: 0;
 }
 #fe_ai_search_settings_display_floating_enable_floating_mode {
 	padding: 1em;
-    border: 1px solid silver;
-    border-radius: 5px;
-    margin: 0 auto 1em -1em;
+	border: 1px solid silver;
+	border-radius: 5px;
+	margin: 0 auto 1em -1em;
 }
 #fe_ai_search_settings_display_floating_enable_floating_mode label {
 	margin: 0 !important;
@@ -371,6 +364,7 @@ a.nav-tab:last-of-type {
 .form-table td > div {
 	margin: 0 0 1em;
 }
+
 /* ==========================================================================
 	Icons & Utilities
 	========================================================================== */
@@ -395,17 +389,15 @@ a:has(.dashicons-warning) span {
 	animation: spin 1s infinite linear;
 }
 
-/* --- Sync UI Styles --- */
-
+/* Sync UI Styles */
 #fe_ai_search_progress_container {
 	display: none;
-    width: 100%;
-    background-color: #eee;
-    /* border: 1px solid #ccc; */
-    border-radius: 4px;
-    margin-top: 1em;
+	width: 100%;
+	background-color: #eee;
+	border-radius: 4px;
+	margin-top: 1em;
 	margin-bottom: 0.5em;
-    overflow: hidden;
+	overflow: hidden;
 }
 
 #fe_ai_search_progress_bar {
@@ -438,36 +430,36 @@ a:has(.dashicons-warning) span {
 		transform: rotate(360deg);
 	}
 }
-#tab-provider details {
+#tab_provider details {
 	margin-bottom: 1em;
 }
 
-#tab-provider details strong {
+#tab_provider details strong {
 	color: #0071a1;
 }
-#tab-provider details summary {
+#tab_provider details summary {
 	cursor: pointer;
 	color: #0071a1;
 }
-#tab-provider details>div {
+#tab_provider details>div {
 	background: #f9f9f9;
 	border: 1px solid #ddd;
 	padding: 10px;
 	margin-top: 5px;
 	border-radius: 4px;
 }
-#tab-provider details p {
+#tab_provider details p {
 	margin: 0;
 }
-#tab-provider details .fe-ai-subheading {
+#tab_provider details .fe-ai-subheading {
 	font-weight: 600;
     margin: 1em 0 0.5em;
 }
-#tab-provider details b {
+#tab_provider details b {
 	font-weight: bold;
 	margin: 1em;
 }
-#tab-provider details ul {
+#tab_provider details ul {
 	list-style: square;
 	list-style-position: inside;
 }
@@ -475,17 +467,18 @@ a:has(.dashicons-warning) span {
 /* ==========================================================================
 	License Tab Pro promotion section
 	========================================================================== */
+
 /* License tab Pro promotion wrapper */
-#tab-license .fe-ai-search-pro-promo {
+#tab_license .fe-ai-search-pro-promo {
   /* Keep existing inline styles: margin-top, padding, border, background as is */
 }
-#tab-license .fe-ai-search-pro-promo hr {
+#tab_license .fe-ai-search-pro-promo hr {
 	width: 80%;
     margin: auto;
     border-top: 0;
     border-bottom: 1px solid silver;
 }
-#tab-license .fe-ai-search-pro-promo h3 {
+#tab_license .fe-ai-search-pro-promo h3 {
 	display: block;
     text-align: center;
     margin: -0.65em auto 1em;
@@ -496,12 +489,12 @@ a:has(.dashicons-warning) span {
     font-size: 1.3em;
 }
 
-#tab-license .fe-ai-search-pro-promo p {
+#tab_license .fe-ai-search-pro-promo p {
 	text-align: center;
 }
 
 /* Layout for the Pro feature list */
-#tab-license .fe-ai-search-pro-promo > ul {
+#tab_license .fe-ai-search-pro-promo > ul {
   margin: 16px 0 0;
   padding: 0;
   list-style: none; /* Remove default bullets from parent UL */
@@ -511,7 +504,7 @@ a:has(.dashicons-warning) span {
 }
 
 /* Individual feature blocks (cards) */
-#tab-license .fe-ai-search-pro-promo > ul > li {
+#tab_license .fe-ai-search-pro-promo > ul > li {
   margin: 0;
   padding: 16px 18px;
   border-radius: 6px;
@@ -521,7 +514,7 @@ a:has(.dashicons-warning) span {
 }
 
 /* Card heading */
-#tab-license .fe-ai-search-pro-promo > ul > li > h4 {
+#tab_license .fe-ai-search-pro-promo > ul > li > h4 {
   margin: 0 0 8px;
   font-size: 14px;
   font-weight: 600;
@@ -529,43 +522,43 @@ a:has(.dashicons-warning) span {
 }
 
 /* Keep inner UL (feature list) as regular bullet list */
-#tab-license .fe-ai-search-pro-promo > ul > li > ul {
+#tab_license .fe-ai-search-pro-promo > ul > li > ul {
   margin: 0;
   padding-left: 1.2em;
   list-style: disc;
 }
 
 /* Spacing for nested UL (sub bullet list) */
-#tab-license .fe-ai-search-pro-promo > ul > li ul ul {
+#tab_license .fe-ai-search-pro-promo > ul > li ul ul {
   margin-top: 4px;
 }
 
 /* Line height and font size for text items */
-#tab-license .fe-ai-search-pro-promo > ul > li li {
+#tab_license .fe-ai-search-pro-promo > ul > li li {
   font-size: 13px;
   line-height: 1.5;
 }
 
 /* Second-level list: remove bullets and indent by about one character */
-#tab-license .fe-ai-search-pro-promo > ul > li ul ul {
+#tab_license .fe-ai-search-pro-promo > ul > li ul ul {
 	list-style: none;
 	padding-left: 1em; /* Approximate indent width of one character */
 	margin: 4px 0 0;
 }
 
 /* Add a hyphen at the start of each second-level li */
-#tab-license .fe-ai-search-pro-promo > ul > li ul ul > li {
+#tab_license .fe-ai-search-pro-promo > ul > li ul ul > li {
 	position: relative;
 }
 
 /* Hyphen marker */
-#tab-license .fe-ai-search-pro-promo > ul > li ul ul > li::before {
+#tab_license .fe-ai-search-pro-promo > ul > li ul ul > li::before {
 	content: "- ";
 	position: absolute;
 	left: -1em;
 }
 
-#tab-license .fe-ai-search-pro-promo .button {
+#tab_license .fe-ai-search-pro-promo .button {
 	margin: 2em auto;
 	background: linear-gradient(139deg, #602fba, #0082ff);
     border: none;
@@ -578,7 +571,7 @@ a:has(.dashicons-warning) span {
 }
 
 /* External link icon */
-#tab-license .fe-ai-search-pro-promo .button::after {
+#tab_license .fe-ai-search-pro-promo .button::after {
     content: "\f504";              /* Code point for dashicons-external */
     font-family: "dashicons";
     display: inline-block;
@@ -588,7 +581,7 @@ a:has(.dashicons-warning) span {
     top: 0.08em;                   /* Slightly shift down for vertical alignment */
 }
 
-#tab-license .fe-ai-search-pro-promo .button:hover {
+#tab_license .fe-ai-search-pro-promo .button:hover {
     opacity: 1;
 }
 
@@ -601,7 +594,4 @@ a:has(.dashicons-warning) span {
 #fe-ai-search-tool-manifest summary,
 #fe-ai-search-api-guide summary {
 	font-weight: bold;
-}
-.toplevel_page_fe-ai-search .dashicons-before img {
-	width: 16px;
 }

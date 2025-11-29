@@ -436,7 +436,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	// We listen on the entire settings page for clicks.
 	const settingsWrapper = document.querySelector('.wrap');
 	if (settingsWrapper) {
-		// 初期状態で .accordion-content.open があれば表示し、タイトルにクラスを付与
+		// If there is any .accordion-content.open initially, show it and add a class to the title.
 		settingsWrapper.querySelectorAll('.accordion-content.open').forEach(content => {
 			content.style.display = 'block';
 			const title = content.previousElementSibling;
@@ -462,7 +462,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				// Simply toggle the display property. No animations, but always reliable.
 				const isOpen = content.style.display === 'block';
 				content.style.display = isOpen ? 'none' : 'block';
-				// タイトルの開閉状態クラスを更新（CSSの矢印向きに利用）
+				// Update the open/closed state class on the title (used for the CSS arrow direction).
 				if (isOpen) {
 					title.classList.remove('is-open');
 				} else {
@@ -541,10 +541,10 @@ document.addEventListener('DOMContentLoaded', () => {
 			const initialTabAnchor = hash ? tabsWrapper.querySelector(`a[href = "${hash}"]`) : null;
 			let initialTabId = null;
 			if (hash && initialTabAnchor) {
-				// 1) URL のハッシュが有効なら、それを優先
+				// 1) If the URL hash is valid, prefer it.
 				initialTabId = hash;
 			} else {
-				// 2) ハッシュが無ければ、localStorage に保存されたタブIDを試す
+				// 2) If there is no hash, try the tab ID stored in localStorage.
 				let storedTabId = null;
 				try {
 					storedTabId = window.localStorage.getItem('fe_ai_search_active_tab');
@@ -554,7 +554,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				if (storedTabId && tabsWrapper.querySelector(`a[href = "${storedTabId}"]`)) {
 					initialTabId = storedTabId;
 				} else {
-					// 3) それも無ければ、先頭のタブをフォールバックとして使用
+					// 3) If neither is available, fall back to the first tab.
 					initialTabId = tabsWrapper.querySelector('.nav-tab')?.getAttribute('href');
 				}
 			}

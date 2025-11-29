@@ -1089,7 +1089,8 @@ Instead, answer based only on the remaining visible text.
 		$question_len  = isset( $_POST['question_length'] ) ? intval( $_POST['question_length'] ) : 0;
 		$log_id        = 0;
 
-		// 質問テキストはプライバシー保護のため保存しない。セッションIDと回答があればログを作成する。
+		// For privacy protection, do not store the full question text. Only create a log entry
+		// when both a session ID and an answer are available.
 		if ( ! empty( $session_id ) && ! empty( $answer ) ) {
 			$wpdb->insert(
 				$logs_table,

@@ -70,13 +70,13 @@ class FE_AI_Search_Assets {
 		list( $bg_r, $bg_g, $bg_b )             = $bg_rgb;
 		list( $accent_r, $accent_g, $accent_b ) = $accent_rgb;
 
-		// チャット入力欄用に、背景色を白方向へ約50%明るくした色を計算。
+		// Calculate the input field background color by making the background color about 50% lighter.
 		$input_bg_r   = (int) round( $bg_r + ( 255 - $bg_r ) * 0.1 );
 		$input_bg_g   = (int) round( $bg_g + ( 255 - $bg_g ) * 0.1 );
 		$input_bg_b   = (int) round( $bg_b + ( 255 - $bg_b ) * 0.1 );
 		$input_bg_hex = sanitize_hex_color( sprintf( '#%02x%02x%02x', $input_bg_r, $input_bg_g, $input_bg_b ) ) ?: $background_color;
 
-		// ユーザーバブル用に、input用の色にアクセントカラーを少し(20%)混ぜた色を計算。
+		// Calculate the user chat bubble color by mixing a small amount (5%) of the accent color into the input color.
 		$user_bubble_mix = 0.05;
 		$user_bubble_r   = (int) round( $input_bg_r * ( 1 - $user_bubble_mix ) + $accent_r * $user_bubble_mix );
 		$user_bubble_g   = (int) round( $input_bg_g * ( 1 - $user_bubble_mix ) + $accent_g * $user_bubble_mix );
@@ -92,7 +92,7 @@ class FE_AI_Search_Assets {
 		$bg_top_g = (int) round( $bg_g * ( 1 - $bg_factor_dark ) );
 		$bg_top_b = (int) round( $bg_b * ( 1 - $bg_factor_dark ) );
 
-		// 背景の明るい側: 元の背景色の色相を少し回転させた上で、白を15%混ぜる。
+		// Calculate the bright side of the background color by slightly rotating the hue of the original background color and mixing in 15% white.
 		list( $h, $s, $l )       = $this->rgb_to_hsl( $bg_r, $bg_g, $bg_b );
 		$h                       = fmod( ( $h + 3.0 ), 360.0 );
 		list( $h_r, $h_g, $h_b ) = $this->hsl_to_rgb( $h, $s, $l );
@@ -107,7 +107,7 @@ class FE_AI_Search_Assets {
 		$accent_top_r                  = (int) round( $a_h_r * ( 1 - $accent_factor_dark ) );
 		$accent_top_g                  = (int) round( $a_h_g * ( 1 - $accent_factor_dark ) );
 		$accent_top_b                  = (int) round( $a_h_b * ( 1 - $accent_factor_dark ) );
-		// アクセントの明るい側(右上): 元のアクセント色に白を少し混ぜて明るくする。
+		// Bright side of the accent (top-right): slightly mix white into the original accent color to brighten it.
 		$accent_bot_r = (int) round( $accent_r + ( 255 - $accent_r ) * $accent_factor_light );
 		$accent_bot_g = (int) round( $accent_g + ( 255 - $accent_g ) * $accent_factor_light );
 		$accent_bot_b = (int) round( $accent_b + ( 255 - $accent_b ) * $accent_factor_light );
@@ -282,11 +282,12 @@ class FE_AI_Search_Assets {
 	}
 
 	/**
-	 * 背景色からボーダー用のカラーを自動生成する。
-	 * 暗い背景なら少し明るい色、明るい背景なら少し暗い色を返す。
+	 * Automatically generates a border color from the background color.
+	 * Returns a slightly lighter color for dark backgrounds and a slightly darker
+	 * color for light backgrounds.
 	 *
-	 * @param string $background_hex サニタイズ済みの HEX カラー (#rrggbb).
-	 * @return string HEX カラー (#rrggbb).
+	 * @param string $background_hex Sanitized HEX color (#rrggbb).
+	 * @return string HEX color (#rrggbb).
 	 */
 	private function generate_border_color_from_background( $background_hex ) {
 		$rgb = $this->hex_to_rgb( $background_hex );
@@ -322,10 +323,10 @@ class FE_AI_Search_Assets {
 	}
 
 	/**
-	 * HEX カラー (#rgb / #rrggbb) を RGB 配列 [r, g, b] に変換する。
-	 * 無効な値の場合は null を返す。
+	 * Converts a HEX color (#rgb / #rrggbb) to an RGB array [r, g, b].
+	 * Returns null for invalid values.
 	 *
-	 * @param string $hex HEX カラー.
+	 * @param string $hex HEX color.
 	 * @return array<int,int>|null
 	 */
 	private function hex_to_rgb( $hex ) {
@@ -350,7 +351,7 @@ class FE_AI_Search_Assets {
 	}
 
 	/**
-	 * RGB (0-255) から HSL (H:0-360, S:0-1, L:0-1) に変換する。
+	 * Converts RGB (0-255) to HSL (H:0-360, S:0-1, L:0-1).
 	 *
 	 * @param int $r Red.
 	 * @param int $g Green.
@@ -387,7 +388,7 @@ class FE_AI_Search_Assets {
 	}
 
 	/**
-	 * HSL (H:0-360, S:0-1, L:0-1) から RGB (0-255) に変換する。
+	 * Converts HSL (H:0-360, S:0-1, L:0-1) to RGB (0-255).
 	 *
 	 * @param float $h Hue.
 	 * @param float $s Saturation.

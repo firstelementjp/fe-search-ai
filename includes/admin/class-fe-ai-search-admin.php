@@ -117,14 +117,13 @@ class FE_AI_Search_Admin {
 	 */
 	public function add_admin_menu() {
 		$parent_slug = 'fe-ai-search';
-		$icon_url    = plugin_dir_url( FE_AI_SEARCH_PLUGIN_FILE ) . 'assets/images/fesai-logo.png';
 		add_menu_page(
 			'FE Search AI',
 			'FE Search AI',
 			'manage_options',
 			$parent_slug,
 			[ FE_AI_Search_Settings::class, 'render_page' ],
-			$icon_url,
+			'dashicons-search',
 			80
 		);
 		add_submenu_page(
