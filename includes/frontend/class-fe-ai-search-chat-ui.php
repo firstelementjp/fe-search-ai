@@ -186,25 +186,27 @@ class FE_AI_Search_Chat_UI {
 		$terms_page_id       = $links_options['terms_page_id'] ?? 0;
 		$privacy_page_id     = $links_options['privacy_page_id'] ?? 0;
 
-		// Ensure text fields fall back to defaults when empty or not set.
+		// Ensure text fields fall back to shared defaults when empty or not set.
+		$defaults = \FEAISearch\Core\FE_AI_Search_Defaults::get_display_text_defaults();
+
 		$window_title = trim( $text_options['window_title'] ?? '' );
 		if ( '' === $window_title ) {
-			$window_title = __( 'FE Search AI', 'fe-ai-search' );
+			$window_title = $defaults['window_title'];
 		}
 
 		$greeting_message = trim( $text_options['greeting_message'] ?? '' );
 		if ( '' === $greeting_message ) {
-			$greeting_message = __( 'Hello! Please ask me anything about the information on this site.', 'fe-ai-search' );
+			$greeting_message = $defaults['greeting_message'];
 		}
 
 		$placeholder_text = trim( $text_options['placeholder_text'] ?? '' );
 		if ( '' === $placeholder_text ) {
-			$placeholder_text = __( 'Please enter a question...', 'fe-ai-search' );
+			$placeholder_text = $defaults['placeholder_text'];
 		}
 
 		$submit_button_text = trim( $text_options['submit_button_text'] ?? '' );
 		if ( '' === $submit_button_text ) {
-			$submit_button_text = __( 'Submit', 'fe-ai-search' );
+			$submit_button_text = $defaults['submit_button_text'];
 		}
 
 		// Build the $args array for passing to the filter
@@ -226,8 +228,11 @@ class FE_AI_Search_Chat_UI {
 			<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
 			<div id="fe_ai_search_chat_bubble">
-				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="32" height="32">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="42" height="42" id="fe_ai_search_chat_bubble_icon">
 					<path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"></path>
+				</svg>
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 35 35" fill="currentColor" width="42" height="42" id="fe_ai_search_chat_bubble_icon_face">
+					<path d="M31.5,0H3.5C1.58,0,0,1.58,0,3.5v31.5l7-7h24.5c1.92,0,3.5-1.58,3.5-3.5V3.5c0-1.92-1.58-3.5-3.5-3.5ZM22.58,6.91c0-.72.59-1.31,1.31-1.31s1.31.59,1.31,1.31v3.5c0,.72-.59,1.31-1.31,1.31s-1.31-.59-1.31-1.31v-3.5ZM9.8,6.91c0-.72.59-1.31,1.31-1.31s1.31.59,1.31,1.31v3.5c0,.72-.59,1.31-1.31,1.31s-1.31-.59-1.31-1.31v-3.5ZM25.41,20.43c-2.63,1.25-5.27,1.88-7.91,1.88s-5.29-.62-7.91-1.88c-.65-.31-.93-1.09-.62-1.75s1.09-.93,1.75-.62c4.57,2.18,9.01,2.18,13.57,0,.65-.31,1.44-.03,1.75.62.31.65.03,1.44-.62,1.75Z"/>
 				</svg>
 			</div>
 

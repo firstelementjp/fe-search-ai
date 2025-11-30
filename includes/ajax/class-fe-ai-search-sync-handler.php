@@ -900,7 +900,7 @@ class FE_AI_Search_Sync_Handler {
 
 		// Log the successful call.
 		\FEAISearch\Core\FE_AI_Search_Logger::log(
-			'SUCCESS',
+			'INFO',
 			'OpenAI Embedding API call succeeded.',
 			[
 				'http_status'     => wp_remote_retrieve_response_code( $response ),
@@ -1025,7 +1025,7 @@ class FE_AI_Search_Sync_Handler {
 
 		// Log success.
 		\FEAISearch\Core\FE_AI_Search_Logger::log(
-			'SUCCESS',
+			'INFO',
 			'Gemini Embedding API call succeeded.',
 			[
 				'http_status'     => $response_code,
@@ -1089,7 +1089,15 @@ class FE_AI_Search_Sync_Handler {
 
 		// Tokenize
 		if ( 'ja' === $lang_code ) {
-			$words = $this->segmenter->segment( $text_normalized );
+			$tokenizer_engine = $this->get_japanese_tokenizer_engine();
+			if ( 'yahoo_ma' === $tokenizer_engine && $this->get_yahoo_app_id() ) {
+				$words = $this->tokenize_with_yahoo_api( $text_normalized );
+				if ( is_wp_error( $words ) || empty( $words ) ) {
+					$words = $this->segmenter->segment( $text_normalized );
+				}
+			} else {
+				$words = $this->segmenter->segment( $text_normalized );
+			}
 		} else {
 			$words = preg_split( '/\s+/', $text_normalized, -1, PREG_SPLIT_NO_EMPTY );
 		}
@@ -1159,6 +1167,134 @@ class FE_AI_Search_Sync_Handler {
 		return $final_words;
 	}
 
+	private function get_japanese_tokenizer_engine() {
+		$tokenizer_root = $this->options['tokenizer'] ?? [];
+		if ( ! is_array( $tokenizer_root ) ) {
+			$tokenizer_root = [];
+		}
+		$ja_conf = $tokenizer_root['ja'] ?? [];
+		if ( ! is_array( $ja_conf ) ) {
+			$ja_conf = [];
+		}
+		$engine = $ja_conf['engine'] ?? 'tinysegmenter';
+		if ( ! in_array( $engine, [ 'tinysegmenter', 'yahoo_ma' ], true ) ) {
+			$engine = 'tinysegmenter';
+		}
+		return $engine;
+	}
+
+	private function get_yahoo_app_id() {
+		if ( defined( 'FEAS_YAHOO_APP_ID' ) && FEAS_YAHOO_APP_ID ) {
+			return FEAS_YAHOO_APP_ID;
+		}
+		$tokenizer_root = $this->options['tokenizer'] ?? [];
+		if ( ! is_array( $tokenizer_root ) ) {
+			$tokenizer_root = [];
+		}
+		$ja_conf = $tokenizer_root['ja'] ?? [];
+		if ( ! is_array( $ja_conf ) ) {
+			$ja_conf = [];
+		}
+		$yahoo_id = $ja_conf['yahoo_id'] ?? '';
+		return (string) $yahoo_id;
+	}
+
+	private function tokenize_with_yahoo_api( $text_normalized ) {
+		$app_id = $this->get_yahoo_app_id();
+		if ( empty( $app_id ) ) {
+			return [];
+		}
+
+		$endpoint = 'https://jlp.yahooapis.jp/MAService/V2/parse';
+		$body     = [
+			'id'      => '1',
+			'jsonrpc' => '2.0',
+			'method'  => 'jlp.maservice.parse',
+			'params'  => [
+				'q'           => $text_normalized,
+				'ma_response' => 'surface,baseform',
+			],
+		];
+
+		$debug_mode = ! empty( $this->options['advanced']['debug_mode'] );
+		if ( $debug_mode ) {
+			\FEAISearch\Core\FE_AI_Search_Logger::log(
+				'INFO',
+				'Yahoo MA API request prepared.',
+				[
+					'endpoint'     => $endpoint,
+					// Since the full text tends to be long, only the beginning is logged.
+					'query_length' => mb_strlen( $text_normalized, 'UTF-8' ),
+				]
+			);
+		}
+
+		$response = wp_remote_post(
+			$endpoint,
+			[
+				'headers' => [
+					'Content-Type'   => 'application/json',
+					'User-Agent'     => 'Yahoo AppID: ' . $app_id,
+					'X-Yahoo-App-Id' => $app_id,
+				],
+				'body'    => wp_json_encode( $body ),
+				'timeout' => 20,
+			]
+		);
+
+		if ( is_wp_error( $response ) ) {
+			\FEAISearch\Core\FE_AI_Search_Logger::log(
+				'ERROR',
+				'Yahoo MA API call failed.',
+				[
+					'error_code'    => $response->get_error_code(),
+					'error_message' => $response->get_error_message(),
+				]
+			);
+			return $response;
+		}
+
+		$code = wp_remote_retrieve_response_code( $response );
+		$raw  = wp_remote_retrieve_body( $response );
+		$data = json_decode( $raw, true );
+
+		if ( 200 !== $code || ! isset( $data['result']['tokens'] ) || ! is_array( $data['result']['tokens'] ) ) {
+			\FEAISearch\Core\FE_AI_Search_Logger::log(
+				'ERROR',
+				'Yahoo MA API returned unexpected response.',
+				[
+					'http_status' => $code,
+				]
+			);
+			return [];
+		}
+
+		$words = [];
+		foreach ( $data['result']['tokens'] as $token_row ) {
+			// According to API docs: [surface, reading, baseform, pos, ...]
+			$surface  = $token_row[0] ?? '';
+			$baseform = $token_row[2] ?? '';
+			$word     = $baseform ?: $surface;
+			$word     = (string) $word;
+			if ( '' !== $word ) {
+				$words[] = $word;
+			}
+		}
+
+		if ( $debug_mode ) {
+			\FEAISearch\Core\FE_AI_Search_Logger::log(
+				'INFO',
+				'Yahoo MA API call succeeded.',
+				[
+					'http_status' => $code,
+					'token_count' => count( $words ),
+				]
+			);
+		}
+
+		return $words;
+	}
+
 	/**
 	 * Renders an administrator notification about internationalization
 	 */
@@ -1194,12 +1330,33 @@ class FE_AI_Search_Sync_Handler {
 			</p>
 		</div>
 		<script>
-			// Added the ability to flag hidden links without reloading the page
-			jQuery(function($){
-				$('div[data-dismiss-url]').on('click', '.notice-dismiss', function(e){
+			// Handle dismissing the notice and flagging it via AJAX without reloading the page.
+			document.addEventListener('DOMContentLoaded', function () {
+				var notice = document.querySelector('div[data-dismiss-url]');
+				if (!notice) {
+					return;
+				}
+				var dismissButton = notice.querySelector('.notice-dismiss');
+				if (!dismissButton) {
+					return;
+				}
+				dismissButton.addEventListener('click', function (e) {
 					e.preventDefault();
-					$.post(ajaxurl, { action: 'dismiss-wp-pointer', pointer: 'fe_ai_search_i18n_notice_dismissed' });
-					$(this).closest('.notice').fadeOut();
+					try {
+						var formData = new URLSearchParams();
+						formData.append('action', 'dismiss-wp-pointer');
+						formData.append('pointer', 'fe_ai_search_i18n_notice_dismissed');
+						if (typeof ajaxurl !== 'undefined') {
+							fetch(ajaxurl, {
+								method: 'POST',
+								body: formData
+								// No need to await; fire-and-forget is fine for this notification.
+							});
+						}
+					} catch (error) {
+						// Silently ignore errors; the notice will still be hidden locally.
+					}
+					notice.style.display = 'none';
 				});
 			});
 		</script>
@@ -1221,7 +1378,18 @@ class FE_AI_Search_Sync_Handler {
 		}
 
 		$status_label = '<strong>' . esc_html__( 'Japanese Tokenizer Status', 'fe-ai-search' ) . ':</strong>';
-		$status_text  = '<span style="color:#a0a5aa;">' . esc_html__( 'Built-in (TinySegmenter)', 'fe-ai-search' ) . '</span>';
+		$engine       = $this->get_japanese_tokenizer_engine();
+		$yahoo_id     = $this->get_yahoo_app_id();
+		if ( 'yahoo_ma' === $engine && ! empty( $yahoo_id ) ) {
+			$this->japanese_tokenizer = 'yahoo_ma';
+			$status_text              = '<span style="color:#46b450;">' . esc_html__( 'Yahoo! Japanese MA API (App ID configured)', 'fe-ai-search' ) . '</span>';
+		} elseif ( 'yahoo_ma' === $engine ) {
+			$this->japanese_tokenizer = 'yahoo_ma';
+			$status_text              = '<span style="color:#dc3232;">' . esc_html__( 'Yahoo! Japanese MA API (App ID missing)', 'fe-ai-search' ) . '</span>';
+		} else {
+			$this->japanese_tokenizer = 'tinysegmenter';
+			$status_text              = '<span style="color:#a0a5aa;">' . esc_html__( 'Built-in (TinySegmenter)', 'fe-ai-search' ) . '</span>';
+		}
 
 		/**
 		 * Filter the Japanese tokenizer status HTML shown in the Sync page.

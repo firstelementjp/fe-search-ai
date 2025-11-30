@@ -35,7 +35,7 @@ class FE_AI_Search_Logger {
 	 * This is a static method so it can be called from anywhere in the plugin
 	 * without needing to instantiate the class.
 	 *
-	 * @param string $level   The log level (e.g., 'INFO', 'SUCCESS', 'ERROR').
+	 * @param string $level   The log level (e.g., 'INFO', 'WARNING', 'ERROR', 'DEBUG').
 	 * @param string $message The main log message.
 	 * @param array  $data    Optional. Additional data to store as JSON.
 	 */

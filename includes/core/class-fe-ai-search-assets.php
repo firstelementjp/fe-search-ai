@@ -45,135 +45,46 @@ class FE_AI_Search_Assets {
 	 * Load scripts and styles for the front end.
 	 */
 	public function enqueue_assets() {
-		$ui_options       = $this->options['display']['ui'] ?? [];
-		$enable_css       = $ui_options['enable_css'] ?? true;
-		$enable_js        = $ui_options['enable_js'] ?? true;
-		$animation_speed  = $ui_options['animation_speed'] ?? 3;
-		$send_mode        = $ui_options['send_mode'] ?? 'enter';
-		$key_color        = $ui_options['key_color'] ?? '#0073aa';
-		$background_color = $ui_options['background_color'] ?? '#f5f5f5';
-		$text_color       = $ui_options['text_color'] ?? '#111111';
-		$use_gradient     = isset( $ui_options['use_gradient'] ) ? (bool) $ui_options['use_gradient'] : true;
-
-		$key_color        = sanitize_hex_color( $key_color ) ?: '#0073aa';
-		$background_color = sanitize_hex_color( $background_color ) ?: '#f5f5f5';
-		$text_color       = sanitize_hex_color( $text_color ) ?: '#111111';
-		$border_color     = $this->generate_border_color_from_background( $background_color );
-
-		$bg_rgb     = $this->hex_to_rgb( $background_color );
-		$accent_rgb = $this->hex_to_rgb( $key_color );
-		if ( ! $bg_rgb ) {
-			$bg_rgb = [ 240, 240, 240 ];
-		}
-		if ( ! $accent_rgb ) {
-			$accent_rgb = [ 0, 115, 170 ];
-		}
-		list( $bg_r, $bg_g, $bg_b )             = $bg_rgb;
-		list( $accent_r, $accent_g, $accent_b ) = $accent_rgb;
-
-		// Calculate the input field background color by making the background color about 50% lighter.
-		$input_bg_r   = (int) round( $bg_r + ( 255 - $bg_r ) * 0.1 );
-		$input_bg_g   = (int) round( $bg_g + ( 255 - $bg_g ) * 0.1 );
-		$input_bg_b   = (int) round( $bg_b + ( 255 - $bg_b ) * 0.1 );
-		$input_bg_hex = sanitize_hex_color( sprintf( '#%02x%02x%02x', $input_bg_r, $input_bg_g, $input_bg_b ) ) ?: $background_color;
-
-		// Calculate the user chat bubble color by mixing a small amount (5%) of the accent color into the input color.
-		$user_bubble_mix = 0.05;
-		$user_bubble_r   = (int) round( $input_bg_r * ( 1 - $user_bubble_mix ) + $accent_r * $user_bubble_mix );
-		$user_bubble_g   = (int) round( $input_bg_g * ( 1 - $user_bubble_mix ) + $accent_g * $user_bubble_mix );
-		$user_bubble_b   = (int) round( $input_bg_b * ( 1 - $user_bubble_mix ) + $accent_b * $user_bubble_mix );
-		$user_bubble_hex = sanitize_hex_color( sprintf( '#%02x%02x%02x', $user_bubble_r, $user_bubble_g, $user_bubble_b ) ) ?: $key_color;
-
-		$bg_factor_light     = 0.1;
-		$bg_factor_dark      = 0.05;
-		$accent_factor_light = 0.05;
-		$accent_factor_dark  = 0.05;
-
-		$bg_top_r = (int) round( $bg_r * ( 1 - $bg_factor_dark ) );
-		$bg_top_g = (int) round( $bg_g * ( 1 - $bg_factor_dark ) );
-		$bg_top_b = (int) round( $bg_b * ( 1 - $bg_factor_dark ) );
-
-		// Calculate the bright side of the background color by slightly rotating the hue of the original background color and mixing in 15% white.
-		list( $h, $s, $l )       = $this->rgb_to_hsl( $bg_r, $bg_g, $bg_b );
-		$h                       = fmod( ( $h + 3.0 ), 360.0 );
-		list( $h_r, $h_g, $h_b ) = $this->hsl_to_rgb( $h, $s, $l );
-		$bg_bot_r                = (int) round( $h_r + ( 255 - $h_r ) * $bg_factor_light );
-		$bg_bot_g                = (int) round( $h_g + ( 255 - $h_g ) * $bg_factor_light );
-		$bg_bot_b                = (int) round( $h_b + ( 255 - $h_b ) * $bg_factor_light );
-
-		// アクセントの暗い側(左下): アクセント色の色相を少し回転させた上で暗くする。
-		list( $ah, $as, $al )          = $this->rgb_to_hsl( $accent_r, $accent_g, $accent_b );
-		$ah                            = fmod( ( $ah + 3.0 ), 360.0 );
-		list( $a_h_r, $a_h_g, $a_h_b ) = $this->hsl_to_rgb( $ah, $as, $al );
-		$accent_top_r                  = (int) round( $a_h_r * ( 1 - $accent_factor_dark ) );
-		$accent_top_g                  = (int) round( $a_h_g * ( 1 - $accent_factor_dark ) );
-		$accent_top_b                  = (int) round( $a_h_b * ( 1 - $accent_factor_dark ) );
-		// Bright side of the accent (top-right): slightly mix white into the original accent color to brighten it.
-		$accent_bot_r = (int) round( $accent_r + ( 255 - $accent_r ) * $accent_factor_light );
-		$accent_bot_g = (int) round( $accent_g + ( 255 - $accent_g ) * $accent_factor_light );
-		$accent_bot_b = (int) round( $accent_b + ( 255 - $accent_b ) * $accent_factor_light );
-
-		$bg_top_hex        = sanitize_hex_color( sprintf( '#%02x%02x%02x', $bg_top_r, $bg_top_g, $bg_top_b ) ) ?: $background_color;
-		$bg_bottom_hex     = sanitize_hex_color( sprintf( '#%02x%02x%02x', $bg_bot_r, $bg_bot_g, $bg_bot_b ) ) ?: $background_color;
-		$accent_top_hex    = sanitize_hex_color( sprintf( '#%02x%02x%02x', $accent_top_r, $accent_top_g, $accent_top_b ) ) ?: $key_color;
-		$accent_bottom_hex = sanitize_hex_color( sprintf( '#%02x%02x%02x', $accent_bot_r, $accent_bot_g, $accent_bot_b ) ) ?: $key_color;
-
-		if ( ! $use_gradient ) {
-			$bg_top_hex        = $background_color;
-			$bg_bottom_hex     = $background_color;
-			$accent_top_hex    = $key_color;
-			$accent_bottom_hex = $key_color;
+		// Pro settings (used for rate limiting and privacy configuration).
+		$pro_options = [];
+		if ( $is_license_active && class_exists( '\\FEAISearch\\Pro\\Admin\\FE_AI_Search_Pro_Settings' ) ) {
+			$pro_options = get_option( 'fe_ai_search_pro_settings', [] );
 		}
 
-		$license_data = get_option( 'fe_ai_search_license', [] );
-		$status       = $license_data['status'] ?? 'inactive';
-		$data         = $license_data['data'] ?? [];
-		$product_id   = isset( $data['productId'] ) ? (int) $data['productId'] : 0;
-		// Treat the license as active when the status is "active" and the product ID
-		// matches the Pro add-on (productId = 65 in License Manager for WooCommerce).
-		$is_license_active = ( 'active' === $status && 65 === $product_id );
+		// License settings values
+		$license_data      = get_option( 'fe_ai_search_license', [] );
+		$status            = $license_data['status'] ?? 'inactive';
+		$data              = $license_data['data'] ?? [];
+		$product_id        = isset( $data['productId'] ) ? (int) $data['productId'] : 0;
+		$is_license_active = ( 'active' === $status && 65 === $product_id ); // 65 is the product ID for the Pro add-on.
 
-		// Prepare initial defaults for rate limiting.
-		// In the Free version, these values act as the base. When the Pro version is active,
-		// they can be overridden by the values stored in fe_ai_search_pro_settings.
-		$pro_options    = [];
-		$ip_limit_count = 50; // Default: 50 requests per IP address per hour
+		// UI settings values
+		$ui_options        = $this->options['display']['ui'] ?? [];
+		$enable_css        = $ui_options['enable_css'] ?? true;
+		$enable_js         = $ui_options['enable_js'] ?? true;
+		$animation_speed   = $ui_options['animation_speed'] ?? 3;
+		$send_mode         = $ui_options['send_mode'] ?? 'enter';
+		$key_color         = $ui_options['key_color'] ?? '#cee8ff';
+		$background_color  = $ui_options['background_color'] ?? '#f5f5f5';
+		$text_color        = $ui_options['text_color'] ?? '#3a424f';
+		$use_gradient      = isset( $ui_options['use_gradient'] ) ? (bool) $ui_options['use_gradient'] : true;
+		$key_color         = sanitize_hex_color( $key_color ) ?: '#0073aa';
+		$background_color  = sanitize_hex_color( $background_color ) ?: '#f5f5f5';
+		$text_color        = sanitize_hex_color( $text_color ) ?: '#111111';
+		$colors            = $this->compute_chat_colors( $key_color, $background_color, $text_color, $use_gradient );
+		$border_color      = $colors['border'];
+		$input_bg_hex      = $colors['input_bg'];
+		$user_bubble_hex   = $colors['user_bubble'];
+		$bg_top_hex        = $colors['bg_top'];
+		$bg_bottom_hex     = $colors['bg_bottom'];
+		$accent_top_hex    = $colors['accent_top'];
+		$accent_bottom_hex = $colors['accent_bottom'];
 
 		// Prepare initial defaults for privacy consent banner.
 		$privacy_config = [
 			'enable_consent'  => false,
 			'consent_message' => '',
 		];
-
-		if ( class_exists( '\\FEAISearch\\Pro\\Admin\\FE_AI_Search_Pro_Settings' ) ) {
-			$pro_options        = get_option( 'fe_ai_search_pro_settings', [] );
-			$rate_limit_options = $pro_options['security']['rate_limit'] ?? [];
-			// If the Pro settings define an IP-based limit, override the Free default here.
-			$ip_limit_count = $rate_limit_options['ip_limit_count'] ?? 50;
-		}
-
-		// Use the same filter (fe_ai_search_rate_limit_settings) as the streaming handler
-		// to determine the final rate limit configuration.
-		// This allows Free/Pro and site-specific customizations to override the limits
-		// through a single shared interface.
-		$default_limits = [
-			'ip_limit_count'     => (int) $ip_limit_count,
-			'global_limit_count' => 1000,
-			'notify_threshold'   => 80,
-			'notify_email'       => get_option( 'admin_email' ),
-		];
-
-		/**
-		 * Filter the final rate limit configuration.
-		 *
-		 * Allows external code (themes/plugins) to adjust the rate limit settings
-		 * using $default_limits as the base configuration.
-		 */
-		$rate_limit_config = apply_filters( 'fe_ai_search_rate_limit_settings', $default_limits );
-
-		// Ensure any missing keys are filled with defaults to avoid notices/warnings.
-		$rate_limit_config = wp_parse_args( $rate_limit_config, $default_limits );
-		$ip_limit_count    = (int) $rate_limit_config['ip_limit_count'];
 
 		// Build the privacy consent configuration from Pro settings, if available.
 		if ( ! empty( $pro_options ) ) {
@@ -197,6 +108,40 @@ class FE_AI_Search_Assets {
 			}
 		}
 
+		// Rate limit settings values (base defaults).
+		$ip_limit_count     = 50;  // Default: 50 requests per IP address per hour.
+		$global_limit_count = 1000; // Default: 1000 requests globally per hour.
+		$notify_threshold   = 80;   // Default: notify when 80% of the limit is reached.
+
+		if ( ! empty( $pro_options ) ) {
+			$rate_limit_options = $pro_options['security']['rate_limit'] ?? [];
+			$ip_limit_count     = $rate_limit_options['ip_limit_count'] ?? $ip_limit_count;
+			$global_limit_count = $rate_limit_options['global_limit_count'] ?? $global_limit_count;
+			$notify_threshold   = $rate_limit_options['notify_threshold'] ?? $notify_threshold;
+		}
+
+		$default_limits = [
+			'ip_limit_count'     => (int) $ip_limit_count,
+			'global_limit_count' => (int) $global_limit_count,
+			'notify_threshold'   => (int) $notify_threshold,
+			'notify_email'       => get_option( 'admin_email' ),
+		];
+
+		/**
+		 * Filter the final rate limit configuration.
+		 *
+		 * Allows external code (themes/plugins) to adjust the rate limit settings
+		 * using $default_limits as the base configuration.
+		 */
+		$rate_limit_config = apply_filters( 'fe_ai_search_rate_limit_settings', $default_limits );
+
+		// Ensure any missing keys are filled with defaults to avoid notices/warnings.
+		$rate_limit_config  = wp_parse_args( $rate_limit_config, $default_limits );
+		$ip_limit_count     = (int) $rate_limit_config['ip_limit_count'];
+		$global_limit_count = (int) $rate_limit_config['global_limit_count'];
+		$notify_threshold   = (int) $rate_limit_config['notify_threshold'];
+
+		// Enqueue frontend styles and scripts for the chat UI.
 		$use_unminified = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG;
 		$frontend_css   = $use_unminified ? 'assets/css/frontend-styles.css' : 'assets/css/frontend-styles.min.css';
 		$frontend_js    = $use_unminified ? 'assets/js/frontend-scripts.js' : 'assets/js/frontend-scripts.min.js';
@@ -312,6 +257,108 @@ class FE_AI_Search_Assets {
 				'rate_limit_message' => $rate_limit_message,
 			]
 		);
+	}
+
+	/**
+	 * Computes all derived chat UI colors (CSS variables) from the base colors.
+	 *
+	 * This method encapsulates the color math used to generate the gradient
+	 * endpoints, input background, user bubble background, and border color.
+	 *
+	 * @param string $key_color        Sanitized HEX key color.
+	 * @param string $background_color Sanitized HEX background color.
+	 * @param string $text_color       Sanitized HEX text color.
+	 * @param bool   $use_gradient     Whether gradients are enabled.
+	 * @return array{
+	 *     border: string,
+	 *     input_bg: string,
+	 *     user_bubble: string,
+	 *     bg_top: string,
+	 *     bg_bottom: string,
+	 *     accent_top: string,
+	 *     accent_bottom: string
+	 * }
+	 */
+	private function compute_chat_colors( string $key_color, string $background_color, string $text_color, bool $use_gradient ): array {
+		$border_color = $this->generate_border_color_from_background( $background_color );
+
+		// Convert HEX colors to RGB arrays so we can perform numeric adjustments
+		// (lighten/darken, mix accent color, and build gradient endpoints).
+		$bg_rgb     = $this->hex_to_rgb( $background_color );
+		$accent_rgb = $this->hex_to_rgb( $key_color );
+		if ( ! $bg_rgb ) {
+			$bg_rgb = [ 240, 240, 240 ];
+		}
+		if ( ! $accent_rgb ) {
+			$accent_rgb = [ 0, 115, 170 ];
+		}
+		list( $bg_r, $bg_g, $bg_b )             = $bg_rgb;
+		list( $accent_r, $accent_g, $accent_b ) = $accent_rgb;
+
+		// Calculate the input field background color by making the background color about 10% lighter.
+		$input_bg_r   = (int) round( $bg_r + ( 255 - $bg_r ) * 0.1 );
+		$input_bg_g   = (int) round( $bg_g + ( 255 - $bg_g ) * 0.1 );
+		$input_bg_b   = (int) round( $bg_b + ( 255 - $bg_b ) * 0.1 );
+		$input_bg_hex = sanitize_hex_color( sprintf( '#%02x%02x%02x', $input_bg_r, $input_bg_g, $input_bg_b ) ) ?: $background_color;
+
+		// Calculate the user chat bubble color by mixing a small amount (5%) of the accent color into the input color.
+		$user_bubble_mix = 0.05;
+		$user_bubble_r   = (int) round( $input_bg_r * ( 1 - $user_bubble_mix ) + $accent_r * $user_bubble_mix );
+		$user_bubble_g   = (int) round( $input_bg_g * ( 1 - $user_bubble_mix ) + $accent_g * $user_bubble_mix );
+		$user_bubble_b   = (int) round( $input_bg_b * ( 1 - $user_bubble_mix ) + $accent_b * $user_bubble_mix );
+		$user_bubble_hex = sanitize_hex_color( sprintf( '#%02x%02x%02x', $user_bubble_r, $user_bubble_g, $user_bubble_b ) ) ?: $key_color;
+
+		$bg_factor_light     = 0.1;
+		$bg_factor_dark      = 0.05;
+		$accent_factor_light = 0.05;
+		$accent_factor_dark  = 0.05;
+
+		$bg_top_r = (int) round( $bg_r * ( 1 - $bg_factor_dark ) );
+		$bg_top_g = (int) round( $bg_g * ( 1 - $bg_factor_dark ) );
+		$bg_top_b = (int) round( $bg_b * ( 1 - $bg_factor_dark ) );
+
+		// Calculate the bright side of the background color by slightly rotating the hue of the original background color and mixing in 15% white.
+		list( $h, $s, $l )       = $this->rgb_to_hsl( $bg_r, $bg_g, $bg_b );
+		$h                       = fmod( ( $h + 3.0 ), 360.0 );
+		list( $h_r, $h_g, $h_b ) = $this->hsl_to_rgb( $h, $s, $l );
+		$bg_bot_r                = (int) round( $h_r + ( 255 - $h_r ) * $bg_factor_light );
+		$bg_bot_g                = (int) round( $h_g + ( 255 - $h_g ) * $bg_factor_light );
+		$bg_bot_b                = (int) round( $h_b + ( 255 - $h_b ) * $bg_factor_light );
+
+		// Dark side of the accent (bottom-left): slightly rotate the accent hue and darken it.
+		list( $ah, $as, $al )          = $this->rgb_to_hsl( $accent_r, $accent_g, $accent_b );
+		$ah                            = fmod( ( $ah + 3.0 ), 360.0 );
+		list( $a_h_r, $a_h_g, $a_h_b ) = $this->hsl_to_rgb( $ah, $as, $al );
+		$accent_top_r                  = (int) round( $a_h_r * ( 1 - $accent_factor_dark ) );
+		$accent_top_g                  = (int) round( $a_h_g * ( 1 - $accent_factor_dark ) );
+		$accent_top_b                  = (int) round( $a_h_b * ( 1 - $accent_factor_dark ) );
+
+		// Bright side of the accent (top-right): slightly mix white into the original accent color to brighten it.
+		$accent_bot_r = (int) round( $accent_r + ( 255 - $accent_r ) * $accent_factor_light );
+		$accent_bot_g = (int) round( $accent_g + ( 255 - $accent_g ) * $accent_factor_light );
+		$accent_bot_b = (int) round( $accent_b + ( 255 - $accent_b ) * $accent_factor_light );
+
+		$bg_top_hex        = sanitize_hex_color( sprintf( '#%02x%02x%02x', $bg_top_r, $bg_top_g, $bg_top_b ) ) ?: $background_color;
+		$bg_bottom_hex     = sanitize_hex_color( sprintf( '#%02x%02x%02x', $bg_bot_r, $bg_bot_g, $bg_bot_b ) ) ?: $background_color;
+		$accent_top_hex    = sanitize_hex_color( sprintf( '#%02x%02x%02x', $accent_top_r, $accent_top_g, $accent_top_b ) ) ?: $key_color;
+		$accent_bottom_hex = sanitize_hex_color( sprintf( '#%02x%02x%02x', $accent_bot_r, $accent_bot_g, $accent_bot_b ) ) ?: $key_color;
+
+		if ( ! $use_gradient ) {
+			$bg_top_hex        = $background_color;
+			$bg_bottom_hex     = $background_color;
+			$accent_top_hex    = $key_color;
+			$accent_bottom_hex = $key_color;
+		}
+
+		return [
+			'border'        => $border_color,
+			'input_bg'      => $input_bg_hex,
+			'user_bubble'   => $user_bubble_hex,
+			'bg_top'        => $bg_top_hex,
+			'bg_bottom'     => $bg_bottom_hex,
+			'accent_top'    => $accent_top_hex,
+			'accent_bottom' => $accent_bottom_hex,
+		];
 	}
 
 	/**

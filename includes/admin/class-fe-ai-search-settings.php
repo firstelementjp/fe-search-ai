@@ -224,7 +224,7 @@ class FE_AI_Search_Settings {
 										esc_html__( 'You can change these limits from your theme or another plugin using the %1$sfe_ai_search_rate_limit_settings%2$s filter hook. For full sample code, please refer to the %3$sdocumentation%4$s.', 'fe-ai-search' ),
 										'<code>',
 										'</code>',
-										'<a href="https://fe-search.com/ai/manual/" target="_blank" rel="noopener noreferrer">',
+										'<a href="https://fe-search.com/docs/ai" target="_blank" rel="noopener noreferrer">',
 										'</a>'
 									);
 								?>
@@ -436,6 +436,7 @@ class FE_AI_Search_Settings {
 		add_settings_section( 'fe_ai_search_advanced_section', __( 'Advanced Settings', 'fe-ai-search' ), null, $page_slug );
 		add_settings_field( 'fe_ai_search_display_advanced', __( 'Assets Loading', 'fe-ai-search' ), [ $this, 'display_advanced_field_html' ], $page_slug, 'fe_ai_search_advanced_section' );
 		add_settings_field( 'fe_ai_search_debug_mode_enabled', __( 'Debug Mode', 'fe-ai-search' ), [ $this, 'debug_mode_field_html' ], $page_slug, 'fe_ai_search_advanced_section' );
+		add_settings_field( 'fe_ai_search_japanese_tokenizer', __( 'Japanese Tokenizer', 'fe-ai-search' ), [ $this, 'japanese_tokenizer_field_html' ], $page_slug, 'fe_ai_search_advanced_section' );
 	}
 
 	/**
@@ -1147,6 +1148,65 @@ class FE_AI_Search_Settings {
 		<?php
 	}
 
+	public function japanese_tokenizer_field_html() {
+		$tokenizer_options = $this->options['tokenizer']['ja'] ?? [];
+		$engine            = $tokenizer_options['engine'] ?? 'tinysegmenter';
+		$yahoo_id          = $tokenizer_options['yahoo_id'] ?? '';
+
+		$engines = [
+			'tinysegmenter' => __( 'Built-in (TinySegmenter)', 'fe-ai-search' ),
+			'yahoo_ma'      => __( 'Yahoo! Japanese MA API', 'fe-ai-search' ),
+		];
+
+		$has_constant = defined( 'FE_AI_SEARCH_YAHOO_APP_ID' );
+		$const_id     = $has_constant ? FE_AI_SEARCH_YAHOO_APP_ID : '';
+		?>
+		<fieldset>
+			<label for="fe_ai_search_japanese_tokenizer_engine">
+				<?php esc_html_e( 'Engine', 'fe-ai-search' ); ?>
+			</label>
+			<select id="fe_ai_search_japanese_tokenizer_engine" name="fe_ai_search_settings[tokenizer][ja][engine]">
+				<?php foreach ( $engines as $key => $label ) : ?>
+					<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $engine, $key ); ?>>
+						<?php echo esc_html( $label ); ?>
+					</option>
+				<?php endforeach; ?>
+			</select>
+			<p class="description">
+				<?php esc_html_e( 'Select the tokenizer used for Japanese keyword extraction in indexing and search.', 'fe-ai-search' ); ?>
+			</p>
+
+			<div style="margin-top:1em;">
+				<label for="fe_ai_search_yahoo_app_id">
+					<?php esc_html_e( 'Yahoo! App ID (optional)', 'fe-ai-search' ); ?>
+				</label>
+				<input
+					id="fe_ai_search_yahoo_app_id"
+					type="text"
+					name="fe_ai_search_settings[tokenizer][ja][yahoo_id]"
+					value="<?php echo esc_attr( $yahoo_id ); ?>"
+					class="regular-text"
+				>
+				<p class="description">
+					<?php esc_html_e( 'Used when the Yahoo! Japanese MA API is selected. This value is stored in the plugin settings.', 'fe-ai-search' ); ?><br>
+					<?php if ( $has_constant ) : ?>
+						<?php
+							printf(
+								/* translators: 1: constant name, 2: truncated value */
+								esc_html__( '%1$s is defined in wp-config.php and will be used with priority over this field. (Current constant starts with: %2$s)', 'fe-ai-search' ),
+								'FE_AI_SEARCH_YAHOO_APP_ID',
+								esc_html( mb_substr( $const_id, 0, 8 ) )
+							);
+						?>
+					<?php else : ?>
+						<?php esc_html_e( 'If you also define FE_AI_SEARCH_YAHOO_APP_ID in wp-config.php, that constant will override this field.', 'fe-ai-search' ); ?>
+					<?php endif; ?>
+				</p>
+			</div>
+		</fieldset>
+		<?php
+	}
+
 	/**
 	 * Renders the UI for the embed mode shortcode.
 	 *
@@ -1245,14 +1305,13 @@ class FE_AI_Search_Settings {
 		$display_options = $this->options['display']['text'] ?? [];
 		$ui_options      = $this->options['display']['ui'] ?? [];
 
-		$defaults = [
-			'window_title'       => __( 'FE Search AI', 'fe-ai-search' ),
-			'greeting_message'   => __( 'Hello! I am FE Search AI. How can I help you today?', 'fe-ai-search' ),
-			'placeholder_text'   => __( 'Ask a question about this site…', 'fe-ai-search' ),
-			'submit_button_text' => __( 'Send', 'fe-ai-search' ),
-			'key_color'          => '#0073aa',
-			'background_color'   => '#f5f5f5',
-			'text_color'         => '#111111',
+		// Shared defaults for chat text (used by both settings placeholders and frontend UI).
+		$defaults = \FEAISearch\Core\FE_AI_Search_Defaults::get_display_text_defaults();
+		// Add legacy color defaults for this settings section.
+		$defaults += [
+			'key_color'        => '#0073aa',
+			'background_color' => '#f5f5f5',
+			'text_color'       => '#111111',
 		];
 
 		$window_title       = $display_options['window_title'] ?? $defaults['window_title'];
@@ -1834,6 +1893,18 @@ class FE_AI_Search_Settings {
 		$new_input['display']['text']     = $this->sanitize_display_text( $input['display']['text'] ?? [] );
 		$new_input['display']['links']    = $this->sanitize_display_links( $input['display']['links'] ?? [] );
 		$new_input['display']['floating'] = $this->sanitize_display_floating( $input['display']['floating'] ?? [] );
+
+		// --- Tokenizer (Japanese) ---
+		$tokenizer_input = $input['tokenizer']['ja'] ?? [];
+		if ( ! is_array( $tokenizer_input ) ) {
+			$tokenizer_input = [];
+		}
+		$engine = sanitize_key( $tokenizer_input['engine'] ?? 'tinysegmenter' );
+		if ( ! in_array( $engine, [ 'tinysegmenter', 'yahoo_ma' ], true ) ) {
+			$engine = 'tinysegmenter';
+		}
+		$new_input['tokenizer']['ja']['engine']   = $engine;
+		$new_input['tokenizer']['ja']['yahoo_id'] = sanitize_text_field( $tokenizer_input['yahoo_id'] ?? '' );
 
 		// --- Data Tab ---
 		$new_input['advanced']['delete_on_uninstall'] = ! empty( $input['advanced']['delete_on_uninstall'] );

@@ -453,9 +453,9 @@ class FE_AI_Search_Chat_Handler {
 				]
 			);
 		} else {
-			// SUCCESS: Log the successful completion of the stream.
+			// INFO: Log the successful completion of the stream.
 			\FEAISearch\Core\FE_AI_Search_Logger::log(
-				'SUCCESS',
+				'INFO',
 				'Chat completion stream finished successfully.',
 				[
 					'provider'    => $provider,
@@ -660,7 +660,7 @@ class FE_AI_Search_Chat_Handler {
 			);
 		} else {
 			\FEAISearch\Core\FE_AI_Search_Logger::log(
-				'SUCCESS',
+				'INFO',
 				'Chat completion stream finished successfully.',
 				[
 					'provider'    => $provider,

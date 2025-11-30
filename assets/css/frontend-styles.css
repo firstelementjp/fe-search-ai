@@ -36,17 +36,76 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 60px;
-	height: 60px;
-	background-color: var(--feais-accent);
-	color: var(--feais-text);
+	width: 65px;
+	height: 65px;
+	/* background-color: var(--feais-accent); */
+	/* color: var(--feais-text); */
+	color: #fff;
 	border-radius: 50%;
-	box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+	/* box-shadow: 0 4px 8px rgba(0,0,0,0.2); */
 	cursor: pointer;
+	transition: all 0.2s ease-in-out;
+	position: relative;
 }
 
-.fe-ai-search-mode-float #fe_ai_search_chat_bubble.hidden {
+#fe_ai_search_chat_bubble:hover {
+	width: 75px;
+	height: 75px;
+}
+
+#fe_ai_search_chat_bubble.hidden {
 	display: none;
+}
+
+#fe_ai_search_chat_bubble_icon {
+	width: 42px;
+	height: 42px;
+	position: absolute;
+	opacity: 1;
+	transition: all 0.2s ease-in-out;
+}
+
+#fe_ai_search_chat_bubble_icon_face {
+	width: 42px;
+	height: 42px;
+	position: absolute;
+	opacity: 0;
+	transition: all 0.2s ease-in-out;
+}
+
+#fe_ai_search_chat_bubble:hover #fe_ai_search_chat_bubble_icon {
+	/* width: 52px;
+	height: 52px; */
+	opacity: 0;
+}
+
+#fe_ai_search_chat_bubble:hover #fe_ai_search_chat_bubble_icon_face {
+	/* width: 52px;
+	height: 52px; */
+	opacity: 1;
+}
+
+@keyframes opacity {
+	0% { opacity: 0.7; }
+	100% { opacity: 1; }
+}
+@keyframes shimmer {
+	0% { background-position: 0% 50%; }
+	100% { background-position: 100% 50%; }
+}
+
+@keyframes pulse {
+	0%   { transform: scale(1); }
+	50%  { transform: scale(1.08); }
+	100% { transform: scale(1); }
+}
+
+#fe_ai_search_chat_bubble {
+	animation: shimmer 6s ease-in-out infinite alternate,
+	           pulse 4s ease-in-out infinite,
+			   opacity 3s linear infinite alternate;
+	background: linear-gradient(135deg, #00f, #0ff, #f0f, #00f);
+	background-size: 500% 500%;
 }
 
 .fe-ai-search-mode-float #fe_ai_search_chat_window {
@@ -354,6 +413,14 @@
 
 #fe_ai_search_send_mode_toggle {
 	width: fit-content;
+	color: var(--feais-text);
+    font-size: 0.9rem;
+	background: var(--feais-bg);
+}
+
+.fe-ai-search-feedback-thanks {
+	color: var(--feais-text);
+	padding: 10px 15px;
 }
 
 /* ==========================================================================
@@ -484,11 +551,14 @@
 	opacity: 0.7;
 	padding: 8px 15px;
 	background: linear-gradient(25deg, var(--feais-accent-top, var(--feais-accent)) 0%, var(--feais-accent-bottom, var(--feais-accent)) 55%);
-	color: var(--feais-text);
+	/* color: var(--feais-text); */
+	color: white;
 	border: none;
 	border-radius: 18px;
 	white-space: nowrap;
 	cursor: pointer;
+	font-weight: 600;
+	background: linear-gradient(135deg, #7878ff, #3c84e7, #daa5e0);
 }
 
 #fe_ai_search_chat_form button:hover {
