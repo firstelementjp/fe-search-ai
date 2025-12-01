@@ -334,6 +334,25 @@ class FE_AI_Search_Chat_Handler {
 			return;
 		}
 
+		// DEBUG: Log context chunk statistics (count and first few permalinks).
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			$chunk_count = is_array( $context_chunks ) ? count( $context_chunks ) : 0;
+			$permalinks  = [];
+			if ( $chunk_count > 0 ) {
+				foreach ( $context_chunks as $idx => $chunk ) {
+					if ( $idx >= 3 ) {
+						break;
+					}
+					if ( isset( $chunk['permalink'] ) ) {
+						$permalinks[] = $chunk['permalink'];
+					}
+				}
+			}
+			error_log( 'FEAS Gemini debug: context_chunks_count=' . $chunk_count . ' sample_permalinks=' . wp_json_encode( $permalinks ) );
+		}
+
+		// DEBUG: (removed misplaced Gemini debug block from OpenAI handler)
+
 		$model = 'gpt-4o-mini'; // Default
 		if ( $this->is_license_active ) {
 			if ( 'openai_compatible' === $provider ) {
@@ -521,6 +540,11 @@ class FE_AI_Search_Chat_Handler {
 	private function stream_completion_for_gemini( $question, $context_chunks, $history, $provider ) {
 		$start_time = microtime( true );
 
+		// DEBUG: Basic Gemini state for troubleshooting.
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( 'FEAS Gemini debug: is_license_active=' . ( $this->is_license_active ? 'true' : 'false' ) );
+		}
+
 		// Admin UI stores the key at provider.google_key.
 		$api_key = $this->options['provider']['google_key'] ?? '';
 		if ( empty( $api_key ) ) {
@@ -538,8 +562,23 @@ class FE_AI_Search_Chat_Handler {
 
 		$model = 'gemini-2.5-flash-lite'; // Default
 		if ( $this->is_license_active ) {
-			$model = $this->options['model']['google'] ?? [ 'type' => $model ];
-			$model = ( isset( $model['type'] ) && 'custom' === $model['type'] ) ? $model['custom'] : $model['type'];
+			// Read Gemini model settings from Pro options (fe_ai_search_pro_settings).
+			$pro_settings   = get_option( 'fe_ai_search_pro_settings', [] );
+			$google_options = $pro_settings['model']['google_model'] ?? [];
+			if ( is_array( $google_options ) ) {
+				$type   = $google_options['type'] ?? '';
+				$custom = $google_options['custom'] ?? '';
+				if ( 'custom' === $type && '' !== trim( (string) $custom ) ) {
+					$model = $custom;
+				} elseif ( '' !== $type ) {
+					$model = $type;
+				}
+			}
+		}
+
+		// DEBUG: Log the resolved Gemini model once per request for troubleshooting.
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( 'FEAS Gemini debug: resolved_model=' . $model );
 		}
 
 		// INFO: Log the start of the API call.
@@ -558,6 +597,38 @@ class FE_AI_Search_Chat_Handler {
 			$history,
 			false
 		);
+
+		// DEBUG: Log a view of the prompt payload before sending to Gemini.
+		// - System prompt: full text
+		// - Context chunks: each summarized as permalink + first ~80 chars of content
+		// - Question: original user question (without embedded Site Information)
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			$messages_copy  = $messages;
+			$system_full    = '';
+			$context_summaries = [];
+			if ( ! empty( $messages_copy ) && isset( $messages_copy[0]['role'] ) && 'system' === $messages_copy[0]['role'] ) {
+				$system_full = (string) ( $messages_copy[0]['content'] ?? '' );
+			}
+			if ( is_array( $context_chunks ) && ! empty( $context_chunks ) ) {
+				foreach ( $context_chunks as $idx => $chunk ) {
+					// Limit the number of logged chunks to avoid excessive log size.
+					if ( $idx >= 10 ) {
+						break;
+					}
+					$context_summaries[] = [
+						'permalink' => $chunk['permalink'] ?? '',
+						'head'      => mb_substr( (string) ( $chunk['content_chunk'] ?? '' ), 0, 80, 'UTF-8' ),
+					];
+				}
+			}
+			$debug_payload = [
+				'system'           => $system_full,
+				'question'         => $question,
+				'context_summaries'=> $context_summaries,
+				'message_cnt'      => count( $messages_copy ),
+			];
+			error_log( 'FEAS Gemini debug: prompt_preview=' . wp_json_encode( $debug_payload ) );
+		}
 
 		$system_prompt_data = array_shift( $messages );
 		$system_prompt_text = $system_prompt_data['content'];
@@ -822,7 +893,7 @@ class FE_AI_Search_Chat_Handler {
 			);
 		} else {
 			\FEAISearch\Core\FE_AI_Search_Logger::log(
-				'SUCCESS',
+				'INFO',
 				'Chat completion stream finished successfully.',
 				[
 					'provider'    => $provider,
@@ -878,9 +949,11 @@ class FE_AI_Search_Chat_Handler {
 		// Get site info and replace placeholders in the prompt.
 		$site_name    = $this->options['prompt']['site_name'] ?? get_bloginfo( 'name' );
 		$site_purpose = $this->options['prompt']['site_purpose'] ?? get_bloginfo( 'description' );
+		$site_url     = home_url( '/' );
 
 		$system_prompt = str_replace( '{site_name}', $site_name, $system_prompt );
 		$system_prompt = str_replace( '{site_purpose}', $site_purpose, $system_prompt );
+		$system_prompt = str_replace( '{site_url}', $site_url, $system_prompt );
 
 		// Detect the language that should be used for answers, based on the current
 		// WordPress locale and, if available, the active multilingual plugin.

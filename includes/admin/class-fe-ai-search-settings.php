@@ -254,17 +254,21 @@ class FE_AI_Search_Settings {
 					<table class="form-table">
 						<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_sync_options_section' ); ?>
 					</table>
-
+					
 					<?php do_settings_sections( 'fe_ai_search_sync_ui_section' ); ?>
 					<table class="form-table">
 						<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_sync_ui_section' ); ?>
 					</table>
-
+					
 					<?php do_settings_sections( 'fe_ai_search_sync_advanced_section' ); ?>
 					<table class="form-table">
 						<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_sync_advanced_section' ); ?>
 					</table>
 					<?php // Pro add-on: tuning (Custom Stop Words) now lives at the end of the Sync tab. ?>
+					<?php do_settings_sections( 'fe_ai_search_vector_store_section_pro' ); ?>
+					<table class="form-table">
+						<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_vector_store_section_pro' ); ?>
+					</table>
 					<?php do_settings_sections( 'fe_ai_search_tuning_section_pro' ); ?>
 					<table class="form-table">
 						<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_tuning_section_pro' ); ?>
@@ -310,6 +314,10 @@ class FE_AI_Search_Settings {
 					<?php do_settings_sections( 'fe_ai_search_advanced_section' ); ?>
 					<table class="form-table">
 						<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_advanced_section' ); ?>
+					</table>
+					<?php do_settings_sections( 'fe_ai_search_qdrant_section_pro' ); ?>
+					<table class="form-table">
+						<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_qdrant_section_pro' ); ?>
 					</table>
 					<?php // Data management (previously in its own "Data" tab). ?>
 					<?php do_settings_sections( 'fe_ai_search_data_section' ); ?>
@@ -1371,34 +1379,46 @@ class FE_AI_Search_Settings {
 		<p>
 			<label for="fe_ai_search_key_color"><?php esc_html_e( 'Key Color', 'fe-ai-search' ); ?></label>
 			<input
-				type="text"
+				type="hidden"
 				id="fe_ai_search_key_color"
 				name="fe_ai_search_settings[display][ui][key_color]"
 				value="<?php echo esc_attr( $key_color ); ?>"
+			>
+			<div
 				class="fe-ai-search-color-picker"
-			><br />
+				data-target-input="fe_ai_search_key_color"
+				data-default-color="<?php echo esc_attr( $key_color ); ?>"
+			></div><br />
 			<span class="description"><?php esc_html_e( 'Select the basic colors for chat bubbles and user speech balloons.', 'fe-ai-search' ); ?></span>
 		</p>
 		<p>
 			<label for="fe_ai_search_background_color"><?php esc_html_e( 'Chat window background color', 'fe-ai-search' ); ?></label>
 			<input
-				type="text"
+				type="hidden"
 				id="fe_ai_search_background_color"
 				name="fe_ai_search_settings[display][ui][background_color]"
 				value="<?php echo esc_attr( $background_color ); ?>"
+			>
+			<div
 				class="fe-ai-search-color-picker"
-			><br />
+				data-target-input="fe_ai_search_background_color"
+				data-default-color="<?php echo esc_attr( $background_color ); ?>"
+			></div><br />
 			<span class="description"><?php esc_html_e( 'Background color for the chat window and message area.', 'fe-ai-search' ); ?></span>
 		</p>
 		<p>
 			<label for="fe_ai_search_text_color"><?php esc_html_e( 'Base text color', 'fe-ai-search' ); ?></label>
 			<input
-				type="text"
+				type="hidden"
 				id="fe_ai_search_text_color"
 				name="fe_ai_search_settings[display][ui][text_color]"
 				value="<?php echo esc_attr( $text_color ); ?>"
+			>
+			<div
 				class="fe-ai-search-color-picker"
-			><br />
+				data-target-input="fe_ai_search_text_color"
+				data-default-color="<?php echo esc_attr( $text_color ); ?>"
+			></div><br />
 			<span class="description"><?php esc_html_e( 'Default text color used for chat content and labels.', 'fe-ai-search' ); ?></span>
 		</p>
 		<p>
@@ -1413,12 +1433,6 @@ class FE_AI_Search_Settings {
 			</label><br />
 			<span class="description"><?php esc_html_e( 'When unchecked, the chat UI will use flat colors without gradients.', 'fe-ai-search' ); ?></span>
 		</p>
-
-		<script>
-			jQuery(document).ready(function($){
-				$('.fe-ai-search-color-picker').wpColorPicker();
-			});
-		</script>
 		<?php
 	}
 

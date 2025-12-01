@@ -54,6 +54,75 @@ document.addEventListener('DOMContentLoaded', () => {
 		return response.json();
 	}
 
+	// --- Color Picker (Pickr) Initialization ---
+	if (typeof Pickr !== 'undefined') {
+		const colorPickers = document.querySelectorAll('.fe-ai-search-color-picker');
+		colorPickers.forEach(container => {
+			const targetId = container.dataset.targetInput;
+			const defaultColor = container.dataset.defaultColor || '#0073aa';
+			const input = targetId ? document.getElementById(targetId) : null;
+
+			if (!input) {
+				return;
+			}
+
+			const initialColor = input.value || defaultColor;
+			const pickr = Pickr.create({
+				el: container,
+				theme: 'classic',
+				default: initialColor,
+				components: {
+					// Main components
+					preview: true,
+					opacity: false,
+					hue: true,
+
+					// Input / interaction
+					interaction: {
+						hex: true,
+						rgba: false,
+						hsla: false,
+						hsva: false,
+						cmyk: false,
+						input: true,
+						save: true,
+						clear: true,
+					},
+				},
+			});
+
+			// Sync Pickr -> input
+			pickr.on('save', (color, instance) => {
+				if (color) {
+					input.value = color.toHEXA().toString();
+				} else {
+					input.value = '';
+				}
+				instance.hide();
+			});
+
+			pickr.on('clear', instance => {
+				input.value = '';
+				instance.hide();
+			});
+
+			pickr.on('change', color => {
+				if (color) {
+					input.value = color.toHEXA().toString();
+				}
+			});
+
+			// Initialize with current value if present
+			if (initialColor) {
+				try {
+					pickr.setColor(initialColor);
+				} catch (e) {
+					// Ignore invalid initial colors
+				}
+			}
+		});
+	}
+
 	// ==========================================================================
 	// Manual Synchronization
 	// ==========================================================================

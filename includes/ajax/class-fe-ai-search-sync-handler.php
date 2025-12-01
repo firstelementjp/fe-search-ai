@@ -406,6 +406,33 @@ class FE_AI_Search_Sync_Handler {
 			$locale    = get_locale();
 			$lang_code = strstr( $locale, '_', true ) ?: $locale;
 
+			// Read Pro vector store configuration to determine if Qdrant is enabled.
+			$pro_settings  = get_option( 'fe_ai_search_pro_settings', [] );
+			$vector_config = isset( $pro_settings['vector'] ) && is_array( $pro_settings['vector'] ) ? $pro_settings['vector'] : [];
+			$qdrant_config = isset( $vector_config['qdrant'] ) && is_array( $vector_config['qdrant'] ) ? $vector_config['qdrant'] : [];
+			$vector_store  = $vector_config['store'] ?? 'mariadb';
+
+			\FEAISearch\Core\FE_AI_Search_Logger::log(
+				'INFO',
+				'Qdrant config check in ajax_process_batch.',
+				[
+					'vector_store'  => $vector_store,
+					'vector_config' => $vector_config,
+					'qdrant_config' => $qdrant_config,
+				]
+			);
+
+			error_log( 'QDRANT DEBUG: vector_store=' . $vector_store );
+error_log( 'QDRANT DEBUG: vector_config=' . print_r( $vector_config, true ) );
+error_log( 'QDRANT DEBUG: qdrant_config=' . print_r( $qdrant_config, true ) );
+
+			$qdrant_enabled = (
+				'qdrant' === $vector_store
+				&& ! empty( $qdrant_config['endpoint'] )
+				&& ! empty( $qdrant_config['api_key'] )
+				&& ! empty( $qdrant_config['collection'] )
+			);
+
 			// Process each post
 			foreach ( $posts_batch as $post ) {
 				$chunks_with_meta = $this->create_chunks_from_post( $post );
@@ -465,6 +492,12 @@ class FE_AI_Search_Sync_Handler {
 							}
 						}
 					}
+
+					// Mirror vectors to Qdrant when enabled in Pro settings.
+					if ( $qdrant_enabled ) {
+						$this->upsert_vectors_to_qdrant( $post, $lang_code, $chunks_with_meta, $vectors_data, $qdrant_config );
+					}
+
 				} else {
 				}
 			}
@@ -542,6 +575,113 @@ class FE_AI_Search_Sync_Handler {
 		}
 
 		wp_send_json_success( __( 'All sync data has been deleted.', 'fe-ai-search' ) );
+	}
+
+	/**
+	 * Upserts vectors for a single post into Qdrant when configured in Pro settings.
+	 *
+	 * @param \WP_Post $post             The post being processed.
+	 * @param string   $lang_code        Language code (e.g. "en", "ja").
+	 * @param array    $chunks_with_meta Array of chunks with permalink metadata.
+	 * @param array    $vectors_data     Embedding response data from provider.
+	 * @param array    $qdrant_config    Qdrant configuration from Pro settings.
+	 * @return void
+	 */
+	private function upsert_vectors_to_qdrant( $post, $lang_code, $chunks_with_meta, $vectors_data, $qdrant_config ) {
+		\FEAISearch\Core\FE_AI_Search_Logger::log(
+			'INFO',
+			'Qdrant upsert invoked.',
+			[ 'post_id' => $post->ID ]
+		);
+
+		$endpoint   = isset( $qdrant_config['endpoint'] ) ? rtrim( $qdrant_config['endpoint'], '/' ) : '';
+		$collection = $qdrant_config['collection'] ?? '';
+		$api_key    = $qdrant_config['api_key'] ?? '';
+
+		if ( empty( $endpoint ) || empty( $collection ) || empty( $api_key ) ) {
+			return;
+		}
+
+		$points = [];
+
+		foreach ( $vectors_data as $index => $vector_item ) {
+			if ( empty( $vector_item['embedding'] ) || empty( $chunks_with_meta[ $index ] ) ) {
+				continue;
+			}
+
+			$chunk = $chunks_with_meta[ $index ];
+
+			$points[] = [
+				'id'      => (int) ( $post->ID * 10000 + $index ),
+				'vector'  => $vector_item['embedding'],
+				'payload' => [
+					'site_id'         => get_current_blog_id(),
+					'post_id'         => $post->ID,
+					'permalink'       => $chunk['permalink'] ?? get_permalink( $post ),
+					'title'           => get_the_title( $post ),
+					'content_snippet' => mb_substr( $chunk['content_chunk'], 0, 500 ),
+					'language'        => $lang_code,
+					'source'          => 'post',
+				],
+			];
+		}
+
+		if ( empty( $points ) ) {
+			return;
+		}
+
+		$body = [
+			'points' => $points,
+		];
+
+		error_log( 'QDRANT DEBUG REQUEST BODY: ' . wp_json_encode( $body ) );
+		$url  = $endpoint . '/collections/' . rawurlencode( $collection ) . '/points';
+
+		$response = wp_remote_request(
+			$url,
+			[
+				'method'  => 'PUT',
+				'headers' => [
+					'Content-Type' => 'application/json',
+					'api-key'      => $api_key,
+				],
+				'body'    => wp_json_encode( $body ),
+				'timeout' => 20,
+			]
+		);
+
+		error_log(
+			'QDRANT DEBUG RESPONSE: status=' .
+			wp_remote_retrieve_response_code( $response ) .
+			' body=' . wp_remote_retrieve_body( $response )
+		);
+
+		if ( is_wp_error( $response ) ) {
+			\FEAISearch\Core\FE_AI_Search_Logger::log(
+				'ERROR',
+				'Qdrant upsert request failed.',
+				[
+					'post_id'       => $post->ID,
+					'error_code'    => $response->get_error_code(),
+					'error_message' => $response->get_error_message(),
+				]
+			);
+			return;
+		}
+
+		$status_code = wp_remote_retrieve_response_code( $response );
+		if ( $status_code < 200 || $status_code >= 300 ) {
+			$body_text = wp_remote_retrieve_body( $response );
+			\FEAISearch\Core\FE_AI_Search_Logger::log(
+				'ERROR',
+				'Qdrant upsert returned non-2xx status.',
+				[
+					'post_id'       => $post->ID,
+					'http_status'   => $status_code,
+					'response_body' => $body_text,
+				]
+			);
+		}
 	}
 
 	/**
@@ -825,7 +965,10 @@ class FE_AI_Search_Sync_Handler {
 
 		$api_url = 'https://api.openai.com/v1/embeddings';
 		if ( $this->is_license_active ) {
-			$custom_endpoint = $this->options['provider']['openai_compatible']['embedding']['endpoint'];
+			$provider_root       = isset( $this->options['provider'] ) && is_array( $this->options['provider'] ) ? $this->options['provider'] : [];
+			$openai_compatible   = isset( $provider_root['openai_compatible'] ) && is_array( $provider_root['openai_compatible'] ) ? $provider_root['openai_compatible'] : [];
+			$embedding_conf      = isset( $openai_compatible['embedding'] ) && is_array( $openai_compatible['embedding'] ) ? $openai_compatible['embedding'] : [];
+			$custom_endpoint     = $embedding_conf['endpoint'] ?? '';
 			if ( ! empty( $custom_endpoint ) ) {
 				$api_url = $custom_endpoint;
 			}

@@ -59,7 +59,20 @@ class FE_AI_Search_Admin {
 		$admin_css      = $use_unminified ? 'assets/css/admin-styles.css' : 'assets/css/admin-styles.min.css';
 		$admin_js       = $use_unminified ? 'assets/js/admin-scripts.js' : 'assets/js/admin-scripts.min.js';
 
-		wp_enqueue_style( 'wp-color-picker' );
+		// Color picker (Pickr) styles.
+		wp_enqueue_style(
+			'fe-ai-search-pickr',
+			plugin_dir_url( FE_AI_SEARCH_PLUGIN_FILE ) . 'assets/vendor/pickr.min.css',
+			[],
+			FE_AI_SEARCH_VERSION
+		);
+		wp_enqueue_script(
+			'fe-ai-search-pickr',
+			plugin_dir_url( FE_AI_SEARCH_PLUGIN_FILE ) . 'assets/vendor/pickr.min.js',
+			[],
+			FE_AI_SEARCH_VERSION,
+			true
+		);
 		wp_enqueue_style(
 			'codemirror-css',
 			'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.css'
@@ -71,7 +84,6 @@ class FE_AI_Search_Admin {
 			FE_AI_SEARCH_VERSION
 		);
 
-		wp_enqueue_script( 'wp-color-picker' );
 		wp_enqueue_script(
 			'codemirror-js',
 			'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.js',
@@ -89,7 +101,7 @@ class FE_AI_Search_Admin {
 		wp_enqueue_script(
 			'fe-ai-search-admin-sync',
 			plugin_dir_url( FE_AI_SEARCH_PLUGIN_FILE ) . $admin_js,
-			[ 'wp-i18n', 'codemirror-js', 'wp-color-picker' ],
+			[ 'wp-i18n', 'codemirror-js', 'fe-ai-search-pickr' ],
 			FE_AI_SEARCH_VERSION,
 			true
 		);
