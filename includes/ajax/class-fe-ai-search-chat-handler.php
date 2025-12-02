@@ -348,7 +348,6 @@ class FE_AI_Search_Chat_Handler {
 					}
 				}
 			}
-			error_log( 'FEAS Gemini debug: context_chunks_count=' . $chunk_count . ' sample_permalinks=' . wp_json_encode( $permalinks ) );
 		}
 
 		// DEBUG: (removed misplaced Gemini debug block from OpenAI handler)
@@ -542,7 +541,6 @@ class FE_AI_Search_Chat_Handler {
 
 		// DEBUG: Basic Gemini state for troubleshooting.
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( 'FEAS Gemini debug: is_license_active=' . ( $this->is_license_active ? 'true' : 'false' ) );
 		}
 
 		// Admin UI stores the key at provider.google_key.
@@ -578,7 +576,6 @@ class FE_AI_Search_Chat_Handler {
 
 		// DEBUG: Log the resolved Gemini model once per request for troubleshooting.
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( 'FEAS Gemini debug: resolved_model=' . $model );
 		}
 
 		// INFO: Log the start of the API call.
@@ -603,8 +600,8 @@ class FE_AI_Search_Chat_Handler {
 		// - Context chunks: each summarized as permalink + first ~80 chars of content
 		// - Question: original user question (without embedded Site Information)
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			$messages_copy  = $messages;
-			$system_full    = '';
+			$messages_copy     = $messages;
+			$system_full       = '';
 			$context_summaries = [];
 			if ( ! empty( $messages_copy ) && isset( $messages_copy[0]['role'] ) && 'system' === $messages_copy[0]['role'] ) {
 				$system_full = (string) ( $messages_copy[0]['content'] ?? '' );
@@ -622,12 +619,11 @@ class FE_AI_Search_Chat_Handler {
 				}
 			}
 			$debug_payload = [
-				'system'           => $system_full,
-				'question'         => $question,
-				'context_summaries'=> $context_summaries,
-				'message_cnt'      => count( $messages_copy ),
+				'system'            => $system_full,
+				'question'          => $question,
+				'context_summaries' => $context_summaries,
+				'message_cnt'       => count( $messages_copy ),
 			];
-			error_log( 'FEAS Gemini debug: prompt_preview=' . wp_json_encode( $debug_payload ) );
 		}
 
 		$system_prompt_data = array_shift( $messages );

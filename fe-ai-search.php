@@ -76,6 +76,37 @@ spl_autoload_register(
 register_activation_hook( FE_AI_SEARCH_PLUGIN_FILE, [ 'FEAISearch\Core\FE_AI_Search_Activator', 'activate' ] );
 register_deactivation_hook( FE_AI_SEARCH_PLUGIN_FILE, [ 'FEAISearch\Core\FE_AI_Search_Activator', 'deactivate' ] );
 
+add_action(
+	'fe_ai_search_daily_log_rotation_event',
+	static function () {
+		$options  = get_option( 'fe_ai_search_settings', [] );
+		$advanced = $options['advanced'] ?? [];
+		$days     = isset( $advanced['log_retention_days'] ) ? (int) $advanced['log_retention_days'] : 30;
+
+		// 0 以下なら自動削除は行わない。
+		if ( $days <= 0 ) {
+			return;
+		}
+
+		$timestamp = current_time( 'timestamp' );
+		$cutoff    = gmdate( 'Y-m-d H:i:s', $timestamp - ( $days * DAY_IN_SECONDS ) );
+
+		global $wpdb;
+		$system_logs_table = $wpdb->prefix . 'fe_ai_search_system_logs';
+		$conv_logs_table   = $wpdb->prefix . 'fe_ai_search_logs';
+
+		// システムログのローテーション。
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $system_logs_table ) ) === $system_logs_table ) {
+			$wpdb->query( $wpdb->prepare( "DELETE FROM `{$system_logs_table}` WHERE `created_at` < %s", $cutoff ) );
+		}
+
+		// 会話ログのローテーション。
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $conv_logs_table ) ) === $conv_logs_table ) {
+			$wpdb->query( $wpdb->prepare( "DELETE FROM `{$conv_logs_table}` WHERE `created_at` < %s", $cutoff ) );
+		}
+	}
+);
+
 /**
  * Boots the FE AI Search plugin and wires up core services.
  *

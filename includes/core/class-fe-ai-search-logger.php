@@ -74,4 +74,26 @@ class FE_AI_Search_Logger {
 			]
 		);
 	}
+
+	/**
+	 * Deletes all system log entries from the custom logs table.
+	 *
+	 * This method is intended to be called from an admin-only context when
+	 * the site owner explicitly requests a full log purge.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public static function clear_logs() {
+		global $wpdb;
+		$table_name = $wpdb->prefix . 'fe_ai_search_system_logs';
+
+		// Check if the table exists before attempting to truncate.
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) !== $table_name ) {
+			return;
+		}
+
+		// Use TRUNCATE to efficiently delete all rows.
+		$wpdb->query( "TRUNCATE TABLE `{$table_name}`" );
+	}
 }

@@ -40,6 +40,7 @@ class FE_AI_Search_Admin {
 
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_admin_assets' ] );
 		add_action( 'admin_menu', [ $this, 'add_admin_menu' ] );
+		add_action( 'admin_head', [ $this, 'maybe_reposition_settings_errors' ] );
 	}
 
 	/**
@@ -120,8 +121,6 @@ class FE_AI_Search_Admin {
 				'nonce'    => wp_create_nonce( 'fe_ai_search_ajax_nonce' ),
 			]
 		);
-
-		error_log( 'FREE enqueue_admin_assets: ' . $hook_suffix );
 	}
 
 	/**
@@ -146,5 +145,31 @@ class FE_AI_Search_Admin {
 			$parent_slug,
 			[ FE_AI_Search_Settings::class, 'render_page' ]
 		);
+	}
+
+	/**
+	 * Ensures Settings API notices are rendered only in our custom container
+	 * on the FE Search AI settings page.
+	 *
+	 * WordPress hooks settings_errors() into admin_notices globally, which
+	 * causes the "Settings saved" notice to appear before our custom header
+	 * layout. On the FE Search AI screen, we remove that global callback so
+	 * that notices are only output where FE_AI_Search_Settings::render_page()
+	 * explicitly calls settings_errors() inside the fe-ai-search-notices
+	 * wrapper.
+	 */
+	public function maybe_reposition_settings_errors() {
+		if ( ! function_exists( 'get_current_screen' ) ) {
+			return;
+		}
+
+		$screen = get_current_screen();
+		if ( ! $screen ) {
+			return;
+		}
+
+		if ( 'toplevel_page_fe-ai-search' === $screen->id ) {
+			remove_action( 'admin_notices', 'settings_errors' );
+		}
 	}
 }

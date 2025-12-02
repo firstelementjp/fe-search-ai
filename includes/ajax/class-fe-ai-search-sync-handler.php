@@ -422,10 +422,6 @@ class FE_AI_Search_Sync_Handler {
 				]
 			);
 
-			error_log( 'QDRANT DEBUG: vector_store=' . $vector_store );
-error_log( 'QDRANT DEBUG: vector_config=' . print_r( $vector_config, true ) );
-error_log( 'QDRANT DEBUG: qdrant_config=' . print_r( $qdrant_config, true ) );
-
 			$qdrant_enabled = (
 				'qdrant' === $vector_store
 				&& ! empty( $qdrant_config['endpoint'] )
@@ -497,7 +493,6 @@ error_log( 'QDRANT DEBUG: qdrant_config=' . print_r( $qdrant_config, true ) );
 					if ( $qdrant_enabled ) {
 						$this->upsert_vectors_to_qdrant( $post, $lang_code, $chunks_with_meta, $vectors_data, $qdrant_config );
 					}
-
 				} else {
 				}
 			}
@@ -633,8 +628,6 @@ error_log( 'QDRANT DEBUG: qdrant_config=' . print_r( $qdrant_config, true ) );
 		$body = [
 			'points' => $points,
 		];
-
-		error_log( 'QDRANT DEBUG REQUEST BODY: ' . wp_json_encode( $body ) );
 		$url  = $endpoint . '/collections/' . rawurlencode( $collection ) . '/points';
 
 		$response = wp_remote_request(
@@ -648,12 +641,6 @@ error_log( 'QDRANT DEBUG: qdrant_config=' . print_r( $qdrant_config, true ) );
 				'body'    => wp_json_encode( $body ),
 				'timeout' => 20,
 			]
-		);
-
-		error_log(
-			'QDRANT DEBUG RESPONSE: status=' .
-			wp_remote_retrieve_response_code( $response ) .
-			' body=' . wp_remote_retrieve_body( $response )
 		);
 
 		if ( is_wp_error( $response ) ) {
@@ -671,17 +658,137 @@ error_log( 'QDRANT DEBUG: qdrant_config=' . print_r( $qdrant_config, true ) );
 
 		$status_code = wp_remote_retrieve_response_code( $response );
 		if ( $status_code < 200 || $status_code >= 300 ) {
-			$body_text = wp_remote_retrieve_body( $response );
+			$body_text    = wp_remote_retrieve_body( $response );
+			$body_summary = mb_substr( $body_text, 0, 1000 );
+			if ( mb_strlen( $body_text ) > 1000 ) {
+				$body_summary .= '...(truncated)';
+			}
 			\FEAISearch\Core\FE_AI_Search_Logger::log(
 				'ERROR',
 				'Qdrant upsert returned non-2xx status.',
 				[
 					'post_id'       => $post->ID,
 					'http_status'   => $status_code,
-					'response_body' => $body_text,
+					'response_body' => $body_summary,
 				]
 			);
 		}
+	}
+
+	/**
+	 * Retrieves similar chunks from Qdrant using the user's question.
+	 *
+	 * Uses the selected embedding provider to embed the question, performs
+	 * a vector search against the configured Qdrant collection, and returns
+	 * an array compatible with the keyword-based find_similar_chunks method.
+	 *
+	 * @param string $question      The end user's question text.
+	 * @param array  $qdrant_config Qdrant configuration from Pro settings.
+	 * @return array An array of the most relevant text chunks and their permalinks.
+	 */
+	private function find_similar_chunks_via_qdrant( $question, $qdrant_config ) {
+		$endpoint   = isset( $qdrant_config['endpoint'] ) ? rtrim( $qdrant_config['endpoint'], '/' ) : '';
+		$collection = $qdrant_config['collection'] ?? '';
+		$api_key    = $qdrant_config['api_key'] ?? '';
+
+		if ( empty( $endpoint ) || empty( $collection ) || empty( $api_key ) ) {
+			return [];
+		}
+
+		$embedding_response = $this->get_embeddings_via_selected_provider( [ $question ] );
+		if ( is_wp_error( $embedding_response ) || empty( $embedding_response['data'][0]['embedding'] ) ) {
+			return [];
+		}
+
+		$vector = $embedding_response['data'][0]['embedding'];
+
+		$body = [
+			'vector'       => $vector,
+			'limit'        => 20,
+			'with_payload' => true,
+			'with_vector'  => false,
+		];
+
+		$url = $endpoint . '/collections/' . rawurlencode( $collection ) . '/points/search';
+
+		$response = wp_remote_request(
+			$url,
+			[
+				'method'  => 'POST',
+				'headers' => [
+					'Content-Type' => 'application/json',
+					'api-key'      => $api_key,
+				],
+				'body'    => wp_json_encode( $body ),
+				'timeout' => 20,
+			]
+		);
+
+		if ( is_wp_error( $response ) ) {
+			\FEAISearch\Core\FE_AI_Search_Logger::log(
+				'ERROR',
+				'Qdrant search request failed.',
+				[
+					'error_code'    => $response->get_error_code(),
+					'error_message' => $response->get_error_message(),
+				]
+			);
+			return [];
+		}
+
+		$status_code = wp_remote_retrieve_response_code( $response );
+		if ( $status_code < 200 || $status_code >= 300 ) {
+			$body_text = wp_remote_retrieve_body( $response );
+			\FEAISearch\Core\FE_AI_Search_Logger::log(
+				'ERROR',
+				'Qdrant search returned non-2xx status.',
+				[
+					'http_status'   => $status_code,
+					'response_body' => $body_text,
+				]
+			);
+			return [];
+		}
+
+		$body_text = wp_remote_retrieve_body( $response );
+		$data      = json_decode( $body_text, true );
+		if ( ! is_array( $data ) || empty( $data['result'] ) || ! is_array( $data['result'] ) ) {
+			return [];
+		}
+
+		$results = [];
+		foreach ( $data['result'] as $point ) {
+			if ( empty( $point['payload'] ) || ! is_array( $point['payload'] ) ) {
+				continue;
+			}
+			$payload         = $point['payload'];
+			$content_snippet = isset( $payload['content_snippet'] ) ? (string) $payload['content_snippet'] : '';
+			$permalink       = isset( $payload['permalink'] ) ? (string) $payload['permalink'] : '';
+
+			if ( '' === $content_snippet || '' === $permalink ) {
+				continue;
+			}
+
+			$results[] = [
+				'content_chunk' => $content_snippet,
+				'permalink'     => $permalink,
+			];
+		}
+
+		\FEAISearch\Core\FE_AI_Search_Logger::log(
+			'INFO',
+			'Qdrant search succeeded.',
+			[
+				'hits'              => count( $results ),
+				'sample_permalinks' => array_slice(
+					array_column( $results, 'permalink' ),
+					0,
+					3
+				),
+			]
+		);
+
+		return $results;
 	}
 
 	/**
@@ -698,6 +805,26 @@ error_log( 'QDRANT DEBUG: qdrant_config=' . print_r( $qdrant_config, true ) );
 	 * @return array An array of the most relevant text chunks and their permalinks.
 	 */
 	public function find_similar_chunks( $question ) {
+		// When Qdrant is enabled in Pro settings, prefer vector search via Qdrant.
+		$pro_settings  = get_option( 'fe_ai_search_pro_settings', [] );
+		$vector_config = isset( $pro_settings['vector'] ) && is_array( $pro_settings['vector'] ) ? $pro_settings['vector'] : [];
+		$qdrant_config = isset( $vector_config['qdrant'] ) && is_array( $vector_config['qdrant'] ) ? $vector_config['qdrant'] : [];
+		$vector_store  = $vector_config['store'] ?? 'mariadb';
+
+		$qdrant_enabled = (
+			'qdrant' === $vector_store &&
+			! empty( $qdrant_config['endpoint'] ) &&
+			! empty( $qdrant_config['api_key'] ) &&
+			! empty( $qdrant_config['collection'] )
+		);
+
+		if ( $qdrant_enabled ) {
+			$results = $this->find_similar_chunks_via_qdrant( $question, $qdrant_config );
+			if ( ! empty( $results ) ) {
+				return $results;
+			}
+		}
+
 		global $wpdb;
 		$vectors_table = $wpdb->prefix . 'fe_ai_search_vectors';
 		$index_table   = $wpdb->prefix . 'fe_ai_search_keyword_index';
@@ -965,10 +1092,10 @@ error_log( 'QDRANT DEBUG: qdrant_config=' . print_r( $qdrant_config, true ) );
 
 		$api_url = 'https://api.openai.com/v1/embeddings';
 		if ( $this->is_license_active ) {
-			$provider_root       = isset( $this->options['provider'] ) && is_array( $this->options['provider'] ) ? $this->options['provider'] : [];
-			$openai_compatible   = isset( $provider_root['openai_compatible'] ) && is_array( $provider_root['openai_compatible'] ) ? $provider_root['openai_compatible'] : [];
-			$embedding_conf      = isset( $openai_compatible['embedding'] ) && is_array( $openai_compatible['embedding'] ) ? $openai_compatible['embedding'] : [];
-			$custom_endpoint     = $embedding_conf['endpoint'] ?? '';
+			$provider_root     = isset( $this->options['provider'] ) && is_array( $this->options['provider'] ) ? $this->options['provider'] : [];
+			$openai_compatible = isset( $provider_root['openai_compatible'] ) && is_array( $provider_root['openai_compatible'] ) ? $provider_root['openai_compatible'] : [];
+			$embedding_conf    = isset( $openai_compatible['embedding'] ) && is_array( $openai_compatible['embedding'] ) ? $openai_compatible['embedding'] : [];
+			$custom_endpoint   = $embedding_conf['endpoint'] ?? '';
 			if ( ! empty( $custom_endpoint ) ) {
 				$api_url = $custom_endpoint;
 			}
@@ -1205,8 +1332,6 @@ error_log( 'QDRANT DEBUG: qdrant_config=' . print_r( $qdrant_config, true ) );
 		$locale     = get_locale();
 		$lang_code  = strstr( $locale, '_', true ) ?: $locale;
 		$stop_words = [];
-		error_log( $locale );
-		error_log( $lang_code );
 		// Load stop words
 		// Use the correct plugin directory constant for locating i18n files.
 		$lang_file = FE_AI_SEARCH_PLUGIN_DIR . "includes/i18n/{$locale}.php";

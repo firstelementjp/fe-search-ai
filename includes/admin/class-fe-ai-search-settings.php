@@ -61,6 +61,8 @@ class FE_AI_Search_Settings {
 		}
 
 		add_action( 'admin_init', [ $this, 'settings_init' ] );
+		add_action( 'wp_ajax_fe_ai_search_delete_system_logs', [ $this, 'ajax_delete_system_logs' ] );
+		add_action( 'wp_ajax_fe_ai_search_delete_conversation_logs', [ $this, 'ajax_delete_conversation_logs' ] );
 	}
 
 	/**
@@ -75,9 +77,15 @@ class FE_AI_Search_Settings {
 	public static function render_page() {
 		?>
 		<div class="wrap">
+
+			<?php
+			// Display any settings errors
+			settings_errors();
+			?>
+
 			<div id="plugin_header">
 				<div id="plugin_header_upper">
-					<h1>FE Search <span>AI</span></h1>
+					<div id="plugin_header_title">FE Search <span>AI</span></div>
 					<a href="https://www.firstelement.co.jp/" id="plugin_logo" target="_blank" title="<?php esc_attr_e( 'Go to the developer\'s website', 'fe-ai-search' ); ?>">
 						<img src="<?php echo plugin_dir_url( FE_AI_SEARCH_PLUGIN_FILE ); ?>/assets/images/logo-feas-white-shadow-s@2x-min.png" width="106" height="27">
 					</a>
@@ -190,12 +198,6 @@ class FE_AI_Search_Settings {
 				do_action( 'fe_ai_search_settings_tabs' );
 				?>
 			</div>
-
-			<?php
-			// Show Settings API errors for the Free plugin settings group.
-			// Pro-specific errors are rendered inside their own tabs (e.g., Security).
-			// settings_errors();
-			?>
 
 			<form action="options.php" method="post">
 				<?php
@@ -436,6 +438,8 @@ class FE_AI_Search_Settings {
 		// ------------------
 		add_settings_section( 'fe_ai_search_data_section', __( 'Data Management', 'fe-ai-search' ), null, $page_slug );
 		add_settings_field( 'fe_ai_search_delete_vectors_ui', __( 'Delete Synced Data', 'fe-ai-search' ), [ $this, 'delete_vectors_ui_field_html' ], $page_slug, 'fe_ai_search_data_section' );
+		add_settings_field( 'fe_ai_search_delete_system_logs_ui', __( 'Delete System Logs', 'fe-ai-search' ), [ $this, 'delete_system_logs_ui_field_html' ], $page_slug, 'fe_ai_search_data_section' );
+		add_settings_field( 'fe_ai_search_delete_conversation_logs_ui', __( 'Delete Conversation Logs', 'fe-ai-search' ), [ $this, 'delete_conversation_logs_ui_field_html' ], $page_slug, 'fe_ai_search_data_section' );
 		add_settings_field( 'fe_ai_search_delete_on_uninstall', __( 'Delete Data on Uninstall', 'fe-ai-search' ), [ $this, 'delete_on_uninstall_field_html' ], $page_slug, 'fe_ai_search_data_section' );
 
 		// ------------------
@@ -444,6 +448,7 @@ class FE_AI_Search_Settings {
 		add_settings_section( 'fe_ai_search_advanced_section', __( 'Advanced Settings', 'fe-ai-search' ), null, $page_slug );
 		add_settings_field( 'fe_ai_search_display_advanced', __( 'Assets Loading', 'fe-ai-search' ), [ $this, 'display_advanced_field_html' ], $page_slug, 'fe_ai_search_advanced_section' );
 		add_settings_field( 'fe_ai_search_debug_mode_enabled', __( 'Debug Mode', 'fe-ai-search' ), [ $this, 'debug_mode_field_html' ], $page_slug, 'fe_ai_search_advanced_section' );
+		add_settings_field( 'fe_ai_search_log_retention_days', __( 'Log Retention (days)', 'fe-ai-search' ), [ $this, 'log_retention_days_field_html' ], $page_slug, 'fe_ai_search_advanced_section' );
 		add_settings_field( 'fe_ai_search_japanese_tokenizer', __( 'Japanese Tokenizer', 'fe-ai-search' ), [ $this, 'japanese_tokenizer_field_html' ], $page_slug, 'fe_ai_search_advanced_section' );
 	}
 
@@ -977,6 +982,99 @@ class FE_AI_Search_Settings {
 	}
 
 	/**
+	 * Renders the UI for deleting all system logs.
+	 *
+	 * Placed under the "Delete Synced Data" control in the Advanced tab so that
+	 * all destructive maintenance actions are grouped together.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public function delete_system_logs_ui_field_html() {
+		?>
+		<p class="description">
+			<?php esc_html_e( 'This will delete all system logs stored in the `{prefix}fe_ai_search_system_logs` table. Use this if logs have grown unexpectedly large or contain information you no longer wish to keep.', 'fe-ai-search' ); ?>
+		</p>
+		<button type="button" id="fe_ai_search_delete_system_logs_button" class="button button-secondary">
+			<?php esc_html_e( 'Delete all system logs', 'fe-ai-search' ); ?>
+		</button>
+		<span class="spinner"></span>
+		<p id="fe_ai_search_delete_logs_status"></p>
+		<?php
+	}
+
+	/**
+	 * Renders the UI for deleting all conversation logs.
+	 *
+	 * Placed next to the system log delete control so that each log type can
+	 * be purged independently.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public function delete_conversation_logs_ui_field_html() {
+		?>
+		<p class="description">
+			<?php esc_html_e( 'This will delete all conversation logs stored in the `{prefix}fe_ai_search_logs` table. Use this if conversations have grown unexpectedly large or contain information you no longer wish to keep.', 'fe-ai-search' ); ?>
+		</p>
+		<button type="button" id="fe_ai_search_delete_conversation_logs_button" class="button button-secondary">
+			<?php esc_html_e( 'Delete all conversation logs', 'fe-ai-search' ); ?>
+		</button>
+		<span class="spinner"></span>
+		<p id="fe_ai_search_delete_conversation_logs_status"></p>
+		<?php
+	}
+
+	/**
+	 * Handles the AJAX request to delete all system logs.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public function ajax_delete_system_logs() {
+		check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error(
+				[
+					'message' => __( 'You do not have permission to perform this action.', 'fe-ai-search' ),
+				]
+			);
+		}
+
+		\FEAISearch\Core\FE_AI_Search_Logger::clear_logs();
+
+		wp_send_json_success( __( 'All system logs have been deleted.', 'fe-ai-search' ) );
+	}
+
+	/**
+	 * Handles the AJAX request to delete all conversation logs.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public function ajax_delete_conversation_logs() {
+		check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error(
+				[
+					'message' => __( 'You do not have permission to perform this action.', 'fe-ai-search' ),
+				]
+			);
+		}
+
+		global $wpdb;
+		$table_name = $wpdb->prefix . 'fe_ai_search_logs';
+
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) === $table_name ) {
+			$wpdb->query( "TRUNCATE TABLE `{$table_name}`" );
+		}
+
+		wp_send_json_success( __( 'All conversation logs have been deleted.', 'fe-ai-search' ) );
+	}
+
+	/**
 	 * Renders the settings for the floating chat widget display rules.
 	 *
 	 * Controls login status visibility, device targeting, and per-template
@@ -1008,7 +1106,7 @@ class FE_AI_Search_Settings {
 		$floating_options = wp_parse_args( $floating_options, $defaults );
 		?>
 		<fieldset id="fe_ai_search_settings_display_floating">
-			<div id="fe_ai_search_floating_display_accordion" class="fe-ai-search-accordion-wrapper">
+			<div id="fe-ai-search-floating-display-accordion" class="fe-ai-search-accordion-wrapper">
 				<div class="post-type-accordion-item">
 					<h4 class="accordion-title">
 						<label>
@@ -1156,6 +1254,35 @@ class FE_AI_Search_Settings {
 		<?php
 	}
 
+	/**
+	 * Renders the numeric input for log retention days.
+	 *
+	 * Controls how many days system logs and conversation logs are kept before
+	 * being automatically deleted by the daily log rotation cron.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public function log_retention_days_field_html() {
+		$advanced_options = $this->options['advanced'] ?? [];
+		$days             = isset( $advanced_options['log_retention_days'] ) ? (int) $advanced_options['log_retention_days'] : 30;
+		if ( $days <= 0 ) {
+			$days = 30;
+		}
+		?>
+		<input
+			type="number"
+			name="fe_ai_search_settings[advanced][log_retention_days]"
+			value="<?php echo esc_attr( $days ); ?>"
+			class="small-text"
+			min="1"
+		/>
+		<p class="description">
+			<?php esc_html_e( 'Number of days to keep system logs and conversation logs. Older entries will be deleted automatically by the daily log rotation. Leave empty or set to 0 to disable automatic deletion.', 'fe-ai-search' ); ?>
+		</p>
+		<?php
+	}
+
 	public function japanese_tokenizer_field_html() {
 		$tokenizer_options = $this->options['tokenizer']['ja'] ?? [];
 		$engine            = $tokenizer_options['engine'] ?? 'tinysegmenter';
@@ -1227,7 +1354,12 @@ class FE_AI_Search_Settings {
 	public function display_embed_field_html() {
 		?>
 		<p class="description">
-			<?php esc_html_e( 'Please paste the following shortcode into the content of the page where you want to display the chat.', 'fe-ai-search' ); ?>
+			<?php
+			esc_html_e(
+				'Instead of automatically displaying the floating chat window based on the conditions above, you can also embed the chat manually anywhere on your site using the shortcode. Please paste the following shortcode into the content of the page where you want to display the chat.',
+				'fe-ai-search'
+			);
+			?>
 		</p>
 		<code>[fe-ai-search]</code>
 		<?php

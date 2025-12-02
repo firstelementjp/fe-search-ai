@@ -25,6 +25,14 @@ document.addEventListener('DOMContentLoaded', () => {
 	const statusText = statusDiv?.querySelector('.status-text');
 	const deleteButton = document.querySelector('#fe_ai_search_delete_vectors_button');
 	const deleteStatus = document.querySelector('#fe_ai_search_delete_status');
+	const deleteLogsButton = document.querySelector('#fe_ai_search_delete_system_logs_button');
+	const deleteLogsStatus = document.querySelector('#fe_ai_search_delete_logs_status');
+	const deleteConversationLogsButton = document.querySelector(
+		'#fe_ai_search_delete_conversation_logs_button'
+	);
+	const deleteConversationLogsStatus = document.querySelector(
+		'#fe_ai_search_delete_conversation_logs_status'
+	);
 	const tabsWrapper = document.querySelector('.nav-tab-wrapper');
 
 	// ==========================================================================
@@ -443,6 +451,84 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 	});
 
+	// Delete Conversation Logs Button
+	deleteConversationLogsButton?.addEventListener('click', async () => {
+		if (
+			// eslint-disable-next-line no-alert
+			!confirm(
+				__(
+					'Are you sure you want to delete all conversation logs? This action cannot be undone.',
+					'fe-ai-search'
+				)
+			)
+		) {
+			return;
+		}
+		deleteConversationLogsButton.disabled = true;
+		const spinner = deleteConversationLogsButton.parentElement.querySelector('.spinner');
+		spinner.style.visibility = 'visible';
+		deleteConversationLogsStatus.textContent = '';
+		try {
+			const response = await wpPost('fe_ai_search_delete_conversation_logs', {
+				nonce: fe_ai_search_sync_obj.nonce,
+			});
+			if (response.success) {
+				deleteConversationLogsStatus.style.color = 'green';
+				deleteConversationLogsStatus.textContent = response.data;
+			} else {
+				throw new Error(response.data.message || 'Deletion failed.');
+			}
+		} catch (error) {
+			deleteConversationLogsStatus.style.color = 'red';
+			deleteConversationLogsStatus.textContent = __(
+				'A communication error has occurred.',
+				'fe-ai-search'
+			);
+		} finally {
+			deleteConversationLogsButton.disabled = false;
+			spinner.style.visibility = 'hidden';
+		}
+	});
+
+	// Delete System Logs Button
+	deleteLogsButton?.addEventListener('click', async () => {
+		if (
+			// eslint-disable-next-line no-alert
+			!confirm(
+				__(
+					'Are you sure you want to delete all system logs? This action cannot be undone.',
+					'fe-ai-search'
+				)
+			)
+		) {
+			return;
+		}
+		deleteLogsButton.disabled = true;
+		const spinner = deleteLogsButton.parentElement.querySelector('.spinner');
+		spinner.style.visibility = 'visible';
+		deleteLogsStatus.textContent = '';
+		try {
+			const response = await wpPost('fe_ai_search_delete_system_logs', {
+				nonce: fe_ai_search_sync_obj.nonce,
+			});
+			if (response.success) {
+				deleteLogsStatus.style.color = 'green';
+				deleteLogsStatus.textContent = response.data;
+			} else {
+				throw new Error(response.data.message || 'Deletion failed.');
+			}
+		} catch (error) {
+			deleteLogsStatus.style.color = 'red';
+			deleteLogsStatus.textContent = __(
+				'A communication error has occurred.',
+				'fe-ai-search'
+			);
+		} finally {
+			deleteLogsButton.disabled = false;
+			spinner.style.visibility = 'hidden';
+		}
+	});
+
 	// "Change Model" Link Handler
 	document.querySelectorAll('.fe-ai-search-change-model-link').forEach(link => {
 		link.addEventListener('click', e => {
@@ -698,4 +784,16 @@ document.addEventListener('DOMContentLoaded', () => {
 			spinner.style.visibility = 'hidden';
 		}
 	});
+
+	if (document.body.classList.contains('toplevel_page_fe-ai-search')) {
+		const wrap = document.querySelector('.wrap');
+		const header = document.querySelector('#plugin_header');
+		const firstNotice = document.querySelector('.notice.settings-error');
+
+		console.log('[FEAS] wrap:', !!wrap, 'header:', !!header, 'firstNotice:', !!firstNotice);
+
+		if (wrap && header && firstNotice) {
+			wrap.insertBefore(firstNotice, header);
+		}
+	}
 });
