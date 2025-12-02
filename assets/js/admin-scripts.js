@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		return response.json();
 	}
 
-	// --- Color Picker (Pickr) Initialization ---
+	// Color Picker (Pickr) Initialization
 	if (typeof Pickr !== 'undefined') {
 		const colorPickers = document.querySelectorAll('.fe-ai-search-color-picker');
 		colorPickers.forEach(container => {
@@ -99,34 +99,39 @@ document.addEventListener('DOMContentLoaded', () => {
 				},
 			});
 
-			// Sync Pickr -> input
+			// Sync Pickr -> input + container
+			pickr.on('change', color => {
+				if (color) {
+					const hex = color.toHEXA().toString();
+					input.value = hex;
+					container.style.backgroundColor = hex;
+				}
+			});
+
 			pickr.on('save', (color, instance) => {
 				if (color) {
-					input.value = color.toHEXA().toString();
+					const hex = color.toHEXA().toString();
+					input.value = hex;
+					container.style.backgroundColor = hex;
 				} else {
 					input.value = '';
+					container.style.backgroundColor = '';
 				}
 				instance.hide();
 			});
 
 			pickr.on('clear', instance => {
 				input.value = '';
+				container.style.backgroundColor = '';
 				instance.hide();
 			});
 
-			pickr.on('change', color => {
-				if (color) {
-					input.value = color.toHEXA().toString();
-				}
-			});
-
-			// Initialize with current value if present
+			// Initial color
 			if (initialColor) {
 				try {
 					pickr.setColor(initialColor);
-				} catch (e) {
-					// Ignore invalid initial colors
-				}
+					container.style.backgroundColor = initialColor;
+				} catch (e) {}
 			}
 		});
 	}

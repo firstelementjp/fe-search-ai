@@ -1567,6 +1567,7 @@ class FE_AI_Search_Sync_Handler {
 	 * Renders an administrator notification about internationalization
 	 */
 	public function render_i18n_notice() {
+		error_log( 'FEAS i18n: transient=' . ( get_transient( 'fe_ai_search_i18n_notice_dismissed' ) ? '1' : '0' ) . ' locale=' . get_locale() );
 		// Do not show the notice if it was recently dismissed.
 		if ( get_transient( 'fe_ai_search_i18n_notice_dismissed' ) ) {
 			return;

@@ -43,6 +43,7 @@ code {
 .tab-content input[type="text"],
 .tab-content input[type="number"],
 .tab-content input[type="password"],
+.tab-content input[type="url"],
 .wp-picker-container {
 	margin-bottom: 0.5em;
 }
@@ -121,6 +122,9 @@ textarea {
 	grid-gap: 1.5em;
 	justify-content: end;
 	align-items: center;
+}
+.locale-ja #plugin_support {
+	grid-template: 100% / 6em 5em 22px 20px 20px 17px 17px;
 }
 #plugin_support a {
 	text-align: right;
@@ -202,7 +206,12 @@ textarea {
 	Specific Components
 	========================================================================== */
 
-.wrap form:has(.tab-content) {
+/* .wrap form:has(.tab-content) {
+	background: white;
+	padding: 1rem;
+} */
+
+#fe_ai_search_settings_inner {
 	background: white;
 	padding: 1rem;
 }
@@ -390,9 +399,19 @@ a.nav-tab:last-of-type {
 
 .fe-ai-search-wrapper.slider {
 	padding: 1em;
-	border: 1px solid silver;
+	border: 1px solid #8c8f94;
 	border-radius: 5px;
 	display: inline-flex;
+	width: 25em;
+}
+
+.fe-ai-search-wrapper.slider input {
+	width: 60%;
+}
+
+.fe-ai-search-wrapper.slider span {
+	padding: 0 0.5em;
+    white-space: nowrap;
 }
 
 .form-table td > div {
@@ -622,6 +641,10 @@ a:has(.dashicons-warning) span {
     opacity: 1;
 }
 
+#fe-ai-search-api-token-generator {
+	margin: 1em 0;
+}
+
 #fe-ai-search-tool-manifest,
 #fe-ai-search-api-guide {
 	margin: 1em 0;
@@ -630,10 +653,75 @@ a:has(.dashicons-warning) span {
 
 #fe-ai-search-tool-manifest summary,
 #fe-ai-search-api-guide summary {
-	font-weight: bold;
+	margin: 2em 0 1em;
+}
+
+#fe-ai-search-api-guide h4 {
+	margin: 2em 0 1em;
+}
+
+#fe-ai-search-api-guide li {
+	margin: 0 0 1em;
 }
 
 #fe_ai_search_delete_logs_status,
 #fe_ai_search_delete_conversation_logs_status {
 	padding: 10px 0;
+}
+
+/* .fe-ai-search-color-picker {
+	width: 24px;
+	height: 24px;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	position: relative;
+	overflow: hidden;
+}
+
+.fe-ai-search-color-picker .pcr-button {
+	position: absolute;
+	inset: 0;
+	opacity: 0;
+	cursor: pointer;
+} */
+
+.fe-ai-search-color-picker .pcr-button::after {
+	background: var(--pcr-color) !important;
+}
+
+#fe-ai-search-color-picker hr {
+	margin: 1em 0;
+    width: 10%;
+}
+.color-picker-box {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 1em;
+	margin-bottom: 1em;
+}
+
+.color-picker-box-right {
+	padding: 0 1em;
+}
+
+#fe_ai_search_pro_rate_limit_options h4 {
+	margin: 0 0 1em;
+}
+.rate-limit-group {
+	margin-bottom: 2em;
+}
+.rate-limit-group p {
+	margin: 0.5em 0 !important;
+}
+
+#fe_ai_search_api_usage_limits code {
+	display: inline-block;
+	padding: 0 0.5em;
+    margin: 0;
+}
+
+.toplevel_page_fe-ai-search .notice-info {
+	margin: 15px 0 15px 2px;
+    width: fit-content;
 }

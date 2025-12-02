@@ -63,7 +63,7 @@ class FE_AI_Search_Admin {
 		// Color picker (Pickr) styles.
 		wp_enqueue_style(
 			'fe-ai-search-pickr',
-			plugin_dir_url( FE_AI_SEARCH_PLUGIN_FILE ) . 'assets/vendor/pickr.min.css',
+			'https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/classic.min.css',
 			[],
 			FE_AI_SEARCH_VERSION
 		);
