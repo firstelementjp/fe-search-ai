@@ -605,6 +605,20 @@ class FE_AI_Search_Sync_Handler {
 			}
 
 			$chunk = $chunks_with_meta[ $index ];
+			/**
+			 * Filters the maximum length of the content snippet stored in Qdrant payload.
+			 *
+			 * This controls how many characters from each content chunk are saved
+			 * as `content_snippet` when mirroring vectors to Qdrant.
+			 *
+			 * @param int      $snippet_length Default snippet length in characters.
+			 * @param \WP_Post $post           The post being processed.
+			 * @param array    $chunk          The chunk data including 'content_chunk' and 'permalink'.
+			 */
+			$snippet_length = (int) apply_filters( 'fe_ai_search_qdrant_snippet_length', 1000, $post, $chunk );
+			if ( $snippet_length <= 0 ) {
+				$snippet_length = 1000;
+			}
 
 			$points[] = [
 				'id'      => (int) ( $post->ID * 10000 + $index ),
@@ -614,7 +628,7 @@ class FE_AI_Search_Sync_Handler {
 					'post_id'         => $post->ID,
 					'permalink'       => $chunk['permalink'] ?? get_permalink( $post ),
 					'title'           => get_the_title( $post ),
-					'content_snippet' => mb_substr( $chunk['content_chunk'], 0, 500 ),
+					'content_snippet' => mb_substr( $chunk['content_chunk'], 0, $snippet_length ),
 					'language'        => $lang_code,
 					'source'          => 'post',
 				],
@@ -860,8 +874,21 @@ class FE_AI_Search_Sync_Handler {
 		}
 
 		// Find vector IDs that match the keywords.
+		/**
+		 * Filters the maximum number of chunks returned for use as LLM context.
+		 *
+		 * This controls how many of the most relevant text chunks are retrieved
+		 * from the keyword index and ultimately passed to the LLM as context.
+		 *
+		 * @param int    $max_chunks Default maximum number of chunks.
+		 * @param string $question   The end user's question text.
+		 */
+		$max_chunks = (int) apply_filters( 'fe_ai_search_max_chunks_for_llm', 500, $question );
+		if ( $max_chunks <= 0 ) {
+			$max_chunks = 500;
+		}
 		$placeholders = implode( ', ', array_fill( 0, count( $valid_keywords ), '%s' ) );
-		$sql          = "SELECT DISTINCT `vector_id` FROM `{$index_table}` WHERE `keyword` IN ( {$placeholders} ) LIMIT 500";
+		$sql          = "SELECT DISTINCT `vector_id` FROM `{$index_table}` WHERE `keyword` IN ( {$placeholders} ) LIMIT {$max_chunks}";
 		$vector_ids   = $wpdb->get_col( $wpdb->prepare( $sql, $valid_keywords ) );
 
 		// DEBUG: Log index search results.
@@ -921,14 +948,15 @@ class FE_AI_Search_Sync_Handler {
 			];
 		}
 
-		$text_parts = [];
+		$meta_parts = [];
+		$body_text  = '';
 
 		// Build an array of sentences from metadata.
 		if ( ! empty( $pt_options['include_title'] ) ) {
-			$text_parts[] = sprintf( 'The title of this article is "%s".', $post->post_title );
+			$meta_parts[] = sprintf( 'The title of this article is "%s".', $post->post_title );
 		}
 		if ( ! empty( $pt_options['include_date'] ) ) {
-			$text_parts[] = sprintf( 'This article was published on %s.', date_i18n( get_option( 'date_format' ), strtotime( $post->post_date ) ) );
+			$meta_parts[] = sprintf( 'This article was published on %s.', date_i18n( get_option( 'date_format' ), strtotime( $post->post_date ) ) );
 		}
 		if ( ! empty( $pt_options['include_author'] ) ) {
 			$user = get_user_by( 'ID', $post->post_author );
@@ -947,22 +975,83 @@ class FE_AI_Search_Sync_Handler {
 					$nickname !== $user_email &&
 					$nickname !== $user_login
 				) {
-					$text_parts[] = sprintf( 'The author of this article is %s.', $nickname );
+					$meta_parts[] = sprintf( 'The author of this article is %s.', $nickname );
 				}
 			}
 		}
 
-		// Add taxonomies as keywords.
 		if ( ! empty( $pt_options['taxonomies'] ) ) {
-			$term_list = [];
+			$taxonomy_lines = [];
 			foreach ( $pt_options['taxonomies'] as $tax_slug ) {
 				$terms = get_the_terms( $post->ID, $tax_slug );
-				if ( ! is_wp_error( $terms ) && ! empty( $terms ) ) {
-					$term_list = array_merge( $term_list, wp_list_pluck( $terms, 'name' ) );
+				if ( is_wp_error( $terms ) || empty( $terms ) ) {
+					continue;
+				}
+				$taxonomy = get_taxonomy( $tax_slug );
+				if ( ! $taxonomy ) {
+					continue;
+				}
+				$label            = $taxonomy->label;
+				$term_names       = wp_list_pluck( $terms, 'name' );
+				$line             = sprintf( '%s=%s', $label, implode( ', ', $term_names ) );
+				$taxonomy_lines[] = $line;
+			}
+			if ( ! empty( $taxonomy_lines ) ) {
+				$taxonomy_lines = apply_filters( 'fe_ai_search_taxonomy_lines', $taxonomy_lines, $post, $pt_options );
+				$prefix_line    = 'The following taxonomy metadata is associated with this article:';
+				$has_prefix     = false;
+				foreach ( $taxonomy_lines as $line ) {
+					if ( trim( (string) $line ) === $prefix_line ) {
+						$has_prefix = true;
+						break;
+					}
+				}
+				if ( ! $has_prefix ) {
+					$meta_parts[] = $prefix_line;
+				}
+				foreach ( $taxonomy_lines as $line ) {
+					if ( '' !== trim( (string) $line ) ) {
+						$meta_parts[] = (string) $line;
+					}
 				}
 			}
-			if ( ! empty( $term_list ) ) {
-				$text_parts[] = sprintf( 'The related keywords are: "%s".', implode( ', ', $term_list ) );
+		}
+
+		$enable_custom_fields = ! empty( $pt_options['enable_custom_fields'] );
+		$custom_fields_input  = $pt_options['custom_fields'] ?? '';
+		if ( $enable_custom_fields && '' !== trim( (string) $custom_fields_input ) ) {
+			$keys_raw = explode( ',', (string) $custom_fields_input );
+			$keys     = array_filter(
+				array_map(
+					'sanitize_key',
+					array_map( 'trim', $keys_raw )
+				)
+			);
+			$cf_pairs = [];
+			foreach ( $keys as $meta_key ) {
+				if ( '' === $meta_key ) {
+					continue;
+				}
+				$value = get_post_meta( $post->ID, $meta_key, true );
+				if ( '' === $value || null === $value ) {
+					continue;
+				}
+				$normalized = $this->normalize_custom_field_value( $value );
+				if ( '' === $normalized ) {
+					continue;
+				}
+				$cf_pairs[] = sprintf( '%s=%s', $meta_key, $normalized );
+			}
+			if ( ! empty( $cf_pairs ) ) {
+				$custom_fields_line = implode( ', ', $cf_pairs );
+				$custom_fields_line = apply_filters( 'fe_ai_search_custom_fields_line', $custom_fields_line, $post, $cf_pairs, $pt_options );
+				if ( '' !== trim( (string) $custom_fields_line ) ) {
+					$prefix_line = 'The following custom field metadata is associated with this article:';
+					if ( 0 !== strpos( trim( (string) $custom_fields_line ), $prefix_line ) ) {
+						$meta_parts[] = $prefix_line;
+					}
+					$meta_parts[] = (string) $custom_fields_line;
+				}
 			}
 		}
 
@@ -970,15 +1059,16 @@ class FE_AI_Search_Sync_Handler {
 		if ( ! empty( $pt_options['include_content'] ) ) {
 			$content      = strip_shortcodes( $post->post_content );
 			$content      = wp_strip_all_tags( $content );
-			$text_parts[] = "Here is the main content of the article:\n" . $content;
+			$meta_parts[] = 'Here is the main content of the article:';
+			$body_text    = $content;
 		}
 
-		if ( empty( $text_parts ) ) {
+		if ( empty( $meta_parts ) && '' === trim( (string) $body_text ) ) {
 			return [];
 		}
 
-		// Join all parts into a single block of text.
-		$full_text = implode( "\n", $text_parts );
+		// Join metadata into a single block of text.
+		$meta_text = implode( "\n", $meta_parts );
 
 		/**
 		 * A filter hook for customizing the chunk size used when splitting text.
@@ -992,25 +1082,57 @@ class FE_AI_Search_Sync_Handler {
 		 */
 		$chunk_size = (int) apply_filters( 'fe_ai_search_chunk_size', 1000, $post );
 		$chunks     = [];
-		if ( mb_strlen( $full_text ) > $chunk_size ) {
-			// Split the text into sentences.
-			$sentences     = preg_split( '/(?<=[。．！？\n])\s*/u', $full_text, -1, PREG_SPLIT_NO_EMPTY );
-			$current_chunk = '';
-			foreach ( $sentences as $sentence ) {
-				// If adding the next sentence would exceed the chunk size,
-				// add the current chunk to the list and start a new chunk.
-				if ( mb_strlen( $current_chunk . $sentence ) > $chunk_size ) {
-					$chunks[]      = trim( $current_chunk );
-					$current_chunk = $sentence;
-				} else {
-					$current_chunk .= $sentence;
-				}
-			}
-			if ( ! empty( $current_chunk ) ) {
-				$chunks[] = trim( $current_chunk );
+		$meta_text  = trim( (string) $meta_text );
+		$body_text  = trim( (string) $body_text );
+
+		// If there is no body, create a single chunk from metadata only.
+		if ( '' === $body_text ) {
+			$single = $meta_text;
+			if ( '' !== $single ) {
+				$chunks[] = $single;
 			}
 		} else {
-			$chunks[] = trim( $full_text );
+			// Determine how many characters are available for the body part in each chunk.
+			$available_for_body = $chunk_size;
+			if ( '' !== $meta_text ) {
+				$available_for_body = $chunk_size - mb_strlen( $meta_text ) - 1; // 1 for the newline between meta and body.
+			}
+			if ( $available_for_body <= 0 ) {
+				$available_for_body = 1;
+			}
+
+			if ( mb_strlen( $body_text ) <= $available_for_body ) {
+				// Everything fits into a single chunk.
+				if ( '' !== $meta_text ) {
+					$chunks[] = trim( $meta_text . "\n" . $body_text );
+				} else {
+					$chunks[] = trim( $body_text );
+				}
+			} else {
+				// Split the body into sentence-based chunks, each limited by available_for_body.
+				$sentences    = preg_split( '/(?<=[。．！？\n])\s*/u', $body_text, -1, PREG_SPLIT_NO_EMPTY );
+				$current_body = '';
+				foreach ( $sentences as $sentence ) {
+					if ( mb_strlen( $current_body . $sentence ) > $available_for_body ) {
+						// Flush the current body chunk.
+						if ( '' !== $meta_text ) {
+							$chunks[] = trim( $meta_text . "\n" . $current_body );
+						} else {
+							$chunks[] = trim( $current_body );
+						}
+						$current_body = $sentence;
+					} else {
+						$current_body .= $sentence;
+					}
+				}
+				if ( '' !== $current_body ) {
+					if ( '' !== $meta_text ) {
+						$chunks[] = trim( $meta_text . "\n" . $current_body );
+					} else {
+						$chunks[] = trim( $current_body );
+					}
+				}
+			}
 		}
 
 		$permalink        = get_permalink( $post );
@@ -1024,6 +1146,40 @@ class FE_AI_Search_Sync_Handler {
 		}
 
 		return $chunks_with_meta;
+	}
+
+	/**
+	 * Normalizes a custom field value into a flat, human-readable string.
+	 *
+	 * Attempts to unserialize string values, flattens arrays/objects recursively
+	 * into a comma-separated list, and converts scalar/boolean values to strings.
+	 * This is used when embedding custom field values into text chunks so that
+	 * LLMs can consume them consistently (e.g. "place=tokyo").
+	 *
+	 * @param mixed $value Raw meta value retrieved from get_post_meta().
+	 * @return string Normalized string representation of the value.
+	 */
+	private function normalize_custom_field_value( $value ) {
+		if ( is_string( $value ) ) {
+			$value = maybe_unserialize( $value );
+		}
+		if ( is_array( $value ) || is_object( $value ) ) {
+			$flat = [];
+			foreach ( (array) $value as $sub_value ) {
+				$sub_normalized = $this->normalize_custom_field_value( $sub_value );
+				if ( '' !== $sub_normalized ) {
+					$flat[] = $sub_normalized;
+				}
+			}
+			return implode( ', ', $flat );
+		}
+		if ( is_bool( $value ) ) {
+			return $value ? 'true' : 'false';
+		}
+		if ( is_scalar( $value ) ) {
+			return (string) $value;
+		}
+		return '';
 	}
 
 	/**

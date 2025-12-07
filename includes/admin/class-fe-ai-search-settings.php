@@ -106,7 +106,7 @@ class FE_AI_Search_Settings {
 					<a href="https://fe-search.com/docs/ai"
 						target="_blank"
 						title="<?php esc_attr_e( 'Go to the instruction manual', 'fe-ai-search' ); ?>">
-						<?php esc_html_e( 'Docs', 'fe-ai-search' ); ?>
+						<?php esc_html_e( 'Documentation', 'fe-ai-search' ); ?>
 					</a>
 					<?php
 					$forum_url = 'https://fe-search.com/en-forums/ai';
@@ -362,8 +362,14 @@ class FE_AI_Search_Settings {
 					do_action( 'fe_ai_search_settings_tabs_content' );
 					?>
 				</div>
+
 				<div id="fe_ai_search_settings_footer">
 					<?php submit_button( __( 'Save Settings', 'fe-ai-search' ) ); ?>
+					<?php if ( 'ja' === $locale || 'ja_JP' === $locale ) : ?>
+						<!-- Begin Yahoo! JAPAN Web Services Attribution Snippet -->
+						<span style="margin:15px 15px 15px 15px"><a href="https://developer.yahoo.co.jp/sitemap/">Webサービス by Yahoo! JAPAN</a></span>
+						<!-- End Yahoo! JAPAN Web Services Attribution Snippet -->
+					<?php endif; ?>
 				</div>
 			</form>
 		</div>

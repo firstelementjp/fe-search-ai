@@ -133,6 +133,8 @@ This plugin incorporates the following third-party libraries:
     - License: Modified BSD
     - Source: [https://github.com/u7aro/tinysegmenter-php](https://github.com/u7aro/tinysegmenter-php)
     - The full license text is included in the `LICENSE-TinySegmenter.txt` file.
+- **Web Services by Yahoo! JAPAN**
+    - Source: [https://developer.yahoo.co.jp/sitemap/](https://developer.yahoo.co.jp/sitemap/)
 - **Pickr**
     - Author: Simon Wep
     - License: MIT

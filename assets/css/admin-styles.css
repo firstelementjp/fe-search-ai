@@ -118,7 +118,7 @@ textarea {
 	height: 2.5rem;
 	background-color: white;
 	display: grid;
-	grid-template: 100% / 3em 4em 22px 20px 20px 17px 17px;
+	grid-template: 100% / 7em 4em 22px 20px 20px 17px 17px;
 	grid-gap: 1.5em;
 	justify-content: end;
 	align-items: center;
@@ -434,11 +434,20 @@ a:has(.dashicons-warning) span {
 	vertical-align: middle;
 }
 
+#fe_ai_search_progress_bar_wrapper {
+    padding: 0 5px;
+}
+
+#fe_ai_search_sync_status {
+	display: flex;
+    align-items: center;
+}
+
 #fe_ai_search_sync_status .spin {
 	display: none;
 	float: none;
 	vertical-align: middle;
-	margin-right: 5px;
+	margin: 0 5px;
 	animation: spin 1s infinite linear;
 }
 
@@ -459,7 +468,7 @@ a:has(.dashicons-warning) span {
 	line-height: 20px;
 	text-align: center;
 	font-size: 12px;
-	color: #fff;
+	color: #c0c0c0;
 	background-color: #0073aa; /* Standard WordPress blue */
 	border-radius: 3px;
 	/* Add smooth animation when JS changes the width */
@@ -467,7 +476,7 @@ a:has(.dashicons-warning) span {
 }
 
 #fe_ai_search_progress_container .status-text {
-	padding: 5px 10px;
+	padding: 5px;
     display: block;
 }
 
@@ -724,4 +733,12 @@ a:has(.dashicons-warning) span {
 .toplevel_page_fe-ai-search .notice-info {
 	margin: 15px 0 15px 2px;
     width: fit-content;
+}
+
+#fe_ai_search_settings_footer {
+	display: flex;
+	justify-content: space-between;
+}
+#fe_ai_search_settings_footer span {
+	margin-right: 0 !important;
 }
