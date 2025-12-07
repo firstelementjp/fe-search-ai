@@ -173,6 +173,8 @@ function initFEAIChat() {
 	bubble.addEventListener('click', () => {
 		windowEl.classList.remove('hidden');
 		bubble.classList.add('hidden');
+		// Ensure the latest messages are visible when opening the window.
+		messagesContainer.scrollTop = messagesContainer.scrollHeight;
 		ensureConsentUI();
 	});
 
@@ -442,7 +444,7 @@ function initFEAIChat() {
 		}
 	});
 
-	// --- 5. Helper Functions ---
+	// Helper Functions
 
 	/**
 	 * Adds a message to the chat UI.
@@ -457,6 +459,32 @@ function initFEAIChat() {
 		messagesContainer.appendChild(messageWrapper);
 		messagesContainer.scrollTop = messagesContainer.scrollHeight;
 		return messageWrapper;
+	}
+
+	/**
+	 * Restores the session history from sessionStorage into the visible chat UI.
+	 *
+	 * @return {void}
+	 */
+	function restoreSessionHistory() {
+		if (!Array.isArray(sessionHistory) || sessionHistory.length === 0) {
+			return;
+		}
+
+		sessionHistory.forEach(entry => {
+			if (!entry || typeof entry.content !== 'string') {
+				return;
+			}
+
+			if (entry.role === 'user') {
+				addMessage(`<p>${entry.content}</p>`, 'user');
+			} else if (entry.role === 'assistant') {
+				// Assistant messages are stored as plain markdown text.
+				addMessage(marked.parse(entry.content), 'ai');
+			} else if (entry.role === 'system') {
+				addMessage(`<p>${entry.content}</p>`, 'system');
+			}
+		});
 	}
 
 	/**
@@ -491,11 +519,11 @@ function initFEAIChat() {
 	/**
 	 * Configure typing animation speed based on the PHP setting.
 	 *
-	 * animation_speed (1-10) を、
-	 * - 1: 1文字ずつ、かなりゆっくり
-	 * - 10: 大きなブロック単位でほぼ一瞬
-	 * に近い体感になるよう、1 tick あたりの文字数と
-	 * tick 間隔の両方にマッピングする。
+	 * Map the animation_speed (1–10) value to both
+	 * the number of characters per tick and the tick interval
+	 * so that:
+	 * - 1 feels very slow, typing one character at a time
+	 * - 10 feels almost instantaneous, outputting large chunks at once.
 	 */
 	function configureTypingSpeed() {
 		let speed = fe_ai_search_ajax_obj.animation_speed || 3;
@@ -505,13 +533,13 @@ function initFEAIChat() {
 		// Clamp to [1, 10]
 		speed = Math.max(1, Math.min(10, speed));
 
-		// デフォルトは通常モード（キューを小分けに描画）
+		// Default to the normal mode (rendering the queue in small chunks).
 		typingImmediate = false;
 
-		// --- Interval 設定 ---
-		// 1〜3: 手作業でメリハリを付ける（すべて1文字ずつだがテンポを変える）
+		// --- Interval configuration ---
+		// 1–3: Manually tuned for a natural feel (always 1 char, but different tempo)
 		//  1 => ~160ms, 2 => ~110ms, 3 => ~70ms
-		// 4〜9: 3の値から9の高速値(~25ms)までリニアに補間
+		// 4–9: Linearly interpolate from the value at 3 to the fast value at 9 (~25ms)
 		if (speed <= 3) {
 			const intervals = {
 				1: 160,
@@ -520,39 +548,43 @@ function initFEAIChat() {
 			};
 			typingInterval = intervals[speed];
 		} else if (speed < 10) {
-			// speed: 4..9 を 0..1 に正規化し、70ms -> 25ms へ補間
-			// ただし最初はゆっくり、後半で一気に速くなるように緩やかなカーブを付ける
+			// Normalize speed 4..9 to 0..1 and interpolate 70ms -> 25ms.
+			// Use an easing curve so it accelerates more in the higher range.
 			const fastRatioLinear = (speed - 3) / 6; // 4..9 => 1/6..1
-			const fastRatio = Math.pow(fastRatioLinear, 1.5); // 4,5,6 はややゆっくり、7〜9 で急速に速く
-			const startInterval = 70; // speed=3 相当
-			const endInterval = 25; // speed=9 相当
+			const fastRatio = Math.pow(fastRatioLinear, 1.5); // 4,5,6 are slower, 7–9 accelerate quickly
+			const startInterval = 70; // Equivalent to speed=3
+			const endInterval = 25; // Equivalent to speed=9
 			typingInterval = Math.round(startInterval - (startInterval - endInterval) * fastRatio);
 		} else {
-			// speed=10: 即モード側で扱うが、保険として最小値を入れておく
+			// speed=10: Handled as \"immediate mode\", but keep a minimum value as a fallback.
 			typingInterval = 20;
 		}
 
-		// --- Chars per tick 設定 ---
-		// 1〜3: 常に1文字ずつ
-		// 4〜9: 2文字から 9 の高速値(約15文字)までリニアに増やす
-		// 10: 即モード（キュー全体を一気に吐き出す）
+		// --- Characters-per-tick configuration ---
+		// 1–3: Always 1 character per tick
+		// 4–9: Linearly increase from 2 characters up to ~15 characters at speed 9
+		// 10: Immediate mode (render the entire queue at once)
 		if (speed === 10) {
 			typingImmediate = true;
 			typingCharsPerTick = 10000;
 		} else if (speed <= 3) {
 			typingCharsPerTick = 1;
 		} else {
-			// speed 4..9 を 0..1 に正規化し、2文字から15文字までリニアに増やす
+			// Normalize speed 4..9 to 0..1 and linearly increase from 2 to 15 characters.
 			const charsRatio = (speed - 4) / 5; // 4..9 => 0..1
-			const minChars = 2; // speed=4 で約2文字
+			const minChars = 2; // About 2 characters at speed=4
 			const maxChars = 15;
 			const rawChars = minChars + (maxChars - minChars) * charsRatio;
 			typingCharsPerTick = Math.max(1, Math.round(rawChars));
 		}
 	}
 
-	// 初期化時に一度だけ設定値から速度テーブルを構成
+	// Build the typing speed table from the settings once at initialization.
 	configureTypingSpeed();
+
+	// Restore previous session history into the chat UI so that
+	// conversations persist across page navigations.
+	restoreSessionHistory();
 
 	/**
 	 * Renders the typing animation queue.
@@ -567,7 +599,7 @@ function initFEAIChat() {
 		}
 		if (charQueue.length === 0) return;
 
-		// 最高速モードでは、キュー内を一気に描画
+		// In immediate mode, render the entire queue at once.
 		const takeCount = typingImmediate ? charQueue.length : typingCharsPerTick;
 		const charsToRender = charQueue.splice(0, takeCount).join('');
 		fullResponse += charsToRender;
