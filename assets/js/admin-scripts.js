@@ -728,38 +728,36 @@ document.addEventListener('DOMContentLoaded', () => {
 	// License Activation & Deactivation
 	// ==========================================================================
 
-	// License key visibility toggle (Show/Hide password).
-	const licenseInput = document.getElementById('fe_ai_search_license_key_input');
-	const licenseToggle = document.getElementById('fe_ai_search_license_toggle_visibility');
-	if (licenseInput && licenseToggle) {
-		licenseToggle.addEventListener('click', () => {
-			const isPassword = licenseInput.type === 'password';
-			licenseInput.type = isPassword ? 'text' : 'password';
-			licenseToggle.textContent = isPassword
+	// License key visibility toggle (Show/Hide password) for all license inputs.
+	document.querySelectorAll('.fe-ai-search-license-toggle').forEach(toggle => {
+		const targetId = toggle.dataset.targetInputId;
+		if (!targetId) {
+			return;
+		}
+		const input = document.getElementById(targetId);
+		if (!input) {
+			return;
+		}
+		toggle.addEventListener('click', () => {
+			const isPassword = input.type === 'password';
+			input.type = isPassword ? 'text' : 'password';
+			toggle.textContent = isPassword
 				? __('Hide', 'fe-ai-search')
 				: __('Show', 'fe-ai-search');
 		});
-	}
+	});
 
 	// We must use event delegation on the document body, because the license tab
 	// is part of the main settings form, not a separate Pro feature.
 	document.body.addEventListener('click', async e => {
-		let action = '';
-		let button = null;
-		if (e.target.id === 'fe_ai_search_license_activate') {
-			action = 'activate';
-			button = e.target;
-		} else if (e.target.id === 'fe_ai_search_license_deactivate') {
-			action = 'deactivate';
-			button = e.target;
-		}
-
-		// If a license button was not clicked, do nothing.
+		const button = e.target.closest('[data-license-product-id][data-license-action]');
 		if (!button) {
 			return;
 		}
 
-		const licenseKeyInput = document.getElementById('fe_ai_search_license_key_input');
+		const action = button.dataset.licenseAction;
+		const inputId = button.dataset.licenseInputId || 'fe_ai_search_license_key_input';
+		const licenseKeyInput = document.getElementById(inputId);
 		const licenseKey = licenseKeyInput ? licenseKeyInput.value : '';
 		const spinner = button.parentElement.querySelector('.spinner');
 		button.disabled = true;
@@ -794,8 +792,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		const wrap = document.querySelector('.wrap');
 		const header = document.querySelector('#plugin_header');
 		const firstNotice = document.querySelector('.notice.settings-error');
-
-		console.log('[FEAS] wrap:', !!wrap, 'header:', !!header, 'firstNotice:', !!firstNotice);
 
 		if (wrap && header && firstNotice) {
 			wrap.insertBefore(firstNotice, header);

@@ -20,6 +20,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use FEAISearch\Core\FE_AI_Search_License;
+
 /**
  * Manages the UI and registration for the main license settings tab.
  *
@@ -67,14 +69,9 @@ class FE_AI_Search_License_Settings {
 		/**
 		 * Check the status of the license (stored in its own option).
 		 */
-		$license_data = get_option( 'fe_ai_search_license', [] );
-		$status       = $license_data['status'] ?? 'inactive';
-		$data         = $license_data['data'] ?? [];
-		$product_id   = isset( $data['productId'] ) ? (int) $data['productId'] : 0;
-
 		// Treat the license as active when the status is "active" and the product ID
 		// matches the Pro add-on (productId = 65 in License Manager for WooCommerce).
-		$this->is_license_active = ( 'active' === $status && 65 === $product_id );
+		$this->is_license_active = FE_AI_Search_License::is_pro_active();
 
 		if ( ! $this->is_license_active ) {
 			$this->license_alert_icon = '<a href="' . admin_url( 'admin.php' )
@@ -95,8 +92,11 @@ class FE_AI_Search_License_Settings {
 	 * @since 1.0.0
 	 */
 	public function add_tab() {
-		$icon = '';
-		if ( class_exists( '\\FEAISearch\\Pro\\Admin\\FE_AI_Search_Pro_Settings' ) && ! $this->is_license_active ) {
+		$icon          = '';
+		$has_pro_addon = class_exists( '\\FEAISearch\\Pro\\Admin\\FE_AI_Search_Pro_Settings' );
+		if ( ( $has_pro_addon && ! $this->is_license_active ) || ( ! $has_pro_addon && $this->is_license_active ) ) {
+			// Show a yellow warning icon when the Pro add-on is installed but the license is inactive,
+			// or when the license is active but the Pro add-on is not installed/active.
 			$icon = '<span class="dashicons dashicons-warning" style="color: #f59e0b;"></span>';
 		}
 		echo '<a href="#tab_license" class="nav-tab">' . esc_html__( 'License', 'fe-ai-search' ) . ' ' . wp_kses_post( $icon ) . '</a>';
@@ -307,39 +307,65 @@ class FE_AI_Search_License_Settings {
 	 * @since 1.0.0
 	 */
 	public function field_html() {
-		$license_data = get_option( 'fe_ai_search_license', [] );
+		$products   = FE_AI_Search_License::get_products();
+		$entry_pro  = $products[ FE_AI_Search_License::PRODUCT_ID_PRO ] ?? null;
+		$entry_pro  = is_array( $entry_pro ) ? $entry_pro : [];
+		$entry_pine = $products[ FE_AI_Search_License::PRODUCT_ID_PINECONE ] ?? null;
+		$entry_pine = is_array( $entry_pine ) ? $entry_pine : [];
 
-		$license_key    = isset( $license_data['key'] ) ? $license_data['key'] : '';
-		$license_status = isset( $license_data['status'] ) ? $license_data['status'] : 'inactive';
+		$license_key_pro    = isset( $entry_pro['key'] ) ? (string) $entry_pro['key'] : '';
+		$license_status_pro = isset( $entry_pro['status'] ) ? (string) $entry_pro['status'] : 'inactive';
+
+		$license_key_pine    = isset( $entry_pine['key'] ) ? (string) $entry_pine['key'] : '';
+		$license_status_pine = isset( $entry_pine['status'] ) ? (string) $entry_pine['status'] : 'inactive';
 		?>
+		<p>
+			<strong><?php esc_html_e( 'FE Search AI Pro License', 'fe-ai-search' ); ?></strong>
+		</p>
 		<input
 			type="password"
 			autocomplete="off"
 			id="fe_ai_search_license_key_input"
 			name="fe_ai_search_license_key_input"
-			value="<?php echo esc_attr( $license_key ); ?>"
+			value="<?php echo esc_attr( $license_key_pro ); ?>"
 			class="regular-text"
 			style="width: 300px;"
 		>
 		<button
 			type="button"
 			id="fe_ai_search_license_toggle_visibility"
-			class="button button-secondary"
+			class="button button-secondary fe-ai-search-license-toggle"
+			data-target-input-id="fe_ai_search_license_key_input"
 			style="margin-left: 8px;"
 		>
 			<?php esc_html_e( 'Show', 'fe-ai-search' ); ?>
 		</button>
 
-		<?php if ( 'active' === $license_status ) : ?>
+		<?php if ( 'active' === $license_status_pro ) : ?>
 
-			<button type="button" id="fe_ai_search_license_deactivate" class="button button-secondary"><?php esc_html_e( 'Deactivate', 'fe-ai-search' ); ?></button>
+			<button
+				type="button"
+				id="fe_ai_search_license_deactivate"
+				class="button button-secondary"
+				data-license-product-id="<?php echo esc_attr( (string) FE_AI_Search_License::PRODUCT_ID_PRO ); ?>"
+				data-license-input-id="fe_ai_search_license_key_input"
+				data-license-action="deactivate"
+			>
+				<?php esc_html_e( 'Deactivate', 'fe-ai-search' ); ?>
+			</button>
 			<p class="description" style="color: green; font-weight: bold;">
 				<?php esc_html_e( 'The license is valid.', 'fe-ai-search' ); ?>
 			</p>
+			<?php if ( ! class_exists( '\\FEAISearch\\Pro\\Admin\\FE_AI_Search_Pro_Settings' ) ) : ?>
+				<p class="description" style="color: #dc2626;">
+					<?php esc_html_e( 'The Pro add-on plugin is not installed or not active. Please install and activate "FE Search AI Pro" to use Pro features.', 'fe-ai-search' ); ?>
+				</p>
+			<?php endif; ?>
 			<?php
-				$expires_at          = $license_data['data']['expiresAt'] ?? '';
-				$times_activated     = $license_data['data']['timesActivated'] ?? null;
-				$times_activated_max = $license_data['data']['timesActivatedMax'] ?? null;
+				$data                = isset( $entry_pro['data'] ) && is_array( $entry_pro['data'] ) ? $entry_pro['data'] : [];
+				$expires_at          = $data['expiresAt'] ?? '';
+				$times_activated     = $data['timesActivated'] ?? null;
+				$times_activated_max = $data['timesActivatedMax'] ?? null;
 				$remaining_days      = '';
 
 			if ( ! empty( $expires_at ) ) {
@@ -386,7 +412,16 @@ class FE_AI_Search_License_Settings {
 
 		<?php else : ?>
 
-			<button type="button" id="fe_ai_search_license_activate" class="button button-primary"><?php esc_html_e( 'Activate', 'fe-ai-search' ); ?></button>
+			<button
+				type="button"
+				id="fe_ai_search_license_activate"
+				class="button button-primary"
+				data-license-product-id="<?php echo esc_attr( (string) FE_AI_Search_License::PRODUCT_ID_PRO ); ?>"
+				data-license-input-id="fe_ai_search_license_key_input"
+				data-license-action="activate"
+			>
+				<?php esc_html_e( 'Activate', 'fe-ai-search' ); ?>
+			</button>
 			<p class="description">
 				<?php esc_html_e( 'Enter the license key you received at the time of purchase and press the "Activate" button.', 'fe-ai-search' ); ?>
 			</p>
@@ -401,6 +436,79 @@ class FE_AI_Search_License_Settings {
 			endif;
 			?>
 
+		<?php endif; ?>
+
+		<hr>
+		<p>
+			<strong><?php esc_html_e( 'Pinecone Add-on License (Test Product)', 'fe-ai-search' ); ?></strong>
+		</p>
+		<input
+			type="password"
+			autocomplete="off"
+			id="fe_ai_search_license_key_input_pine"
+			name="fe_ai_search_license_key_input_pine"
+			value="<?php echo esc_attr( $license_key_pine ); ?>"
+			class="regular-text"
+			style="width: 300px;"
+		>
+		<button
+			type="button"
+			id="fe_ai_search_license_toggle_visibility_pine"
+			class="button button-secondary fe-ai-search-license-toggle"
+			data-target-input-id="fe_ai_search_license_key_input_pine"
+			style="margin-left: 8px;"
+		>
+			<?php esc_html_e( 'Show', 'fe-ai-search' ); ?>
+		</button>
+		<?php if ( 'active' === $license_status_pine ) : ?>
+			<button
+				type="button"
+				id="fe_ai_search_license_deactivate_pine"
+				class="button button-secondary"
+				data-license-product-id="<?php echo esc_attr( (string) FE_AI_Search_License::PRODUCT_ID_PINECONE ); ?>"
+				data-license-input-id="fe_ai_search_license_key_input_pine"
+				data-license-action="deactivate"
+			>
+				<?php esc_html_e( 'Deactivate', 'fe-ai-search' ); ?>
+			</button>
+			<p class="description" style="color: green; font-weight: bold;">
+				<?php esc_html_e( 'The Pinecone add-on license is valid.', 'fe-ai-search' ); ?>
+			</p>
+			<?php if ( ! class_exists( 'FE_AI_Search_Pinecone_Addon' ) ) : ?>
+				<p class="description" style="color: #dc2626;">
+					<?php esc_html_e( 'The Pinecone add-on plugin is not installed or not active. Please install and activate the Pinecone add-on to use Pinecone features.', 'fe-ai-search' ); ?>
+				</p>
+			<?php endif; ?>
+			<?php
+				$data_pine                = isset( $entry_pine['data'] ) && is_array( $entry_pine['data'] ) ? $entry_pine['data'] : [];
+				$times_activated_pine     = $data_pine['timesActivated'] ?? null;
+				$times_activated_max_pine = $data_pine['timesActivatedMax'] ?? null;
+				$max_text_pine            = is_null( $times_activated_max_pine ) ? __( 'Unlimited', 'fe-ai-search' ) : (string) (int) $times_activated_max_pine;
+			?>
+			<p class="description">
+				<?php
+					/* translators: 1: times activated, 2: max activations */
+					printf(
+						esc_html__( 'Activation count: %1$s / %2$s', 'fe-ai-search' ),
+						esc_html( (string) ( $times_activated_pine ?? 0 ) ),
+						esc_html( $max_text_pine )
+					);
+				?>
+			</p>
+		<?php else : ?>
+			<button
+				type="button"
+				id="fe_ai_search_license_activate_pine"
+				class="button button-primary"
+				data-license-product-id="<?php echo esc_attr( (string) FE_AI_Search_License::PRODUCT_ID_PINECONE ); ?>"
+				data-license-input-id="fe_ai_search_license_key_input_pine"
+				data-license-action="activate"
+			>
+				<?php esc_html_e( 'Activate', 'fe-ai-search' ); ?>
+			</button>
+			<p class="description">
+				<?php esc_html_e( 'Enter the license key for the Pinecone add-on and press the "Activate" button.', 'fe-ai-search' ); ?>
+			</p>
 		<?php endif; ?>
 
 		<span class="spinner" style="float: none; vertical-align: middle;"></span>

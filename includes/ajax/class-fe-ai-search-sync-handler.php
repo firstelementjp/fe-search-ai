@@ -19,6 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use FEAISearch\Core\FE_AI_Search_License;
 use U7aro\TinySegmenter\TinySegmenter;
 use WP_Error;
 
@@ -51,17 +52,7 @@ class FE_AI_Search_Sync_Handler {
 
 		$this->options   = get_option( 'fe_ai_search_settings', [] );
 		$this->segmenter = new TinySegmenter();
-
-		$license_data = get_option( 'fe_ai_search_license', [] );
-		$status       = $license_data['status'] ?? 'inactive';
-		$data         = $license_data['data'] ?? [];
-		$product_id   = isset( $data['productId'] ) ? (int) $data['productId'] : 0;
-
-		// Set license status for use in various methods.
-		// Active when the status is "active" and the product ID matches the Pro add-on.
-		$this->is_license_active = ( 'active' === $status && 65 === $product_id );
-
-		// $this->is_license_active = true; // Debug override
+		$this->is_license_active = FE_AI_Search_License::is_pro_active();
 
 		add_filter( 'fe_ai_search_tokenizer_status', [ $this, 'add_japanese_tokenizer_status' ] );
 		add_action( 'wp_ajax_fe_ai_search_start_sync', [ $this, 'ajax_start_sync' ] );

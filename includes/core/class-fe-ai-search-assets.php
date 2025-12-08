@@ -19,6 +19,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use FEAISearch\Core\FE_AI_Search_License;
+
 /**
  * The assets handler class.
  *
@@ -47,16 +49,9 @@ class FE_AI_Search_Assets {
 	public function enqueue_assets() {
 		// Pro settings (used for rate limiting and privacy configuration).
 		$pro_options = [];
-		if ( $is_license_active && class_exists( '\\FEAISearch\\Pro\\Admin\\FE_AI_Search_Pro_Settings' ) ) {
+		if ( $this->is_pro && class_exists( '\\FEAISearch\\Pro\\Admin\\FE_AI_Search_Pro_Settings' ) ) {
 			$pro_options = get_option( 'fe_ai_search_pro_settings', [] );
 		}
-
-		// License settings values
-		$license_data      = get_option( 'fe_ai_search_license', [] );
-		$status            = $license_data['status'] ?? 'inactive';
-		$data              = $license_data['data'] ?? [];
-		$product_id        = isset( $data['productId'] ) ? (int) $data['productId'] : 0;
-		$is_license_active = ( 'active' === $status && 65 === $product_id ); // 65 is the product ID for the Pro add-on.
 
 		// UI settings values
 		$ui_options        = $this->options['display']['ui'] ?? [];

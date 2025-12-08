@@ -190,12 +190,10 @@ textarea {
 }
 
 #plugin_header #plugin_header_title {
+	display: flex;
+    align-items: center;
 	font-size: 21px;
 	font-weight: 500;
-}
-
-#plugin_header #plugin_header_title span {
-	color: #6d6ddb;
 }
 
 .toplevel_page_fe-ai-search .fe-ai-search-notices .notice {
@@ -741,4 +739,19 @@ a:has(.dashicons-warning) span {
 }
 #fe_ai_search_settings_footer span {
 	margin-right: 0 !important;
+}
+
+#plugin_header_title .ai-text {
+	margin: 0 0 0 0.2em;
+	color: #6d6ddb;
+}
+
+#plugin_header_title .pro-badge {
+	font-size: 0.7em;
+    margin: 0 0 0 0.3em;
+    padding: 0.1em 0.5em;
+    line-height: 1;
+    color: white;
+    background: #6d6ddb;
+    border-radius: 99px;
 }

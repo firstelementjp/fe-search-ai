@@ -19,6 +19,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use FEAISearch\Core\FE_AI_Search_License;
+
 /**
  * Main controller for all frontend chat interactions.
  *
@@ -39,21 +41,8 @@ class FE_AI_Search_Chat_Handler {
 	private $sync_handler;
 
 	public function __construct( $sync_handler ) {
-
-		// Retrieve all configuration data
 		$this->options = get_option( 'fe_ai_search_settings', [] );
-
-		/**
-		 * Check the status of the license (stored in its own option).
-		 */
-		$license_data = get_option( 'fe_ai_search_license', [] );
-		$status       = $license_data['status'] ?? 'inactive';
-		$data         = $license_data['data'] ?? [];
-		$product_id   = isset( $data['productId'] ) ? (int) $data['productId'] : 0;
-
-		// Treat the license as active when the status is "active" and the product ID
-		// matches the Pro add-on (productId = 65 in License Manager for WooCommerce).
-		$this->is_license_active = ( 'active' === $status && 65 === $product_id );
+		$this->is_license_active = FE_AI_Search_License::is_pro_active();
 		$this->sync_handler      = $sync_handler;
 
 		add_action( 'rest_api_init', [ $this, 'register_endpoints' ] );
@@ -1460,28 +1449,49 @@ Instead, answer based only on the remaining visible text.
 		// Perform the license action.
 		$handler = new \FEAISearch\Core\FE_AI_Search_License_Handler();
 		$result  = ( 'activate' === $action ) ? $handler->activate( $license_key ) : $handler->deactivate( $license_key );
+
+		// Determine the product ID from the remote response. If it's missing,
+		// fall back to the main Pro product ID.
+		$product_id = 0;
+		if ( isset( $result['data']['productId'] ) ) {
+			$product_id = (int) $result['data']['productId'];
+		} elseif ( class_exists( '\FEAISearch\\Core\\FE_AI_Search_License' ) ) {
+			$product_id = \FEAISearch\Core\FE_AI_Search_License::PRODUCT_ID_PRO;
+		}
+
+		$all_licenses = get_option( 'fe_ai_search_license', [] );
+		if ( ! isset( $all_licenses['products'] ) || ! is_array( $all_licenses['products'] ) ) {
+			$all_licenses['products'] = [];
+		}
+
 		if ( $result && $result['success'] ) {
 			// Determine the local license status based on the requested action.
 			// For this site, a successful deactivation should always be treated as inactive,
 			// even if the remote license itself remains valid for other activations.
 			$local_status = ( 'activate' === $action ) ? 'active' : 'inactive';
 
-			$license = [
-				'key'    => $license_key,
-				'status' => $local_status,
-				'data'   => $result['data'] ?? [],
-			];
-			update_option( 'fe_ai_search_license', $license );
+			if ( $product_id > 0 ) {
+				$all_licenses['products'][ $product_id ] = [
+					'key'    => $license_key,
+					'status' => $local_status,
+					'data'   => $result['data'] ?? [],
+				];
+			}
+
+			update_option( 'fe_ai_search_license', $all_licenses );
 			delete_transient( 'fe_ai_search_license_error' );
 			$send_response = 'wp_send_json_success';
 
 		} else {
-			$license = [
-				'key'    => $license_key,
-				'status' => 'inactive',
-				'data'   => $result['data'] ?? [],
-			];
-			update_option( 'fe_ai_search_license', $license );
+			if ( $product_id > 0 ) {
+				$all_licenses['products'][ $product_id ] = [
+					'key'    => $license_key,
+					'status' => 'inactive',
+					'data'   => $result['data'] ?? [],
+				];
+			}
+
+			update_option( 'fe_ai_search_license', $all_licenses );
 			set_transient( 'fe_ai_search_license_error', $result['message'], 60 );
 			$send_response = 'wp_send_json_error';
 		}

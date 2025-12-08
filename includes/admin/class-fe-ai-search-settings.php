@@ -18,6 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use FEAISearch\Core\FE_AI_Search_License;
+
 /**
  * The main settings page UI controller for the plugin.
  *
@@ -45,14 +47,9 @@ class FE_AI_Search_Settings {
 		/**
 		 * Check the status of the license (stored in its own option).
 		 */
-		$license_data = get_option( 'fe_ai_search_license', [] );
-		$status       = $license_data['status'] ?? 'inactive';
-		$data         = $license_data['data'] ?? [];
-		$product_id   = isset( $data['productId'] ) ? (int) $data['productId'] : 0;
-
 		// Treat the license as active when the status is "active" and the product ID
 		// matches the Pro add-on (productId = 65 in License Manager for WooCommerce).
-		$this->is_license_active = ( 'active' === $status && 65 === $product_id );
+		$this->is_license_active = FE_AI_Search_License::is_pro_active();
 
 		if ( class_exists( '\\FEAISearch\\Pro\\Admin\\FE_AI_Search_Pro_Settings' ) && ! $this->is_license_active ) {
 			$this->license_alert_icon = '<a href="' . admin_url( 'admin.php' )
@@ -75,6 +72,9 @@ class FE_AI_Search_Settings {
 	 * @since 1.0.0
 	 */
 	public static function render_page() {
+		// Determine if the Pro license is active and the Pro add-on is installed.
+		$has_pro_class = class_exists( '\\FEAISearch\\Pro\\Admin\\FE_AI_Search_Pro_Settings' );
+		$is_pro        = ( FE_AI_Search_License::is_pro_active() && $has_pro_class );
 		?>
 		<div class="wrap">
 
@@ -88,7 +88,11 @@ class FE_AI_Search_Settings {
 
 			<div id="plugin_header">
 				<div id="plugin_header_upper">
-					<div id="plugin_header_title">FE Search <span>AI</span></div>
+					<div id="plugin_header_title">FE Search <span class="ai-text">AI</span>
+					<?php if ( $is_pro ) : ?>
+						<span class="pro-badge">Pro</span>
+					<?php endif; ?>
+				</div>
 					<a href="https://www.firstelement.co.jp/" id="plugin_logo" target="_blank" title="<?php esc_attr_e( 'Go to the developer\'s website', 'fe-ai-search' ); ?>">
 						<img src="<?php echo plugin_dir_url( FE_AI_SEARCH_PLUGIN_FILE ); ?>/assets/images/logo-feas-white-shadow-s@2x-min.png" width="106" height="27">
 					</a>
@@ -180,14 +184,6 @@ class FE_AI_Search_Settings {
 					</a>
 				</div>
 			</div>
-
-			<?php
-			// Determine if the Pro license is active (same logic as in the constructor).
-			$license_data = get_option( 'fe_ai_search_license', [] );
-			$status       = $license_data['status'] ?? 'inactive';
-			$products     = $license_data['data']['products'] ?? [];
-			$is_pro       = ( 'active' === $status );
-			?>
 			<div class="nav-tab-wrapper">
 				<a href="#tab_provider" class="nav-tab"><?php esc_html_e( 'Providers', 'fe-ai-search' ); ?></a>
 				<?php if ( $is_pro ) : ?>
@@ -283,14 +279,16 @@ class FE_AI_Search_Settings {
 							<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_sync_advanced_section' ); ?>
 						</table>
 						<?php // Pro add-on: tuning (Custom Stop Words) now lives at the end of the Sync tab. ?>
-						<?php do_settings_sections( 'fe_ai_search_vector_store_section_pro' ); ?>
-						<table class="form-table">
-							<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_vector_store_section_pro' ); ?>
-						</table>
-						<?php do_settings_sections( 'fe_ai_search_tuning_section_pro' ); ?>
-						<table class="form-table">
-							<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_tuning_section_pro' ); ?>
-						</table>
+						<?php if ( $is_pro ) : ?>
+							<?php do_settings_sections( 'fe_ai_search_vector_store_section_pro' ); ?>
+							<table class="form-table">
+								<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_vector_store_section_pro' ); ?>
+							</table>
+							<?php do_settings_sections( 'fe_ai_search_tuning_section_pro' ); ?>
+							<table class="form-table">
+								<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_tuning_section_pro' ); ?>
+							</table>
+						<?php endif; ?>
 					</div>
 
 					<div id="tab_display" class="tab-content">
@@ -314,10 +312,12 @@ class FE_AI_Search_Settings {
 							<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_display_appearance_section' ); ?>
 						</table>
 						<?php // Pro add-on: Privacy opt-in (User Consent) is shown below the legal links. ?>
-						<?php do_settings_sections( 'fe_ai_search_privacy_section_pro' ); ?>
-						<table class="form-table">
-							<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_privacy_section_pro' ); ?>
-						</table>
+						<?php if ( $is_pro ) : ?>
+							<?php do_settings_sections( 'fe_ai_search_privacy_section_pro' ); ?>
+							<table class="form-table">
+								<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_privacy_section_pro' ); ?>
+							</table>
+						<?php endif; ?>
 					</div>
 
 					<div id="tab_prompt" class="tab-content">
@@ -333,20 +333,24 @@ class FE_AI_Search_Settings {
 						<table class="form-table">
 							<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_advanced_section' ); ?>
 						</table>
-						<?php do_settings_sections( 'fe_ai_search_qdrant_section_pro' ); ?>
-						<table class="form-table">
-							<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_qdrant_section_pro' ); ?>
-						</table>
+						<?php if ( $is_pro ) : ?>
+							<?php do_settings_sections( 'fe_ai_search_qdrant_section_pro' ); ?>
+							<table class="form-table">
+								<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_qdrant_section_pro' ); ?>
+							</table>
+						<?php endif; ?>
 						<?php // Data management (previously in its own "Data" tab). ?>
 						<?php do_settings_sections( 'fe_ai_search_data_section' ); ?>
 						<table class="form-table">
 							<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_data_section' ); ?>
 						</table>
 						<?php // Pro add-on: external API token section only. ?>
-						<?php do_settings_sections( 'fe_ai_search_api_token_section_pro' ); ?>
-						<table class="form-table">
-							<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_api_token_section_pro' ); ?>
-						</table>
+						<?php if ( $is_pro ) : ?>
+							<?php do_settings_sections( 'fe_ai_search_api_token_section_pro' ); ?>
+							<table class="form-table">
+								<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_api_token_section_pro' ); ?>
+							</table>
+						<?php endif; ?>
 					</div>
 
 					<?php
@@ -834,6 +838,8 @@ class FE_AI_Search_Settings {
 								$enable_custom_fields  = $pt_options['enable_custom_fields'] ?? false;
 								$custom_fields_value   = $pt_options['custom_fields'] ?? '';
 								$custom_field_input_id = 'fe_ai_search_custom_fields_' . esc_attr( $post_type->name );
+								$has_pro_class         = class_exists( '\\FEAISearch\\Pro\\Admin\\FE_AI_Search_Pro_Settings' );
+								$is_pro                = ( $this->is_license_active && $has_pro_class );
 								?>
 
 								<label>
@@ -844,7 +850,7 @@ class FE_AI_Search_Settings {
 										class="fe-ai-search-cf-toggle"
 										data-target-input-id="<?php echo $custom_field_input_id; ?>"
 										<?php checked( $enable_custom_fields ); ?>
-										<?php disabled( ! $this->is_license_active ); ?>
+										<?php disabled( ! $is_pro ); ?>
 									>
 									<?php echo $this->license_alert_icon; ?>
 									<?php esc_html_e( 'Include Custom Fields', 'fe-ai-search' ); ?>
@@ -874,7 +880,7 @@ class FE_AI_Search_Settings {
 										value="<?php echo esc_attr( $custom_fields_value ); ?>"
 										class="regular-text"
 										placeholder="field_name_1, field_name_2"
-										<?php disabled( ! $this->is_license_active ); ?>
+										<?php disabled( ! $is_pro ); ?>
 									>
 									<p class="description">
 										<?php esc_html_e( 'Enter the keys of the custom fields you want to include, separated by commas.', 'fe-ai-search' ); ?>
