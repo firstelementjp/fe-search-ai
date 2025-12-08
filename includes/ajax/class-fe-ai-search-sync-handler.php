@@ -50,8 +50,8 @@ class FE_AI_Search_Sync_Handler {
 	 */
 	public function __construct() {
 
-		$this->options   = get_option( 'fe_ai_search_settings', [] );
-		$this->segmenter = new TinySegmenter();
+		$this->options           = get_option( 'fe_ai_search_settings', [] );
+		$this->segmenter         = new TinySegmenter();
 		$this->is_license_active = FE_AI_Search_License::is_pro_active();
 
 		add_filter( 'fe_ai_search_tokenizer_status', [ $this, 'add_japanese_tokenizer_status' ] );
@@ -397,9 +397,9 @@ class FE_AI_Search_Sync_Handler {
 			$locale    = get_locale();
 			$lang_code = strstr( $locale, '_', true ) ?: $locale;
 
-			// Read Pro vector store configuration to determine if Qdrant is enabled.
-			$pro_settings  = get_option( 'fe_ai_search_pro_settings', [] );
-			$vector_config = isset( $pro_settings['vector'] ) && is_array( $pro_settings['vector'] ) ? $pro_settings['vector'] : [];
+			// Read Free plugin vector store configuration to determine if Qdrant is enabled.
+			$free_settings = get_option( 'fe_ai_search_settings', [] );
+			$vector_config = isset( $free_settings['vector'] ) && is_array( $free_settings['vector'] ) ? $free_settings['vector'] : [];
 			$qdrant_config = isset( $vector_config['qdrant'] ) && is_array( $vector_config['qdrant'] ) ? $vector_config['qdrant'] : [];
 			$vector_store  = $vector_config['store'] ?? 'mariadb';
 
@@ -810,9 +810,9 @@ class FE_AI_Search_Sync_Handler {
 	 * @return array An array of the most relevant text chunks and their permalinks.
 	 */
 	public function find_similar_chunks( $question ) {
-		// When Qdrant is enabled in Pro settings, prefer vector search via Qdrant.
-		$pro_settings  = get_option( 'fe_ai_search_pro_settings', [] );
-		$vector_config = isset( $pro_settings['vector'] ) && is_array( $pro_settings['vector'] ) ? $pro_settings['vector'] : [];
+		// When Qdrant is enabled in Free settings, prefer vector search via Qdrant.
+		$free_settings = get_option( 'fe_ai_search_settings', [] );
+		$vector_config = isset( $free_settings['vector'] ) && is_array( $free_settings['vector'] ) ? $free_settings['vector'] : [];
 		$qdrant_config = isset( $vector_config['qdrant'] ) && is_array( $vector_config['qdrant'] ) ? $vector_config['qdrant'] : [];
 		$vector_store  = $vector_config['store'] ?? 'mariadb';
 
@@ -1010,6 +1010,9 @@ class FE_AI_Search_Sync_Handler {
 
 		$enable_custom_fields = ! empty( $pt_options['enable_custom_fields'] );
 		$custom_fields_input  = $pt_options['custom_fields'] ?? '';
+		if ( ! FE_AI_Search_License::is_pro_active() ) {
+			$enable_custom_fields = false;
+		}
 		if ( $enable_custom_fields && '' !== trim( (string) $custom_fields_input ) ) {
 			$keys_raw = explode( ',', (string) $custom_fields_input );
 			$keys     = array_filter(

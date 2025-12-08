@@ -432,10 +432,6 @@ a:has(.dashicons-warning) span {
 	vertical-align: middle;
 }
 
-#fe_ai_search_progress_bar_wrapper {
-    padding: 0 5px;
-}
-
 #fe_ai_search_sync_status {
 	display: flex;
     align-items: center;
@@ -471,6 +467,8 @@ a:has(.dashicons-warning) span {
 	border-radius: 3px;
 	/* Add smooth animation when JS changes the width */
 	transition: width 0.3s ease-in-out;
+	padding: 0 2px;
+    text-indent: 5px;
 }
 
 #fe_ai_search_progress_container .status-text {

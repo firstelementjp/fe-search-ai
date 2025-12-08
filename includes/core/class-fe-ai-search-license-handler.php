@@ -80,7 +80,7 @@ class FE_AI_Search_License_Handler {
 					'action'      => $action,
 					'license_key' => $license_key,
 					'instance'    => home_url(),
-					'product_id'  => FE_AI_SEARCH_PRO_PRODUCT_ID,
+					'product_id'  => FE_AI_Search_License::PRODUCT_ID_PRO,
 				],
 			]
 		);

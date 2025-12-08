@@ -278,6 +278,11 @@ class FE_AI_Search_Settings {
 						<table class="form-table">
 							<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_sync_advanced_section' ); ?>
 						</table>
+
+						<?php do_settings_sections( 'fe_ai_search_vector_store_section' ); ?>
+						<table class="form-table">
+							<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_vector_store_section' ); ?>
+						</table>
 						<?php // Pro add-on: tuning (Custom Stop Words) now lives at the end of the Sync tab. ?>
 						<?php if ( $is_pro ) : ?>
 							<?php do_settings_sections( 'fe_ai_search_vector_store_section_pro' ); ?>
@@ -333,11 +338,11 @@ class FE_AI_Search_Settings {
 						<table class="form-table">
 							<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_advanced_section' ); ?>
 						</table>
+						<?php do_settings_sections( 'fe_ai_search_qdrant_section' ); ?>
+						<table class="form-table">
+							<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_qdrant_section' ); ?>
+						</table>
 						<?php if ( $is_pro ) : ?>
-							<?php do_settings_sections( 'fe_ai_search_qdrant_section_pro' ); ?>
-							<table class="form-table">
-								<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_qdrant_section_pro' ); ?>
-							</table>
 						<?php endif; ?>
 						<?php // Data management (previously in its own "Data" tab). ?>
 						<?php do_settings_sections( 'fe_ai_search_data_section' ); ?>
@@ -426,6 +431,7 @@ class FE_AI_Search_Settings {
 		add_settings_field( 'fe_ai_search_sync_options', __( 'Sync Targets', 'fe-ai-search' ), [ $this, 'sync_options_field_html' ], $page_slug, 'fe_ai_search_sync_options_section' );
 		add_settings_field( 'fe_ai_search_include_post_ids', __( 'Only Sync Specific Posts', 'fe-ai-search' ), [ $this, 'include_post_ids_field_html' ], $page_slug, 'fe_ai_search_sync_options_section' );
 		add_settings_field( 'fe_ai_search_exclude_post_ids', __( 'Exclude Specific Posts', 'fe-ai-search' ), [ $this, 'exclude_post_ids_field_html' ], $page_slug, 'fe_ai_search_sync_options_section' );
+		add_settings_field( 'fe_ai_search_vector_store', __( 'Vector Store', 'fe-ai-search' ), [ $this, 'vector_store_field_html' ], $page_slug, 'fe_ai_search_sync_options_section' );
 		add_settings_field( 'fe_ai_search_sync_limit', __( 'Sync Limit', 'fe-ai-search' ), [ $this, 'sync_limit_field_html' ], $page_slug, 'fe_ai_search_sync_options_section' );
 		add_settings_field( 'fe_ai_search_batch_size', __( 'Batch Size', 'fe-ai-search' ), [ $this, 'batch_size_field_html' ], $page_slug, 'fe_ai_search_sync_options_section' );
 
@@ -481,6 +487,142 @@ class FE_AI_Search_Settings {
 		if ( 'ja' === $locale || 'ja_JP' === $locale ) {
 			add_settings_field( 'fe_ai_search_japanese_tokenizer', __( 'Japanese Tokenizer', 'fe-ai-search' ), [ $this, 'japanese_tokenizer_field_html' ], $page_slug, 'fe_ai_search_advanced_section' );
 		}
+
+		// Qdrant connection settings (endpoint, API key, collection) shown in Advanced tab.
+		add_settings_section( 'fe_ai_search_qdrant_section', null, null, $page_slug );
+		add_settings_field( 'fe_ai_search_qdrant_settings', __( 'Qdrant Settings', 'fe-ai-search' ), [ $this, 'qdrant_settings_field_html' ], $page_slug, 'fe_ai_search_qdrant_section' );
+	}
+
+	public function vector_store_field_html() {
+		$vector     = $this->options['vector'] ?? [];
+		$current    = $vector['store'] ?? 'mariadb';
+		$endpoint   = $vector['qdrant']['endpoint'] ?? '';
+		$collection = $vector['qdrant']['collection'] ?? '';
+		global $wpdb;
+		$db_version = method_exists( $wpdb, 'db_version' ) ? (string) $wpdb->db_version() : '';
+		$db_engine  = '';
+		if ( false !== stripos( $db_version, 'mariadb' ) ) {
+			$db_engine = 'MariaDB';
+		} elseif ( false !== stripos( $db_version, 'mysql' ) ) {
+			$db_engine = 'MySQL';
+		}
+		$base_label   = __( 'WordPress database', 'fe-ai-search' );
+		$engine_label = $db_engine ? sprintf( '%s (%s)', $db_engine, $base_label ) : $base_label;
+		?>
+		<div class="fe-ai-search-boxed-option">
+			<p>
+				<strong><?php esc_html_e( 'Vector Data Storage', 'fe-ai-search' ); ?></strong>
+			</p>
+			<p>
+				<?php esc_html_e( 'Select where to store vector data used for search.', 'fe-ai-search' ); ?>
+			</p>
+			<fieldset>
+				<label>
+					<input
+						type="radio"
+						name="fe_ai_search_settings[vector][store]"
+						value="mariadb"
+						<?php checked( $current, 'mariadb' ); ?>
+					>
+					<?php echo esc_html( $engine_label ); ?>
+					<br>
+					<span style="display:inline-block; margin-left:24px; color:#666; font-size:11px;">
+						<?php esc_html_e( 'When using the WordPress database, vector search is not performed. Instead, chunked text is indexed and searched using a keyword-based index.', 'fe-ai-search' ); ?>
+					</span>
+				</label>
+				<label>
+					<input
+						type="radio"
+						name="fe_ai_search_settings[vector][store]"
+						value="qdrant"
+						<?php checked( $current, 'qdrant' ); ?>
+					>
+					<?php esc_html_e( 'Qdrant (external vector database)', 'fe-ai-search' ); ?>
+				</label>
+			</fieldset>
+			<p class="description">
+				<?php
+				if ( ! empty( $endpoint ) && ! empty( $collection ) ) {
+					esc_html_e( 'Qdrant connection settings are configured in the Advanced settings tab.', 'fe-ai-search' );
+				} else {
+					esc_html_e( 'To use Qdrant, configure the endpoint, API key, and collection in the Advanced settings tab.', 'fe-ai-search' );
+				}
+				?>
+			</p>
+		</div>
+		<?php
+	}
+
+	public function qdrant_settings_field_html() {
+		$vector     = $this->options['vector'] ?? [];
+		$endpoint   = $vector['qdrant']['endpoint'] ?? '';
+		$collection = $vector['qdrant']['collection'] ?? '';
+		$api_key    = $vector['qdrant']['api_key'] ?? '';
+		?>
+		<div class="fe-ai-search-boxed-option">
+			<p>
+				<strong><?php esc_html_e( 'Qdrant Vector DB Settings', 'fe-ai-search' ); ?></strong>
+			</p>
+			<p class="description">
+				<?php esc_html_e( 'Configure the connection to your Qdrant Cloud or self-hosted Qdrant instance.', 'fe-ai-search' ); ?>
+			</p>
+			<table class="form-table">
+				<tr>
+					<th scope="row">
+						<label for="fe_ai_search_qdrant_endpoint"><?php esc_html_e( 'Qdrant Endpoint', 'fe-ai-search' ); ?></label>
+					</th>
+					<td>
+						<input
+							type="url"
+							id="fe_ai_search_qdrant_endpoint"
+							name="fe_ai_search_settings[vector][qdrant][endpoint]"
+							value="<?php echo esc_attr( $endpoint ); ?>"
+							class="regular-text"
+							placeholder="https://your-instance.qdrant.io:6333"
+						>
+						<p class="description">
+							<?php esc_html_e( 'Enter the base URL of your Qdrant HTTP API (including port).', 'fe-ai-search' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row">
+						<label for="fe_ai_search_qdrant_api_key"><?php esc_html_e( 'Qdrant API Key', 'fe-ai-search' ); ?></label>
+					</th>
+					<td>
+						<input
+							type="password"
+							id="fe_ai_search_qdrant_api_key"
+							name="fe_ai_search_settings[vector][qdrant][api_key]"
+							value="<?php echo esc_attr( $api_key ); ?>"
+							class="regular-text"
+						>
+						<p class="description">
+							<?php esc_html_e( 'If you leave this field empty, the previously saved API key will be kept.', 'fe-ai-search' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row">
+						<label for="fe_ai_search_qdrant_collection"><?php esc_html_e( 'Collection Name', 'fe-ai-search' ); ?></label>
+					</th>
+					<td>
+						<input
+							type="text"
+							id="fe_ai_search_qdrant_collection"
+							name="fe_ai_search_settings[vector][qdrant][collection]"
+							value="<?php echo esc_attr( $collection ); ?>"
+							class="regular-text"
+							placeholder="collection-1"
+						>
+						<p class="description">
+							<?php esc_html_e( 'The Qdrant collection name used for this site. It should match the collection used during synchronization.', 'fe-ai-search' ); ?>
+						</p>
+					</td>
+				</tr>
+			</table>
+		</div>
+		<?php
 	}
 
 	/**
@@ -776,12 +918,17 @@ class FE_AI_Search_Settings {
 			}
 
 			// Get saved options for this post type from sync['targets'][post_type].
-			$pt_options      = $sync_targets[ $post_type->name ] ?? [];
-			$is_enabled      = $pt_options['enabled'] ?? in_array( $post_type->name, [ 'post', 'page' ], true );
-			$include_title   = $pt_options['include_title'] ?? true;
-			$include_content = $pt_options['include_content'] ?? true;
-			$include_date    = $pt_options['include_date'] ?? true;
-			$include_author  = $pt_options['include_author'] ?? true;
+			$pt_options          = $sync_targets[ $post_type->name ] ?? [];
+			$is_enabled          = $pt_options['enabled'] ?? in_array( $post_type->name, [ 'post', 'page' ], true );
+			$include_title       = $pt_options['include_title'] ?? true;
+			$include_content     = $pt_options['include_content'] ?? true;
+			$include_date        = $pt_options['include_date'] ?? true;
+			$include_author      = $pt_options['include_author'] ?? true;
+			$snippet_title       = $pt_options['snippet_include_title'] ?? true;
+			$snippet_content     = $pt_options['snippet_include_content'] ?? true;
+			$snippet_date        = $pt_options['snippet_include_date'] ?? false;
+			$snippet_author      = $pt_options['snippet_include_author'] ?? false;
+			$snippet_taxonomies  = $pt_options['snippet_include_tax'] ?? false;
 			?>
 			<div class="post-type-accordion-item">
 				<h4 class="accordion-title">
@@ -796,52 +943,99 @@ class FE_AI_Search_Settings {
 					</label>
 				</h4>
 				<div class="accordion-content">
-					<div class="accordion-inner">
-						<fieldset>
-							<label>
-								<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][include_title]" value="1" <?php checked( $include_title ); ?>>
-								<?php esc_html_e( 'Include Post Title', 'fe-ai-search' ); ?>
-							</label>
-							<label>
-								<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][include_content]" value="1" <?php checked( $include_content ); ?>>
-								<?php esc_html_e( 'Include Post Content', 'fe-ai-search' ); ?>
-							</label>
-							<label>
-								<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][include_date]" value="1" <?php checked( $include_date ); ?>>
-								<?php esc_html_e( 'Include Post Date', 'fe-ai-search' ); ?>
-							</label>
-							<label>
-								<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][include_author]" value="1" <?php checked( $include_author ); ?>>
-								<?php esc_html_e( 'Include Post Author (nickname)', 'fe-ai-search' ); ?>
-							</label>
-
-							<?php
-							$taxonomies = get_object_taxonomies( $post_type->name, 'objects' );
-							if ( ! empty( $taxonomies ) ) {
-								foreach ( $taxonomies as $tax ) {
-									if ( ! $tax->public ) {
-										continue;
-									}
-									$is_checked = ! empty( $pt_options['taxonomies'] ) && in_array( $tax->name, $pt_options['taxonomies'], true );
-									?>
-									<label>
-										<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][taxonomies][]" value="<?php echo esc_attr( $tax->name ); ?>" <?php checked( $is_checked ); ?>>
-										<?php printf( esc_html__( 'Include %s', 'fe-ai-search' ), esc_html( $tax->label ) ); ?>
-									</label>
-									<?php
-								}
-							}
-							?>
+						<div class="accordion-inner">
+							<fieldset>
+								<table class="widefat striped fe-ai-search-sync-targets-table">
+									<thead>
+										<tr>
+											<th><?php esc_html_e( 'Metadata', 'fe-ai-search' ); ?></th>
+											<th><?php esc_html_e( 'Sync Target', 'fe-ai-search' ); ?></th>
+											<th><?php esc_html_e( 'Include in Chunk Data', 'fe-ai-search' ); ?></th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr>
+											<td><?php esc_html_e( 'Post Title', 'fe-ai-search' ); ?></td>
+											<td>
+												<label>
+													<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][include_title]" value="1" <?php checked( $include_title ); ?>>
+												</label>
+											</td>
+											<td>
+												<label>
+													<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_include_title]" value="1" <?php checked( $snippet_title ); ?>>
+												</label>
+											</td>
+										</tr>
+										<tr>
+											<td><?php esc_html_e( 'Post Content', 'fe-ai-search' ); ?></td>
+											<td>
+												<label>
+													<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][include_content]" value="1" <?php checked( $include_content ); ?>>
+												</label>
+											</td>
+											<td>
+												<label>
+													<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_include_content]" value="1" <?php checked( $snippet_content ); ?>>
+												</label>
+											</td>
+										</tr>
+										<tr>
+											<td><?php esc_html_e( 'Post Date', 'fe-ai-search' ); ?></td>
+											<td>
+												<label>
+													<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][include_date]" value="1" <?php checked( $include_date ); ?>>
+												</label>
+											</td>
+											<td>
+												<label>
+													<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_include_date]" value="1" <?php checked( $snippet_date ); ?>>
+												</label>
+											</td>
+										</tr>
+										<tr>
+											<td><?php esc_html_e( 'Post Author (nickname)', 'fe-ai-search' ); ?></td>
+											<td>
+												<label>
+													<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][include_author]" value="1" <?php checked( $include_author ); ?>>
+												</label>
+											</td>
+											<td>
+												<label>
+													<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_include_author]" value="1" <?php checked( $snippet_author ); ?>>
+												</label>
+											</td>
+										</tr>
+										<?php
+										$taxonomies = get_object_taxonomies( $post_type->name, 'objects' );
+										if ( ! empty( $taxonomies ) ) {
+											foreach ( $taxonomies as $tax ) {
+												if ( ! $tax->public ) {
+													continue;
+												}
+												$is_checked = ! empty( $pt_options['taxonomies'] ) && in_array( $tax->name, $pt_options['taxonomies'], true );
+												?>
+												<tr>
+													<td><?php printf( esc_html__( '%s taxonomy', 'fe-ai-search' ), esc_html( $tax->label ) ); ?></td>
+													<td>
+														<label>
+															<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][taxonomies][]" value="<?php echo esc_attr( $tax->name ); ?>" <?php checked( $is_checked ); ?>>
+														</label>
+													</td>
+													<td>
+														<label>
+															<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_include_tax]" value="1" <?php checked( $snippet_taxonomies ); ?>>
+														</label>
+													</td>
+												</tr>
+												<?php
+											}
+										}
+										?>
+									</tbody>
+								</table>
 
 							<div>
-								<?php
-								$enable_custom_fields  = $pt_options['enable_custom_fields'] ?? false;
-								$custom_fields_value   = $pt_options['custom_fields'] ?? '';
-								$custom_field_input_id = 'fe_ai_search_custom_fields_' . esc_attr( $post_type->name );
-								$has_pro_class         = class_exists( '\\FEAISearch\\Pro\\Admin\\FE_AI_Search_Pro_Settings' );
-								$is_pro                = ( $this->is_license_active && $has_pro_class );
-								?>
-
 								<label>
 									<input
 										type="checkbox"
@@ -873,17 +1067,40 @@ class FE_AI_Search_Settings {
 								</label>
 
 								<div class="custom-field-input-wrapper" style="margin-left: 20px;">
-									<input
-										type="text"
+									<label for="<?php echo $custom_field_input_id; ?>">
+										<strong><?php esc_html_e( 'Custom Fields (Sync Targets)', 'fe-ai-search' ); ?></strong>
+									</label>
+									<br>
+									<textarea
 										id="<?php echo $custom_field_input_id; ?>"
 										name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][custom_fields]"
-										value="<?php echo esc_attr( $custom_fields_value ); ?>"
-										class="regular-text"
+										rows="3"
+										cols="60"
+										class="large-text code"
 										placeholder="field_name_1, field_name_2"
 										<?php disabled( ! $is_pro ); ?>
-									>
+									><?php echo esc_textarea( $custom_fields_value ); ?></textarea>
 									<p class="description">
-										<?php esc_html_e( 'Enter the keys of the custom fields you want to include, separated by commas.', 'fe-ai-search' ); ?>
+										<?php esc_html_e( 'Enter the keys of the custom fields you want to sync, separated by commas or new lines.', 'fe-ai-search' ); ?>
+									</p>
+								</div>
+
+								<div class="custom-field-input-wrapper" style="margin-left: 20px; margin-top: 8px;">
+									<label for="<?php echo $snippet_field_input_id; ?>">
+										<strong><?php esc_html_e( 'Custom Fields (Include in Chunk Data)', 'fe-ai-search' ); ?></strong>
+									</label>
+									<br>
+									<textarea
+										id="<?php echo $snippet_field_input_id; ?>"
+										name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_custom_fields]"
+										rows="3"
+										cols="60"
+										class="large-text code"
+										placeholder="field_name_1, field_name_2"
+										<?php disabled( ! $is_pro ); ?>
+									><?php echo esc_textarea( $snippet_custom_fields_value ); ?></textarea>
+									<p class="description">
+										<?php esc_html_e( 'Enter only the keys of custom fields you want to include in chunk data (content snippets), separated by commas or new lines.', 'fe-ai-search' ); ?>
 									</p>
 								</div>
 							</div>
@@ -2101,6 +2318,39 @@ class FE_AI_Search_Settings {
 		// Include / Exclude IDs are stored under sync['include']['ids'] / sync['exclude']['ids'].
 		$new_input['sync']['include']['ids'] = $this->sanitize_numeric_string( $raw_include['ids'] ?? '' );
 		$new_input['sync']['exclude']['ids'] = $this->sanitize_numeric_string( $raw_exclude['ids'] ?? '' );
+
+		// Vector Store / Qdrant (Free)
+		$existing_vector = $new_input['vector'] ?? [];
+		if ( ! is_array( $existing_vector ) ) {
+			$existing_vector = [];
+		}
+		$vector_input = $input['vector'] ?? [];
+		if ( ! is_array( $vector_input ) ) {
+			$vector_input = [];
+		}
+		$store = $vector_input['store'] ?? ( $existing_vector['store'] ?? 'mariadb' );
+		if ( ! in_array( $store, [ 'mariadb', 'qdrant' ], true ) ) {
+			$store = 'mariadb';
+		}
+		$new_input['vector']['store'] = $store;
+
+		$qdrant_existing = $existing_vector['qdrant'] ?? [];
+		if ( ! is_array( $qdrant_existing ) ) {
+			$qdrant_existing = [];
+		}
+		$qdrant_input = $vector_input['qdrant'] ?? [];
+		if ( ! is_array( $qdrant_input ) ) {
+			$qdrant_input = [];
+		}
+		$new_input['vector']['qdrant']['endpoint']   = esc_url_raw( $qdrant_input['endpoint'] ?? ( $qdrant_existing['endpoint'] ?? '' ) );
+		$new_input['vector']['qdrant']['collection'] = sanitize_text_field( $qdrant_input['collection'] ?? ( $qdrant_existing['collection'] ?? '' ) );
+		$existing_api_key                            = $qdrant_existing['api_key'] ?? '';
+		$new_api_key                                 = $qdrant_input['api_key'] ?? '';
+		if ( '' === trim( (string) $new_api_key ) && '' !== $existing_api_key ) {
+			$new_input['vector']['qdrant']['api_key'] = $existing_api_key;
+		} else {
+			$new_input['vector']['qdrant']['api_key'] = sanitize_text_field( $new_api_key );
+		}
 
 		// Display Tab
 		$new_input['display']['ui']       = $this->sanitize_display_ui( $input['display']['ui'] ?? [] );
