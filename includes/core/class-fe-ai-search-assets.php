@@ -35,12 +35,12 @@ use FEAISearch\Core\FE_AI_Search_License;
  */
 class FE_AI_Search_Assets {
 
-	private $options = [];
+	private $options           = [];
 	private $is_license_active = false;
 
 	public function __construct() {
 		$this->options = get_option( 'fe_ai_search_settings', [] );
-		
+
 		// Check the status of the license (stored in its own option)
 		$this->is_license_active = FE_AI_Search_License::is_pro_active();
 
@@ -52,10 +52,10 @@ class FE_AI_Search_Assets {
 	 */
 	public function enqueue_assets() {
 		// Pro settings (used for rate limiting and privacy configuration).
-		$pro_options = [];
+		$pro_options   = [];
 		$has_pro_class = class_exists( '\\FEAISearch\\Pro\\Admin\\FE_AI_Search_Pro_Settings' );
-		$is_pro = ( $this->is_license_active && $has_pro_class );
-		
+		$is_pro        = ( $this->is_license_active && $has_pro_class );
+
 		if ( $is_pro ) {
 			$pro_options = get_option( 'fe_ai_search_pro_settings', [] );
 		}

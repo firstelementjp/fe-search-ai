@@ -123,9 +123,11 @@ textarea {
 	justify-content: end;
 	align-items: center;
 }
+
 .locale-ja #plugin_support {
 	grid-template: 100% / 6em 5em 22px 20px 20px 17px 17px;
 }
+
 #plugin_support a {
 	text-align: right;
 }
@@ -148,27 +150,27 @@ textarea {
 
 #plugin_header .icon {
 	-webkit-font-smoothing: antialiased;
-	font: normal 17px / 1 'dashicons';
+	font: 400 17px / 1 dashicons;
 	color: #46aae6;
 	text-align: center;
 }
 
 /* Dashicons-based header icons */
-#plugin_header .icon_fb.icon:before {
-	content: '\f305';
+#plugin_header .icon_fb.icon::before {
+	content: "\f305";
 }
 
-#plugin_header .icon_mail.icon:before {
-	content: '\f465';
+#plugin_header .icon_mail.icon::before {
+	content: "\f465";
 }
 
 /* SVG-based header icons (use currentColor) */
 #plugin_header .icon svg {
-	fill: currentColor;
+	fill: currentcolor;
 }
 
 #plugin_header .icon_tw.icon {
-	content: '';
+	content: "";
 	display: grid;
 	justify-content: center;
 }
@@ -191,13 +193,13 @@ textarea {
 
 #plugin_header #plugin_header_title {
 	display: flex;
-    align-items: center;
+	align-items: center;
 	font-size: 21px;
 	font-weight: 500;
 }
 
 .toplevel_page_fe-ai-search .fe-ai-search-notices .notice {
-    margin: 15px 0;
+	margin: 15px 0;
 }
 
 /* ==========================================================================
@@ -261,7 +263,7 @@ a.nav-tab:last-of-type {
 
 .option-header {
 	margin: 0 0 0.5em;
-	font-weight: bold;
+	font-weight: 700;
 }
 
 .accordion-title {
@@ -269,7 +271,6 @@ a.nav-tab:last-of-type {
 	margin: 0;
 	border: 1px solid #c3c4c7;
 	margin-bottom: 0;
-	background: #fff;
 	margin-top: -2px;
 	cursor: pointer;
 	font-size: 14px;
@@ -279,7 +280,7 @@ a.nav-tab:last-of-type {
 }
 
 .accordion-title::after {
-	content: '';
+	content: "";
 	position: absolute;
 	top: 50%;
 	right: 12px;
@@ -305,7 +306,11 @@ a.nav-tab:last-of-type {
 }
 
 .js-accordion-initialized .accordion-content {
-	transition: max-height 0.3s ease-out, padding-top 0.3s ease-out, padding-bottom 0.3s ease-out, border-top-width 0.1s;
+	transition:
+		max-height 0.3s ease-out,
+		padding-top 0.3s ease-out,
+		padding-bottom 0.3s ease-out,
+		border-top-width 0.1s;
 }
 
 .accordion-inner {
@@ -373,9 +378,11 @@ a.nav-tab:last-of-type {
 	background: #f0f0f1;
 	margin: 0 -1em -1em;
 }
+
 #fe_ai_search_floating_display_accordion .accordion-inner {
 	padding-bottom: 0;
 }
+
 #fe_ai_search_settings_display_floating_enable_floating_mode {
 	padding: 1em;
 	border: 1px solid silver;
@@ -392,7 +399,7 @@ a.nav-tab:last-of-type {
 	vertical-align: middle;
 	width: 2em;
 	text-align: right;
-	font-weight: bold;
+	font-weight: 700;
 }
 
 .fe-ai-search-wrapper.slider {
@@ -409,7 +416,7 @@ a.nav-tab:last-of-type {
 
 .fe-ai-search-wrapper.slider span {
 	padding: 0 0.5em;
-    white-space: nowrap;
+	white-space: nowrap;
 }
 
 .form-table td > div {
@@ -434,7 +441,7 @@ a:has(.dashicons-warning) span {
 
 #fe_ai_search_sync_status {
 	display: flex;
-    align-items: center;
+	align-items: center;
 }
 
 #fe_ai_search_sync_status .spin {
@@ -465,15 +472,16 @@ a:has(.dashicons-warning) span {
 	color: #c0c0c0;
 	background-color: #0073aa; /* Standard WordPress blue */
 	border-radius: 3px;
+
 	/* Add smooth animation when JS changes the width */
 	transition: width 0.3s ease-in-out;
 	padding: 0 2px;
-    text-indent: 5px;
+	text-indent: 5px;
 }
 
 #fe_ai_search_progress_container .status-text {
 	padding: 5px;
-    display: block;
+	display: block;
 }
 
 /* ==========================================================================
@@ -481,9 +489,11 @@ a:has(.dashicons-warning) span {
 	========================================================================== */
 
 @keyframes spin {
+
 	from {
 		transform: rotate(0deg);
 	}
+
 	to {
 		transform: rotate(360deg);
 	}
@@ -502,7 +512,7 @@ a:has(.dashicons-warning) span {
 	color: #0071a1;
 }
 
-#tab_provider details>div {
+#tab_provider details > div {
 	background: #f9f9f9;
 	border: 1px solid #ddd;
 	padding: 10px;
@@ -516,11 +526,11 @@ a:has(.dashicons-warning) span {
 
 #tab_provider details .fe-ai-subheading {
 	font-weight: 600;
-    margin: 1em 0 0.5em;
+	margin: 1em 0 0.5em;
 }
 
 #tab_provider details b {
-	font-weight: bold;
+	font-weight: 700;
 	margin: 1em;
 }
 
@@ -535,19 +545,20 @@ a:has(.dashicons-warning) span {
 
 #tab_license .fe-ai-search-pro-promo hr {
 	width: 80%;
-    margin: auto;
-    border-top: 0;
-    border-bottom: 1px solid silver;
+	margin: auto;
+	border-top: 0;
+	border-bottom: 1px solid silver;
 }
+
 #tab_license .fe-ai-search-pro-promo h3 {
 	display: block;
-    text-align: center;
-    margin: -0.65em auto 1em;
-    background: white;
-    padding: 0em 2em;
-    width: fit-content;
-    line-height: 1;
-    font-size: 1.3em;
+	text-align: center;
+	margin: -0.65em auto 1em;
+	background: white;
+	padding: 0 2em;
+	width: fit-content;
+	line-height: 1;
+	font-size: 1.3em;
 }
 
 #tab_license .fe-ai-search-pro-promo p {
@@ -556,48 +567,48 @@ a:has(.dashicons-warning) span {
 
 /* Layout for the Pro feature list */
 #tab_license .fe-ai-search-pro-promo > ul {
-  margin: 16px 0 0;
-  padding: 0;
-  list-style: none; /* Remove default bullets from parent UL */
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 16px;
+	margin: 16px 0 0;
+	padding: 0;
+	list-style: none; /* Remove default bullets from parent UL */
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+	gap: 16px;
 }
 
 /* Individual feature blocks (cards) */
 #tab_license .fe-ai-search-pro-promo > ul > li {
-  margin: 0;
-  padding: 16px 18px;
-  border-radius: 6px;
-  border: 1px solid #6d6ddb;
-  background: #ffffff;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+	margin: 0;
+	padding: 16px 18px;
+	border-radius: 6px;
+	border: 1px solid #6d6ddb;
+	background: #fff;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 /* Card heading */
 #tab_license .fe-ai-search-pro-promo > ul > li > h4 {
-  margin: 0 0 8px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #111827;
+	margin: 0 0 8px;
+	font-size: 14px;
+	font-weight: 600;
+	color: #111827;
 }
 
 /* Keep inner UL (feature list) as regular bullet list */
 #tab_license .fe-ai-search-pro-promo > ul > li > ul {
-  margin: 0;
-  padding-left: 1.2em;
-  list-style: disc;
+	margin: 0;
+	padding-left: 1.2em;
+	list-style: disc;
 }
 
 /* Spacing for nested UL (sub bullet list) */
 #tab_license .fe-ai-search-pro-promo > ul > li ul ul {
-  margin-top: 4px;
+	margin-top: 4px;
 }
 
 /* Line height and font size for text items */
 #tab_license .fe-ai-search-pro-promo > ul > li li {
-  font-size: 13px;
-  line-height: 1.5;
+	font-size: 13px;
+	line-height: 1.5;
 }
 
 /* Second-level list: remove bullets and indent by about one character */
@@ -622,10 +633,10 @@ a:has(.dashicons-warning) span {
 #tab_license .fe-ai-search-pro-promo .button {
 	margin: 2em auto;
 	background: linear-gradient(139deg, #602fba, #0082ff);
-    border: none;
-    padding: 0.2em;
-    width: 60%;
-    font-size: 1.4em;
+	border: none;
+	padding: 0.2em;
+	width: 60%;
+	font-size: 1.4em;
 	opacity: 0.8;
 	transition: opacity 0.3s ease;
 	min-width: fit-content;
@@ -633,17 +644,17 @@ a:has(.dashicons-warning) span {
 
 /* External link icon */
 #tab_license .fe-ai-search-pro-promo .button::after {
-    content: "\f504"; /* dashicons-external */
-    font-family: "dashicons";
-    display: inline-block;
-    margin-left: 0.4em;
-    font-size: 1em;
-    position: relative;
-    top: 0.08em;
+	content: "\f504"; /* dashicons-external */
+	font-family: dashicons;
+	display: inline-block;
+	margin-left: 0.4em;
+	font-size: 1em;
+	position: relative;
+	top: 0.08em;
 }
 
 #tab_license .fe-ai-search-pro-promo .button:hover {
-    opacity: 1;
+	opacity: 1;
 }
 
 #fe-ai-search-api-token-generator {
@@ -696,8 +707,9 @@ a:has(.dashicons-warning) span {
 
 #fe-ai-search-color-picker hr {
 	margin: 1em 0;
-    width: 10%;
+	width: 10%;
 }
+
 .color-picker-box {
 	display: flex;
 	flex-direction: row;
@@ -713,9 +725,11 @@ a:has(.dashicons-warning) span {
 #fe_ai_search_pro_rate_limit_options h4 {
 	margin: 0 0 1em;
 }
+
 .rate-limit-group {
 	margin-bottom: 2em;
 }
+
 .rate-limit-group p {
 	margin: 0.5em 0 !important;
 }
@@ -723,18 +737,19 @@ a:has(.dashicons-warning) span {
 #fe_ai_search_api_usage_limits code {
 	display: inline-block;
 	padding: 0 0.5em;
-    margin: 0;
+	margin: 0;
 }
 
 .toplevel_page_fe-ai-search .notice-info {
 	margin: 15px 0 15px 2px;
-    width: fit-content;
+	width: fit-content;
 }
 
 #fe_ai_search_settings_footer {
 	display: flex;
 	justify-content: space-between;
 }
+
 #fe_ai_search_settings_footer span {
 	margin-right: 0 !important;
 }
@@ -746,12 +761,12 @@ a:has(.dashicons-warning) span {
 
 #plugin_header_title .pro-badge {
 	font-size: 0.7em;
-    margin: 0 0 0 0.3em;
-    padding: 0.1em 0.5em;
-    line-height: 1;
-    color: white;
-    background: #6d6ddb;
-    border-radius: 99px;
+	margin: 0 0 0 0.3em;
+	padding: 0.1em 0.5em;
+	line-height: 1;
+	color: white;
+	background: #6d6ddb;
+	border-radius: 99px;
 }
 
 .form-table .fe-ai-search-sync-targets-table th {
@@ -767,9 +782,10 @@ table.fe-ai-search-sync-targets-table {
 	border: none;
 	box-shadow: none;
 }
+
 #fe_ai_search_sync_options_accordion hr {
 	margin: 1em -1em;
-    background: #cfcfcf;
-    border: none;
-    height: 1px;
+	background: #cfcfcf;
+	border: none;
+	height: 1px;
 }

@@ -349,22 +349,11 @@ document.addEventListener('DOMContentLoaded', () => {
 				throw new Error(response.data.message || 'Batch processing failed.');
 			}
 		} catch (error) {
-			// If JSON parsing fails, log an error to the console
+			// If JSON parsing fails, handle gracefully
 			if (error instanceof SyntaxError) {
-				// eslint-disable-next-line no-console
-				console.error('Failed to parse JSON. Raw response:', responseText);
-				// eslint-disable-next-line no-console
-				console.error('SyntaxError details:', error.message);
+				// Silently handle JSON parsing errors
 			} else {
-				// eslint-disable-next-line no-console
-				console.error('Batch processing error:', error);
-				// eslint-disable-next-line no-console
-				console.error('Error details:', {
-					message: error.message,
-					stack: error.stack,
-					currentPage,
-					responseText,
-				});
+				// Silently handle other batch processing errors
 			}
 			statusText.innerHTML = `<span style="color:red;">${__(
 				'Error: A problem occurred while processing batch',

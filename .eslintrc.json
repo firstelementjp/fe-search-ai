@@ -21,5 +21,6 @@
 	"env": {
 		"browser": true,
 		"jquery": true
-	}
+	},
+	"ignorePatterns": ["vendor/", "node_modules/", "*.min.js"]
 }
