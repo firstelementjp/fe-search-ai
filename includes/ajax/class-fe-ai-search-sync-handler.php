@@ -106,7 +106,18 @@ class FE_AI_Search_Sync_Handler {
 		if ( ! empty( $targets ) ) {
 			foreach ( $targets as $pt_slug => $pt_options ) {
 				if ( ! empty( $pt_options['enabled'] ) ) {
-					$post_types_to_sync[] = $pt_slug;
+					// Skip if no Include in Chunk Data options are selected
+					$has_any_snippet = (
+						! empty( $pt_options['snippet_include_title'] ) ||
+						! empty( $pt_options['snippet_include_content'] ) ||
+						! empty( $pt_options['snippet_include_date'] ) ||
+						! empty( $pt_options['snippet_include_author'] ) ||
+						! empty( $pt_options['snippet_taxonomies'] ) ||
+						( ! empty( $pt_options['enable_custom_fields'] ) && ! empty( $pt_options['snippet_custom_fields'] ) )
+					);
+					if ( $has_any_snippet ) {
+						$post_types_to_sync[] = $pt_slug;
+					}
 				}
 			}
 		}
@@ -931,25 +942,35 @@ class FE_AI_Search_Sync_Handler {
 		// fall back to sensible defaults so that content is actually indexed.
 		if ( empty( $pt_options ) ) {
 			$pt_options = [
-				'include_title'   => true,
-				'include_content' => true,
-				'include_date'    => true,
-				'include_author'  => true,
-				'taxonomies'      => [],
+				'enabled' => true,
+				'snippet_include_title'   => true,
+				'snippet_include_content' => true,
+				'snippet_include_date'    => false,
+				'snippet_include_author'  => false,
+				'snippet_taxonomies'      => [],
+				'enable_custom_fields'    => false,
+				'snippet_custom_fields'   => '',
 			];
 		}
 
 		$meta_parts = [];
 		$body_text  = '';
 
+		// Resolve snippet flags
+		$snippet_title     = ! empty( $pt_options['snippet_include_title'] );
+		$snippet_content   = ! empty( $pt_options['snippet_include_content'] );
+		$snippet_date      = ! empty( $pt_options['snippet_include_date'] );
+		$snippet_author    = ! empty( $pt_options['snippet_include_author'] );
+		$snippet_taxonomies = isset( $pt_options['snippet_taxonomies'] ) && is_array( $pt_options['snippet_taxonomies'] ) ? $pt_options['snippet_taxonomies'] : [];
+
 		// Build an array of sentences from metadata.
-		if ( ! empty( $pt_options['include_title'] ) ) {
+		if ( $snippet_title ) {
 			$meta_parts[] = sprintf( 'The title of this article is "%s".', $post->post_title );
 		}
-		if ( ! empty( $pt_options['include_date'] ) ) {
+		if ( $snippet_date ) {
 			$meta_parts[] = sprintf( 'This article was published on %s.', date_i18n( get_option( 'date_format' ), strtotime( $post->post_date ) ) );
 		}
-		if ( ! empty( $pt_options['include_author'] ) ) {
+		if ( $snippet_author ) {
 			$user = get_user_by( 'ID', $post->post_author );
 			if ( $user instanceof \WP_User ) {
 				$nickname   = (string) get_the_author_meta( 'nickname', $post->post_author );
@@ -971,19 +992,46 @@ class FE_AI_Search_Sync_Handler {
 			}
 		}
 
-		if ( ! empty( $pt_options['taxonomies'] ) ) {
+		// Taxonomies with include/exclude behavior and term IDs filter
+		if ( ! empty( $snippet_taxonomies ) ) {
 			$taxonomy_lines = [];
-			foreach ( $pt_options['taxonomies'] as $tax_slug ) {
-				$terms = get_the_terms( $post->ID, $tax_slug );
+			foreach ( $snippet_taxonomies as $tax_name => $tax_config ) {
+				if ( ! is_array( $tax_config ) ) {
+					continue;
+				}
+				$behavior = $tax_config['behavior'] ?? 'include_terms';
+				$term_ids_raw = $tax_config['term_ids'] ?? '';
+				$term_ids = [];
+				if ( is_string( $term_ids_raw ) && '' !== trim( $term_ids_raw ) ) {
+					$term_ids = array_map( 'intval', array_filter( array_map( 'trim', explode( ',', $term_ids_raw ) ) ) );
+				}
+				$terms = get_the_terms( $post->ID, $tax_name );
 				if ( is_wp_error( $terms ) || empty( $terms ) ) {
 					continue;
 				}
-				$taxonomy = get_taxonomy( $tax_slug );
+				$taxonomy = get_taxonomy( $tax_name );
 				if ( ! $taxonomy ) {
 					continue;
 				}
+				// Filter terms by behavior and term_ids
+				$filtered_terms = [];
+				foreach ( $terms as $term ) {
+					$term_id = (int) $term->term_id;
+					if ( 'include_terms' === $behavior ) {
+						if ( empty( $term_ids ) || in_array( $term_id, $term_ids, true ) ) {
+							$filtered_terms[] = $term;
+						}
+					} elseif ( 'exclude_terms' === $behavior ) {
+						if ( empty( $term_ids ) || ! in_array( $term_id, $term_ids, true ) ) {
+							$filtered_terms[] = $term;
+						}
+					}
+				}
+				if ( empty( $filtered_terms ) ) {
+					continue;
+				}
 				$label            = $taxonomy->label;
-				$term_names       = wp_list_pluck( $terms, 'name' );
+				$term_names       = wp_list_pluck( $filtered_terms, 'name' );
 				$line             = sprintf( '%s=%s', $label, implode( ', ', $term_names ) );
 				$taxonomy_lines[] = $line;
 			}
@@ -1008,49 +1056,57 @@ class FE_AI_Search_Sync_Handler {
 			}
 		}
 
-		$enable_custom_fields = ! empty( $pt_options['enable_custom_fields'] );
-		$custom_fields_input  = $pt_options['custom_fields'] ?? '';
+		$enable_custom_fields        = ! empty( $pt_options['enable_custom_fields'] );
+		$snippet_custom_fields_input = $pt_options['snippet_custom_fields'] ?? '';
 		if ( ! FE_AI_Search_License::is_pro_active() ) {
 			$enable_custom_fields = false;
 		}
-		if ( $enable_custom_fields && '' !== trim( (string) $custom_fields_input ) ) {
-			$keys_raw = explode( ',', (string) $custom_fields_input );
-			$keys     = array_filter(
-				array_map(
-					'sanitize_key',
-					array_map( 'trim', $keys_raw )
-				)
-			);
-			$cf_pairs = [];
-			foreach ( $keys as $meta_key ) {
-				if ( '' === $meta_key ) {
-					continue;
-				}
-				$value = get_post_meta( $post->ID, $meta_key, true );
-				if ( '' === $value || null === $value ) {
-					continue;
-				}
-				$normalized = $this->normalize_custom_field_value( $value );
-				if ( '' === $normalized ) {
-					continue;
-				}
-				$cf_pairs[] = sprintf( '%s=%s', $meta_key, $normalized );
-			}
-			if ( ! empty( $cf_pairs ) ) {
-				$custom_fields_line = implode( ', ', $cf_pairs );
-				$custom_fields_line = apply_filters( 'fe_ai_search_custom_fields_line', $custom_fields_line, $post, $cf_pairs, $pt_options );
-				if ( '' !== trim( (string) $custom_fields_line ) ) {
-					$prefix_line = 'The following custom field metadata is associated with this article:';
-					if ( 0 !== strpos( trim( (string) $custom_fields_line ), $prefix_line ) ) {
-						$meta_parts[] = $prefix_line;
+		if ( $enable_custom_fields ) {
+			// snippet_custom_fields exclusively controls which custom fields are embedded into chunks.
+			$raw_input = (string) $snippet_custom_fields_input;
+			$raw_input = trim( $raw_input );
+			if ( '' !== $raw_input ) {
+				// Support commas, newlines, and whitespace as separators.
+				$normalized_input = preg_replace( '/[\r\n]+/u', ',', $raw_input );
+				$normalized_input = preg_replace( '/\s+/u', ',', $normalized_input );
+				$keys_raw         = explode( ',', (string) $normalized_input );
+				$keys             = array_filter(
+					array_map(
+						'sanitize_key',
+						array_map( 'trim', $keys_raw )
+					)
+				);
+				$cf_pairs         = [];
+				foreach ( $keys as $meta_key ) {
+					if ( '' === $meta_key ) {
+						continue;
 					}
-					$meta_parts[] = (string) $custom_fields_line;
+					$value = get_post_meta( $post->ID, $meta_key, true );
+					if ( '' === $value || null === $value ) {
+						continue;
+					}
+					$normalized = $this->normalize_custom_field_value( $value );
+					if ( '' === $normalized ) {
+						continue;
+					}
+					$cf_pairs[] = sprintf( '%s=%s', $meta_key, $normalized );
+				}
+				if ( ! empty( $cf_pairs ) ) {
+					$custom_fields_line = implode( ', ', $cf_pairs );
+					$custom_fields_line = apply_filters( 'fe_ai_search_custom_fields_line', $custom_fields_line, $post, $cf_pairs, $pt_options );
+					if ( '' !== trim( (string) $custom_fields_line ) ) {
+						$prefix_line = 'The following custom field metadata is associated with this article:';
+						if ( 0 !== strpos( trim( (string) $custom_fields_line ), $prefix_line ) ) {
+							$meta_parts[] = $prefix_line;
+						}
+						$meta_parts[] = (string) $custom_fields_line;
+					}
 				}
 			}
 		}
 
 		// Add the main content.
-		if ( ! empty( $pt_options['include_content'] ) ) {
+		if ( $snippet_content ) {
 			$content      = strip_shortcodes( $post->post_content );
 			$content      = wp_strip_all_tags( $content );
 			$meta_parts[] = 'Here is the main content of the article:';

@@ -431,7 +431,7 @@ class FE_AI_Search_Settings {
 		add_settings_field( 'fe_ai_search_sync_options', __( 'Sync Targets', 'fe-ai-search' ), [ $this, 'sync_options_field_html' ], $page_slug, 'fe_ai_search_sync_options_section' );
 		add_settings_field( 'fe_ai_search_include_post_ids', __( 'Only Sync Specific Posts', 'fe-ai-search' ), [ $this, 'include_post_ids_field_html' ], $page_slug, 'fe_ai_search_sync_options_section' );
 		add_settings_field( 'fe_ai_search_exclude_post_ids', __( 'Exclude Specific Posts', 'fe-ai-search' ), [ $this, 'exclude_post_ids_field_html' ], $page_slug, 'fe_ai_search_sync_options_section' );
-		add_settings_field( 'fe_ai_search_vector_store', __( 'Vector Store', 'fe-ai-search' ), [ $this, 'vector_store_field_html' ], $page_slug, 'fe_ai_search_sync_options_section' );
+		add_settings_field( 'fe_ai_search_vector_store', __( 'Chunk Storage', 'fe-ai-search' ), [ $this, 'vector_store_field_html' ], $page_slug, 'fe_ai_search_sync_options_section' );
 		add_settings_field( 'fe_ai_search_sync_limit', __( 'Sync Limit', 'fe-ai-search' ), [ $this, 'sync_limit_field_html' ], $page_slug, 'fe_ai_search_sync_options_section' );
 		add_settings_field( 'fe_ai_search_batch_size', __( 'Batch Size', 'fe-ai-search' ), [ $this, 'batch_size_field_html' ], $page_slug, 'fe_ai_search_sync_options_section' );
 
@@ -511,10 +511,10 @@ class FE_AI_Search_Settings {
 		?>
 		<div class="fe-ai-search-boxed-option">
 			<p>
-				<strong><?php esc_html_e( 'Vector Data Storage', 'fe-ai-search' ); ?></strong>
+				<strong><?php esc_html_e( 'Chunk Storage Destination', 'fe-ai-search' ); ?></strong>
 			</p>
 			<p>
-				<?php esc_html_e( 'Select where to store vector data used for search.', 'fe-ai-search' ); ?>
+				<?php esc_html_e( 'Choose where chunk data (and, when applicable, vector embeddings) are stored.', 'fe-ai-search' ); ?>
 			</p>
 			<fieldset>
 				<label>
@@ -527,7 +527,7 @@ class FE_AI_Search_Settings {
 					<?php echo esc_html( $engine_label ); ?>
 					<br>
 					<span style="display:inline-block; margin-left:24px; color:#666; font-size:11px;">
-						<?php esc_html_e( 'When using the WordPress database, vector search is not performed. Instead, chunked text is indexed and searched using a keyword-based index.', 'fe-ai-search' ); ?>
+						<?php esc_html_e( 'WordPress database keeps only chunk text and keyword indexes (no embeddings), so you can run AI検索 without a dedicated vector service.', 'fe-ai-search' ); ?>
 					</span>
 				</label>
 				<label>
@@ -904,11 +904,12 @@ class FE_AI_Search_Settings {
 	public function sync_options_field_html() {
 		// New sync schema: per-post-type options are stored under sync['targets'][post_type].
 		$sync_targets = $this->options['sync']['targets'] ?? [];
+		$is_pro       = ( $this->is_license_active && class_exists( '\FEAISearch\Pro\Admin\FE_AI_Search_Pro_Settings' ) );
 
 		$post_types          = get_post_types( [ 'public' => true ], 'objects' );
 		$excluded_post_types = [ 'attachment' ];
 
-		$string = __( 'Select the post types you want to include in your AI search and the metadata you want to include in chunks for each post type.', 'fe-ai-search' );
+		$string = __( 'Select the post types you want to include in your AI search and the metadata you want to include in chunks for each post type. If no items are checked under "Include in Chunk Data" for a post type, that post type will be skipped during synchronization.', 'fe-ai-search' );
 		echo '<p class="description">' . wp_kses_post( $string ) . '</p>';
 		echo '<div id="fe_ai_search_sync_options_accordion" class="fe-ai-search-accordion-wrapper">';
 
@@ -920,15 +921,14 @@ class FE_AI_Search_Settings {
 			// Get saved options for this post type from sync['targets'][post_type].
 			$pt_options          = $sync_targets[ $post_type->name ] ?? [];
 			$is_enabled          = $pt_options['enabled'] ?? in_array( $post_type->name, [ 'post', 'page' ], true );
-			$include_title       = $pt_options['include_title'] ?? true;
-			$include_content     = $pt_options['include_content'] ?? true;
-			$include_date        = $pt_options['include_date'] ?? true;
-			$include_author      = $pt_options['include_author'] ?? true;
 			$snippet_title       = $pt_options['snippet_include_title'] ?? true;
 			$snippet_content     = $pt_options['snippet_include_content'] ?? true;
 			$snippet_date        = $pt_options['snippet_include_date'] ?? false;
 			$snippet_author      = $pt_options['snippet_include_author'] ?? false;
-			$snippet_taxonomies  = $pt_options['snippet_include_tax'] ?? false;
+			$snippet_taxonomies  = isset( $pt_options['snippet_taxonomies'] ) && is_array( $pt_options['snippet_taxonomies'] ) ? $pt_options['snippet_taxonomies'] : [];
+			$enable_custom_fields = $pt_options['enable_custom_fields'] ?? false;
+			$snippet_custom_fields_value = $pt_options['snippet_custom_fields'] ?? '';
+			$snippet_field_input_id = sanitize_html_class( 'fe-ai-search-snippet-cf-' . $post_type->name );
 			?>
 			<div class="post-type-accordion-item">
 				<h4 class="accordion-title">
@@ -943,97 +943,87 @@ class FE_AI_Search_Settings {
 					</label>
 				</h4>
 				<div class="accordion-content">
-						<div class="accordion-inner">
-							<fieldset>
-								<table class="widefat striped fe-ai-search-sync-targets-table">
-									<thead>
-										<tr>
-											<th><?php esc_html_e( 'Metadata', 'fe-ai-search' ); ?></th>
-											<th><?php esc_html_e( 'Sync Target', 'fe-ai-search' ); ?></th>
-											<th><?php esc_html_e( 'Include in Chunk Data', 'fe-ai-search' ); ?></th>
-										</tr>
-									</thead>
-									<tbody>
-										<tr>
-											<td><?php esc_html_e( 'Post Title', 'fe-ai-search' ); ?></td>
-											<td>
-												<label>
-													<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][include_title]" value="1" <?php checked( $include_title ); ?>>
-												</label>
-											</td>
-											<td>
-												<label>
-													<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_include_title]" value="1" <?php checked( $snippet_title ); ?>>
-												</label>
-											</td>
-										</tr>
-										<tr>
-											<td><?php esc_html_e( 'Post Content', 'fe-ai-search' ); ?></td>
-											<td>
-												<label>
-													<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][include_content]" value="1" <?php checked( $include_content ); ?>>
-												</label>
-											</td>
-											<td>
-												<label>
-													<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_include_content]" value="1" <?php checked( $snippet_content ); ?>>
-												</label>
-											</td>
-										</tr>
-										<tr>
-											<td><?php esc_html_e( 'Post Date', 'fe-ai-search' ); ?></td>
-											<td>
-												<label>
-													<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][include_date]" value="1" <?php checked( $include_date ); ?>>
-												</label>
-											</td>
-											<td>
-												<label>
-													<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_include_date]" value="1" <?php checked( $snippet_date ); ?>>
-												</label>
-											</td>
-										</tr>
-										<tr>
-											<td><?php esc_html_e( 'Post Author (nickname)', 'fe-ai-search' ); ?></td>
-											<td>
-												<label>
-													<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][include_author]" value="1" <?php checked( $include_author ); ?>>
-												</label>
-											</td>
-											<td>
-												<label>
-													<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_include_author]" value="1" <?php checked( $snippet_author ); ?>>
-												</label>
-											</td>
-										</tr>
-										<?php
-										$taxonomies = get_object_taxonomies( $post_type->name, 'objects' );
-										if ( ! empty( $taxonomies ) ) {
-											foreach ( $taxonomies as $tax ) {
-												if ( ! $tax->public ) {
-													continue;
-												}
-												$is_checked = ! empty( $pt_options['taxonomies'] ) && in_array( $tax->name, $pt_options['taxonomies'], true );
-												?>
-												<tr>
-													<td><?php printf( esc_html__( '%s taxonomy', 'fe-ai-search' ), esc_html( $tax->label ) ); ?></td>
-													<td>
-														<label>
-															<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][taxonomies][]" value="<?php echo esc_attr( $tax->name ); ?>" <?php checked( $is_checked ); ?>>
-														</label>
-													</td>
-													<td>
-														<label>
-															<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_include_tax]" value="1" <?php checked( $snippet_taxonomies ); ?>>
-														</label>
-													</td>
-												</tr>
-												<?php
+					<div class="accordion-inner">
+						<fieldset>
+							<table class="widefat striped fe-ai-search-sync-targets-table">
+								<thead>
+									<tr>
+										<th><?php esc_html_e( 'Metadata', 'fe-ai-search' ); ?></th>
+										<th><?php esc_html_e( 'Include in Chunk Data', 'fe-ai-search' ); ?></th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td><?php esc_html_e( 'Post Title', 'fe-ai-search' ); ?></td>
+										<td>
+											<label>
+												<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_include_title]" value="1" <?php checked( $snippet_title ); ?>>
+											</label>
+										</td>
+									</tr>
+									<tr>
+										<td><?php esc_html_e( 'Post Content', 'fe-ai-search' ); ?></td>
+										<td>
+											<label>
+												<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_include_content]" value="1" <?php checked( $snippet_content ); ?>>
+											</label>
+										</td>
+									</tr>
+									<tr>
+										<td><?php esc_html_e( 'Post Date', 'fe-ai-search' ); ?></td>
+										<td>
+											<label>
+												<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_include_date]" value="1" <?php checked( $snippet_date ); ?>>
+											</label>
+										</td>
+									</tr>
+									<tr>
+										<td><?php esc_html_e( 'Post Author (nickname)', 'fe-ai-search' ); ?></td>
+										<td>
+											<label>
+												<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_include_author]" value="1" <?php checked( $snippet_author ); ?>>
+											</label>
+										</td>
+									</tr>
+									<?php
+									$taxonomies = get_object_taxonomies( $post_type->name, 'objects' );
+									if ( ! empty( $taxonomies ) ) {
+										foreach ( $taxonomies as $tax ) {
+											if ( ! $tax->public ) {
+												continue;
 											}
+											$snippet_tax_behavior = $pt_options['snippet_taxonomies'][ $tax->name ]['behavior'] ?? 'include_terms';
+											$snippet_tax_term_ids = $pt_options['snippet_taxonomies'][ $tax->name ]['term_ids'] ?? '';
+											$tax_behavior_radio_name = "fe_ai_search_settings[sync][targets][{$post_type->name}][snippet_taxonomies][{$tax->name}][behavior]";
+											$tax_term_ids_name = "fe_ai_search_settings[sync][targets][{$post_type->name}][snippet_taxonomies][{$tax->name}][term_ids]";
+											?>
+											<tr>
+												<td><?php printf( esc_html__( '%s taxonomy', 'fe-ai-search' ), esc_html( $tax->label ) ); ?></td>
+												<td>
+													<div style="margin-bottom: 0.5em;">
+														<label style="margin-right: 1em;">
+															<input type="radio" name="<?php echo esc_attr( $tax_behavior_radio_name ); ?>" value="include_terms" <?php checked( $snippet_tax_behavior, 'include_terms' ); ?>>
+															<?php esc_html_e( 'Include only specified term IDs', 'fe-ai-search' ); ?>
+														</label>
+														<label>
+															<input type="radio" name="<?php echo esc_attr( $tax_behavior_radio_name ); ?>" value="exclude_terms" <?php checked( $snippet_tax_behavior, 'exclude_terms' ); ?>>
+															<?php esc_html_e( 'Exclude specified term IDs', 'fe-ai-search' ); ?>
+														</label>
+													</div>
+													<input type="text" name="<?php echo esc_attr( $tax_term_ids_name ); ?>" value="<?php echo esc_attr( $snippet_tax_term_ids ); ?>" placeholder="<?php esc_attr_e( 'e.g. 3,7,12', 'fe-ai-search' ); ?>" class="regular-text">
+													<p class="description">
+														<?php esc_html_e( 'Comma-separated term IDs. Leave empty to include all terms (for Include) or exclude none (for Exclude).', 'fe-ai-search' ); ?>
+													</p>
+												</td>
+											</tr>
+											<?php
 										}
-										?>
-									</tbody>
-								</table>
+									}
+									?>
+								</tbody>
+							</table>
+
+							<hr>
 
 							<div>
 								<label>
@@ -1042,7 +1032,7 @@ class FE_AI_Search_Settings {
 										name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][enable_custom_fields]"
 										value="1"
 										class="fe-ai-search-cf-toggle"
-										data-target-input-id="<?php echo $custom_field_input_id; ?>"
+										data-target-input-id="<?php echo $snippet_field_input_id; ?>"
 										<?php checked( $enable_custom_fields ); ?>
 										<?php disabled( ! $is_pro ); ?>
 									>
@@ -1050,46 +1040,26 @@ class FE_AI_Search_Settings {
 									<?php esc_html_e( 'Include Custom Fields', 'fe-ai-search' ); ?>
 									<?php if ( ! class_exists( '\FEAISearch\Pro\Admin\FE_AI_Search_Pro_Settings' ) ) : ?>
 										<span class="description">(
-										<?php
-										printf(
-											/* translators: %s: Link to the Pro version. */
-											wp_kses_post( __( 'Available in the %s version.', 'fe-ai-search' ) ),
-											sprintf(
-												'<a href="%s" class="%s">%s</a>',
-												'#tab_license',
-												'fe-ai-search-change-model-link',
-												esc_html__( 'Pro', 'fe-ai-search' )
-											)
-										);
-										?>
-										)</span>
+											<?php
+											printf(
+												/* translators: %s: Link to the Pro version. */
+												wp_kses_post( __( 'Available in the %s version.', 'fe-ai-search' ) ),
+												sprintf(
+													'<a href="%s" class="%s">%s</a>',
+													'#tab_license',
+													'fe-ai-search-change-model-link',
+													esc_html__( 'Pro', 'fe-ai-search' )
+												)
+											);
+											?>
+											)</span>
 									<?php endif; ?>
 								</label>
 
-								<div class="custom-field-input-wrapper" style="margin-left: 20px;">
-									<label for="<?php echo $custom_field_input_id; ?>">
-										<strong><?php esc_html_e( 'Custom Fields (Sync Targets)', 'fe-ai-search' ); ?></strong>
-									</label>
-									<br>
-									<textarea
-										id="<?php echo $custom_field_input_id; ?>"
-										name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][custom_fields]"
-										rows="3"
-										cols="60"
-										class="large-text code"
-										placeholder="field_name_1, field_name_2"
-										<?php disabled( ! $is_pro ); ?>
-									><?php echo esc_textarea( $custom_fields_value ); ?></textarea>
-									<p class="description">
-										<?php esc_html_e( 'Enter the keys of the custom fields you want to sync, separated by commas or new lines.', 'fe-ai-search' ); ?>
-									</p>
-								</div>
-
-								<div class="custom-field-input-wrapper" style="margin-left: 20px; margin-top: 8px;">
+								<div class="custom-field-input-wrapper">
 									<label for="<?php echo $snippet_field_input_id; ?>">
 										<strong><?php esc_html_e( 'Custom Fields (Include in Chunk Data)', 'fe-ai-search' ); ?></strong>
 									</label>
-									<br>
 									<textarea
 										id="<?php echo $snippet_field_input_id; ?>"
 										name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_custom_fields]"
@@ -1160,27 +1130,32 @@ class FE_AI_Search_Settings {
 
 			<div id="fe_ai_search_sync_wrapper">
 				<?php
-				/**
-				 * Filters the array of status messages to display on the Sync tab.
-				 *
-				 * This allows the Sync_Handler (for MeCab) or add-ons (for other languages)
-				 * to add their own tokenizer status UI.
-				 *
-				 * @since 1.0.0
-				 * @param array $statuses An array of HTML strings, each representing a status line.
-				 */
-				$tokenizer_statuses = apply_filters( 'fe_ai_search_tokenizer_status', [] );
+				$vector_store = $this->options['vector']['store'] ?? 'mariadb';
+				if ( 'qdrant' !== $vector_store ) {
+					/**
+					 * Filters the array of status messages to display on the Sync tab.
+					 *
+					 * This allows the Sync_Handler (for MeCab) or add-ons (for other languages)
+					 * to add their own tokenizer status UI.
+					 *
+					 * @since 1.0.0
+					 * @param array $statuses An array of HTML strings, each representing a status line.
+					 */
+					$tokenizer_statuses = apply_filters( 'fe_ai_search_tokenizer_status', [] );
 
-				if ( ! empty( $tokenizer_statuses ) ) :
-					?>
-					<div id="fe_ai_search_tokenizer_status">
-						<?php
-						foreach ( $tokenizer_statuses as $status_html ) {
-							echo '<p>' . wp_kses_post( $status_html ) . '</p>';
-						}
+					if ( ! empty( $tokenizer_statuses ) ) :
 						?>
-					</div>
-				<?php endif; ?>
+						<div id="fe_ai_search_tokenizer_status">
+							<?php
+							foreach ( $tokenizer_statuses as $status_html ) {
+								echo '<p>' . wp_kses_post( $status_html ) . '</p>';
+							}
+							?>
+						</div>
+					<?php
+					endif;
+				}
+				?>
 
 				<div class="fe-ai-search-wrapper">
 					<button id="fe_ai_search_smart_sync" class="button button-primary">
@@ -1913,7 +1888,7 @@ class FE_AI_Search_Settings {
 			class="regular-text"
 		>
 		<p class="description">
-			<?php echo wp_kses_post( __( 'If you want to sync only certain posts, enter the post IDs separated by commas (e.g. 10, 25, 103).<br><strong>Note:</strong> If you enter any here, the "Sync Targets" setting will be ignored and only the posts with those IDs will be synced.', 'fe-ai-search' ) ); ?>
+			<?php echo wp_kses_post( __( 'If you want to sync only certain posts, enter the post IDs separated by commas (e.g. 10, 25, 103).<br><strong>Note:</strong> When you enter post IDs here, only those posts are prioritized as sync targets. The per-post-type “Sync Targets” settings (which metadata to include, etc.) are still applied.', 'fe-ai-search' ) ); ?>
 		</p>
 		<?php
 	}
@@ -2425,22 +2400,35 @@ class FE_AI_Search_Settings {
 			}
 
 			$new_input[ $pt_name ]['enabled']              = ! empty( $input[ $pt_name ]['enabled'] );
-			$new_input[ $pt_name ]['include_title']        = ! empty( $input[ $pt_name ]['include_title'] );
-			$new_input[ $pt_name ]['include_content']      = ! empty( $input[ $pt_name ]['include_content'] );
-			$new_input[ $pt_name ]['include_date']         = ! empty( $input[ $pt_name ]['include_date'] );
-			$new_input[ $pt_name ]['include_author']       = ! empty( $input[ $pt_name ]['include_author'] );
 			$new_input[ $pt_name ]['enable_custom_fields'] = ! empty( $input[ $pt_name ]['enable_custom_fields'] );
 
-			// Taxonomies
-			if ( isset( $input[ $pt_name ]['taxonomies'] ) && is_array( $input[ $pt_name ]['taxonomies'] ) ) {
-				$new_input[ $pt_name ]['taxonomies'] = array_map( 'sanitize_key', $input[ $pt_name ]['taxonomies'] );
-			} else {
-				$new_input[ $pt_name ]['taxonomies'] = [];
+			// Snippet flags control which metadata is embedded into each chunk.
+			$new_input[ $pt_name ]['snippet_include_title']   = ! empty( $input[ $pt_name ]['snippet_include_title'] );
+			$new_input[ $pt_name ]['snippet_include_content'] = ! empty( $input[ $pt_name ]['snippet_include_content'] );
+			$new_input[ $pt_name ]['snippet_include_date']    = ! empty( $input[ $pt_name ]['snippet_include_date'] );
+			$new_input[ $pt_name ]['snippet_include_author']  = ! empty( $input[ $pt_name ]['snippet_include_author'] );
+
+			// Custom Fields (Pro) - only snippet_custom_fields remains
+			if ( isset( $input[ $pt_name ]['snippet_custom_fields'] ) ) {
+				$new_input[ $pt_name ]['snippet_custom_fields'] = sanitize_textarea_field( $input[ $pt_name ]['snippet_custom_fields'] );
 			}
 
-			// Custom Fields (Pro)
-			if ( isset( $input[ $pt_name ]['custom_fields'] ) ) {
-				$new_input[ $pt_name ]['custom_fields'] = sanitize_text_field( $input[ $pt_name ]['custom_fields'] );
+			// Taxonomies: new per-taxonomy behavior/term_ids structure
+			if ( isset( $input[ $pt_name ]['snippet_taxonomies'] ) && is_array( $input[ $pt_name ]['snippet_taxonomies'] ) ) {
+				$new_input[ $pt_name ]['snippet_taxonomies'] = [];
+				foreach ( $input[ $pt_name ]['snippet_taxonomies'] as $tax_name => $tax_config ) {
+					if ( ! is_array( $tax_config ) ) {
+						continue;
+					}
+					$behavior = in_array( $tax_config['behavior'] ?? '', [ 'include_terms', 'exclude_terms' ], true ) ? $tax_config['behavior'] : 'include_terms';
+					$term_ids = sanitize_text_field( $tax_config['term_ids'] ?? '' );
+					$new_input[ $pt_name ]['snippet_taxonomies'][ $tax_name ] = [
+						'behavior' => $behavior,
+						'term_ids' => $term_ids,
+					];
+				}
+			} else {
+				$new_input[ $pt_name ]['snippet_taxonomies'] = [];
 			}
 		}
 		return $new_input;

@@ -753,3 +753,23 @@ a:has(.dashicons-warning) span {
     background: #6d6ddb;
     border-radius: 99px;
 }
+
+.form-table .fe-ai-search-sync-targets-table th {
+	border-bottom: none;
+	padding: 5px 5px 10px 10px;
+}
+
+.form-table .fe-ai-search-sync-targets-table td {
+	padding: 5px 10px;
+}
+
+table.fe-ai-search-sync-targets-table {
+	border: none;
+	box-shadow: none;
+}
+#fe_ai_search_sync_options_accordion hr {
+	margin: 1em -1em;
+    background: #cfcfcf;
+    border: none;
+    height: 1px;
+}

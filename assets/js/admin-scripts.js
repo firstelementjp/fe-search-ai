@@ -562,6 +562,28 @@ document.addEventListener('DOMContentLoaded', () => {
 	// Accordion UI Logic (FINAL & COMPLETE VERSION)
 	// ==========================================================================
 
+	// --- Sync Target vs Snippet checkbox dependency (taxonomies) ---
+	function updateSnippetTaxCheckboxStates() {
+		document.querySelectorAll('.fe-ai-search-snippet-tax-checkbox').forEach(snippetCheckbox => {
+			const syncCheckboxId = snippetCheckbox.dataset.syncCheckboxId;
+			const syncCheckbox = syncCheckboxId ? document.getElementById(syncCheckboxId) : null;
+			const shouldEnable = !!(syncCheckbox && syncCheckbox.checked);
+			snippetCheckbox.disabled = !shouldEnable;
+			if (!shouldEnable) {
+				snippetCheckbox.checked = false;
+			}
+		});
+	}
+
+	function bindSyncTaxonomyCheckboxes() {
+		document.querySelectorAll('.fe-ai-search-sync-tax-checkbox').forEach(syncCheckbox => {
+			syncCheckbox.addEventListener('change', updateSnippetTaxCheckboxStates);
+		});
+		updateSnippetTaxCheckboxStates();
+	}
+
+	bindSyncTaxonomyCheckboxes();
+
 	/**
 	 * Initializes any open accordions within a specific container.
 	 * This is the core function for making accordions visible.
