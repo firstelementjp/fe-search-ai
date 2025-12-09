@@ -4,13 +4,8 @@
 	"description": "AI Search functionality for WordPress",
 	"main": "index.js",
 	"scripts": {
-		"lint": "npm run lint:js && npm run lint:css",
-		"lint:js": "eslint . --ext .js",
-		"lint:js:fix": "eslint . --ext .js --fix",
-		"lint:css": "prettier --check \"assets/css/*.css\" \"!assets/css/*.min.css\" \"!assets/css/*.copy.css\"",
-		"lint:css:fix": "prettier --write \"assets/css/*.css\" \"!assets/css/*.min.css\" \"!assets/css/*.copy.css\"",
-		"lint:fix": "npm run lint:js:fix && npm run lint:css:fix",
-		"format:css": "prettier --write \"assets/css/*.css\" \"!assets/css/*.min.css\" \"!assets/css/*.copy.css\"",
+		"lint": "eslint . --ext .js",
+		"lint:fix": "eslint . --ext .js --fix",
 		"build:css": "esbuild assets/css/frontend-styles.css --minify --outfile=assets/css/frontend-styles.min.css",
 		"build:js": "esbuild assets/js/frontend-scripts.js --minify --outfile=assets/js/frontend-scripts.min.js",
 		"build": "npm run build:css && npm run build:js",
@@ -22,8 +17,7 @@
 		"watch:admin:css": "esbuild assets/css/admin-styles.css --minify --outfile=assets/css/admin-styles.min.css --watch",
 		"watch:admin:js": "esbuild assets/js/admin-scripts.js --minify --outfile=assets/js/admin-scripts.min.js --watch",
 		"build:admin:pro:js": "esbuild ../fe-ai-search-pro/assets/js/admin-pro-scripts.js --minify --outfile=../fe-ai-search-pro/assets/js/admin-pro-scripts.min.js",
-		"watch:admin:pro:js": "esbuild ../fe-ai-search-pro/assets/js/admin-pro-scripts.js --minify --outfile=../fe-ai-search-pro/assets/js/admin-pro-scripts.min.js --watch",
-		"make-json": "wp i18n make-json languages --domain=fe-ai-search"
+		"watch:admin:pro:js": "esbuild ../fe-ai-search-pro/assets/js/admin-pro-scripts.js --minify --outfile=../fe-ai-search-pro/assets/js/admin-pro-scripts.min.js --watch"
 	},
 	"keywords": [
 		"wordpress",

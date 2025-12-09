@@ -19,7 +19,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use FEAISearch\Core\FE_AI_Search_License;
 use U7aro\TinySegmenter\TinySegmenter;
 use WP_Error;
 
@@ -50,9 +49,19 @@ class FE_AI_Search_Sync_Handler {
 	 */
 	public function __construct() {
 
-		$this->options           = get_option( 'fe_ai_search_settings', [] );
-		$this->segmenter         = new TinySegmenter();
-		$this->is_license_active = FE_AI_Search_License::is_pro_active();
+		$this->options   = get_option( 'fe_ai_search_settings', [] );
+		$this->segmenter = new TinySegmenter();
+
+		$license_data = get_option( 'fe_ai_search_license', [] );
+		$status       = $license_data['status'] ?? 'inactive';
+		$data         = $license_data['data'] ?? [];
+		$product_id   = isset( $data['productId'] ) ? (int) $data['productId'] : 0;
+
+		// Set license status for use in various methods.
+		// Active when the status is "active" and the product ID matches the Pro add-on.
+		$this->is_license_active = ( 'active' === $status && 65 === $product_id );
+
+		// $this->is_license_active = true; // Debug override
 
 		add_filter( 'fe_ai_search_tokenizer_status', [ $this, 'add_japanese_tokenizer_status' ] );
 		add_action( 'wp_ajax_fe_ai_search_start_sync', [ $this, 'ajax_start_sync' ] );
@@ -108,21 +117,21 @@ class FE_AI_Search_Sync_Handler {
 				if ( ! empty( $pt_options['enabled'] ) ) {
 					// Skip if no Include in Chunk Data options are selected
 					$has_any_snippet = (
-					! empty( $pt_options['snippet_include_title'] ) ||
-					! empty( $pt_options['snippet_include_content'] ) ||
-					! empty( $pt_options['snippet_include_date'] ) ||
-					! empty( $pt_options['snippet_include_author'] ) ||
-					! empty(
-						array_filter(
-							array_map(
-								function ( $tax_config ) {
-									return ! empty( $tax_config['enabled'] );
-								},
-								$pt_options['snippet_taxonomies'] ?? []
+						! empty( $pt_options['include_title'] ) ||
+						! empty( $pt_options['include_content'] ) ||
+						! empty( $pt_options['include_date'] ) ||
+						! empty( $pt_options['include_author'] ) ||
+						! empty(
+							array_filter(
+								array_map(
+									function ( $tax_config ) {
+										return ! empty( $tax_config['enabled'] );
+									},
+									$pt_options['snippet_taxonomies'] ?? []
+								)
 							)
-						)
-					) ||
-					( ! empty( $pt_options['enable_custom_fields'] ) && ! empty( $pt_options['snippet_custom_fields'] ) )
+						) ||
+						( ! empty( $pt_options['enable_custom_fields'] ) && ! empty( $pt_options['custom_fields'] ) )
 					);
 					if ( $has_any_snippet ) {
 						$post_types_to_sync[] = $pt_slug;
@@ -214,7 +223,27 @@ class FE_AI_Search_Sync_Handler {
 		if ( ! empty( $targets ) ) {
 			foreach ( $targets as $pt_slug => $pt_options ) {
 				if ( ! empty( $pt_options['enabled'] ) ) {
-					$post_types_to_sync[] = $pt_slug;
+					// Skip if no Include in Chunk Data options are selected
+					$has_any_snippet = (
+						! empty( $pt_options['include_title'] ) ||
+						! empty( $pt_options['include_content'] ) ||
+						! empty( $pt_options['include_date'] ) ||
+						! empty( $pt_options['include_author'] ) ||
+						! empty(
+							array_filter(
+								array_map(
+									function ( $tax_config ) {
+										return ! empty( $tax_config['enabled'] );
+									},
+									$pt_options['snippet_taxonomies'] ?? []
+								)
+							)
+						) ||
+						( ! empty( $pt_options['enable_custom_fields'] ) && ! empty( $pt_options['custom_fields'] ) )
+					);
+					if ( $has_any_snippet ) {
+						$post_types_to_sync[] = $pt_slug;
+					}
 				}
 			}
 		}
@@ -417,9 +446,9 @@ class FE_AI_Search_Sync_Handler {
 			$locale    = get_locale();
 			$lang_code = strstr( $locale, '_', true ) ?: $locale;
 
-			// Read Free plugin vector store configuration to determine if Qdrant is enabled.
-			$free_settings = get_option( 'fe_ai_search_settings', [] );
-			$vector_config = isset( $free_settings['vector'] ) && is_array( $free_settings['vector'] ) ? $free_settings['vector'] : [];
+			// Read Pro vector store configuration to determine if Qdrant is enabled.
+			$pro_settings  = get_option( 'fe_ai_search_pro_settings', [] );
+			$vector_config = isset( $pro_settings['vector'] ) && is_array( $pro_settings['vector'] ) ? $pro_settings['vector'] : [];
 			$qdrant_config = isset( $vector_config['qdrant'] ) && is_array( $vector_config['qdrant'] ) ? $vector_config['qdrant'] : [];
 			$vector_store  = $vector_config['store'] ?? 'mariadb';
 
@@ -440,9 +469,6 @@ class FE_AI_Search_Sync_Handler {
 				&& ! empty( $qdrant_config['collection'] )
 			);
 
-			// Initialize variables for the batch
-			$all_vectors_data = []; // Collect all vectors for Qdrant upload
-
 			// Process each post
 			foreach ( $posts_batch as $post ) {
 				$chunks_with_meta = $this->create_chunks_from_post( $post );
@@ -450,146 +476,64 @@ class FE_AI_Search_Sync_Handler {
 					continue;
 				}
 
-				// Only generate embeddings if using Qdrant (vector search)
-				$embedding_response = null;
-				$vectors_data       = []; // Initialize for this post
-				if ( $qdrant_enabled ) {
-					$chunks_for_embedding = wp_list_pluck( $chunks_with_meta, 'content_chunk' );
-					$embedding_response   = $this->get_embeddings_via_selected_provider( $chunks_for_embedding );
-					if ( ! is_wp_error( $embedding_response ) && ! empty( $embedding_response['data'] ) ) {
-						$vectors_data = $embedding_response['data'];
-						// Collect vectors for this post for Qdrant upload
-						$all_vectors_data = array_merge( $all_vectors_data, $vectors_data );
-					}
-				}
+				$chunks_for_embedding = wp_list_pluck( $chunks_with_meta, 'content_chunk' );
+				$embedding_response   = $this->get_embeddings_via_selected_provider( $chunks_for_embedding );
 
-				// Always store chunks and keyword index (for both WordPress DB and Qdrant modes)
-				global $wpdb;
-				$vectors_table = $wpdb->prefix . 'fe_ai_search_vectors';
-				$index_table   = $wpdb->prefix . 'fe_ai_search_keyword_index';
+				if ( ! is_wp_error( $embedding_response ) && ! empty( $embedding_response['data'] ) ) {
+					$embedding_model = $embedding_response['embedding_model'] ?? '';
+					$embedding_dim   = (int) ( $embedding_response['embedding_dim'] ?? 0 );
+					global $wpdb;
+					$vectors_table = $wpdb->prefix . 'fe_ai_search_vectors';
+					$index_table   = $wpdb->prefix . 'fe_ai_search_keyword_index';
+					$vectors_data  = $embedding_response['data'];
 
-				foreach ( $chunks_with_meta as $index => $chunk_item ) {
-					// Store chunk data (without vector for WordPress DB mode)
-					$chunk_data = [
-						'post_id'       => $post->ID,
-						'lang'          => $lang_code,
-						'content_chunk' => $chunk_item['content_chunk'],
-						'created_at'    => current_time( 'mysql' ),
-					];
-					// Add vector data only if using Qdrant
-					if ( $qdrant_enabled && ! is_wp_error( $embedding_response ) && ! empty( $embedding_response['data'] ) ) {
-						$embedding_model = $embedding_response['embedding_model'] ?? '';
-						$embedding_dim   = (int) ( $embedding_response['embedding_dim'] ?? 0 );
-						$vector_id       = $embedding_response['vector_id'] ?? '';
-
-						if ( isset( $vectors_data[ $index ]['embedding'] ) ) {
-							$chunk_data['vector_data']     = wp_json_encode( $vectors_data[ $index ]['embedding'] );
-							$chunk_data['embedding_model'] = $embedding_model;
-							$chunk_data['embedding_dim']   = $embedding_dim;
-							$chunk_data['vector_id']       = $vector_id;
+					foreach ( $vectors_data as $index => $vector_item ) {
+						if ( empty( $vector_item['embedding'] ) ) {
+							continue;
 						}
-					}
 
-					$wpdb->insert( $vectors_table, $chunk_data );
-					$vector_id = $wpdb->insert_id;
+						$chunk_item = $chunks_with_meta[ $index ];
 
-					// Debug: Log chunk storage
-					\FEAISearch\Core\FE_AI_Search_Logger::log(
-						'DEBUG',
-						'Chunk stored in WordPress DB.',
-						[
-							'vector_id'      => $vector_id,
-							'post_id'        => $post->ID,
-							'chunk_length'   => strlen( $chunk_item['content_chunk'] ),
-							'qdrant_enabled' => $qdrant_enabled,
-							'has_vector'     => ! empty( $chunk_data['vector_data'] ),
-						]
-					);
+						$wpdb->insert(
+							$vectors_table,
+							[
+								'post_id'         => $post->ID,
+								'lang'            => $lang_code,
+								'content_chunk'   => $chunk_item['content_chunk'],
+								'vector_data'     => wp_json_encode( $vector_item['embedding'] ),
+								'embedding_model' => $embedding_model,
+								'embedding_dim'   => $embedding_dim,
+								'created_at'      => current_time( 'mysql' ),
+							]
+						);
+						$vector_id = $wpdb->insert_id;
 
-					if ( $vector_id ) {
-						// Extract and store keywords for the chunk
-						$keywords      = $this->tokenize_text( $chunk_item['content_chunk'] );
-						$keyword_count = 0;
-						if ( ! empty( $keywords ) ) {
-							// Remove duplicate keywords to prevent database constraint violation
+						if ( $vector_id ) {
+							$keywords        = $this->tokenize_text( $chunk_item['content_chunk'] );
 							$unique_keywords = array_unique( $keywords );
+
 							foreach ( $unique_keywords as $keyword ) {
-								// Use INSERT IGNORE to skip existing duplicates
-								$result = $wpdb->query( 
-									$wpdb->prepare(
-										"INSERT IGNORE INTO {$index_table} (vector_id, keyword) VALUES (%s, %s)",
-										$vector_id,
-										$keyword
-									)
-								);
-								if ( $result !== false && $result > 0 ) {
-									++$keyword_count;
+								if ( mb_strlen( $keyword ) > 1 ) {
+									// Use INSERT IGNORE semantics so that duplicate (keyword, vector_id)
+									// combinations do not trigger database errors during sync.
+									$wpdb->query(
+										$wpdb->prepare(
+											"INSERT IGNORE INTO `{$index_table}` (`keyword`, `vector_id`, `lang`) VALUES (%s, %d, %s)",
+											$keyword,
+											$vector_id,
+											$lang_code
+										)
+									);
 								}
 							}
 						}
-
-						// Debug: Log keyword indexing
-						\FEAISearch\Core\FE_AI_Search_Logger::log(
-							'DEBUG',
-							'Keywords indexed for chunk.',
-							[
-								'vector_id'     => $vector_id,
-								'keyword_count' => $keyword_count,
-								'total_keywords' => count( $unique_keywords ),
-								'keywords_list' => array_slice( $unique_keywords, 0, 10 ), // First 10 keywords
-							]
-						);
-					}
-				}
-
-				// Mirror vectors to Qdrant when enabled in Pro settings (batch upload)
-				if ( $qdrant_enabled && ! empty( $all_vectors_data ) ) {
-					// For Qdrant upload, we need to collect all chunks from all posts
-					$all_chunks_with_meta = [];
-					foreach ( $posts_batch as $post ) {
-						$post_chunks = $this->create_chunks_from_post( $post );
-						if ( ! empty( $post_chunks ) ) {
-							$all_chunks_with_meta = array_merge( $all_chunks_with_meta, $post_chunks );
-						}
 					}
 
-					if ( ! empty( $all_chunks_with_meta ) ) {
-						// Process each post individually for Qdrant upload to avoid data overwrite
-						// Pre-map all posts to their chunks to avoid recreating them
-						$post_chunks_map = [];
-						$chunk_offset    = 0;
-						foreach ( $posts_batch as $post ) {
-							$post_chunks = $this->create_chunks_from_post( $post );
-							if ( ! empty( $post_chunks ) ) {
-								$post_chunks_map[ $post->ID ] = $post_chunks;
-							}
-						}
-
-						// Now process each post with its pre-calculated chunks
-						$chunk_offset = 0;
-						foreach ( $posts_batch as $post ) {
-							if ( isset( $post_chunks_map[ $post->ID ] ) ) {
-								$post_chunks       = $post_chunks_map[ $post->ID ];
-								$post_vectors_data = array_slice( $all_vectors_data, $chunk_offset, count( $post_chunks ) );
-
-								// Debug: Log post processing
-								\FEAISearch\Core\FE_AI_Search_Logger::log(
-									'DEBUG',
-									'Processing post for Qdrant upload.',
-									[
-										'post_id'      => $post->ID,
-										'post_title'   => get_the_title( $post ),
-										'chunk_offset' => $chunk_offset,
-										'chunks_count' => count( $post_chunks ),
-										'vectors_data_count' => count( $post_vectors_data ),
-									]
-								);
-
-								$this->upsert_vectors_to_qdrant( $post, $lang_code, $post_chunks, $post_vectors_data, $qdrant_config );
-								$chunk_offset += count( $post_chunks );
-							}
-						}
+					// Mirror vectors to Qdrant when enabled in Pro settings.
+					if ( $qdrant_enabled ) {
+						$this->upsert_vectors_to_qdrant( $post, $lang_code, $chunks_with_meta, $vectors_data, $qdrant_config );
 					}
+				} else {
 				}
 			}
 
@@ -597,19 +541,6 @@ class FE_AI_Search_Sync_Handler {
 			wp_send_json_success( [ 'message' => 'Batch ' . $page . ' processed.' ] );
 
 		} catch ( \Throwable $t ) {
-			// Log detailed error for debugging
-			\FEAISearch\Core\FE_AI_Search_Logger::log(
-				'ERROR',
-				'Batch processing failed with exception.',
-				[
-					'error_message' => $t->getMessage(),
-					'error_file'    => $t->getFile(),
-					'error_line'    => $t->getLine(),
-					'error_trace'   => $t->getTraceAsString(),
-					'page'          => $page ?? 'unknown',
-				]
-			);
-
 			if ( ob_get_level() > 0 ) {
 				ob_end_clean();
 			}
@@ -695,12 +626,7 @@ class FE_AI_Search_Sync_Handler {
 		\FEAISearch\Core\FE_AI_Search_Logger::log(
 			'INFO',
 			'Qdrant upsert invoked.',
-			[
-				'post_id'       => $post->ID,
-				'post_title'    => get_the_title( $post ),
-				'chunks_count'  => count( $chunks_with_meta ),
-				'vectors_count' => count( $vectors_data ),
-			]
+			[ 'post_id' => $post->ID ]
 		);
 
 		$endpoint   = isset( $qdrant_config['endpoint'] ) ? rtrim( $qdrant_config['endpoint'], '/' ) : '';
@@ -747,19 +673,6 @@ class FE_AI_Search_Sync_Handler {
 					'source'          => 'post',
 				],
 			];
-
-			// Debug: Log payload generation for each point
-			\FEAISearch\Core\FE_AI_Search_Logger::log(
-				'DEBUG',
-				'Generated Qdrant point payload.',
-				[
-					'point_index'     => $index,
-					'post_id'         => $post->ID,
-					'title'           => get_the_title( $post ),
-					'qdrant_point_id' => (int) ( $post->ID * 10000 + $index ),
-					'content_preview' => mb_substr( $chunk['content_chunk'], 0, 100 ),
-				]
-			);
 		}
 
 		if ( empty( $points ) ) {
@@ -813,83 +726,6 @@ class FE_AI_Search_Sync_Handler {
 					'response_body' => $body_summary,
 				]
 			);
-			return;
-		}
-
-		// Update WordPress DB with Qdrant vector IDs after successful upload
-		$this->update_wordpress_vector_ids_after_qdrant( $post, $lang_code, $chunks_with_meta, $vectors_data );
-
-		\FEAISearch\Core\FE_AI_Search_Logger::log(
-			'INFO',
-			'Qdrant upsert completed successfully.',
-			[ 'post_id' => $post->ID, 'points_count' => count( $points ) ]
-		);
-	}
-
-	/**
-	 * Updates WordPress DB vector_id fields after successful Qdrant upload.
-	 *
-	 * This method updates the vector_id column in wp_fe_ai_search_vectors table
-	 * with the corresponding Qdrant point IDs for each chunk.
-	 *
-	 * @param \WP_Post $post             The post that was processed.
-	 * @param string   $lang_code        Language code for the processed content.
-	 * @param array    $chunks_with_meta Array of chunks with metadata.
-	 * @param array    $vectors_data     Embedding data used for Qdrant upload.
-	 * @return void
-	 */
-	private function update_wordpress_vector_ids_after_qdrant( $post, $lang_code, $chunks_with_meta, $vectors_data ) {
-		global $wpdb;
-		$vectors_table = $wpdb->prefix . 'fe_ai_search_vectors';
-
-		\FEAISearch\Core\FE_AI_Search_Logger::log(
-			'INFO',
-			'Updating WordPress DB vector IDs after Qdrant upload.',
-			[ 'post_id' => $post->ID ]
-		);
-
-		foreach ( $chunks_with_meta as $index => $chunk ) {
-			// Generate the same Qdrant point ID used in upsert
-			$qdrant_vector_id = (string) ( $post->ID * 10000 + $index );
-
-			// Find the corresponding WordPress DB record for this chunk
-			$chunk_content = $chunk['content_chunk'];
-
-			// Update the vector_id field
-			$result = $wpdb->update(
-				$vectors_table,
-				[ 'vector_id' => $qdrant_vector_id ],
-				[
-					'post_id'       => $post->ID,
-					'lang'          => $lang_code,
-					'content_chunk' => $chunk_content,
-				],
-				[ '%s' ],
-				[ '%d', '%s', '%s' ]
-			);
-
-			if ( $result !== false ) {
-				\FEAISearch\Core\FE_AI_Search_Logger::log(
-					'DEBUG',
-					'Updated vector_id for chunk.',
-					[
-						'post_id'          => $post->ID,
-						'chunk_index'      => $index,
-						'qdrant_vector_id' => $qdrant_vector_id,
-						'updated_rows'     => $result,
-					]
-				);
-			} else {
-				\FEAISearch\Core\FE_AI_Search_Logger::log(
-					'ERROR',
-					'Failed to update vector_id for chunk.',
-					[
-						'post_id'     => $post->ID,
-						'chunk_index' => $index,
-						'error'       => $wpdb->last_error,
-					]
-				);
-			}
 		}
 	}
 
@@ -1023,9 +859,9 @@ class FE_AI_Search_Sync_Handler {
 	 * @return array An array of the most relevant text chunks and their permalinks.
 	 */
 	public function find_similar_chunks( $question ) {
-		// When Qdrant is enabled in Free settings, prefer vector search via Qdrant.
-		$free_settings = get_option( 'fe_ai_search_settings', [] );
-		$vector_config = isset( $free_settings['vector'] ) && is_array( $free_settings['vector'] ) ? $free_settings['vector'] : [];
+		// When Qdrant is enabled in Pro settings, prefer vector search via Qdrant.
+		$pro_settings  = get_option( 'fe_ai_search_pro_settings', [] );
+		$vector_config = isset( $pro_settings['vector'] ) && is_array( $pro_settings['vector'] ) ? $pro_settings['vector'] : [];
 		$qdrant_config = isset( $vector_config['qdrant'] ) && is_array( $vector_config['qdrant'] ) ? $vector_config['qdrant'] : [];
 		$vector_store  = $vector_config['store'] ?? 'mariadb';
 
@@ -1144,35 +980,25 @@ class FE_AI_Search_Sync_Handler {
 		// fall back to sensible defaults so that content is actually indexed.
 		if ( empty( $pt_options ) ) {
 			$pt_options = [
-				'enabled'                 => true,
-				'snippet_include_title'   => true,
-				'snippet_include_content' => true,
-				'snippet_include_date'    => false,
-				'snippet_include_author'  => false,
-				'snippet_taxonomies'      => [],
-				'enable_custom_fields'    => false,
-				'snippet_custom_fields'   => '',
+				'include_title'   => true,
+				'include_content' => true,
+				'include_date'    => true,
+				'include_author'  => true,
+				'snippet_taxonomies' => [],
 			];
 		}
 
 		$meta_parts = [];
 		$body_text  = '';
 
-		// Resolve snippet flags
-		$snippet_title      = ! empty( $pt_options['snippet_include_title'] );
-		$snippet_content    = ! empty( $pt_options['snippet_include_content'] );
-		$snippet_date       = ! empty( $pt_options['snippet_include_date'] );
-		$snippet_author     = ! empty( $pt_options['snippet_include_author'] );
-		$snippet_taxonomies = isset( $pt_options['snippet_taxonomies'] ) && is_array( $pt_options['snippet_taxonomies'] ) ? $pt_options['snippet_taxonomies'] : [];
-
 		// Build an array of sentences from metadata.
-		if ( $snippet_title ) {
+		if ( ! empty( $pt_options['include_title'] ) ) {
 			$meta_parts[] = sprintf( 'The title of this article is "%s".', $post->post_title );
 		}
-		if ( $snippet_date ) {
+		if ( ! empty( $pt_options['include_date'] ) ) {
 			$meta_parts[] = sprintf( 'This article was published on %s.', date_i18n( get_option( 'date_format' ), strtotime( $post->post_date ) ) );
 		}
-		if ( $snippet_author ) {
+		if ( ! empty( $pt_options['include_author'] ) ) {
 			$user = get_user_by( 'ID', $post->post_author );
 			if ( $user instanceof \WP_User ) {
 				$nickname   = (string) get_the_author_meta( 'nickname', $post->post_author );
@@ -1194,47 +1020,44 @@ class FE_AI_Search_Sync_Handler {
 			}
 		}
 
-		// Taxonomies with include/exclude behavior and term IDs filter (only if enabled)
-		if ( ! empty( $snippet_taxonomies ) ) {
+		if ( ! empty( $pt_options['snippet_taxonomies'] ) ) {
 			$taxonomy_lines = [];
-			foreach ( $snippet_taxonomies as $tax_name => $tax_config ) {
-				if ( ! is_array( $tax_config ) || empty( $tax_config['enabled'] ) ) {
+			foreach ( $pt_options['snippet_taxonomies'] as $tax_slug => $tax_config ) {
+				if ( empty( $tax_config['enabled'] ) ) {
 					continue;
 				}
-				$behavior     = $tax_config['behavior'] ?? 'include_terms';
-				$term_ids_raw = $tax_config['term_ids'] ?? '';
-				$term_ids     = [];
-				if ( is_string( $term_ids_raw ) && '' !== trim( $term_ids_raw ) ) {
-					$term_ids = array_map( 'intval', array_filter( array_map( 'trim', explode( ',', $term_ids_raw ) ) ) );
-				}
-				$terms = get_the_terms( $post->ID, $tax_name );
+				
+				$terms = get_the_terms( $post->ID, $tax_slug );
 				if ( is_wp_error( $terms ) || empty( $terms ) ) {
 					continue;
 				}
-				$taxonomy = get_taxonomy( $tax_name );
+				
+				$taxonomy = get_taxonomy( $tax_slug );
 				if ( ! $taxonomy ) {
 					continue;
 				}
-				// Filter terms by behavior and term_ids
-				$filtered_terms = [];
-				foreach ( $terms as $term ) {
-					$term_id = (int) $term->term_id;
-					if ( 'include_terms' === $behavior ) {
-						if ( empty( $term_ids ) || in_array( $term_id, $term_ids, true ) ) {
-							$filtered_terms[] = $term;
-						}
-					} elseif ( 'exclude_terms' === $behavior ) {
-						if ( empty( $term_ids ) || ! in_array( $term_id, $term_ids, true ) ) {
-							$filtered_terms[] = $term;
-						}
-					}
+				
+				// Filter terms based on behavior and term_ids
+				$behavior = $tax_config['behavior'] ?? 'include_terms';
+				$term_ids = ! empty( $tax_config['term_ids'] ) ? array_map( 'intval', explode( ',', $tax_config['term_ids'] ) ) : [];
+				
+				if ( 'include_terms' === $behavior && ! empty( $term_ids ) ) {
+					$terms = array_filter( $terms, function( $term ) use ( $term_ids ) {
+						return in_array( $term->term_id, $term_ids, true );
+					});
+				} elseif ( 'exclude_terms' === $behavior && ! empty( $term_ids ) ) {
+					$terms = array_filter( $terms, function( $term ) use ( $term_ids ) {
+						return ! in_array( $term->term_id, $term_ids, true );
+					});
 				}
-				if ( empty( $filtered_terms ) ) {
+				
+				if ( empty( $terms ) ) {
 					continue;
 				}
-				$label            = $taxonomy->label;
-				$term_names       = wp_list_pluck( $filtered_terms, 'name' );
-				$line             = sprintf( '%s=%s', $label, implode( ', ', $term_names ) );
+				
+				$label      = $taxonomy->label;
+				$term_names = wp_list_pluck( $terms, 'name' );
+				$line       = sprintf( '%s=%s', $label, implode( ', ', $term_names ) );
 				$taxonomy_lines[] = $line;
 			}
 			if ( ! empty( $taxonomy_lines ) ) {
@@ -1258,57 +1081,46 @@ class FE_AI_Search_Sync_Handler {
 			}
 		}
 
-		$enable_custom_fields        = ! empty( $pt_options['enable_custom_fields'] );
-		$snippet_custom_fields_input = $pt_options['snippet_custom_fields'] ?? '';
-		if ( ! FE_AI_Search_License::is_pro_active() ) {
-			$enable_custom_fields = false;
-		}
-		if ( $enable_custom_fields ) {
-			// snippet_custom_fields exclusively controls which custom fields are embedded into chunks.
-			$raw_input = (string) $snippet_custom_fields_input;
-			$raw_input = trim( $raw_input );
-			if ( '' !== $raw_input ) {
-				// Support commas, newlines, and whitespace as separators.
-				$normalized_input = preg_replace( '/[\r\n]+/u', ',', $raw_input );
-				$normalized_input = preg_replace( '/\s+/u', ',', $normalized_input );
-				$keys_raw         = explode( ',', (string) $normalized_input );
-				$keys             = array_filter(
-					array_map(
-						'sanitize_key',
-						array_map( 'trim', $keys_raw )
-					)
-				);
-				$cf_pairs         = [];
-				foreach ( $keys as $meta_key ) {
-					if ( '' === $meta_key ) {
-						continue;
-					}
-					$value = get_post_meta( $post->ID, $meta_key, true );
-					if ( '' === $value || null === $value ) {
-						continue;
-					}
-					$normalized = $this->normalize_custom_field_value( $value );
-					if ( '' === $normalized ) {
-						continue;
-					}
-					$cf_pairs[] = sprintf( '%s=%s', $meta_key, $normalized );
+		$enable_custom_fields = ! empty( $pt_options['enable_custom_fields'] );
+		$custom_fields_input  = $pt_options['custom_fields'] ?? '';
+		if ( $enable_custom_fields && '' !== trim( (string) $custom_fields_input ) ) {
+			$keys_raw = explode( ',', (string) $custom_fields_input );
+			$keys     = array_filter(
+				array_map(
+					'sanitize_key',
+					array_map( 'trim', $keys_raw )
+				)
+			);
+			$cf_pairs = [];
+			foreach ( $keys as $meta_key ) {
+				if ( '' === $meta_key ) {
+					continue;
 				}
-				if ( ! empty( $cf_pairs ) ) {
-					$custom_fields_line = implode( ', ', $cf_pairs );
-					$custom_fields_line = apply_filters( 'fe_ai_search_custom_fields_line', $custom_fields_line, $post, $cf_pairs, $pt_options );
-					if ( '' !== trim( (string) $custom_fields_line ) ) {
-						$prefix_line = 'The following custom field metadata is associated with this article:';
-						if ( 0 !== strpos( trim( (string) $custom_fields_line ), $prefix_line ) ) {
-							$meta_parts[] = $prefix_line;
-						}
-						$meta_parts[] = (string) $custom_fields_line;
+				$value = get_post_meta( $post->ID, $meta_key, true );
+				if ( '' === $value || null === $value ) {
+					continue;
+				}
+				$normalized = $this->normalize_custom_field_value( $value );
+				if ( '' === $normalized ) {
+					continue;
+				}
+				$cf_pairs[] = sprintf( '%s=%s', $meta_key, $normalized );
+			}
+			if ( ! empty( $cf_pairs ) ) {
+				$custom_fields_line = implode( ', ', $cf_pairs );
+				$custom_fields_line = apply_filters( 'fe_ai_search_custom_fields_line', $custom_fields_line, $post, $cf_pairs, $pt_options );
+				if ( '' !== trim( (string) $custom_fields_line ) ) {
+					$prefix_line = 'The following custom field metadata is associated with this article:';
+					if ( 0 !== strpos( trim( (string) $custom_fields_line ), $prefix_line ) ) {
+						$meta_parts[] = $prefix_line;
 					}
+					$meta_parts[] = (string) $custom_fields_line;
 				}
 			}
 		}
 
 		// Add the main content.
-		if ( $snippet_content ) {
+		if ( ! empty( $pt_options['include_content'] ) ) {
 			$content      = strip_shortcodes( $post->post_content );
 			$content      = wp_strip_all_tags( $content );
 			$meta_parts[] = 'Here is the main content of the article:';
@@ -1840,9 +1652,6 @@ class FE_AI_Search_Sync_Handler {
 		 */
 		$final_words = apply_filters( 'fe_ai_search_tokenize_text', $final_words, $text_normalized, $locale );
 
-		// Final unique check after filters (filters might add duplicates)
-		$final_words = array_values( array_unique( $final_words ) );
-
 		return $final_words;
 	}
 
@@ -1978,6 +1787,7 @@ class FE_AI_Search_Sync_Handler {
 	 * Renders an administrator notification about internationalization
 	 */
 	public function render_i18n_notice() {
+		error_log( 'FEAS i18n: transient=' . ( get_transient( 'fe_ai_search_i18n_notice_dismissed' ) ? '1' : '0' ) . ' locale=' . get_locale() );
 		// Do not show the notice if it was recently dismissed.
 		if ( get_transient( 'fe_ai_search_i18n_notice_dismissed' ) ) {
 			return;

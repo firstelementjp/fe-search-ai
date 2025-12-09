@@ -17,5 +17,4 @@ node_modules
 # Exclude environment files
 .env
 .env.*
-.envrc
 !.envrc.example

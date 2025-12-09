@@ -9,7 +9,7 @@
  * @since   1.0.0
  */
 
-/* global ajaxurl, fe_ai_search_sync_obj, CodeMirror, Pickr */
+/* global ajaxurl, fe_ai_search_sync_obj, CodeMirror */
 
 document.addEventListener('DOMContentLoaded', () => {
 	// Initialize WordPress internationalization functions.
@@ -349,16 +349,15 @@ document.addEventListener('DOMContentLoaded', () => {
 				throw new Error(response.data.message || 'Batch processing failed.');
 			}
 		} catch (error) {
-			// If JSON parsing fails, handle gracefully
+			// If JSON parsing fails, log an error to the console
 			if (error instanceof SyntaxError) {
-				// Silently handle JSON parsing errors
-			} else {
-				// Silently handle other batch processing errors
+				// eslint-disable-next-line no-console
+				console.error('Failed to parse JSON. See the raw response above for details.');
 			}
 			statusText.innerHTML = `<span style="color:red;">${__(
 				'Error: A problem occurred while processing batch',
 				'fe-ai-search'
-			)} ${currentPage}. ${error.message || ''}</span>`;
+			)} ${currentPage}.</span>`;
 
 			statusSpinner.style.display = 'none';
 			rebuildBtn.disabled = false;
@@ -536,18 +535,19 @@ document.addEventListener('DOMContentLoaded', () => {
 	});
 
 	// "Change Model" Link Handler
-	document.querySelectorAll('.fe-ai-search-change-model-link').forEach(link => {
-		link.addEventListener('click', e => {
-			e.preventDefault();
-			const targetTabId = link.getAttribute('href');
-			const targetTab = document.querySelector(
-				`.nav-tab-wrapper a.nav-tab[href="${targetTabId}"]`
-			);
-			if (targetTab) {
-				targetTab.click();
-			}
+	document
+		.querySelectorAll('.fe-ai-search-change-model-link')
+		.forEach((link) => {
+			link.addEventListener('click', (e) => {
+				e.preventDefault();
+				const targetTabId = link.getAttribute('href');
+				const targetTab = document
+					.querySelector(`.nav-tab-wrapper a.nav-tab[href="${targetTabId}"]`);
+				if (targetTab) {
+					targetTab.click();
+				}
+			});
 		});
-	});
 
 	// --- Animation Speed Slider UI ---
 	const animationSpeedSlider = document.querySelector('#fe_ai_search_animation_speed_slider');
@@ -562,28 +562,6 @@ document.addEventListener('DOMContentLoaded', () => {
 	// ==========================================================================
 	// Accordion UI Logic (FINAL & COMPLETE VERSION)
 	// ==========================================================================
-
-	// --- Sync Target vs Snippet checkbox dependency (taxonomies) ---
-	function updateSnippetTaxCheckboxStates() {
-		document.querySelectorAll('.fe-ai-search-snippet-tax-checkbox').forEach(snippetCheckbox => {
-			const syncCheckboxId = snippetCheckbox.dataset.syncCheckboxId;
-			const syncCheckbox = syncCheckboxId ? document.getElementById(syncCheckboxId) : null;
-			const shouldEnable = !!(syncCheckbox && syncCheckbox.checked);
-			snippetCheckbox.disabled = !shouldEnable;
-			if (!shouldEnable) {
-				snippetCheckbox.checked = false;
-			}
-		});
-	}
-
-	function bindSyncTaxonomyCheckboxes() {
-		document.querySelectorAll('.fe-ai-search-sync-tax-checkbox').forEach(syncCheckbox => {
-			syncCheckbox.addEventListener('change', updateSnippetTaxCheckboxStates);
-		});
-		updateSnippetTaxCheckboxStates();
-	}
-
-	bindSyncTaxonomyCheckboxes();
 
 	/**
 	 * Initializes any open accordions within a specific container.
@@ -620,7 +598,9 @@ document.addEventListener('DOMContentLoaded', () => {
 	const settingsWrapper = document.querySelector('.wrap');
 	if (settingsWrapper) {
 		// If there is any .accordion-content.open initially, show it and add a class to the title.
-		settingsWrapper.querySelectorAll('.accordion-content.open').forEach(content => {
+		settingsWrapper
+			.querySelectorAll('.accordion-content.open')
+			.forEach((content) => {
 			content.style.display = 'block';
 			const title = content.previousElementSibling;
 			if (title && title.classList.contains('accordion-title')) {
@@ -628,7 +608,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 		});
 
-		settingsWrapper.addEventListener('click', e => {
+		settingsWrapper.addEventListener('click', (e) => {
 			// Check if an accordion title was the target of the click.
 			const title = e.target.closest('.accordion-title');
 			if (!title) {
@@ -654,11 +634,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				// If it was just opened, initialize any CodeMirror instances inside.
 				if (!isOpen) {
-					content.querySelectorAll('.fe-ai-search-prompt-editor').forEach(textarea => {
-						initializeCodeMirror(textarea);
-					});
+					content
+						.querySelectorAll('.fe-ai-search-prompt-editor')
+						.forEach((textarea) => {
+							initializeCodeMirror(textarea);
+						});
 					// Also explicitly refresh any that might already exist.
-					content.querySelectorAll('.CodeMirror').forEach(cm => {
+					content.querySelectorAll('.CodeMirror').forEach((cm) => {
 						if (cm.CodeMirror) {
 							cm.CodeMirror.refresh();
 						}
@@ -672,22 +654,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	if (tabsWrapper) {
 		const tabContents = document.querySelectorAll('.tab-content');
-		tabContents.forEach(content => (content.style.display = 'none'));
+		tabContents.forEach((content) => (content.style.display = 'none'));
 
-		const activateTab = targetId => {
-			const targetTab = tabsWrapper.querySelector(`[href="${targetId}"]`);
+		const activateTab = (targetId) => {
+			if (!targetId || !document.querySelector(targetId)) {
+				return;
+			}
+
+			const targetTab = tabsWrapper.querySelector(`a[href = "${targetId}"]`);
 			const targetContent = document.querySelector(targetId);
 
 			tabsWrapper
 				.querySelectorAll('.nav-tab')
-				.forEach(tab => tab.classList.remove('nav-tab-active'));
-			tabContents.forEach(content => (content.style.display = 'none'));
+				.forEach((tab) => tab.classList.remove('nav-tab-active'));
+			tabContents.forEach((content) => (content.style.display = 'none'));
 
 			if (targetTab && targetContent) {
 				targetTab.classList.add('nav-tab-active');
 				targetContent.style.display = 'block';
+
+				// When a tab becomes visible, initialize any CodeMirror editors inside it.
+				targetContent
+					.querySelectorAll('.fe-ai-search-prompt-editor')
+					.forEach((textarea) => {
+						initializeCodeMirror(textarea);
+					});
 			}
 
+			// Remember the last active tab so that it can be restored after saving settings.
 			try {
 				window.localStorage.setItem('fe_ai_search_active_tab', targetId);
 			} catch (e) {
@@ -701,7 +695,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 		};
 
-		tabsWrapper.addEventListener('click', e => {
+		tabsWrapper.addEventListener('click', (e) => {
 			if (e.target.classList.contains('nav-tab')) {
 				e.preventDefault();
 				activateTab(e.target.getAttribute('href'));
@@ -727,7 +721,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				if (storedTabId && tabsWrapper.querySelector(`a[href = "${storedTabId}"]`)) {
 					initialTabId = storedTabId;
 				} else {
-					// 3 If neither is available, fall back to the first tab.
+					// 3) If neither is available, fall back to the first tab.
 					initialTabId = tabsWrapper.querySelector('.nav-tab')?.getAttribute('href');
 				}
 			}
@@ -741,54 +735,40 @@ document.addEventListener('DOMContentLoaded', () => {
 	// License Activation & Deactivation
 	// ==========================================================================
 
-	// License key visibility toggle (Show/Hide password) for all license inputs.
-	document.querySelectorAll('.fe-ai-search-license-toggle').forEach(toggle => {
-		const targetId = toggle.dataset.targetInputId;
-		if (!targetId) {
-			return;
-		}
-		const input = document.getElementById(targetId);
-		if (!input) {
-			return;
-		}
-		toggle.addEventListener('click', () => {
-			const isPassword = input.type === 'password';
-			input.type = isPassword ? 'text' : 'password';
-			toggle.textContent = isPassword
+	// License key visibility toggle (Show/Hide password).
+	const licenseInput = document.getElementById('fe_ai_search_license_key_input');
+	const licenseToggle = document.getElementById('fe_ai_search_license_toggle_visibility');
+	if (licenseInput && licenseToggle) {
+		licenseToggle.addEventListener('click', () => {
+			const isPassword = licenseInput.type === 'password';
+			licenseInput.type = isPassword ? 'text' : 'password';
+			licenseToggle.textContent = isPassword
 				? __('Hide', 'fe-ai-search')
 				: __('Show', 'fe-ai-search');
 		});
-	});
-
-	// Taxonomy enable checkbox toggle: show/hide behavior and term_ids inputs
-	document.querySelectorAll('.fe-ai-search-snippet-tax-enabled').forEach(checkbox => {
-		const wrapperClass = checkbox.dataset.targetWrapperClass;
-		if (!wrapperClass) {
-			return;
-		}
-		const wrapper = document.querySelector('.' + wrapperClass);
-		if (!wrapper) {
-			return;
-		}
-		// Initial state
-		wrapper.style.display = checkbox.checked ? 'block' : 'none';
-		// Toggle on change
-		checkbox.addEventListener('change', () => {
-			wrapper.style.display = checkbox.checked ? 'block' : 'none';
-		});
-	});
+	}
 
 	// We must use event delegation on the document body, because the license tab
 	// is part of the main settings form, not a separate Pro feature.
 	document.body.addEventListener('click', async e => {
-		const button = e.target.closest('[data-license-product-id][data-license-action]');
+		let action = '';
+		let button = null;
+		if (e.target.id === 'fe_ai_search_license_activate') {
+			action = 'activate';
+			button = e.target;
+		} else if (e.target.id === 'fe_ai_search_license_deactivate') {
+			action = 'deactivate';
+			button = e.target;
+		}
+
+		// If a license button was not clicked, do nothing.
 		if (!button) {
 			return;
 		}
 
-		const action = button.dataset.licenseAction;
-		const inputId = button.dataset.licenseInputId || 'fe_ai_search_license_key_input';
-		const licenseKeyInput = document.getElementById(inputId);
+		const licenseKeyInput = document.getElementById(
+			'fe_ai_search_license_key_input'
+		);
 		const licenseKey = licenseKeyInput ? licenseKeyInput.value : '';
 		const spinner = button.parentElement.querySelector('.spinner');
 		button.disabled = true;
@@ -819,14 +799,49 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 	});
 
-	// Notice repositioning
 	if (document.body.classList.contains('toplevel_page_fe-ai-search')) {
 		const wrap = document.querySelector('.wrap');
 		const header = document.querySelector('#plugin_header');
 		const firstNotice = document.querySelector('.notice.settings-error');
 
+		console.log('[FEAS] wrap:', !!wrap, 'header:', !!header, 'firstNotice:', !!firstNotice);
+
 		if (wrap && header && firstNotice) {
 			wrap.insertBefore(firstNotice, header);
 		}
+
+// Taxonomy configuration toggle functionality
+document.addEventListener('change', function(event) {
+if (
+event.target.matches(
+'input[name*="[snippet_taxonomies]"][name*="[enabled]"]'
+)
+) {
+const checkbox = event.target;
+const wrapper = checkbox
+.closest('td')
+.querySelector('fe-ai-search-tax-config-wrapper');
+if (wrapper) {
+wrapper.style.display = checkbox.checked ? 'block' : 'none';
+}
+}
+});
+
+// Custom fields toggle functionality
+document.addEventListener('change', function(event) {
+if (
+event.target.matches(
+'input[name*="[enable_custom_fields]"]'
+)
+) {
+const checkbox = event.target;
+const wrapper = checkbox
+.closest('td')
+.querySelector('fe-ai-search-custom-fields-wrapper');
+if (wrapper) {
+wrapper.style.display = checkbox.checked ? 'block' : 'none';
+}
+}
+});
 	}
 });

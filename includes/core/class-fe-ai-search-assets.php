@@ -19,8 +19,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use FEAISearch\Core\FE_AI_Search_License;
-
 /**
  * The assets handler class.
  *
@@ -35,14 +33,10 @@ use FEAISearch\Core\FE_AI_Search_License;
  */
 class FE_AI_Search_Assets {
 
-	private $options           = [];
-	private $is_license_active = false;
+	private $options = [];
 
 	public function __construct() {
 		$this->options = get_option( 'fe_ai_search_settings', [] );
-
-		// Check the status of the license (stored in its own option)
-		$this->is_license_active = FE_AI_Search_License::is_pro_active();
 
 		add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_assets' ] );
 	}
@@ -52,13 +46,17 @@ class FE_AI_Search_Assets {
 	 */
 	public function enqueue_assets() {
 		// Pro settings (used for rate limiting and privacy configuration).
-		$pro_options   = [];
-		$has_pro_class = class_exists( '\\FEAISearch\\Pro\\Admin\\FE_AI_Search_Pro_Settings' );
-		$is_pro        = ( $this->is_license_active && $has_pro_class );
-
-		if ( $is_pro ) {
+		$pro_options = [];
+		if ( $is_license_active && class_exists( '\\FEAISearch\\Pro\\Admin\\FE_AI_Search_Pro_Settings' ) ) {
 			$pro_options = get_option( 'fe_ai_search_pro_settings', [] );
 		}
+
+		// License settings values
+		$license_data      = get_option( 'fe_ai_search_license', [] );
+		$status            = $license_data['status'] ?? 'inactive';
+		$data              = $license_data['data'] ?? [];
+		$product_id        = isset( $data['productId'] ) ? (int) $data['productId'] : 0;
+		$is_license_active = ( 'active' === $status && 65 === $product_id ); // 65 is the product ID for the Pro add-on.
 
 		// UI settings values
 		$ui_options        = $this->options['display']['ui'] ?? [];
@@ -240,9 +238,6 @@ class FE_AI_Search_Assets {
 			'fe_ai_search_rate_limit_message',
 			__( '(You have reached the request limit. Please wait a while before trying again.)', 'fe-ai-search' )
 		);
-
-		// Check license status
-		$is_license_active = $this->is_license_active;
 
 		// Expose configuration and runtime data to the frontend chat script.
 		wp_localize_script(

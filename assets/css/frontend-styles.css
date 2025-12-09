@@ -38,13 +38,10 @@
 	justify-content: center;
 	width: 65px;
 	height: 65px;
-
 	/* background-color: var(--feais-accent); */
-
 	/* color: var(--feais-text); */
 	color: #fff;
 	border-radius: 50%;
-
 	/* box-shadow: 0 4px 8px rgba(0,0,0,0.2); */
 	cursor: pointer;
 	transition: all 0.2s ease-in-out;
@@ -77,61 +74,36 @@
 }
 
 #fe_ai_search_chat_bubble:hover #fe_ai_search_chat_bubble_icon {
-
 	/* width: 52px;
 	height: 52px; */
 	opacity: 0;
 }
 
 #fe_ai_search_chat_bubble:hover #fe_ai_search_chat_bubble_icon_face {
-
 	/* width: 52px;
 	height: 52px; */
 	opacity: 1;
 }
 
 @keyframes opacity {
-
-	0% {
-		opacity: 0.7;
-	}
-
-	100% {
-		opacity: 1;
-	}
+	0% { opacity: 0.7; }
+	100% { opacity: 1; }
 }
-
 @keyframes shimmer {
-
-	0% {
-		background-position: 0% 50%;
-	}
-
-	100% {
-		background-position: 100% 50%;
-	}
+	0% { background-position: 0% 50%; }
+	100% { background-position: 100% 50%; }
 }
 
 @keyframes pulse {
-
-	0% {
-		transform: scale(1);
-	}
-
-	50% {
-		transform: scale(1.08);
-	}
-
-	100% {
-		transform: scale(1);
-	}
+	0%   { transform: scale(1); }
+	50%  { transform: scale(1.08); }
+	100% { transform: scale(1); }
 }
 
 #fe_ai_search_chat_bubble {
-	animation:
-		shimmer 6s ease-in-out infinite alternate,
-		pulse 4s ease-in-out infinite,
-		opacity 3s linear infinite alternate;
+	animation: shimmer 6s ease-in-out infinite alternate,
+	           pulse 4s ease-in-out infinite,
+			   opacity 3s linear infinite alternate;
 	background: linear-gradient(135deg, #00f, #0ff, #f0f, #00f);
 	background-size: 500% 500%;
 }
@@ -142,7 +114,7 @@
 	max-width: 90vw;
 	max-height: 85vh;
 	border-radius: 10px;
-	box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+	box-shadow: 0 5px 15px rgba(0,0,0,0.3);
 }
 
 #fe_ai_search_chat_footer {
@@ -199,7 +171,7 @@
 	border-radius: 8px;
 	padding: 10px;
 	margin-bottom: 5px;
-	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+	box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 	white-space: nowrap;
 }
 
@@ -213,7 +185,7 @@
 	color: var(--feais-text);
 }
 
-#fe_ai_search_options_menu label [type="checkbox"] {
+#fe_ai_search_options_menu label [type=checkbox] {
 	margin: 0 0.5em 0 0;
 }
 
@@ -300,13 +272,8 @@
 	height: calc(100vh - 120px); /* Full viewport height minus header/footer */
 }
 
-.is-fullscreen .icon-maximize {
-	display: none;
-}
-
-.is-fullscreen .icon-minimize {
-	display: block !important;
-}
+.is-fullscreen .icon-maximize { display: none; }
+.is-fullscreen .icon-minimize { display: block !important; }
 
 .is-fullscreen #fe_ai_search_chat_bubble,
 .is-fullscreen #fe_ai_search_chat_close {
@@ -331,7 +298,6 @@
 	justify-content: space-between;
 	align-items: center;
 	padding: 10px 15px;
-
 	/* background: var(--feais-bg); */
 	border-bottom: 1px solid var(--feais-border);
 }
@@ -364,22 +330,16 @@
 	color: var(--feais-text);
 }
 
-#fe_ai_search_chat_home_link {
-	display: none;
-	margin-right: 10px;
-}
-
+#fe_ai_search_chat_home_link { display: none; margin-right: 10px; }
 #fe_ai_search_chat_home_link svg,
 #fe_ai_search_chat_fullscreen_toggle svg,
 #fe_ai_search_chat_close svg {
 	width: 20px;
 	height: 20px;
-	fill: currentcolor;
+	fill: currentColor;
 }
 
-.icon-minimize {
-	display: none;
-}
+.icon-minimize { display: none; }
 
 /* ==========================================================================
 	Chat Messages Area
@@ -423,7 +383,7 @@
 
 .fe-ai-search-message-ai p::before {
 	display: block;
-	content: "";
+	content: '';
 	border-left: 2px;
 	background: black;
 }
@@ -454,7 +414,7 @@
 #fe_ai_search_send_mode_toggle {
 	width: fit-content;
 	color: var(--feais-text);
-	font-size: 0.9rem;
+    font-size: 0.9rem;
 	background: var(--feais-bg);
 }
 
@@ -487,7 +447,7 @@
 }
 
 .fe-ai-search-message-user p::after {
-	content: "";
+	content: '';
 	position: absolute;
 	top: 15px;
 	right: -8px;
@@ -590,7 +550,7 @@
 #fe_ai_search_chat_form button {
 	opacity: 0.7;
 	padding: 8px 15px;
-
+	background: linear-gradient(25deg, var(--feais-accent-top, var(--feais-accent)) 0%, var(--feais-accent-bottom, var(--feais-accent)) 55%);
 	/* color: var(--feais-text); */
 	color: white;
 	border: none;
@@ -633,8 +593,5 @@
 }
 
 @keyframes spin {
-
-	to {
-		transform: rotate(360deg);
-	}
+	to { transform: rotate(360deg); }
 }

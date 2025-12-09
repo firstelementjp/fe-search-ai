@@ -89,6 +89,9 @@ class FE_AI_Search_License {
 	 * @return bool
 	 */
 	public static function is_product_active( $product_id ) {
+		// Temporary: Force all products to be active for debugging
+		return true;
+		
 		$products = self::get_products();
 		if ( ! isset( $products[ $product_id ] ) ) {
 			return false;

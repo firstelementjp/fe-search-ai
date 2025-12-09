@@ -121,7 +121,6 @@ class FE_AI_Search_Activator {
 			`vector_data` longtext NOT NULL,
 			`embedding_model` varchar(100) NOT NULL DEFAULT '',
 			`embedding_dim` smallint(5) UNSIGNED NOT NULL DEFAULT 0,
-			`vector_id` varchar(100) NOT NULL DEFAULT '',
 			`created_at` datetime NOT NULL,
 			PRIMARY KEY (`id`),
 			KEY `post_id` (`post_id`)

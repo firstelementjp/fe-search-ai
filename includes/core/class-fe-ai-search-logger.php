@@ -96,41 +96,4 @@ class FE_AI_Search_Logger {
 		// Use TRUNCATE to efficiently delete all rows.
 		$wpdb->query( "TRUNCATE TABLE `{$table_name}`" );
 	}
-
-	/**
-	 * Performs log rotation for both system logs and conversation logs.
-	 *
-	 * Deletes log entries older than the specified retention period.
-	 * This method is called by the daily cron job.
-	 *
-	 * @since 1.0.0
-	 * @return void
-	 */
-	public static function rotate_logs() {
-		$options  = get_option( 'fe_ai_search_settings', [] );
-		$advanced = $options['advanced'] ?? [];
-		$days     = isset( $advanced['log_retention_days'] ) ? (int) $advanced['log_retention_days'] : 30;
-
-		// Do not perform automatic deletion if value is 0 or less.
-		if ( $days <= 0 ) {
-			return;
-		}
-
-		$timestamp = current_time( 'timestamp' );
-		$cutoff    = gmdate( 'Y-m-d H:i:s', $timestamp - ( $days * DAY_IN_SECONDS ) );
-
-		global $wpdb;
-		$system_logs_table = $wpdb->prefix . 'fe_ai_search_system_logs';
-		$conv_logs_table   = $wpdb->prefix . 'fe_ai_search_logs';
-
-		// System log rotation.
-		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $system_logs_table ) ) === $system_logs_table ) {
-			$wpdb->query( $wpdb->prepare( "DELETE FROM `{$system_logs_table}` WHERE `created_at` < %s", $cutoff ) );
-		}
-
-		// Conversation log rotation.
-		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $conv_logs_table ) ) === $conv_logs_table ) {
-			$wpdb->query( $wpdb->prepare( "DELETE FROM `{$conv_logs_table}` WHERE `created_at` < %s", $cutoff ) );
-		}
-	}
 }
