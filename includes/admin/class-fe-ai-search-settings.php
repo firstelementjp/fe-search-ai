@@ -994,26 +994,45 @@ class FE_AI_Search_Settings {
 											}
 											$snippet_tax_behavior = $pt_options['snippet_taxonomies'][ $tax->name ]['behavior'] ?? 'include_terms';
 											$snippet_tax_term_ids = $pt_options['snippet_taxonomies'][ $tax->name ]['term_ids'] ?? '';
+											$snippet_tax_enabled = ! empty( $pt_options['snippet_taxonomies'][ $tax->name ]['enabled'] );
+											$tax_enabled_checkbox_id = sanitize_html_class( 'fe-ai-search-snippet-tax-enabled-' . $post_type->name . '-' . $tax->name );
 											$tax_behavior_radio_name = "fe_ai_search_settings[sync][targets][{$post_type->name}][snippet_taxonomies][{$tax->name}][behavior]";
 											$tax_term_ids_name = "fe_ai_search_settings[sync][targets][{$post_type->name}][snippet_taxonomies][{$tax->name}][term_ids]";
+											$tax_config_wrapper_class = sanitize_html_class( 'fe-ai-search-tax-config-wrapper-' . $post_type->name . '-' . $tax->name );
 											?>
 											<tr>
 												<td><?php printf( esc_html__( '%s taxonomy', 'fe-ai-search' ), esc_html( $tax->label ) ); ?></td>
 												<td>
-													<div style="margin-bottom: 0.5em;">
-														<label style="margin-right: 1em;">
-															<input type="radio" name="<?php echo esc_attr( $tax_behavior_radio_name ); ?>" value="include_terms" <?php checked( $snippet_tax_behavior, 'include_terms' ); ?>>
-															<?php esc_html_e( 'Include only specified term IDs', 'fe-ai-search' ); ?>
-														</label>
+													<div>
 														<label>
-															<input type="radio" name="<?php echo esc_attr( $tax_behavior_radio_name ); ?>" value="exclude_terms" <?php checked( $snippet_tax_behavior, 'exclude_terms' ); ?>>
-															<?php esc_html_e( 'Exclude specified term IDs', 'fe-ai-search' ); ?>
+															<input
+																type="checkbox"
+																id="<?php echo esc_attr( $tax_enabled_checkbox_id ); ?>"
+																class="fe-ai-search-snippet-tax-enabled"
+																data-target-wrapper-class="<?php echo esc_attr( $tax_config_wrapper_class ); ?>"
+																name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_taxonomies][<?php echo esc_attr( $tax->name ); ?>][enabled]"
+																value="1"
+																<?php checked( $snippet_tax_enabled ); ?>
+															>
+															<?php //esc_html_e( 'Include this taxonomy in chunk data', 'fe-ai-search' ); ?>
 														</label>
 													</div>
-													<input type="text" name="<?php echo esc_attr( $tax_term_ids_name ); ?>" value="<?php echo esc_attr( $snippet_tax_term_ids ); ?>" placeholder="<?php esc_attr_e( 'e.g. 3,7,12', 'fe-ai-search' ); ?>" class="regular-text">
-													<p class="description">
-														<?php esc_html_e( 'Comma-separated term IDs. Leave empty to include all terms (for Include) or exclude none (for Exclude).', 'fe-ai-search' ); ?>
-													</p>
+													<div class="<?php echo esc_attr( $tax_config_wrapper_class ); ?> fe-ai-search-tax-config-wrapper" style="margin-top: 0.5em; padding-left: 2em; <?php echo $snippet_tax_enabled ? '' : 'display: none;'; ?>">
+														<div style="margin-bottom: 0.5em;">
+															<label style="margin-right: 1em;">
+																<input type="radio" name="<?php echo esc_attr( $tax_behavior_radio_name ); ?>" value="include_terms" <?php checked( $snippet_tax_behavior, 'include_terms' ); ?>>
+																<?php esc_html_e( 'Include only specified term IDs', 'fe-ai-search' ); ?>
+															</label>
+															<label>
+																<input type="radio" name="<?php echo esc_attr( $tax_behavior_radio_name ); ?>" value="exclude_terms" <?php checked( $snippet_tax_behavior, 'exclude_terms' ); ?>>
+																<?php esc_html_e( 'Exclude specified term IDs', 'fe-ai-search' ); ?>
+															</label>
+														</div>
+														<input type="text" name="<?php echo esc_attr( $tax_term_ids_name ); ?>" value="<?php echo esc_attr( $snippet_tax_term_ids ); ?>" placeholder="<?php esc_attr_e( 'e.g. 3,7,12', 'fe-ai-search' ); ?>" class="regular-text">
+														<p class="description">
+															<?php esc_html_e( 'Comma-separated term IDs. Leave empty to include all terms (for Include) or exclude none (for Exclude).', 'fe-ai-search' ); ?>
+														</p>
+													</div>
 												</td>
 											</tr>
 											<?php
@@ -2413,16 +2432,18 @@ class FE_AI_Search_Settings {
 				$new_input[ $pt_name ]['snippet_custom_fields'] = sanitize_textarea_field( $input[ $pt_name ]['snippet_custom_fields'] );
 			}
 
-			// Taxonomies: new per-taxonomy behavior/term_ids structure
+			// Taxonomies: new per-taxonomy enabled/behavior/term_ids structure
 			if ( isset( $input[ $pt_name ]['snippet_taxonomies'] ) && is_array( $input[ $pt_name ]['snippet_taxonomies'] ) ) {
 				$new_input[ $pt_name ]['snippet_taxonomies'] = [];
 				foreach ( $input[ $pt_name ]['snippet_taxonomies'] as $tax_name => $tax_config ) {
 					if ( ! is_array( $tax_config ) ) {
 						continue;
 					}
+					$enabled = ! empty( $tax_config['enabled'] );
 					$behavior = in_array( $tax_config['behavior'] ?? '', [ 'include_terms', 'exclude_terms' ], true ) ? $tax_config['behavior'] : 'include_terms';
 					$term_ids = sanitize_text_field( $tax_config['term_ids'] ?? '' );
 					$new_input[ $pt_name ]['snippet_taxonomies'][ $tax_name ] = [
+						'enabled'  => $enabled,
 						'behavior' => $behavior,
 						'term_ids' => $term_ids,
 					];

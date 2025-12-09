@@ -20,7 +20,7 @@ define( 'FE_AI_SEARCH_PLUGIN_FILE', __FILE__ );
 define( 'FE_AI_SEARCH_PRO_URL', 'https://fe-search.com/ai/pro' );
 
 add_action(
-	'plugins_loaded',
+	'init',
 	static function () {
 		load_plugin_textdomain(
 			'fe-ai-search',

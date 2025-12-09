@@ -48,24 +48,24 @@ class FE_AI_Search_Sync_Handler {
 	 *
 	 * @return void
 	 */
-	public function __construct() {
+public function __construct() {
 
-		$this->options           = get_option( 'fe_ai_search_settings', [] );
-		$this->segmenter         = new TinySegmenter();
-		$this->is_license_active = FE_AI_Search_License::is_pro_active();
+	$this->options           = get_option( 'fe_ai_search_settings', [] );
+	$this->segmenter         = new TinySegmenter();
+	$this->is_license_active = FE_AI_Search_License::is_pro_active();
 
-		add_filter( 'fe_ai_search_tokenizer_status', [ $this, 'add_japanese_tokenizer_status' ] );
-		add_action( 'wp_ajax_fe_ai_search_start_sync', [ $this, 'ajax_start_sync' ] );
-		add_action( 'wp_ajax_fe_ai_search_process_batch', [ $this, 'ajax_process_batch' ] );
-		add_action( 'wp_ajax_fe_ai_search_update_sync_timestamp', [ $this, 'ajax_update_sync_timestamp' ] );
-		add_action( 'wp_ajax_fe_ai_search_delete_vectors', [ $this, 'ajax_delete_vectors' ] );
-		add_action( 'wp_ajax_fe_ai_search_start_smart_sync', [ $this, 'ajax_start_smart_sync' ] );
-		add_action( 'wp_ajax_fe_ai_search_update_settings_hash', [ $this, 'ajax_update_settings_hash' ] );
+	add_filter( 'fe_ai_search_tokenizer_status', [ $this, 'add_japanese_tokenizer_status' ] );
+	add_action( 'wp_ajax_fe_ai_search_start_sync', [ $this, 'ajax_start_sync' ] );
+	add_action( 'wp_ajax_fe_ai_search_process_batch', [ $this, 'ajax_process_batch' ] );
+	add_action( 'wp_ajax_fe_ai_search_update_sync_timestamp', [ $this, 'ajax_update_sync_timestamp' ] );
+	add_action( 'wp_ajax_fe_ai_search_delete_vectors', [ $this, 'ajax_delete_vectors' ] );
+	add_action( 'wp_ajax_fe_ai_search_start_smart_sync', [ $this, 'ajax_start_smart_sync' ] );
+	add_action( 'wp_ajax_fe_ai_search_update_settings_hash', [ $this, 'ajax_update_settings_hash' ] );
 
-		if ( is_admin() ) {
-			add_action( 'admin_notices', [ $this, 'render_i18n_notice' ] );
-		}
+	if ( is_admin() ) {
+		add_action( 'admin_notices', [ $this, 'render_i18n_notice' ] );
 	}
+}
 
 	/**
 	 * Starts a full rebuild of the index.
@@ -75,39 +75,39 @@ class FE_AI_Search_Sync_Handler {
 	 *
 	 * @return void
 	 */
-	public function ajax_start_sync() {
-		check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
+public function ajax_start_sync() {
+	check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
 
-		global $wpdb;
-		$vectors_table = $wpdb->prefix . 'fe_ai_search_vectors';
-		$index_table   = $wpdb->prefix . 'fe_ai_search_keyword_index';
-		$wpdb->query( "TRUNCATE TABLE `{$vectors_table}`" );
-		$wpdb->query( "TRUNCATE TABLE `{$index_table}`" );
+	global $wpdb;
+	$vectors_table = $wpdb->prefix . 'fe_ai_search_vectors';
+	$index_table   = $wpdb->prefix . 'fe_ai_search_keyword_index';
+	$wpdb->query( "TRUNCATE TABLE `{$vectors_table}`" );
+	$wpdb->query( "TRUNCATE TABLE `{$index_table}`" );
 
-		// Normalize sync options structure to a safe array using new schema.
-		$sync_root = $this->options['sync'] ?? [];
-		if ( ! is_array( $sync_root ) ) {
-			$sync_root = [];
-		}
-		$targets = isset( $sync_root['targets'] ) && is_array( $sync_root['targets'] ) ? $sync_root['targets'] : [];
+	// Normalize sync options structure to a safe array using new schema.
+	$sync_root = $this->options['sync'] ?? [];
+	if ( ! is_array( $sync_root ) ) {
+		$sync_root = [];
+	}
+	$targets = isset( $sync_root['targets'] ) && is_array( $sync_root['targets'] ) ? $sync_root['targets'] : [];
 
-		$include_ids_str = '';
-		$exclude_ids_str = '';
-		if ( isset( $sync_root['include'] ) && is_array( $sync_root['include'] ) ) {
-			$include_ids_str = (string) ( $sync_root['include']['ids'] ?? '' );
-		}
-		if ( isset( $sync_root['exclude'] ) && is_array( $sync_root['exclude'] ) ) {
-			$exclude_ids_str = (string) ( $sync_root['exclude']['ids'] ?? '' );
-		}
+	$include_ids_str = '';
+	$exclude_ids_str = '';
+	if ( isset( $sync_root['include'] ) && is_array( $sync_root['include'] ) ) {
+		$include_ids_str = (string) ( $sync_root['include']['ids'] ?? '' );
+	}
+	if ( isset( $sync_root['exclude'] ) && is_array( $sync_root['exclude'] ) ) {
+		$exclude_ids_str = (string) ( $sync_root['exclude']['ids'] ?? '' );
+	}
 
-		$limit = isset( $sync_root['limit'] ) ? (int) $sync_root['limit'] : -1;
+	$limit = isset( $sync_root['limit'] ) ? (int) $sync_root['limit'] : -1;
 
-		$post_types_to_sync = [];
-		if ( ! empty( $targets ) ) {
-			foreach ( $targets as $pt_slug => $pt_options ) {
-				if ( ! empty( $pt_options['enabled'] ) ) {
-					// Skip if no Include in Chunk Data options are selected
-					$has_any_snippet = (
+	$post_types_to_sync = [];
+	if ( ! empty( $targets ) ) {
+		foreach ( $targets as $pt_slug => $pt_options ) {
+			if ( ! empty( $pt_options['enabled'] ) ) {
+				// Skip if no Include in Chunk Data options are selected
+				$has_any_snippet = (
 					! empty( $pt_options['snippet_include_title'] ) ||
 					! empty( $pt_options['snippet_include_content'] ) ||
 					! empty( $pt_options['snippet_include_date'] ) ||
@@ -123,63 +123,63 @@ class FE_AI_Search_Sync_Handler {
 						)
 					) ||
 					( ! empty( $pt_options['enable_custom_fields'] ) && ! empty( $pt_options['snippet_custom_fields'] ) )
-					);
-					if ( $has_any_snippet ) {
-						$post_types_to_sync[] = $pt_slug;
-					}
+				);
+				if ( $has_any_snippet ) {
+					$post_types_to_sync[] = $pt_slug;
 				}
 			}
 		}
-
-		$args = [
-			'post_status'    => 'publish',
-			'fields'         => 'ids',
-			'cache_results'  => false,
-			'posts_per_page' => $limit,
-			'orderby'        => 'date',
-			'order'          => 'DESC',
-		];
-
-		$include_ids = array_filter( array_map( 'intval', explode( ',', $include_ids_str ) ) );
-		$exclude_ids = array_filter( array_map( 'intval', explode( ',', $exclude_ids_str ) ) );
-
-		if ( ! empty( $include_ids ) ) {
-			$args['post__in'] = $include_ids;
-		} else {
-			$args['post_type'] = empty( $post_types_to_sync ) ? [ 'post', 'page' ] : $post_types_to_sync;
-			if ( ! empty( $exclude_ids ) ) {
-				$args['post__not_in'] = $exclude_ids;
-			}
-		}
-
-		/**
-		 * Filters the query arguments used to fetch posts for synchronization.
-		 *
-		 * This hook allows developers to add custom query parameters (e.g., meta_query,
-		 * category__in) to modify which posts are selected for indexing by the AI.
-		 *
-		 * @since 1.0.0
-		 *
-		 * @param array $args The array of query arguments passed to `get_posts()`.
-		 */
-		$args = apply_filters( 'fe_ai_search_sync_query_args', $args );
-
-		$all_post_ids = get_posts( $args );
-		$total_posts  = count( $all_post_ids );
-
-		$sync_options = isset( $this->options['sync'] ) && is_array( $this->options['sync'] ) ? $this->options['sync'] : [];
-		$batch_size   = (int) ( $sync_options['batch_size'] ?? 10 );
-		$total_pages  = ceil( $total_posts / $batch_size );
-
-		wp_send_json_success(
-			[
-				'total_pages' => $total_pages,
-				'total_posts' => $total_posts,
-				'post_ids'    => $all_post_ids, // Pass the list of IDs to be processed to JS
-				'batch_size'  => $batch_size,
-			]
-		);
 	}
+
+	$args = [
+		'post_status'    => 'publish',
+		'fields'         => 'ids',
+		'cache_results'  => false,
+		'posts_per_page' => $limit,
+		'orderby'        => 'date',
+		'order'          => 'DESC',
+	];
+
+	$include_ids = array_filter( array_map( 'intval', explode( ',', $include_ids_str ) ) );
+	$exclude_ids = array_filter( array_map( 'intval', explode( ',', $exclude_ids_str ) ) );
+
+	if ( ! empty( $include_ids ) ) {
+		$args['post__in'] = $include_ids;
+	} else {
+		$args['post_type'] = empty( $post_types_to_sync ) ? [ 'post', 'page' ] : $post_types_to_sync;
+		if ( ! empty( $exclude_ids ) ) {
+			$args['post__not_in'] = $exclude_ids;
+		}
+	}
+
+	/**
+	 * Filters the query arguments used to fetch posts for synchronization.
+	 *
+	 * This hook allows developers to add custom query parameters (e.g., meta_query,
+	 * category__in) to modify which posts are selected for indexing by the AI.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $args The array of query arguments passed to `get_posts()`.
+	 */
+	$args = apply_filters( 'fe_ai_search_sync_query_args', $args );
+
+	$all_post_ids = get_posts( $args );
+	$total_posts  = count( $all_post_ids );
+
+	$sync_options = isset( $this->options['sync'] ) && is_array( $this->options['sync'] ) ? $this->options['sync'] : [];
+	$batch_size   = (int) ( $sync_options['batch_size'] ?? 10 );
+	$total_pages  = ceil( $total_posts / $batch_size );
+
+	wp_send_json_success(
+		[
+			'total_pages' => $total_pages,
+			'total_posts' => $total_posts,
+			'post_ids'    => $all_post_ids, // Pass the list of IDs to be processed to JS
+			'batch_size'  => $batch_size,
+		]
+	);
+}
 
 	/**
 	 * Starts a smart (incremental) sync based on the last sync timestamp.
@@ -189,186 +189,186 @@ class FE_AI_Search_Sync_Handler {
 	 *
 	 * @return void
 	 */
-	public function ajax_start_smart_sync() {
-		check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( [ 'message' => 'Permission denied.' ] );
-		}
+public function ajax_start_smart_sync() {
+	check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+	}
 
-		// Use the new sync schema for static configuration: enabled post types,
-		// limits, etc. are stored under fe_ai_search_settings['sync'].
-		$sync_root = $this->options['sync'] ?? [];
-		if ( ! is_array( $sync_root ) ) {
-			$sync_root = [];
-		}
-		$targets    = isset( $sync_root['targets'] ) && is_array( $sync_root['targets'] ) ? $sync_root['targets'] : [];
-		$sync_limit = isset( $sync_root['limit'] ) ? (int) $sync_root['limit'] : -1;
+	// Use the new sync schema for static configuration: enabled post types,
+	// limits, etc. are stored under fe_ai_search_settings['sync'].
+	$sync_root = $this->options['sync'] ?? [];
+	if ( ! is_array( $sync_root ) ) {
+		$sync_root = [];
+	}
+	$targets    = isset( $sync_root['targets'] ) && is_array( $sync_root['targets'] ) ? $sync_root['targets'] : [];
+	$sync_limit = isset( $sync_root['limit'] ) ? (int) $sync_root['limit'] : -1;
 
-		// Runtime state (status/settings) is stored separately in
-		// fe_ai_search_sync_state to avoid interference from settings sanitization
-		// or other code paths that update fe_ai_search_settings.
-		$sync_state         = get_option( 'fe_ai_search_sync_state', [] );
-		$sync_status        = isset( $sync_state['status'] ) && is_array( $sync_state['status'] ) ? $sync_state['status'] : [];
-		$state_settings     = isset( $sync_state['settings'] ) && is_array( $sync_state['settings'] ) ? $sync_state['settings'] : [];
-		$post_types_to_sync = [];
-		if ( ! empty( $targets ) ) {
-			foreach ( $targets as $pt_slug => $pt_options ) {
-				if ( ! empty( $pt_options['enabled'] ) ) {
-					$post_types_to_sync[] = $pt_slug;
-				}
+	// Runtime state (status/settings) is stored separately in
+	// fe_ai_search_sync_state to avoid interference from settings sanitization
+	// or other code paths that update fe_ai_search_settings.
+	$sync_state         = get_option( 'fe_ai_search_sync_state', [] );
+	$sync_status        = isset( $sync_state['status'] ) && is_array( $sync_state['status'] ) ? $sync_state['status'] : [];
+	$state_settings     = isset( $sync_state['settings'] ) && is_array( $sync_state['settings'] ) ? $sync_state['settings'] : [];
+	$post_types_to_sync = [];
+	if ( ! empty( $targets ) ) {
+		foreach ( $targets as $pt_slug => $pt_options ) {
+			if ( ! empty( $pt_options['enabled'] ) ) {
+				$post_types_to_sync[] = $pt_slug;
 			}
 		}
+	}
 
-		if ( empty( $post_types_to_sync ) ) {
-			wp_send_json_success(
-				[
-					'total_pages' => 0,
-					'total_posts' => 0,
-					'post_ids'    => [],
-				]
-			);
-			return;
-		}
-
-		// Check if sync settings have changed.
-		// Derive a pure "settings snapshot" from the static sync config by
-		// removing any runtime fields before hashing.
-		$settings_root = $sync_root;
-		unset( $settings_root['status'], $settings_root['settings'] );
-		$current_settings_hash = md5( serialize( $settings_root ) );
-		$last_settings_hash    = $state_settings['hash'] ?? '';
-		$last_sync_timestamp   = (int) ( $state_settings['last_sync_timestamp'] ?? 0 );
-
-		if ( $last_sync_timestamp && $current_settings_hash !== $last_settings_hash ) {
-			wp_send_json_error( [ 'message' => __( 'Sync settings have changed. Please use "Rebuild All" to apply the new settings.', 'fe-ai-search' ) ] );
-		}
-
-		// Find deleted posts
-		global $wpdb;
-		$vectors_table         = $wpdb->prefix . 'fe_ai_search_vectors';
-		$indexed_post_ids      = array_map( 'intval', $wpdb->get_col( "SELECT DISTINCT post_id FROM {$vectors_table}" ) );
-		$all_existing_post_ids = array_map(
-			'intval',
-			get_posts(
-				[
-					'post_type'      => $post_types_to_sync,
-					'posts_per_page' => -1,
-					'fields'         => 'ids',
-					'post_status'    => 'publish',
-				]
-			)
+	if ( empty( $post_types_to_sync ) ) {
+		wp_send_json_success(
+			[
+				'total_pages' => 0,
+				'total_posts' => 0,
+				'post_ids'    => [],
+			]
 		);
-		$deleted_post_ids      = array_diff( $indexed_post_ids, $all_existing_post_ids );
+		return;
+	}
 
-		if ( ! empty( $deleted_post_ids ) ) {
-			foreach ( $deleted_post_ids as $post_id ) {
-				$GLOBALS['fe_ai_search_sync_hooks']->delete_post_from_index( $post_id );
-			}
-		}
+	// Check if sync settings have changed.
+	// Derive a pure "settings snapshot" from the static sync config by
+	// removing any runtime fields before hashing.
+	$settings_root = $sync_root;
+	unset( $settings_root['status'], $settings_root['settings'] );
+	$current_settings_hash = md5( serialize( $settings_root ) );
+	$last_settings_hash    = $state_settings['hash'] ?? '';
+	$last_sync_timestamp   = (int) ( $state_settings['last_sync_timestamp'] ?? 0 );
 
-		// --- 4. Find new and updated posts ---
-		// Baseline is now stored only in sync['status']['last_sync_timestamp'].
-		$last_sync = isset( $sync_status['last_sync_timestamp'] ) ? (int) $sync_status['last_sync_timestamp'] : 0;
+	if ( $last_sync_timestamp && $current_settings_hash !== $last_settings_hash ) {
+		wp_send_json_error( [ 'message' => __( 'Sync settings have changed. Please use "Rebuild All" to apply the new settings.', 'fe-ai-search' ) ] );
+	}
 
-		// If there is no previous sync timestamp, we treat this as "no baseline"
-		// and do NOT attempt a Smart Sync (to avoid syncing the entire site by mistake).
-		if ( 0 === $last_sync ) {
-			wp_send_json_success(
-				[
-					'total_pages' => 0,
-					'total_posts' => 0,
-					'post_ids'    => [],
-					'message'     => __( 'No previous sync baseline found. Please run "Rebuild Index" once before using "Sync Changes".', 'fe-ai-search' ),
-				]
-			);
-		}
-		// Convert the stored local timestamp to a GMT datetime string for post_modified_gmt.
-		$last_sync_local_datetime = date( 'Y-m-d H:i:s', $last_sync );
-		$last_sync_gmt_timestamp  = get_gmt_from_date( $last_sync_local_datetime, 'U' );
-		$last_sync_gmt_datetime   = date( 'Y-m-d H:i:s', $last_sync_gmt_timestamp );
-
-		$updated_post_ids = get_posts(
+	// Find deleted posts
+	global $wpdb;
+	$vectors_table         = $wpdb->prefix . 'fe_ai_search_vectors';
+	$indexed_post_ids      = array_map( 'intval', $wpdb->get_col( "SELECT DISTINCT post_id FROM {$vectors_table}" ) );
+	$all_existing_post_ids = array_map(
+		'intval',
+		get_posts(
 			[
 				'post_type'      => $post_types_to_sync,
 				'posts_per_page' => -1,
 				'fields'         => 'ids',
-				'date_query'     => [
-					[
-						'column' => 'post_modified_gmt',
-						'after'  => $last_sync_gmt_datetime,
-					],
-				],
+				'post_status'    => 'publish',
 			]
-		);
+		)
+	);
+	$deleted_post_ids      = array_diff( $indexed_post_ids, $all_existing_post_ids );
 
-		// --- 5. Apply global sync limit and return the list of IDs to process to JavaScript ---
-		$post_ids_to_process = array_values( array_unique( $updated_post_ids ) );
-		if ( $sync_limit > 0 && count( $post_ids_to_process ) > $sync_limit ) {
-			$post_ids_to_process = array_slice( $post_ids_to_process, 0, $sync_limit );
+	if ( ! empty( $deleted_post_ids ) ) {
+		foreach ( $deleted_post_ids as $post_id ) {
+			$GLOBALS['fe_ai_search_sync_hooks']->delete_post_from_index( $post_id );
 		}
-		$total_posts = count( $post_ids_to_process );
+	}
 
-		// Enforce a minimum batch size of 1 to avoid division by zero.
-		$raw_batch_size = isset( $sync_options['batch_size'] ) ? (int) $sync_options['batch_size'] : 10;
-		$batch_size     = max( 1, $raw_batch_size );
-		$total_pages    = ( $total_posts > 0 ) ? ceil( $total_posts / $batch_size ) : 0;
+	// --- 4. Find new and updated posts ---
+	// Baseline is now stored only in sync['status']['last_sync_timestamp'].
+	$last_sync = isset( $sync_status['last_sync_timestamp'] ) ? (int) $sync_status['last_sync_timestamp'] : 0;
 
-		// After a successful sync, the settings hash should be updated.
-		// We do this here, assuming the JS process will complete.
-		// update_option( 'fe_ai_search_last_settings_hash', $current_settings_hash );
-
+	// If there is no previous sync timestamp, we treat this as "no baseline"
+	// and do NOT attempt a Smart Sync (to avoid syncing the entire site by mistake).
+	if ( 0 === $last_sync ) {
 		wp_send_json_success(
 			[
-				'total_pages' => $total_pages,
-				'total_posts' => $total_posts,
-				'post_ids'    => $post_ids_to_process,
-				'batch_size'  => $batch_size,
+				'total_pages' => 0,
+				'total_posts' => 0,
+				'post_ids'    => [],
+				'message'     => __( 'No previous sync baseline found. Please run "Rebuild Index" once before using "Sync Changes".', 'fe-ai-search' ),
 			]
 		);
 	}
+	// Convert the stored local timestamp to a GMT datetime string for post_modified_gmt.
+	$last_sync_local_datetime = date( 'Y-m-d H:i:s', $last_sync );
+	$last_sync_gmt_timestamp  = get_gmt_from_date( $last_sync_local_datetime, 'U' );
+	$last_sync_gmt_datetime   = date( 'Y-m-d H:i:s', $last_sync_gmt_timestamp );
+
+	$updated_post_ids = get_posts(
+		[
+			'post_type'      => $post_types_to_sync,
+			'posts_per_page' => -1,
+			'fields'         => 'ids',
+			'date_query'     => [
+				[
+					'column' => 'post_modified_gmt',
+					'after'  => $last_sync_gmt_datetime,
+				],
+			],
+		]
+	);
+
+	// --- 5. Apply global sync limit and return the list of IDs to process to JavaScript ---
+	$post_ids_to_process = array_values( array_unique( $updated_post_ids ) );
+	if ( $sync_limit > 0 && count( $post_ids_to_process ) > $sync_limit ) {
+		$post_ids_to_process = array_slice( $post_ids_to_process, 0, $sync_limit );
+	}
+	$total_posts = count( $post_ids_to_process );
+
+	// Enforce a minimum batch size of 1 to avoid division by zero.
+	$raw_batch_size = isset( $sync_options['batch_size'] ) ? (int) $sync_options['batch_size'] : 10;
+	$batch_size     = max( 1, $raw_batch_size );
+	$total_pages    = ( $total_posts > 0 ) ? ceil( $total_posts / $batch_size ) : 0;
+
+	// After a successful sync, the settings hash should be updated.
+	// We do this here, assuming the JS process will complete.
+	// update_option( 'fe_ai_search_last_settings_hash', $current_settings_hash );
+
+	wp_send_json_success(
+		[
+			'total_pages' => $total_pages,
+			'total_posts' => $total_posts,
+			'post_ids'    => $post_ids_to_process,
+			'batch_size'  => $batch_size,
+		]
+	);
+}
 
 	/**
 	 * Updates the saved hash of the sync settings.
 	 * This is called after a successful sync process.
 	 */
-	public function ajax_update_settings_hash() {
-		check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
+public function ajax_update_settings_hash() {
+	check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
 
-		// Pull the freshest static sync configuration from the main settings.
-		$options   = get_option( 'fe_ai_search_settings', [] );
-		$sync_root = isset( $options['sync'] ) && is_array( $options['sync'] ) ? $options['sync'] : [];
+	// Pull the freshest static sync configuration from the main settings.
+	$options   = get_option( 'fe_ai_search_settings', [] );
+	$sync_root = isset( $options['sync'] ) && is_array( $options['sync'] ) ? $options['sync'] : [];
 
-		// Derive the same settings snapshot used in ajax_start_smart_sync by
-		// removing runtime/state fields before hashing.
-		$settings_root = $sync_root;
-		unset( $settings_root['status'], $settings_root['settings'] );
-		$current_settings_hash = md5( serialize( $settings_root ) );
+	// Derive the same settings snapshot used in ajax_start_smart_sync by
+	// removing runtime/state fields before hashing.
+	$settings_root = $sync_root;
+	unset( $settings_root['status'], $settings_root['settings'] );
+	$current_settings_hash = md5( serialize( $settings_root ) );
 
-		// Runtime state (status/settings) is stored in a dedicated option so that
-		// it is not affected by settings sanitization or other writers.
-		$state = get_option( 'fe_ai_search_sync_state', [] );
-		if ( ! is_array( $state ) ) {
-			$state = [];
-		}
-		if ( ! isset( $state['settings'] ) || ! is_array( $state['settings'] ) ) {
-			$state['settings'] = [];
-		}
-		if ( ! isset( $state['status'] ) || ! is_array( $state['status'] ) ) {
-			$state['status'] = [];
-		}
-
-		$now = current_time( 'timestamp' );
-		if ( empty( $state['status']['last_sync_timestamp'] ) ) {
-			$state['status']['last_sync_timestamp'] = $now;
-		}
-
-		$state['settings']['hash']                = $current_settings_hash;
-		$state['settings']['last_sync_timestamp'] = (int) $state['status']['last_sync_timestamp'];
-
-		update_option( 'fe_ai_search_sync_state', $state );
-
-		wp_send_json_success();
+	// Runtime state (status/settings) is stored in a dedicated option so that
+	// it is not affected by settings sanitization or other writers.
+	$state = get_option( 'fe_ai_search_sync_state', [] );
+	if ( ! is_array( $state ) ) {
+		$state = [];
 	}
+	if ( ! isset( $state['settings'] ) || ! is_array( $state['settings'] ) ) {
+		$state['settings'] = [];
+	}
+	if ( ! isset( $state['status'] ) || ! is_array( $state['status'] ) ) {
+		$state['status'] = [];
+	}
+
+	$now = current_time( 'timestamp' );
+	if ( empty( $state['status']['last_sync_timestamp'] ) ) {
+		$state['status']['last_sync_timestamp'] = $now;
+	}
+
+	$state['settings']['hash']                = $current_settings_hash;
+	$state['settings']['last_sync_timestamp'] = (int) $state['status']['last_sync_timestamp'];
+
+	update_option( 'fe_ai_search_sync_state', $state );
+
+	wp_send_json_success();
+}
 
 	/**
 	 * Processes a batch of posts for indexing.
@@ -378,218 +378,151 @@ class FE_AI_Search_Sync_Handler {
 	 *
 	 * @return void
 	 */
-	public function ajax_process_batch() {
-		try {
-			set_time_limit( 0 );
-			ob_start();
+public function ajax_process_batch() {
+	try {
+		set_time_limit( 0 );
+		ob_start();
 
-			check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
+		check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
 
-			// Process input data
-			$page          = isset( $_POST['page'] ) ? absint( $_POST['page'] ) : 1;
-			$post_ids_json = isset( $_POST['post_ids'] ) ? stripslashes( $_POST['post_ids'] ) : '[]';
-			$post_ids      = json_decode( $post_ids_json, true );
-			$sync_options  = isset( $this->options['sync'] ) && is_array( $this->options['sync'] ) ? $this->options['sync'] : [];
-			$batch_conf    = isset( $sync_options['options'] ) && is_array( $sync_options['options'] ) ? $sync_options['options'] : [];
-			$batch_size    = (int) ( $batch_conf['batch_size'] ?? 10 );
-			$offset        = ( $page - 1 ) * $batch_size;
-			$batch_ids     = array_slice( $post_ids, $offset, $batch_size );
+		// Process input data
+		$page          = isset( $_POST['page'] ) ? absint( $_POST['page'] ) : 1;
+		$post_ids_json = isset( $_POST['post_ids'] ) ? stripslashes( $_POST['post_ids'] ) : '[]';
+		$post_ids      = json_decode( $post_ids_json, true );
+		$sync_options  = isset( $this->options['sync'] ) && is_array( $this->options['sync'] ) ? $this->options['sync'] : [];
+		$batch_conf    = isset( $sync_options['options'] ) && is_array( $sync_options['options'] ) ? $sync_options['options'] : [];
+		$batch_size    = (int) ( $batch_conf['batch_size'] ?? 10 );
+		$offset        = ( $page - 1 ) * $batch_size;
+		$batch_ids     = array_slice( $post_ids, $offset, $batch_size );
 
-			if ( empty( $batch_ids ) ) {
-				ob_end_clean();
-				wp_send_json_success( [ 'message' => 'No more posts to process.' ] );
-				return;
+		if ( empty( $batch_ids ) ) {
+			ob_end_clean();
+			wp_send_json_success( [ 'message' => 'No more posts to process.' ] );
+			return;
+		}
+
+		// Retrieve post data
+		$posts_batch = get_posts(
+			[
+				'post__in'            => $batch_ids,
+				'post_type'           => 'any',
+				'orderby'             => 'post__in',
+				'posts_per_page'      => count( $batch_ids ),
+				'ignore_sticky_posts' => 1,
+				'post_status'         => 'publish',
+			]
+		);
+
+		// Determine language code once per batch.
+		$locale    = get_locale();
+		$lang_code = strstr( $locale, '_', true ) ?: $locale;
+
+		// Read Free plugin vector store configuration to determine if Qdrant is enabled.
+		$free_settings = get_option( 'fe_ai_search_settings', [] );
+		$vector_config = isset( $free_settings['vector'] ) && is_array( $free_settings['vector'] ) ? $free_settings['vector'] : [];
+		$qdrant_config = isset( $vector_config['qdrant'] ) && is_array( $vector_config['qdrant'] ) ? $vector_config['qdrant'] : [];
+		$vector_store  = $vector_config['store'] ?? 'mariadb';
+
+		\FEAISearch\Core\FE_AI_Search_Logger::log(
+			'INFO',
+			'Qdrant config check in ajax_process_batch.',
+			[
+				'vector_store'  => $vector_store,
+				'vector_config' => $vector_config,
+				'qdrant_config' => $qdrant_config,
+			]
+		);
+
+		$qdrant_enabled = (
+			'qdrant' === $vector_store
+			&& ! empty( $qdrant_config['endpoint'] )
+			&& ! empty( $qdrant_config['api_key'] )
+			&& ! empty( $qdrant_config['collection'] )
+		);
+
+		// Initialize variables for the batch
+		$all_vectors_data = []; // Collect all vectors for Qdrant upload
+
+		// Process each post
+		foreach ( $posts_batch as $post ) {
+			$chunks_with_meta = $this->create_chunks_from_post( $post );
+			if ( empty( $chunks_with_meta ) ) {
+				continue;
 			}
 
-			// Retrieve post data
-			$posts_batch = get_posts(
-				[
-					'post__in'            => $batch_ids,
-					'post_type'           => 'any',
-					'orderby'             => 'post__in',
-					'posts_per_page'      => count( $batch_ids ),
-					'ignore_sticky_posts' => 1,
-					'post_status'         => 'publish',
-				]
-			);
-
-			// Determine language code once per batch.
-			$locale    = get_locale();
-			$lang_code = strstr( $locale, '_', true ) ?: $locale;
-
-			// Read Free plugin vector store configuration to determine if Qdrant is enabled.
-			$free_settings = get_option( 'fe_ai_search_settings', [] );
-			$vector_config = isset( $free_settings['vector'] ) && is_array( $free_settings['vector'] ) ? $free_settings['vector'] : [];
-			$qdrant_config = isset( $vector_config['qdrant'] ) && is_array( $vector_config['qdrant'] ) ? $vector_config['qdrant'] : [];
-			$vector_store  = $vector_config['store'] ?? 'mariadb';
-
-			\FEAISearch\Core\FE_AI_Search_Logger::log(
-				'INFO',
-				'Qdrant config check in ajax_process_batch.',
-				[
-					'vector_store'  => $vector_store,
-					'vector_config' => $vector_config,
-					'qdrant_config' => $qdrant_config,
-				]
-			);
-
-			$qdrant_enabled = (
-				'qdrant' === $vector_store
-				&& ! empty( $qdrant_config['endpoint'] )
-				&& ! empty( $qdrant_config['api_key'] )
-				&& ! empty( $qdrant_config['collection'] )
-			);
-
-			// Initialize variables for the batch
-			$all_vectors_data = []; // Collect all vectors for Qdrant upload
-
-			// Process each post
-			foreach ( $posts_batch as $post ) {
-				$chunks_with_meta = $this->create_chunks_from_post( $post );
-				if ( empty( $chunks_with_meta ) ) {
-					continue;
+			// Only generate embeddings if using Qdrant (vector search)
+			$embedding_response = null;
+			$vectors_data       = []; // Initialize for this post
+			if ( $qdrant_enabled ) {
+				$chunks_for_embedding = wp_list_pluck( $chunks_with_meta, 'content_chunk' );
+				$embedding_response   = $this->get_embeddings_via_selected_provider( $chunks_for_embedding );
+				if ( ! is_wp_error( $embedding_response ) && ! empty( $embedding_response['data'] ) ) {
+					$vectors_data = $embedding_response['data'];
+					// Collect vectors for this post for Qdrant upload
+					$all_vectors_data = array_merge( $all_vectors_data, $vectors_data );
 				}
+			}
 
-				// Only generate embeddings if using Qdrant (vector search)
-				$embedding_response = null;
-				$vectors_data       = []; // Initialize for this post
-				if ( $qdrant_enabled ) {
-					$chunks_for_embedding = wp_list_pluck( $chunks_with_meta, 'content_chunk' );
-					$embedding_response   = $this->get_embeddings_via_selected_provider( $chunks_for_embedding );
-					if ( ! is_wp_error( $embedding_response ) && ! empty( $embedding_response['data'] ) ) {
-						$vectors_data = $embedding_response['data'];
-						// Collect vectors for this post for Qdrant upload
-						$all_vectors_data = array_merge( $all_vectors_data, $vectors_data );
+			// Always store chunks and keyword index (for both WordPress DB and Qdrant modes)
+			global $wpdb;
+			$vectors_table = $wpdb->prefix . 'fe_ai_search_vectors';
+			$index_table   = $wpdb->prefix . 'fe_ai_search_keyword_index';
+
+			foreach ( $chunks_with_meta as $index => $chunk_item ) {
+				// Store chunk data (without vector for WordPress DB mode)
+				$chunk_data = [
+					'post_id'       => $post->ID,
+					'lang'          => $lang_code,
+					'content_chunk' => $chunk_item['content_chunk'],
+					'created_at'    => current_time( 'mysql' ),
+				];
+				// Add vector data only if using Qdrant
+				if ( $qdrant_enabled && ! is_wp_error( $embedding_response ) && ! empty( $embedding_response['data'] ) ) {
+					$embedding_model = $embedding_response['embedding_model'] ?? '';
+					$embedding_dim   = (int) ( $embedding_response['embedding_dim'] ?? 0 );
+					$vector_id       = $embedding_response['vector_id'] ?? '';
+
+					if ( isset( $vectors_data[ $index ]['embedding'] ) ) {
+						$chunk_data['vector_data']     = wp_json_encode( $vectors_data[ $index ]['embedding'] );
+						$chunk_data['embedding_model'] = $embedding_model;
+						$chunk_data['embedding_dim']   = $embedding_dim;
+						$chunk_data['vector_id']       = $vector_id;
 					}
 				}
 
-				// Always store chunks and keyword index (for both WordPress DB and Qdrant modes)
-				global $wpdb;
-				$vectors_table = $wpdb->prefix . 'fe_ai_search_vectors';
-				$index_table   = $wpdb->prefix . 'fe_ai_search_keyword_index';
+				$wpdb->insert( $vectors_table, $chunk_data );
+				$vector_id = $wpdb->insert_id;
 
-				foreach ( $chunks_with_meta as $index => $chunk_item ) {
-					// Store chunk data (without vector for WordPress DB mode)
-					$chunk_data = [
-						'post_id'       => $post->ID,
-						'lang'          => $lang_code,
-						'content_chunk' => $chunk_item['content_chunk'],
-						'created_at'    => current_time( 'mysql' ),
-					];
-					// Add vector data only if using Qdrant
-					if ( $qdrant_enabled && ! is_wp_error( $embedding_response ) && ! empty( $embedding_response['data'] ) ) {
-						$embedding_model = $embedding_response['embedding_model'] ?? '';
-						$embedding_dim   = (int) ( $embedding_response['embedding_dim'] ?? 0 );
-						$vector_id       = $embedding_response['vector_id'] ?? '';
-
-						if ( isset( $vectors_data[ $index ]['embedding'] ) ) {
-							$chunk_data['vector_data']     = wp_json_encode( $vectors_data[ $index ]['embedding'] );
-							$chunk_data['embedding_model'] = $embedding_model;
-							$chunk_data['embedding_dim']   = $embedding_dim;
-							$chunk_data['vector_id']       = $vector_id;
+				if ( $vector_id ) {
+					// Extract and store keywords for the chunk
+					$keywords = $this->extract_keywords( $chunk_item['content_chunk'] );
+					if ( ! empty( $keywords ) ) {
+						foreach ( $keywords as $keyword ) {
+							$wpdb->insert(
+								$index_table,
+								[
+									'vector_id' => $vector_id,
+									'keyword'   => $keyword,
+								]
+							);
 						}
 					}
+				}
+			}
 
-					$wpdb->insert( $vectors_table, $chunk_data );
-					$vector_id = $wpdb->insert_id;
-
-					// Debug: Log chunk storage
-					\FEAISearch\Core\FE_AI_Search_Logger::log(
-						'DEBUG',
-						'Chunk stored in WordPress DB.',
-						[
-							'vector_id'      => $vector_id,
-							'post_id'        => $post->ID,
-							'chunk_length'   => strlen( $chunk_item['content_chunk'] ),
-							'qdrant_enabled' => $qdrant_enabled,
-							'has_vector'     => ! empty( $chunk_data['vector_data'] ),
-						]
-					);
-
-					if ( $vector_id ) {
-						// Extract and store keywords for the chunk
-						$keywords      = $this->tokenize_text( $chunk_item['content_chunk'] );
-						$keyword_count = 0;
-						if ( ! empty( $keywords ) ) {
-							// Remove duplicate keywords to prevent database constraint violation
-							$unique_keywords = array_unique( $keywords );
-							foreach ( $unique_keywords as $keyword ) {
-								// Use INSERT IGNORE to skip existing duplicates
-								$result = $wpdb->query( 
-									$wpdb->prepare(
-										"INSERT IGNORE INTO {$index_table} (vector_id, keyword) VALUES (%s, %s)",
-										$vector_id,
-										$keyword
-									)
-								);
-								if ( $result !== false && $result > 0 ) {
-									++$keyword_count;
-								}
-							}
-						}
-
-						// Debug: Log keyword indexing
-						\FEAISearch\Core\FE_AI_Search_Logger::log(
-							'DEBUG',
-							'Keywords indexed for chunk.',
-							[
-								'vector_id'     => $vector_id,
-								'keyword_count' => $keyword_count,
-								'total_keywords' => count( $unique_keywords ),
-								'keywords_list' => array_slice( $unique_keywords, 0, 10 ), // First 10 keywords
-							]
-						);
+			// Mirror vectors to Qdrant when enabled in Pro settings (batch upload)
+			if ( $qdrant_enabled && ! empty( $all_vectors_data ) ) {
+				// For Qdrant upload, we need to collect all chunks from all posts
+				$all_chunks_with_meta = [];
+				foreach ( $posts_batch as $post ) {
+					$post_chunks = $this->create_chunks_from_post( $post );
+					if ( ! empty( $post_chunks ) ) {
+						$all_chunks_with_meta = array_merge( $all_chunks_with_meta, $post_chunks );
 					}
 				}
 
-				// Mirror vectors to Qdrant when enabled in Pro settings (batch upload)
-				if ( $qdrant_enabled && ! empty( $all_vectors_data ) ) {
-					// For Qdrant upload, we need to collect all chunks from all posts
-					$all_chunks_with_meta = [];
-					foreach ( $posts_batch as $post ) {
-						$post_chunks = $this->create_chunks_from_post( $post );
-						if ( ! empty( $post_chunks ) ) {
-							$all_chunks_with_meta = array_merge( $all_chunks_with_meta, $post_chunks );
-						}
-					}
-
-					if ( ! empty( $all_chunks_with_meta ) ) {
-						// Process each post individually for Qdrant upload to avoid data overwrite
-						// Pre-map all posts to their chunks to avoid recreating them
-						$post_chunks_map = [];
-						$chunk_offset    = 0;
-						foreach ( $posts_batch as $post ) {
-							$post_chunks = $this->create_chunks_from_post( $post );
-							if ( ! empty( $post_chunks ) ) {
-								$post_chunks_map[ $post->ID ] = $post_chunks;
-							}
-						}
-
-						// Now process each post with its pre-calculated chunks
-						$chunk_offset = 0;
-						foreach ( $posts_batch as $post ) {
-							if ( isset( $post_chunks_map[ $post->ID ] ) ) {
-								$post_chunks       = $post_chunks_map[ $post->ID ];
-								$post_vectors_data = array_slice( $all_vectors_data, $chunk_offset, count( $post_chunks ) );
-
-								// Debug: Log post processing
-								\FEAISearch\Core\FE_AI_Search_Logger::log(
-									'DEBUG',
-									'Processing post for Qdrant upload.',
-									[
-										'post_id'      => $post->ID,
-										'post_title'   => get_the_title( $post ),
-										'chunk_offset' => $chunk_offset,
-										'chunks_count' => count( $post_chunks ),
-										'vectors_data_count' => count( $post_vectors_data ),
-									]
-								);
-
-								$this->upsert_vectors_to_qdrant( $post, $lang_code, $post_chunks, $post_vectors_data, $qdrant_config );
-								$chunk_offset += count( $post_chunks );
-							}
-						}
-					}
+				if ( ! empty( $all_chunks_with_meta ) ) {
+					$this->upsert_vectors_to_qdrant( end( $posts_batch ), $lang_code, $all_chunks_with_meta, $all_vectors_data, $qdrant_config );
 				}
 			}
 
@@ -695,12 +628,7 @@ class FE_AI_Search_Sync_Handler {
 		\FEAISearch\Core\FE_AI_Search_Logger::log(
 			'INFO',
 			'Qdrant upsert invoked.',
-			[
-				'post_id'       => $post->ID,
-				'post_title'    => get_the_title( $post ),
-				'chunks_count'  => count( $chunks_with_meta ),
-				'vectors_count' => count( $vectors_data ),
-			]
+			[ 'post_id' => $post->ID ]
 		);
 
 		$endpoint   = isset( $qdrant_config['endpoint'] ) ? rtrim( $qdrant_config['endpoint'], '/' ) : '';
@@ -747,19 +675,6 @@ class FE_AI_Search_Sync_Handler {
 					'source'          => 'post',
 				],
 			];
-
-			// Debug: Log payload generation for each point
-			\FEAISearch\Core\FE_AI_Search_Logger::log(
-				'DEBUG',
-				'Generated Qdrant point payload.',
-				[
-					'point_index'     => $index,
-					'post_id'         => $post->ID,
-					'title'           => get_the_title( $post ),
-					'qdrant_point_id' => (int) ( $post->ID * 10000 + $index ),
-					'content_preview' => mb_substr( $chunk['content_chunk'], 0, 100 ),
-				]
-			);
 		}
 
 		if ( empty( $points ) ) {
@@ -813,83 +728,6 @@ class FE_AI_Search_Sync_Handler {
 					'response_body' => $body_summary,
 				]
 			);
-			return;
-		}
-
-		// Update WordPress DB with Qdrant vector IDs after successful upload
-		$this->update_wordpress_vector_ids_after_qdrant( $post, $lang_code, $chunks_with_meta, $vectors_data );
-
-		\FEAISearch\Core\FE_AI_Search_Logger::log(
-			'INFO',
-			'Qdrant upsert completed successfully.',
-			[ 'post_id' => $post->ID, 'points_count' => count( $points ) ]
-		);
-	}
-
-	/**
-	 * Updates WordPress DB vector_id fields after successful Qdrant upload.
-	 *
-	 * This method updates the vector_id column in wp_fe_ai_search_vectors table
-	 * with the corresponding Qdrant point IDs for each chunk.
-	 *
-	 * @param \WP_Post $post             The post that was processed.
-	 * @param string   $lang_code        Language code for the processed content.
-	 * @param array    $chunks_with_meta Array of chunks with metadata.
-	 * @param array    $vectors_data     Embedding data used for Qdrant upload.
-	 * @return void
-	 */
-	private function update_wordpress_vector_ids_after_qdrant( $post, $lang_code, $chunks_with_meta, $vectors_data ) {
-		global $wpdb;
-		$vectors_table = $wpdb->prefix . 'fe_ai_search_vectors';
-
-		\FEAISearch\Core\FE_AI_Search_Logger::log(
-			'INFO',
-			'Updating WordPress DB vector IDs after Qdrant upload.',
-			[ 'post_id' => $post->ID ]
-		);
-
-		foreach ( $chunks_with_meta as $index => $chunk ) {
-			// Generate the same Qdrant point ID used in upsert
-			$qdrant_vector_id = (string) ( $post->ID * 10000 + $index );
-
-			// Find the corresponding WordPress DB record for this chunk
-			$chunk_content = $chunk['content_chunk'];
-
-			// Update the vector_id field
-			$result = $wpdb->update(
-				$vectors_table,
-				[ 'vector_id' => $qdrant_vector_id ],
-				[
-					'post_id'       => $post->ID,
-					'lang'          => $lang_code,
-					'content_chunk' => $chunk_content,
-				],
-				[ '%s' ],
-				[ '%d', '%s', '%s' ]
-			);
-
-			if ( $result !== false ) {
-				\FEAISearch\Core\FE_AI_Search_Logger::log(
-					'DEBUG',
-					'Updated vector_id for chunk.',
-					[
-						'post_id'          => $post->ID,
-						'chunk_index'      => $index,
-						'qdrant_vector_id' => $qdrant_vector_id,
-						'updated_rows'     => $result,
-					]
-				);
-			} else {
-				\FEAISearch\Core\FE_AI_Search_Logger::log(
-					'ERROR',
-					'Failed to update vector_id for chunk.',
-					[
-						'post_id'     => $post->ID,
-						'chunk_index' => $index,
-						'error'       => $wpdb->last_error,
-					]
-				);
-			}
 		}
 	}
 
@@ -1840,9 +1678,6 @@ class FE_AI_Search_Sync_Handler {
 		 */
 		$final_words = apply_filters( 'fe_ai_search_tokenize_text', $final_words, $text_normalized, $locale );
 
-		// Final unique check after filters (filters might add duplicates)
-		$final_words = array_values( array_unique( $final_words ) );
-
 		return $final_words;
 	}
 
@@ -1978,6 +1813,7 @@ class FE_AI_Search_Sync_Handler {
 	 * Renders an administrator notification about internationalization
 	 */
 	public function render_i18n_notice() {
+		error_log( 'FEAS i18n: transient=' . ( get_transient( 'fe_ai_search_i18n_notice_dismissed' ) ? '1' : '0' ) . ' locale=' . get_locale() );
 		// Do not show the notice if it was recently dismissed.
 		if ( get_transient( 'fe_ai_search_i18n_notice_dismissed' ) ) {
 			return;

@@ -9,7 +9,7 @@
  * @since   1.0.0
  */
 
-/* global ajaxurl, fe_ai_search_sync_obj, CodeMirror */
+/* global ajaxurl, fe_ai_search_sync_obj, CodeMirror, Pickr */
 
 document.addEventListener('DOMContentLoaded', () => {
 	// Initialize WordPress internationalization functions.
@@ -352,12 +352,24 @@ document.addEventListener('DOMContentLoaded', () => {
 			// If JSON parsing fails, log an error to the console
 			if (error instanceof SyntaxError) {
 				// eslint-disable-next-line no-console
-				console.error('Failed to parse JSON. See the raw response above for details.');
+				console.error('Failed to parse JSON. Raw response:', responseText);
+				// eslint-disable-next-line no-console
+				console.error('SyntaxError details:', error.message);
+			} else {
+				// eslint-disable-next-line no-console
+				console.error('Batch processing error:', error);
+				// eslint-disable-next-line no-console
+				console.error('Error details:', {
+					message: error.message,
+					stack: error.stack,
+					currentPage,
+					responseText,
+				});
 			}
 			statusText.innerHTML = `<span style="color:red;">${__(
 				'Error: A problem occurred while processing batch',
 				'fe-ai-search'
-			)} ${currentPage}.</span>`;
+			)} ${currentPage}. ${error.message || ''}</span>`;
 
 			statusSpinner.style.display = 'none';
 			rebuildBtn.disabled = false;
@@ -674,11 +686,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		tabContents.forEach(content => (content.style.display = 'none'));
 
 		const activateTab = targetId => {
-			if (!targetId || !document.querySelector(targetId)) {
-				return;
-			}
-
-			const targetTab = tabsWrapper.querySelector(`a[href = "${targetId}"]`);
+			const targetTab = tabsWrapper.querySelector(`[href="${targetId}"]`);
 			const targetContent = document.querySelector(targetId);
 
 			tabsWrapper
@@ -689,14 +697,8 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (targetTab && targetContent) {
 				targetTab.classList.add('nav-tab-active');
 				targetContent.style.display = 'block';
-
-				// When a tab becomes visible, initialize any CodeMirror editors inside it.
-				targetContent.querySelectorAll('.fe-ai-search-prompt-editor').forEach(textarea => {
-					initializeCodeMirror(textarea);
-				});
 			}
 
-			// Remember the last active tab so that it can be restored after saving settings.
 			try {
 				window.localStorage.setItem('fe_ai_search_active_tab', targetId);
 			} catch (e) {
@@ -736,7 +738,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				if (storedTabId && tabsWrapper.querySelector(`a[href = "${storedTabId}"]`)) {
 					initialTabId = storedTabId;
 				} else {
-					// 3) If neither is available, fall back to the first tab.
+					// 3 If neither is available, fall back to the first tab.
 					initialTabId = tabsWrapper.querySelector('.nav-tab')?.getAttribute('href');
 				}
 			}
@@ -766,6 +768,24 @@ document.addEventListener('DOMContentLoaded', () => {
 			toggle.textContent = isPassword
 				? __('Hide', 'fe-ai-search')
 				: __('Show', 'fe-ai-search');
+		});
+	});
+
+	// Taxonomy enable checkbox toggle: show/hide behavior and term_ids inputs
+	document.querySelectorAll('.fe-ai-search-snippet-tax-enabled').forEach(checkbox => {
+		const wrapperClass = checkbox.dataset.targetWrapperClass;
+		if (!wrapperClass) {
+			return;
+		}
+		const wrapper = document.querySelector('.' + wrapperClass);
+		if (!wrapper) {
+			return;
+		}
+		// Initial state
+		wrapper.style.display = checkbox.checked ? 'block' : 'none';
+		// Toggle on change
+		checkbox.addEventListener('change', () => {
+			wrapper.style.display = checkbox.checked ? 'block' : 'none';
 		});
 	});
 
@@ -810,6 +830,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 	});
 
+	// Notice repositioning
 	if (document.body.classList.contains('toplevel_page_fe-ai-search')) {
 		const wrap = document.querySelector('.wrap');
 		const header = document.querySelector('#plugin_header');
