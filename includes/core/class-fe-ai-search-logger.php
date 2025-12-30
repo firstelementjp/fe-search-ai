@@ -41,14 +41,14 @@ class FE_Search_AI_Logger {
 	 */
 	public static function log( string $level, string $message, array $data = [] ) {
 		// Read the latest settings directly because this is a static method.
-		$options    = get_option( 'fe_ai_search_settings', [] );
+		$options    = get_option( 'fe_search_ai_settings', [] );
 		$is_enabled = $options['advanced']['debug_mode'] ?? false;
 		if ( ! $is_enabled ) {
 			return;
 		}
 
 		global $wpdb;
-		$table_name = $wpdb->prefix . 'fe_ai_search_system_logs';
+		$table_name = $wpdb->prefix . 'fe_search_ai_system_logs';
 
 		// Check if the table exists to prevent errors.
 		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) !== $table_name ) {
@@ -86,7 +86,7 @@ class FE_Search_AI_Logger {
 	 */
 	public static function clear_logs() {
 		global $wpdb;
-		$table_name = $wpdb->prefix . 'fe_ai_search_system_logs';
+		$table_name = $wpdb->prefix . 'fe_search_ai_system_logs';
 
 		// Check if the table exists before attempting to truncate.
 		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) !== $table_name ) {

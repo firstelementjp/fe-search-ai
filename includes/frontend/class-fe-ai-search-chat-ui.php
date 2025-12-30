@@ -50,7 +50,7 @@ class FE_Search_AI_Chat_UI {
 	 * @return void
 	 */
 	public function __construct( $assets_handler ) {
-		$this->options        = get_option( 'fe_ai_search_settings', [] );
+		$this->options        = get_option( 'fe_search_ai_settings', [] );
 		$this->assets_handler = $assets_handler;
 
 		add_action( 'init', [ $this, 'register_shortcode' ] );
@@ -59,23 +59,23 @@ class FE_Search_AI_Chat_UI {
 	}
 
 	/**
-	 * Registers the [fe_ai_search] shortcode for manual chat placement.
+	 * Registers the [fe_search_ai] shortcode for manual chat placement.
 	 *
 	 * This method registers the WordPress shortcode that allows users to
 	 * manually place the chat interface anywhere in their content using
-	 * the [fe_ai_search] shortcode tag.
+	 * the [fe_search_ai] shortcode tag.
 	 *
 	 * @since 1.0.0
 	 * @return void
 	 */
 	public function register_shortcode() {
-		add_shortcode( 'fe_ai_search', [ $this, 'render_chat_shortcode' ] );
+		add_shortcode( 'fe_search_ai', [ $this, 'render_chat_shortcode' ] );
 	}
 
 	/**
 	 * Renders the chat interface for shortcode output.
 	 *
-	 * This method outputs the chat interface HTML when the [fe_ai_search]
+	 * This method outputs the chat interface HTML when the [fe_search_ai]
 	 * shortcode is used. It prevents duplicate rendering and enqueues
 	 * necessary CSS/JS assets before returning the chat HTML.
 	 *
@@ -188,7 +188,7 @@ class FE_Search_AI_Chat_UI {
 		 * @param bool $should_display Whether the chat UI should be displayed.
 		 */
 		// Temporary force display for debugging
-		if ( true || apply_filters( 'fe_ai_search_should_display_chat', $should_display ) ) {
+		if ( true || apply_filters( 'fe_search_ai_should_display_chat', $should_display ) ) {
 			error_log( 'FE AI Search: About to output HTML' );
 			self::$is_rendered = true;
 			$this->assets_handler->enqueue_assets();
@@ -264,28 +264,28 @@ class FE_Search_AI_Chat_UI {
 		// Build the default HTML
 		ob_start();
 		?>
-		<div id="fe_ai_search_chat_container" class="fe-ai-search-mode-<?php echo esc_attr( $args['mode'] ); ?>">
+		<div id="fe_search_ai_chat_container" class="fe-ai-search-mode-<?php echo esc_attr( $args['mode'] ); ?>">
 			<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-			<div id="fe_ai_search_chat_bubble">
-				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="42" height="42" id="fe_ai_search_chat_bubble_icon">
+			<div id="fe_search_ai_chat_bubble">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="42" height="42" id="fe_search_ai_chat_bubble_icon">
 					<path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"></path>
 				</svg>
-				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 35 35" fill="currentColor" width="42" height="42" id="fe_ai_search_chat_bubble_icon_face">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 35 35" fill="currentColor" width="42" height="42" id="fe_search_ai_chat_bubble_icon_face">
 					<path d="M31.5,0H3.5C1.58,0,0,1.58,0,3.5v31.5l7-7h24.5c1.92,0,3.5-1.58,3.5-3.5V3.5c0-1.92-1.58-3.5-3.5-3.5ZM22.58,6.91c0-.72.59-1.31,1.31-1.31s1.31.59,1.31,1.31v3.5c0,.72-.59,1.31-1.31,1.31s-1.31-.59-1.31-1.31v-3.5ZM9.8,6.91c0-.72.59-1.31,1.31-1.31s1.31.59,1.31,1.31v3.5c0,.72-.59,1.31-1.31,1.31s-1.31-.59-1.31-1.31v-3.5ZM25.41,20.43c-2.63,1.25-5.27,1.88-7.91,1.88s-5.29-.62-7.91-1.88c-.65-.31-.93-1.09-.62-1.75s1.09-.93,1.75-.62c4.57,2.18,9.01,2.18,13.57,0,.65-.31,1.44-.03,1.75.62.31.65.03,1.44-.62,1.75Z"/>
 				</svg>
 			</div>
 
-			<div id="fe_ai_search_chat_window" class="hidden">
-				<div id="fe_ai_search_chat_header">
-					<a href="<?php echo esc_url( home_url( '/' ) ); ?>" id="fe_ai_search_chat_home_link" class="fe-ai-search-header-icon">
+			<div id="fe_search_ai_chat_window" class="hidden">
+				<div id="fe_search_ai_chat_header">
+					<a href="<?php echo esc_url( home_url( '/' ) ); ?>" id="fe_search_ai_chat_home_link" class="fe-ai-search-header-icon">
 						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
 							<path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
 						</svg>
 					</a>
 					<h3><?php echo esc_html( $args['window_title'] ); ?></h3>
 					<div class="fe-ai-search-header-buttons">
-						<button id="fe_ai_search_chat_fullscreen_toggle" class="fe-ai-search-header-icon">
+						<button id="fe_search_ai_chat_fullscreen_toggle" class="fe-ai-search-header-icon">
 							<svg class="icon-maximize" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
 								<path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
 							</svg>
@@ -293,25 +293,25 @@ class FE_Search_AI_Chat_UI {
 								<path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
 							</svg>
 						</button>
-						<button id="fe_ai_search_chat_close" class="fe-ai-search-header-icon">
+						<button id="fe_search_ai_chat_close" class="fe-ai-search-header-icon">
 							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
 								<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
 							</svg>
 						</button>
 					</div>
 				</div>
-				<div id="fe_ai_search_chat_messages">
+				<div id="fe_search_ai_chat_messages">
 					<div class="fe-ai-search-message fe-ai-search-message-ai">
 						<p><?php echo esc_html( $args['greeting_message'] ); ?></p>
 					</div>
 				</div>
-				<div id="fe_ai_search_chat_footer">
-					<form id="fe_ai_search_chat_form">
-						<textarea id="fe_ai_search_chat_input" placeholder="<?php echo esc_attr( $args['placeholder_text'] ); ?>" autocomplete="off"></textarea>
+				<div id="fe_search_ai_chat_footer">
+					<form id="fe_search_ai_chat_form">
+						<textarea id="fe_search_ai_chat_input" placeholder="<?php echo esc_attr( $args['placeholder_text'] ); ?>" autocomplete="off"></textarea>
 						<button type="submit"><?php echo esc_html( $args['submit_button_text'] ); ?></button>
 					</form>
-					<div id="fe_ai_search_chat_options">
-						<div id="fe_ai_search_privacy_notice">
+					<div id="fe_search_ai_chat_options">
+						<div id="fe_search_ai_privacy_notice">
 							<?php
 							$links = [];
 							if ( ! empty( $args['terms_url'] ) ) {
@@ -330,17 +330,17 @@ class FE_Search_AI_Chat_UI {
 							}
 							?>
 						</div>
-						<div id="fe_ai_search_chat_footer_actions">
-							<button id="fe_ai_search_options_toggle" title="<?php esc_attr_e( 'Settings', 'fe-ai-search' ); ?>">
+						<div id="fe_search_ai_chat_footer_actions">
+							<button id="fe_search_ai_options_toggle" title="<?php esc_attr_e( 'Settings', 'fe-ai-search' ); ?>">
 								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
 									<path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12-.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/>
 								</svg>
 							</button>
-							<div id="fe_ai_search_options_menu" class="hidden">
-								<label for="fe_ai_search_send_mode_toggle">
+							<div id="fe_search_ai_options_menu" class="hidden">
+								<label for="fe_search_ai_send_mode_toggle">
 									<?php esc_html_e( 'Send Key Settings:', 'fe-ai-search' ); ?>
 								</label>
-								<select id="fe_ai_search_send_mode_toggle">
+								<select id="fe_search_ai_send_mode_toggle">
 									<option value="enter">
 										<?php esc_html_e( 'Enter', 'fe-ai-search' ); ?>
 									</option>
@@ -358,7 +358,7 @@ class FE_Search_AI_Chat_UI {
 			</div>
 		</div>
 		<script>
-			if (typeof initFEAIChat === 'function' && !document.getElementById('fe_ai_search_chat_container').dataset.initialized) {
+			if (typeof initFEAIChat === 'function' && !document.getElementById('fe_search_ai_chat_container').dataset.initialized) {
 				initFEAIChat();
 			}
 		</script>
@@ -377,7 +377,7 @@ class FE_Search_AI_Chat_UI {
 		 * @param array  $args         An associative array of data used to build the HTML
 		 * (e.g., 'window_title', 'greeting_message', etc.).
 		 */
-		return apply_filters( 'fe_ai_search_chat_ui_html', $default_html, $args );
+		return apply_filters( 'fe_search_ai_chat_ui_html', $default_html, $args );
 	}
 
 	/**
@@ -396,12 +396,12 @@ class FE_Search_AI_Chat_UI {
 
 		ob_start();
 		?>
-		<style id="fe_ai_search_dynamic_styles">
+		<style id="fe_search_ai_dynamic_styles">
 			:root {
 				--fe-ai-search-key-color: <?php echo esc_attr( $key_color ); ?>;
 				--fe-ai-search-key-color-darker: <?php echo esc_attr( $this->adjust_brightness( $key_color, -20 ) ); ?>;
 			}
-			#fe_ai_search_chat_form button:hover {
+			#fe_search_ai_chat_form button:hover {
 				background-color: var(--fe-ai-search-key-color-darker);
 			}
 			.fe-ai-search-message-user p {
@@ -425,7 +425,7 @@ class FE_Search_AI_Chat_UI {
 		 * @param string $default_css The default CSS string, including the <style> tags.
 		 * @param string $key_color   The key color selected by the user in the settings.
 		 */
-		echo apply_filters( 'fe_ai_search_dynamic_styles_css', $default_css, $key_color );
+		echo apply_filters( 'fe_search_ai_dynamic_styles_css', $default_css, $key_color );
 	}
 
 	/**

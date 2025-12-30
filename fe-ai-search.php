@@ -40,7 +40,7 @@ spl_autoload_register(
 	function ( $class ) {
 		$prefixes = [
 			'FESearchAI\\',
-			'FEAISearch\\',
+			'FESearchAI\\',
 		];
 		$base_dir = FE_SEARCH_AI_PLUGIN_DIR . 'includes/';
 
@@ -110,7 +110,7 @@ add_action(
 		$sync_handler   = new FESearchAI\Ajax\FE_Search_AI_Sync_Handler();
 
 		add_filter(
-			'fe_ai_search_get_sync_handler_instance',
+			'fe_search_ai_get_sync_handler_instance',
 			function () use ( $sync_handler ) {
 				return $sync_handler;
 			}
@@ -122,7 +122,7 @@ add_action(
 		new FESearchAI\Ajax\FE_Search_AI_Chat_Handler( $sync_handler );
 
 		// To integrate real-time synchronization with batch synchronization
-		$GLOBALS['fe_ai_search_sync_hooks'] = new FESearchAI\Core\FE_Search_AI_Sync_Hooks( $sync_handler );
+		$GLOBALS['fe_search_ai_sync_hooks'] = new FESearchAI\Core\FE_Search_AI_Sync_Hooks( $sync_handler );
 	}
 );
 
@@ -139,7 +139,7 @@ add_action(
 );
 
 add_action(
-	'fe_ai_search_daily_log_rotation_event',
+	'fe_search_ai_daily_log_rotation_event',
 	static function () {
 		\FESearchAI\Core\FE_Search_AI_Logger::rotate_logs();
 	}
@@ -149,11 +149,11 @@ add_action(
  * Template Tag for displaying the AI Search interface.
  *
  * This function provides a simple template tag that can be used in themes
- * to display the AI search interface. It outputs the fe_ai_search shortcode.
+ * to display the AI search interface. It outputs the fe_search_ai shortcode.
  *
  * @since 1.0.0
  * @return void Outputs the AI search interface HTML
  */
-function fe_ai_search() {
-	echo do_shortcode( '[fe_ai_search]' );
+function fe_search_ai() {
+	echo do_shortcode( '[fe_search_ai]' );
 }

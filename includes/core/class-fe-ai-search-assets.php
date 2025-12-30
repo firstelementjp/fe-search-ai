@@ -2,7 +2,7 @@
 /**
  * Registers all plugin assets (CSS and JavaScript).
  *
- * This file defines the fe_ai_search_Assets class, which is responsible for
+ * This file defines the fe_search_ai_Assets class, which is responsible for
  * enqueuing all styles and scripts for both the public-facing chat UI
  * and the admin settings pages.
  *
@@ -36,7 +36,7 @@ class FE_Search_AI_Assets {
 	private $options = [];
 
 	public function __construct() {
-		$this->options = get_option( 'fe_ai_search_settings', [] );
+		$this->options = get_option( 'fe_search_ai_settings', [] );
 
 		add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_assets' ] );
 	}
@@ -46,7 +46,7 @@ class FE_Search_AI_Assets {
 	 */
 	public function enqueue_assets() {
 		// License settings values
-		$license_data      = get_option( 'fe_ai_search_license', [] );
+		$license_data      = get_option( 'fe_search_ai_license', [] );
 		$status            = $license_data['status'] ?? 'inactive';
 		$data              = $license_data['data'] ?? [];
 		$product_id        = isset( $data['productId'] ) ? (int) $data['productId'] : 0;
@@ -54,8 +54,8 @@ class FE_Search_AI_Assets {
 
 		// Pro settings (used for rate limiting and privacy configuration).
 		$pro_options = [];
-		if ( $is_license_active && class_exists( '\\FEAISearch\\Pro\\Admin\\FE_AI_Search_Pro_Settings' ) ) {
-			$pro_options = get_option( 'fe_ai_search_pro_settings', [] );
+		if ( $is_license_active && class_exists( '\\FESearchAI\\Pro\\Admin\\FE_AI_Search_Pro_Settings' ) ) {
+			$pro_options = get_option( 'fe_search_ai_pro_settings', [] );
 		}
 
 		// UI settings values
@@ -249,7 +249,7 @@ class FE_Search_AI_Assets {
 				'rest_nonce'         => wp_create_nonce( 'wp_rest' ),
 				'nonce'              => wp_create_nonce( 'fe_search_ai_ajax_nonce' ),
 				'animation_speed'    => (int) $animation_speed,
-				'is_pro_active'      => class_exists( '\\FEAISearch\\Pro\\Admin\\FE_AI_Search_Pro_Settings' ),
+				'is_pro_active'      => class_exists( '\\FESearchAI\\Pro\\Admin\\FE_AI_Search_Pro_Settings' ),
 				'is_license_active'  => $is_license_active,
 				'ip_limit_count'     => (int) $ip_limit_count,
 				'send_mode'          => $send_mode,

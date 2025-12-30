@@ -25,7 +25,7 @@ class FE_Search_AI_License {
 	/**
 	 * Returns all product license entries indexed by productId.
 	 *
-	 * Expects the fe_ai_search_license option to use the
+	 * Expects the fe_search_ai_license option to use the
 	 * products[productId] flat format.
 	 *
 	 * @return array<int, array{
@@ -35,7 +35,7 @@ class FE_Search_AI_License {
 	 * }>
 	 */
 	public static function get_products() {
-		$option   = get_option( 'fe_ai_search_license', [] );
+		$option   = get_option( 'fe_search_ai_license', [] );
 		$products = $option['products'] ?? [];
 
 		return is_array( $products ) ? $products : [];

@@ -43,13 +43,13 @@ class FE_Search_AI_Settings {
 	public function __construct() {
 
 		// Retrieve all configuration data
-		$this->options = get_option( 'fe_ai_search_settings', [] );
+		$this->options = get_option( 'fe_search_ai_settings', [] );
 
 		// Treat the license as active when the status is "active" and the product ID
 		// matches the Pro add-on (productId = 65 in License Manager for WooCommerce).
 		$this->is_license_active = FE_Search_AI_License::is_pro_active();
 
-		if ( class_exists( '\\FEAISearch\\Pro\\Admin\\FE_AI_Search_Pro_Settings' ) && ! $this->is_license_active ) {
+		if ( class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) && ! $this->is_license_active ) {
 			$this->license_alert_icon = '<a href="' . admin_url( 'admin.php' )
 			. '?page=fe-ai-search#tab_license">'
 			. '<span class="dashicons dashicons-warning"></span></a>';
@@ -71,7 +71,7 @@ class FE_Search_AI_Settings {
 	 */
 	public static function render_page() {
 		// Determine if the Pro license is active and the Pro add-on is installed.
-		$has_pro_class = class_exists( '\\FEAISearch\\Pro\\Admin\\FE_AI_Search_Pro_Settings' );
+		$has_pro_class = class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' );
 		$is_pro        = ( FE_Search_AI_License::is_pro_active() && $has_pro_class );
 		?>
 		<div class="wrap">
@@ -137,7 +137,7 @@ class FE_Search_AI_Settings {
 									<?php
 										/* translators: 1: opening code tag, 2: closing code tag, 3: opening link tag, 4: closing link tag */
 										printf(
-											esc_html__( 'You can change these limits from your theme or another plugin using the %1$sfe_ai_search_rate_limit_settings%2$s filter hook. For full sample code, please refer to the %3$sdocumentation%4$s.', 'fe-ai-search' ),
+											esc_html__( 'You can change these limits from your theme or another plugin using the %1$sfe_search_ai_rate_limit_settings%2$s filter hook. For full sample code, please refer to the %3$sdocumentation%4$s.', 'fe-ai-search' ),
 											'<code>',
 											'</code>',
 											'<a href="https://fe-search.com/docs/ai" target="_blank" rel="noopener noreferrer">',
@@ -147,115 +147,115 @@ class FE_Search_AI_Settings {
 								</p>
 							</div>
 						</details>
-						<?php do_settings_sections( 'fe_ai_search_chat_provider_section' ); ?>
+						<?php do_settings_sections( 'fe_search_ai_chat_provider_section' ); ?>
 						<table class="form-table">
-							<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_chat_provider_section' ); ?>
+							<?php do_settings_fields( 'fe-ai-search', 'fe_search_ai_chat_provider_section' ); ?>
 						</table>
 
-						<?php do_settings_sections( 'fe_ai_search_embedding_section' ); ?>
+						<?php do_settings_sections( 'fe_search_ai_embedding_section' ); ?>
 						<table class="form-table">
-							<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_embedding_section' ); ?>
+							<?php do_settings_fields( 'fe-ai-search', 'fe_search_ai_embedding_section' ); ?>
 						</table>
 
-						<?php do_settings_sections( 'fe_ai_search_api_section' ); ?>
+						<?php do_settings_sections( 'fe_search_ai_api_section' ); ?>
 						<table class="form-table">
-							<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_api_section' ); ?>
+							<?php do_settings_fields( 'fe-ai-search', 'fe_search_ai_api_section' ); ?>
 						</table>
 
-						<?php do_action( 'fe_ai_search_after_api_settings_fields' ); ?>
+						<?php do_action( 'fe_search_ai_after_api_settings_fields' ); ?>
 					</div>
 
 					<div id="tab_sync" class="tab-content">
-						<?php do_settings_sections( 'fe_ai_search_sync_options_section' ); ?>
+						<?php do_settings_sections( 'fe_search_ai_sync_options_section' ); ?>
 						<table class="form-table">
-							<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_sync_options_section' ); ?>
+							<?php do_settings_fields( 'fe-ai-search', 'fe_search_ai_sync_options_section' ); ?>
 						</table>
 
-						<?php do_settings_sections( 'fe_ai_search_sync_ui_section' ); ?>
+						<?php do_settings_sections( 'fe_search_ai_sync_ui_section' ); ?>
 						<table class="form-table">
-							<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_sync_ui_section' ); ?>
+							<?php do_settings_fields( 'fe-ai-search', 'fe_search_ai_sync_ui_section' ); ?>
 						</table>
 
-						<?php do_settings_sections( 'fe_ai_search_sync_advanced_section' ); ?>
+						<?php do_settings_sections( 'fe_search_ai_sync_advanced_section' ); ?>
 						<table class="form-table">
-							<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_sync_advanced_section' ); ?>
+							<?php do_settings_fields( 'fe-ai-search', 'fe_search_ai_sync_advanced_section' ); ?>
 						</table>
 
-						<?php do_settings_sections( 'fe_ai_search_vector_store_section' ); ?>
+						<?php do_settings_sections( 'fe_search_ai_vector_store_section' ); ?>
 						<table class="form-table">
-							<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_vector_store_section' ); ?>
+							<?php do_settings_fields( 'fe-ai-search', 'fe_search_ai_vector_store_section' ); ?>
 						</table>
 						<?php // Pro add-on: tuning (Custom Stop Words) now lives at the end of the Sync tab. ?>
 						<?php if ( $is_pro ) : ?>
-							<?php do_settings_sections( 'fe_ai_search_vector_store_section_pro' ); ?>
+							<?php do_settings_sections( 'fe_search_ai_vector_store_section_pro' ); ?>
 							<table class="form-table">
-								<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_vector_store_section_pro' ); ?>
+								<?php do_settings_fields( 'fe-ai-search', 'fe_search_ai_vector_store_section_pro' ); ?>
 							</table>
-							<?php do_settings_sections( 'fe_ai_search_tuning_section_pro' ); ?>
+							<?php do_settings_sections( 'fe_search_ai_tuning_section_pro' ); ?>
 							<table class="form-table">
-								<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_tuning_section_pro' ); ?>
+								<?php do_settings_fields( 'fe-ai-search', 'fe_search_ai_tuning_section_pro' ); ?>
 							</table>
 						<?php endif; ?>
 					</div>
 
 					<div id="tab_display" class="tab-content">
-						<?php do_settings_sections( 'fe_ai_search_display_floating_section' ); ?>
+						<?php do_settings_sections( 'fe_search_ai_display_floating_section' ); ?>
 						<table class="form-table">
-							<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_display_floating_section' ); ?>
+							<?php do_settings_fields( 'fe-ai-search', 'fe_search_ai_display_floating_section' ); ?>
 						</table>
 
-						<?php do_settings_sections( 'fe_ai_search_display_embed_section' ); ?>
+						<?php do_settings_sections( 'fe_search_ai_display_embed_section' ); ?>
 						<table class="form-table">
-							<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_display_embed_section' ); ?>
+							<?php do_settings_fields( 'fe-ai-search', 'fe_search_ai_display_embed_section' ); ?>
 						</table>
 
-						<?php do_settings_sections( 'fe_ai_search_display_fullscreen_section' ); ?>
+						<?php do_settings_sections( 'fe_search_ai_display_fullscreen_section' ); ?>
 						<table class="form-table">
-							<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_display_fullscreen_section' ); ?>
+							<?php do_settings_fields( 'fe-ai-search', 'fe_search_ai_display_fullscreen_section' ); ?>
 						</table>
 
-						<?php do_settings_sections( 'fe_ai_search_display_appearance_section' ); ?>
+						<?php do_settings_sections( 'fe_search_ai_display_appearance_section' ); ?>
 						<table class="form-table">
-							<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_display_appearance_section' ); ?>
+							<?php do_settings_fields( 'fe-ai-search', 'fe_search_ai_display_appearance_section' ); ?>
 						</table>
 						<?php // Pro add-on: Privacy opt-in (User Consent) is shown below the legal links. ?>
 						<?php if ( $is_pro ) : ?>
-							<?php do_settings_sections( 'fe_ai_search_privacy_section_pro' ); ?>
+							<?php do_settings_sections( 'fe_search_ai_privacy_section_pro' ); ?>
 							<table class="form-table">
-								<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_privacy_section_pro' ); ?>
+								<?php do_settings_fields( 'fe-ai-search', 'fe_search_ai_privacy_section_pro' ); ?>
 							</table>
 						<?php endif; ?>
 					</div>
 
 					<div id="tab_prompt" class="tab-content">
-						<?php do_settings_sections( 'fe_ai_search_prompt_section' ); ?>
+						<?php do_settings_sections( 'fe_search_ai_prompt_section' ); ?>
 						<table class="form-table">
-							<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_prompt_section' ); ?>
+							<?php do_settings_fields( 'fe-ai-search', 'fe_search_ai_prompt_section' ); ?>
 						</table>
-						<?php do_action( 'fe_ai_search_after_prompt_settings_fields' ); ?>
+						<?php do_action( 'fe_search_ai_after_prompt_settings_fields' ); ?>
 					</div>
 
 					<div id="tab_advanced" class="tab-content">
-						<?php do_settings_sections( 'fe_ai_search_advanced_section' ); ?>
+						<?php do_settings_sections( 'fe_search_ai_advanced_section' ); ?>
 						<table class="form-table">
-							<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_advanced_section' ); ?>
+							<?php do_settings_fields( 'fe-ai-search', 'fe_search_ai_advanced_section' ); ?>
 						</table>
-						<?php do_settings_sections( 'fe_ai_search_qdrant_section' ); ?>
+						<?php do_settings_sections( 'fe_search_ai_qdrant_section' ); ?>
 						<table class="form-table">
-							<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_qdrant_section' ); ?>
+							<?php do_settings_fields( 'fe-ai-search', 'fe_search_ai_qdrant_section' ); ?>
 						</table>
 						<?php if ( $is_pro ) : ?>
 						<?php endif; ?>
 						<?php // Data management (previously in its own "Data" tab). ?>
-						<?php do_settings_sections( 'fe_ai_search_data_section' ); ?>
+						<?php do_settings_sections( 'fe_search_ai_data_section' ); ?>
 						<table class="form-table">
-							<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_data_section' ); ?>
+							<?php do_settings_fields( 'fe-ai-search', 'fe_search_ai_data_section' ); ?>
 						</table>
 						<?php // Pro add-on: external API token section only. ?>
 						<?php if ( $is_pro ) : ?>
-							<?php do_settings_sections( 'fe_ai_search_api_token_section_pro' ); ?>
+							<?php do_settings_sections( 'fe_search_ai_api_token_section_pro' ); ?>
 							<table class="form-table">
-								<?php do_settings_fields( 'fe-ai-search', 'fe_ai_search_api_token_section_pro' ); ?>
+								<?php do_settings_fields( 'fe-ai-search', 'fe_search_ai_api_token_section_pro' ); ?>
 							</table>
 						<?php endif; ?>
 					</div>
@@ -265,7 +265,7 @@ class FE_Search_AI_Settings {
 					 * Fires within the main settings form to add custom tab content panels.
 					 *
 					 * This action is intended to be used in conjunction with the
-					 * 'fe_ai_search_settings_tabs' action. It allows other plugins to render the
+					 * 'fe_search_ai_settings_tabs' action. It allows other plugins to render the
 					 * content (the <div id="tab_...">) for the custom tabs they have added.
 					 *
 					 * @since 1.0.0
@@ -303,7 +303,7 @@ class FE_Search_AI_Settings {
 
 		register_setting(
 			$settings_group,
-			'fe_ai_search_settings',
+			'fe_search_ai_settings',
 			[ 'sanitize_callback' => [ $this, 'sanitize_main_settings' ] ]
 		);
 
@@ -315,91 +315,91 @@ class FE_Search_AI_Settings {
 		// Provider Tab
 		// ------------------
 		// Chat Model Section
-		add_settings_section( 'fe_ai_search_chat_provider_section', __( 'Chat Model', 'fe-ai-search' ), null, $page_slug );
-		add_settings_field( 'fe_ai_search_chat_provider', __( 'Chat AI', 'fe-ai-search' ), [ $this, 'chat_provider_field_html' ], $page_slug, 'fe_ai_search_chat_provider_section' );
+		add_settings_section( 'fe_search_ai_chat_provider_section', __( 'Chat Model', 'fe-ai-search' ), null, $page_slug );
+		add_settings_field( 'fe_search_ai_chat_provider', __( 'Chat AI', 'fe-ai-search' ), [ $this, 'chat_provider_field_html' ], $page_slug, 'fe_search_ai_chat_provider_section' );
 
 		// Embedding Model Section
-		add_settings_section( 'fe_ai_search_embedding_section', __( 'Vectorization Model', 'fe-ai-search' ), null, $page_slug );
-		add_settings_field( 'fe_ai_search_embedding_provider', __( 'Vectorization AI', 'fe-ai-search' ), [ $this, 'embedding_provider_field_html' ], $page_slug, 'fe_ai_search_embedding_section' );
+		add_settings_section( 'fe_search_ai_embedding_section', __( 'Vectorization Model', 'fe-ai-search' ), null, $page_slug );
+		add_settings_field( 'fe_search_ai_embedding_provider', __( 'Vectorization AI', 'fe-ai-search' ), [ $this, 'embedding_provider_field_html' ], $page_slug, 'fe_search_ai_embedding_section' );
 
 		// API Keys Section
-		add_settings_section( 'fe_ai_search_api_section', __( 'API Keys', 'fe-ai-search' ), null, $page_slug );
-		add_settings_field( 'fe_ai_search_openai_api_key', 'OpenAI (GPT)', [ $this, 'openai_api_key_field_html' ], $page_slug, 'fe_ai_search_api_section' );
-		add_settings_field( 'fe_ai_search_google_api_key', 'Google (Gemini)', [ $this, 'google_api_key_field_html' ], $page_slug, 'fe_ai_search_api_section' );
-		add_settings_field( 'fe_ai_search_anthropic_api_key', 'Anthropic (Claude)', [ $this, 'anthropic_api_key_field_html' ], $page_slug, 'fe_ai_search_api_section' );
+		add_settings_section( 'fe_search_ai_api_section', __( 'API Keys', 'fe-ai-search' ), null, $page_slug );
+		add_settings_field( 'fe_search_ai_openai_api_key', 'OpenAI (GPT)', [ $this, 'openai_api_key_field_html' ], $page_slug, 'fe_search_ai_api_section' );
+		add_settings_field( 'fe_search_ai_google_api_key', 'Google (Gemini)', [ $this, 'google_api_key_field_html' ], $page_slug, 'fe_search_ai_api_section' );
+		add_settings_field( 'fe_search_ai_anthropic_api_key', 'Anthropic (Claude)', [ $this, 'anthropic_api_key_field_html' ], $page_slug, 'fe_search_ai_api_section' );
 
 		// ------------------
 		// Sync Tab
 		// ------------------
 		// Sync Controls Section
-		add_settings_section( 'fe_ai_search_sync_ui_section', __( 'Synchronization', 'fe-ai-search' ), null, $page_slug );
-		add_settings_field( 'fe_ai_search_sync_ui', __( 'Sync Controls', 'fe-ai-search' ), [ $this, 'sync_ui_field_html' ], $page_slug, 'fe_ai_search_sync_ui_section' );
+		add_settings_section( 'fe_search_ai_sync_ui_section', __( 'Synchronization', 'fe-ai-search' ), null, $page_slug );
+		add_settings_field( 'fe_search_ai_sync_ui', __( 'Sync Controls', 'fe-ai-search' ), [ $this, 'sync_ui_field_html' ], $page_slug, 'fe_search_ai_sync_ui_section' );
 
 		// Sync Targets Section
-		add_settings_section( 'fe_ai_search_sync_options_section', __( 'Content to Sync', 'fe-ai-search' ), null, $page_slug );
-		add_settings_field( 'fe_ai_search_sync_options', __( 'Sync Targets', 'fe-ai-search' ), [ $this, 'sync_options_field_html' ], $page_slug, 'fe_ai_search_sync_options_section' );
-		add_settings_field( 'fe_ai_search_include_post_ids', __( 'Only Sync Specific Posts', 'fe-ai-search' ), [ $this, 'include_post_ids_field_html' ], $page_slug, 'fe_ai_search_sync_options_section' );
-		add_settings_field( 'fe_ai_search_exclude_post_ids', __( 'Exclude Specific Posts', 'fe-ai-search' ), [ $this, 'exclude_post_ids_field_html' ], $page_slug, 'fe_ai_search_sync_options_section' );
-		add_settings_field( 'fe_ai_search_vector_store', __( 'Data Storage', 'fe-ai-search' ), [ $this, 'vector_store_field_html' ], $page_slug, 'fe_ai_search_sync_options_section' );
-		add_settings_field( 'fe_ai_search_sync_limit', __( 'Sync Limit', 'fe-ai-search' ), [ $this, 'sync_limit_field_html' ], $page_slug, 'fe_ai_search_sync_options_section' );
-		add_settings_field( 'fe_ai_search_batch_size', __( 'Batch Size', 'fe-ai-search' ), [ $this, 'batch_size_field_html' ], $page_slug, 'fe_ai_search_sync_options_section' );
+		add_settings_section( 'fe_search_ai_sync_options_section', __( 'Content to Sync', 'fe-ai-search' ), null, $page_slug );
+		add_settings_field( 'fe_search_ai_sync_options', __( 'Sync Targets', 'fe-ai-search' ), [ $this, 'sync_options_field_html' ], $page_slug, 'fe_search_ai_sync_options_section' );
+		add_settings_field( 'fe_search_ai_include_post_ids', __( 'Only Sync Specific Posts', 'fe-ai-search' ), [ $this, 'include_post_ids_field_html' ], $page_slug, 'fe_search_ai_sync_options_section' );
+		add_settings_field( 'fe_search_ai_exclude_post_ids', __( 'Exclude Specific Posts', 'fe-ai-search' ), [ $this, 'exclude_post_ids_field_html' ], $page_slug, 'fe_search_ai_sync_options_section' );
+		add_settings_field( 'fe_search_ai_vector_store', __( 'Data Storage', 'fe-ai-search' ), [ $this, 'vector_store_field_html' ], $page_slug, 'fe_search_ai_sync_options_section' );
+		add_settings_field( 'fe_search_ai_sync_limit', __( 'Sync Limit', 'fe-ai-search' ), [ $this, 'sync_limit_field_html' ], $page_slug, 'fe_search_ai_sync_options_section' );
+		add_settings_field( 'fe_search_ai_batch_size', __( 'Batch Size', 'fe-ai-search' ), [ $this, 'batch_size_field_html' ], $page_slug, 'fe_search_ai_sync_options_section' );
 
 		// Advanced Sync Section
-		add_settings_section( 'fe_ai_search_sync_advanced_section', __( 'Advanced Sync Settings', 'fe-ai-search' ), null, $page_slug );
+		add_settings_section( 'fe_search_ai_sync_advanced_section', __( 'Advanced Sync Settings', 'fe-ai-search' ), null, $page_slug );
 
 		// ------------------
 		// Display Tab
 		// ------------------
 		// Appearance Section
-		add_settings_section( 'fe_ai_search_display_appearance_section', __( 'Chat UI Appearance', 'fe-ai-search' ), null, $page_slug );
-		add_settings_field( 'fe_ai_search_display_chat_text', __( 'Text & Colors', 'fe-ai-search' ), [ $this, 'display_text_color_field_html' ], $page_slug, 'fe_ai_search_display_appearance_section' );
-		add_settings_field( 'fe_ai_search_display_interaction', __( 'Interaction', 'fe-ai-search' ), [ $this, 'display_interaction_field_html' ], $page_slug, 'fe_ai_search_display_appearance_section' );
-		add_settings_field( 'fe_ai_search_display_links', __( 'Legal Links', 'fe-ai-search' ), [ $this, 'display_links_field_html' ], $page_slug, 'fe_ai_search_display_appearance_section' );
+		add_settings_section( 'fe_search_ai_display_appearance_section', __( 'Chat UI Appearance', 'fe-ai-search' ), null, $page_slug );
+		add_settings_field( 'fe_search_ai_display_chat_text', __( 'Text & Colors', 'fe-ai-search' ), [ $this, 'display_text_color_field_html' ], $page_slug, 'fe_search_ai_display_appearance_section' );
+		add_settings_field( 'fe_search_ai_display_interaction', __( 'Interaction', 'fe-ai-search' ), [ $this, 'display_interaction_field_html' ], $page_slug, 'fe_search_ai_display_appearance_section' );
+		add_settings_field( 'fe_search_ai_display_links', __( 'Legal Links', 'fe-ai-search' ), [ $this, 'display_links_field_html' ], $page_slug, 'fe_search_ai_display_appearance_section' );
 
 		// Floating Mode Section
-		add_settings_section( 'fe_ai_search_display_floating_section', __( 'Floating Mode Settings', 'fe-ai-search' ), null, $page_slug );
-		add_settings_field( 'fe_ai_search_display_floating', __( 'Display Rules', 'fe-ai-search' ), [ $this, 'display_floating_field_html' ], $page_slug, 'fe_ai_search_display_floating_section' );
+		add_settings_section( 'fe_search_ai_display_floating_section', __( 'Floating Mode Settings', 'fe-ai-search' ), null, $page_slug );
+		add_settings_field( 'fe_search_ai_display_floating', __( 'Display Rules', 'fe-ai-search' ), [ $this, 'display_floating_field_html' ], $page_slug, 'fe_search_ai_display_floating_section' );
 
 		// Embed Mode Section
-		add_settings_section( 'fe_ai_search_display_embed_section', __( 'Embed Mode', 'fe-ai-search' ), null, $page_slug );
-		add_settings_field( 'fe_ai_search_display_embed', __( 'Shortcode', 'fe-ai-search' ), [ $this, 'display_embed_field_html' ], $page_slug, 'fe_ai_search_display_embed_section' );
+		add_settings_section( 'fe_search_ai_display_embed_section', __( 'Embed Mode', 'fe-ai-search' ), null, $page_slug );
+		add_settings_field( 'fe_search_ai_display_embed', __( 'Shortcode', 'fe-ai-search' ), [ $this, 'display_embed_field_html' ], $page_slug, 'fe_search_ai_display_embed_section' );
 
 		// Full Screen Mode Section
-		add_settings_section( 'fe_ai_search_display_fullscreen_section', __( 'Fullscreen Mode Settings', 'fe-ai-search' ), null, $page_slug );
-		add_settings_field( 'fe_ai_search_display_fullscreen', __( 'Fullscreen Page', 'fe-ai-search' ), [ $this, 'display_fullscreen_field_html' ], $page_slug, 'fe_ai_search_display_fullscreen_section' );
+		add_settings_section( 'fe_search_ai_display_fullscreen_section', __( 'Fullscreen Mode Settings', 'fe-ai-search' ), null, $page_slug );
+		add_settings_field( 'fe_search_ai_display_fullscreen', __( 'Fullscreen Page', 'fe-ai-search' ), [ $this, 'display_fullscreen_field_html' ], $page_slug, 'fe_search_ai_display_fullscreen_section' );
 
 		// ------------------
 		// Prompt Tab
 		// ------------------
-		add_settings_section( 'fe_ai_search_prompt_section', __( 'Prompt Settings', 'fe-ai-search' ), null, $page_slug );
-		add_settings_field( 'fe_ai_search_site_name', __( 'Site Name (AI)', 'fe-ai-search' ), [ $this, 'site_name_field_html' ], $page_slug, 'fe_ai_search_prompt_section' );
-		add_settings_field( 'fe_ai_search_site_purpose', __( 'Site Purpose (AI)', 'fe-ai-search' ), [ $this, 'site_purpose_field_html' ], $page_slug, 'fe_ai_search_prompt_section' );
-		add_settings_field( 'fe_ai_search_system_prompt', __( 'Base System Prompt', 'fe-ai-search' ), [ $this, 'system_prompt_field_html' ], $page_slug, 'fe_ai_search_prompt_section' );
+		add_settings_section( 'fe_search_ai_prompt_section', __( 'Prompt Settings', 'fe-ai-search' ), null, $page_slug );
+		add_settings_field( 'fe_search_ai_site_name', __( 'Site Name (AI)', 'fe-ai-search' ), [ $this, 'site_name_field_html' ], $page_slug, 'fe_search_ai_prompt_section' );
+		add_settings_field( 'fe_search_ai_site_purpose', __( 'Site Purpose (AI)', 'fe-ai-search' ), [ $this, 'site_purpose_field_html' ], $page_slug, 'fe_search_ai_prompt_section' );
+		add_settings_field( 'fe_search_ai_system_prompt', __( 'Base System Prompt', 'fe-ai-search' ), [ $this, 'system_prompt_field_html' ], $page_slug, 'fe_search_ai_prompt_section' );
 
 		// ------------------
 		// Data Tab
 		// ------------------
-		add_settings_section( 'fe_ai_search_data_section', __( 'Data Management', 'fe-ai-search' ), null, $page_slug );
-		add_settings_field( 'fe_ai_search_delete_vectors_ui', __( 'Delete Synced Data', 'fe-ai-search' ), [ $this, 'delete_vectors_ui_field_html' ], $page_slug, 'fe_ai_search_data_section' );
-		add_settings_field( 'fe_ai_search_delete_system_logs_ui', __( 'Delete System Logs', 'fe-ai-search' ), [ $this, 'delete_system_logs_ui_field_html' ], $page_slug, 'fe_ai_search_data_section' );
-		add_settings_field( 'fe_ai_search_delete_conversation_logs_ui', __( 'Delete Conversation Logs', 'fe-ai-search' ), [ $this, 'delete_conversation_logs_ui_field_html' ], $page_slug, 'fe_ai_search_data_section' );
-		add_settings_field( 'fe_ai_search_delete_on_uninstall', __( 'Delete Data on Uninstall', 'fe-ai-search' ), [ $this, 'delete_on_uninstall_field_html' ], $page_slug, 'fe_ai_search_data_section' );
+		add_settings_section( 'fe_search_ai_data_section', __( 'Data Management', 'fe-ai-search' ), null, $page_slug );
+		add_settings_field( 'fe_search_ai_delete_vectors_ui', __( 'Delete Synced Data', 'fe-ai-search' ), [ $this, 'delete_vectors_ui_field_html' ], $page_slug, 'fe_search_ai_data_section' );
+		add_settings_field( 'fe_search_ai_delete_system_logs_ui', __( 'Delete System Logs', 'fe-ai-search' ), [ $this, 'delete_system_logs_ui_field_html' ], $page_slug, 'fe_search_ai_data_section' );
+		add_settings_field( 'fe_search_ai_delete_conversation_logs_ui', __( 'Delete Conversation Logs', 'fe-ai-search' ), [ $this, 'delete_conversation_logs_ui_field_html' ], $page_slug, 'fe_search_ai_data_section' );
+		add_settings_field( 'fe_search_ai_delete_on_uninstall', __( 'Delete Data on Uninstall', 'fe-ai-search' ), [ $this, 'delete_on_uninstall_field_html' ], $page_slug, 'fe_search_ai_data_section' );
 
 		// ------------------
 		// Advanced Tab
 		// ------------------
-		add_settings_section( 'fe_ai_search_advanced_section', __( 'Advanced Settings', 'fe-ai-search' ), null, $page_slug );
-		add_settings_field( 'fe_ai_search_display_advanced', __( 'Assets Loading', 'fe-ai-search' ), [ $this, 'display_advanced_field_html' ], $page_slug, 'fe_ai_search_advanced_section' );
-		add_settings_field( 'fe_ai_search_debug_mode_enabled', __( 'Debug Mode', 'fe-ai-search' ), [ $this, 'debug_mode_field_html' ], $page_slug, 'fe_ai_search_advanced_section' );
-		add_settings_field( 'fe_ai_search_log_retention_days', __( 'Log Retention (days)', 'fe-ai-search' ), [ $this, 'log_retention_days_field_html' ], $page_slug, 'fe_ai_search_advanced_section' );
+		add_settings_section( 'fe_search_ai_advanced_section', __( 'Advanced Settings', 'fe-ai-search' ), null, $page_slug );
+		add_settings_field( 'fe_search_ai_display_advanced', __( 'Assets Loading', 'fe-ai-search' ), [ $this, 'display_advanced_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
+		add_settings_field( 'fe_search_ai_debug_mode_enabled', __( 'Debug Mode', 'fe-ai-search' ), [ $this, 'debug_mode_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
+		add_settings_field( 'fe_search_ai_log_retention_days', __( 'Log Retention (days)', 'fe-ai-search' ), [ $this, 'log_retention_days_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
 		$locale = get_locale();
 		if ( 'ja' === $locale || 'ja_JP' === $locale ) {
-			add_settings_field( 'fe_ai_search_japanese_tokenizer', __( 'Japanese Tokenizer', 'fe-ai-search' ), [ $this, 'japanese_tokenizer_field_html' ], $page_slug, 'fe_ai_search_advanced_section' );
+			add_settings_field( 'fe_search_ai_japanese_tokenizer', __( 'Japanese Tokenizer', 'fe-ai-search' ), [ $this, 'japanese_tokenizer_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
 		}
 
 		// Qdrant connection settings (endpoint, API key, collection) shown in Advanced tab.
-		add_settings_section( 'fe_ai_search_qdrant_section', null, null, $page_slug );
-		add_settings_field( 'fe_ai_search_qdrant_settings', __( 'Qdrant Settings', 'fe-ai-search' ), [ $this, 'qdrant_settings_field_html' ], $page_slug, 'fe_ai_search_qdrant_section' );
+		add_settings_section( 'fe_search_ai_qdrant_section', null, null, $page_slug );
+		add_settings_field( 'fe_search_ai_qdrant_settings', __( 'Qdrant Settings', 'fe-ai-search' ), [ $this, 'qdrant_settings_field_html' ], $page_slug, 'fe_search_ai_qdrant_section' );
 	}
 
 	/**
@@ -436,7 +436,7 @@ class FE_Search_AI_Settings {
 				<label>
 					<input
 						type="radio"
-						name="fe_ai_search_settings[vector][store]"
+						name="fe_search_ai_settings[vector][store]"
 						value="mariadb"
 						<?php checked( $current, 'mariadb' ); ?>
 					>
@@ -449,7 +449,7 @@ class FE_Search_AI_Settings {
 				<label>
 					<input
 						type="radio"
-						name="fe_ai_search_settings[vector][store]"
+						name="fe_search_ai_settings[vector][store]"
 						value="qdrant"
 						<?php checked( $current, 'qdrant' ); ?>
 					>
@@ -493,13 +493,13 @@ class FE_Search_AI_Settings {
 			<table class="form-table">
 				<tr>
 					<th scope="row">
-						<label for="fe_ai_search_qdrant_endpoint"><?php esc_html_e( 'Qdrant Endpoint', 'fe-ai-search' ); ?></label>
+						<label for="fe_search_ai_qdrant_endpoint"><?php esc_html_e( 'Qdrant Endpoint', 'fe-ai-search' ); ?></label>
 					</th>
 					<td>
 						<input
 							type="url"
-							id="fe_ai_search_qdrant_endpoint"
-							name="fe_ai_search_settings[vector][qdrant][endpoint]"
+							id="fe_search_ai_qdrant_endpoint"
+							name="fe_search_ai_settings[vector][qdrant][endpoint]"
 							value="<?php echo esc_attr( $endpoint ); ?>"
 							class="regular-text"
 							placeholder="https://your-instance.qdrant.io:6333"
@@ -511,13 +511,13 @@ class FE_Search_AI_Settings {
 				</tr>
 				<tr>
 					<th scope="row">
-						<label for="fe_ai_search_qdrant_api_key"><?php esc_html_e( 'Qdrant API Key', 'fe-ai-search' ); ?></label>
+						<label for="fe_search_ai_qdrant_api_key"><?php esc_html_e( 'Qdrant API Key', 'fe-ai-search' ); ?></label>
 					</th>
 					<td>
 						<input
 							type="password"
-							id="fe_ai_search_qdrant_api_key"
-							name="fe_ai_search_settings[vector][qdrant][api_key]"
+							id="fe_search_ai_qdrant_api_key"
+							name="fe_search_ai_settings[vector][qdrant][api_key]"
 							value="<?php echo esc_attr( $api_key ); ?>"
 							class="regular-text"
 						>
@@ -528,13 +528,13 @@ class FE_Search_AI_Settings {
 				</tr>
 				<tr>
 					<th scope="row">
-						<label for="fe_ai_search_qdrant_collection"><?php esc_html_e( 'Collection Name', 'fe-ai-search' ); ?></label>
+						<label for="fe_search_ai_qdrant_collection"><?php esc_html_e( 'Collection Name', 'fe-ai-search' ); ?></label>
 					</th>
 					<td>
 						<input
 							type="text"
-							id="fe_ai_search_qdrant_collection"
-							name="fe_ai_search_settings[vector][qdrant][collection]"
+							id="fe_search_ai_qdrant_collection"
+							name="fe_search_ai_settings[vector][qdrant][collection]"
 							value="<?php echo esc_attr( $collection ); ?>"
 							class="regular-text"
 							placeholder="collection-1"
@@ -580,10 +580,10 @@ class FE_Search_AI_Settings {
 		 * where the key is the provider slug (e.g., 'openai')
 		 * and the value is the display name (e.g., 'OpenAI (GPT-4o)').
 		 */
-		$providers = apply_filters( 'fe_ai_search_chat_providers', $providers );
+		$providers = apply_filters( 'fe_search_ai_chat_providers', $providers );
 
 		?>
-		<select name="fe_ai_search_settings[provider][chat]">
+		<select name="fe_search_ai_settings[provider][chat]">
 			<?php foreach ( $providers as $key => $name ) : ?>
 				<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $provider, $key ); ?>>
 					<?php echo esc_html( $name ); ?>
@@ -626,10 +626,10 @@ class FE_Search_AI_Settings {
 		 * where the key is the provider slug (e.g., 'google')
 		 * and the value is the display name (e.g., 'Google (text-embedding-004)').
 		 */
-		$providers = apply_filters( 'fe_ai_search_embedding_providers', $providers );
+		$providers = apply_filters( 'fe_search_ai_embedding_providers', $providers );
 
 		?>
-		<select name="fe_ai_search_settings[provider][embedding]">
+		<select name="fe_search_ai_settings[provider][embedding]">
 			<?php foreach ( $providers as $key => $name ) : ?>
 				<option
 					value="<?php echo esc_attr( $key ); ?>" <?php selected( $provider, $key ); ?>
@@ -665,7 +665,7 @@ class FE_Search_AI_Settings {
 			<?php $this->anthropic_api_key_field_html(); ?>
 			<?php
 			// Allow Pro version to add its API key fields here
-			do_action( 'fe_ai_search_after_api_key_fields', $this );
+			do_action( 'fe_search_ai_after_api_key_fields', $this );
 			?>
 		</div>
 		<?php
@@ -687,14 +687,14 @@ class FE_Search_AI_Settings {
 
 		$model_to_display = 'gpt-4o-mini';
 		if ( $this->is_license_active ) {
-			$pro_options      = get_option( 'fe_ai_search_pro_settings', $model_to_display );
+			$pro_options      = get_option( 'fe_search_ai_pro_settings', $model_to_display );
 			$model_to_display = $pro_options['model']['openai'] ?? $model_to_display;
 		}
 		?>
 		<input
 			type="password"
 			id="fe_search_ai_openai_api_key"
-			name="fe_ai_search_settings[provider][openai_key]"
+			name="fe_search_ai_settings[provider][openai_key]"
 			value="<?php echo esc_attr( $api_key ); ?>"
 			class="regular-text"
 		>
@@ -710,7 +710,7 @@ class FE_Search_AI_Settings {
 		<div>
 			<p>
 				<strong><?php esc_html_e( 'Model', 'fe-ai-search' ); ?>:</strong> <?php echo esc_html( $model_to_display ); ?>
-				<?php if ( ! class_exists( '\FEAISearch\Pro\Admin\FE_AI_Search_Pro_Settings' ) ) : ?>
+				<?php if ( ! class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) ) : ?>
 					<div class="description">
 						<?php
 						printf(
@@ -754,14 +754,14 @@ class FE_Search_AI_Settings {
 
 		$model_to_display = 'gemini-2.5-flash-lite';
 		if ( $this->is_license_active ) {
-			$pro_options      = get_option( 'fe_ai_search_pro_settings', $model_to_display );
+			$pro_options      = get_option( 'fe_search_ai_pro_settings', $model_to_display );
 			$model_to_display = $pro_options['model']['google'] ?? $model_to_display;
 		}
 		?>
 		<input
 			type="password"
 			id="fe_search_ai_google_api_key"
-			name="fe_ai_search_settings[provider][google_key]"
+			name="fe_search_ai_settings[provider][google_key]"
 			value="<?php echo esc_attr( $api_key ); ?>"
 			class="regular-text"
 		>
@@ -777,7 +777,7 @@ class FE_Search_AI_Settings {
 		<div>
 			<p>
 				<strong><?php esc_html_e( 'Model', 'fe-ai-search' ); ?>:</strong> <?php echo esc_html( $model_to_display ); ?>
-				<?php if ( ! class_exists( '\FEAISearch\Pro\Admin\FE_AI_Search_Pro_Settings' ) ) : ?>
+				<?php if ( ! class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) ) : ?>
 					<div class="description">
 						<?php
 						printf(
@@ -821,14 +821,14 @@ class FE_Search_AI_Settings {
 
 		$model_to_display = 'claude-haiku-4-5-20251001';
 		if ( $this->is_license_active ) {
-			$pro_options      = get_option( 'fe_ai_search_pro_settings', $model_to_display );
+			$pro_options      = get_option( 'fe_search_ai_pro_settings', $model_to_display );
 			$model_to_display = $pro_options['model']['anthropic'] ?? $model_to_display;
 		}
 		?>
 		<input
 			type="password"
 			id="fe_search_ai_anthropic_api_key"
-			name="fe_ai_search_settings[provider][anthropic_key]"
+			name="fe_search_ai_settings[provider][anthropic_key]"
 			value="<?php echo esc_attr( $api_key ); ?>"
 			class="regular-text"
 		>
@@ -844,7 +844,7 @@ class FE_Search_AI_Settings {
 		<div>
 			<p>
 				<strong><?php esc_html_e( 'Model', 'fe-ai-search' ); ?>:</strong> <?php echo esc_html( $model_to_display ); ?>
-				<?php if ( ! class_exists( '\FEAISearch\Pro\Admin\FE_AI_Search_Pro_Settings' ) ) : ?>
+				<?php if ( ! class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) ) : ?>
 					<div class="description">
 						<?php
 						printf(
@@ -887,7 +887,7 @@ class FE_Search_AI_Settings {
 	public function sync_options_field_html() {
 		// New sync schema: per-post-type options are stored under sync['targets'][post_type].
 		$sync_targets = $this->options['sync']['targets'] ?? [];
-		$is_pro       = ( $this->is_license_active && class_exists( '\FEAISearch\Pro\Admin\FE_AI_Search_Pro_Settings' ) );
+		$is_pro       = ( $this->is_license_active && class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) );
 
 		$post_types          = get_post_types( [ 'public' => true ], 'objects' );
 		$excluded_post_types = [ 'attachment' ];
@@ -918,7 +918,7 @@ class FE_Search_AI_Settings {
 					<label>
 						<input
 							type="checkbox"
-							name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][enabled]"
+							name="fe_search_ai_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][enabled]"
 							value="1"
 							<?php checked( $is_enabled ); ?>
 						>
@@ -940,7 +940,7 @@ class FE_Search_AI_Settings {
 										<td><?php printf( esc_html__( '%1$s (%2$s)', 'fe-ai-search' ), esc_html__( 'Post Title', 'fe-ai-search' ), 'post_title' ); ?></td>
 										<td>
 											<label>
-												<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_include_title]" value="1" <?php checked( $snippet_title ); ?>>
+												<input type="checkbox" name="fe_search_ai_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_include_title]" value="1" <?php checked( $snippet_title ); ?>>
 											</label>
 										</td>
 									</tr>
@@ -948,7 +948,7 @@ class FE_Search_AI_Settings {
 										<td><?php printf( esc_html__( '%1$s (%2$s)', 'fe-ai-search' ), esc_html__( 'Post Content', 'fe-ai-search' ), 'post_content' ); ?></td>
 										<td>
 											<label>
-												<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_include_content]" value="1" <?php checked( $snippet_content ); ?>>
+												<input type="checkbox" name="fe_search_ai_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_include_content]" value="1" <?php checked( $snippet_content ); ?>>
 											</label>
 										</td>
 									</tr>
@@ -956,7 +956,7 @@ class FE_Search_AI_Settings {
 										<td><?php printf( esc_html__( '%1$s (%2$s)', 'fe-ai-search' ), esc_html__( 'Post Date', 'fe-ai-search' ), 'post_date' ); ?></td>
 										<td>
 											<label>
-												<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_include_date]" value="1" <?php checked( $snippet_date ); ?>>
+												<input type="checkbox" name="fe_search_ai_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_include_date]" value="1" <?php checked( $snippet_date ); ?>>
 											</label>
 										</td>
 									</tr>
@@ -964,7 +964,7 @@ class FE_Search_AI_Settings {
 										<td><?php printf( esc_html__( '%1$s (%2$s)', 'fe-ai-search' ), esc_html__( 'Post Author', 'fe-ai-search' ), 'usermeta > nickname' ); ?></td>
 										<td>
 											<label>
-												<input type="checkbox" name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_include_author]" value="1" <?php checked( $snippet_author ); ?>>
+												<input type="checkbox" name="fe_search_ai_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_include_author]" value="1" <?php checked( $snippet_author ); ?>>
 											</label>
 										</td>
 									</tr>
@@ -979,8 +979,8 @@ class FE_Search_AI_Settings {
 											$snippet_tax_term_ids     = $pt_options['snippet_taxonomies'][ $tax->name ]['term_ids'] ?? '';
 											$snippet_tax_enabled      = ! empty( $pt_options['snippet_taxonomies'][ $tax->name ]['enabled'] );
 											$tax_enabled_checkbox_id  = sanitize_html_class( 'fe-ai-search-snippet-tax-enabled-' . $post_type->name . '-' . $tax->name );
-											$tax_behavior_radio_name  = "fe_ai_search_settings[sync][targets][{$post_type->name}][snippet_taxonomies][{$tax->name}][behavior]";
-											$tax_term_ids_name        = "fe_ai_search_settings[sync][targets][{$post_type->name}][snippet_taxonomies][{$tax->name}][term_ids]";
+											$tax_behavior_radio_name  = "fe_search_ai_settings[sync][targets][{$post_type->name}][snippet_taxonomies][{$tax->name}][behavior]";
+											$tax_term_ids_name        = "fe_search_ai_settings[sync][targets][{$post_type->name}][snippet_taxonomies][{$tax->name}][term_ids]";
 											$tax_config_wrapper_class = sanitize_html_class( 'fe-ai-search-tax-config-wrapper-' . $post_type->name . '-' . $tax->name );
 											?>
 											<tr>
@@ -993,7 +993,7 @@ class FE_Search_AI_Settings {
 																id="<?php echo esc_attr( $tax_enabled_checkbox_id ); ?>"
 																class="fe-ai-search-snippet-tax-enabled"
 																data-target-wrapper-class="<?php echo esc_attr( $tax_config_wrapper_class ); ?>"
-																name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_taxonomies][<?php echo esc_attr( $tax->name ); ?>][enabled]"
+																name="fe_search_ai_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_taxonomies][<?php echo esc_attr( $tax->name ); ?>][enabled]"
 																value="1"
 																<?php checked( $snippet_tax_enabled ); ?>
 															>
@@ -1011,7 +1011,7 @@ class FE_Search_AI_Settings {
 																<?php esc_html_e( 'Exclude specified term IDs', 'fe-ai-search' ); ?>
 															</label>
 														</div>
-														<input type="text" name="<?php echo esc_attr( $tax_term_ids_name ); ?>" value="<?php echo esc_attr( $snippet_tax_term_ids ); ?>" placeholder="<?php esc_attr_e( 'e.g. 3,7,12', 'fe-ai-search' ); ?>" class="regular-text">
+														<input type="text" name="<?php echo esc_attr( $tax_term_ids_name ); ?>" value="<?php echo esc_attr( $snippet_tax_term_ids ); ?>" placeholder="<?php esc_attr_e( 'e.g.', 'fe-ai-search' ); ?> 3,7,12" class="regular-text">
 														<p class="description">
 															<?php esc_html_e( 'Comma-separated term IDs. Leave empty to include all terms.', 'fe-ai-search' ); ?>
 														</p>
@@ -1031,7 +1031,7 @@ class FE_Search_AI_Settings {
 								<label>
 									<input
 										type="checkbox"
-										name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][enable_custom_fields]"
+										name="fe_search_ai_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][enable_custom_fields]"
 										value="1"
 										class="fe-ai-search-cf-toggle"
 										data-target-input-id="<?php echo $snippet_field_input_id; ?>"
@@ -1040,7 +1040,7 @@ class FE_Search_AI_Settings {
 									>
 									<?php echo $this->license_alert_icon; ?>
 									<?php esc_html_e( 'Include Custom Fields', 'fe-ai-search' ); ?>
-									<?php if ( ! class_exists( '\FEAISearch\Pro\Admin\FE_AI_Search_Pro_Settings' ) ) : ?>
+									<?php if ( ! class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) ) : ?>
 										<span class="description">(
 											<?php
 											printf(
@@ -1064,7 +1064,7 @@ class FE_Search_AI_Settings {
 									</label>
 									<textarea
 										id="<?php echo $snippet_field_input_id; ?>"
-										name="fe_ai_search_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_custom_fields]"
+										name="fe_search_ai_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_custom_fields]"
 										rows="3"
 										cols="60"
 										class="large-text code"
@@ -1096,7 +1096,7 @@ class FE_Search_AI_Settings {
 	 */
 	public function sync_ui_field_html() {
 		global $wpdb;
-		$vectors_table = $wpdb->prefix . 'fe_ai_search_vectors';
+		$vectors_table = $wpdb->prefix . 'fe_search_ai_vectors';
 
 		// Check if the table exists *before* querying it to prevent errors.
 		$table_exists       = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $vectors_table ) ) === $vectors_table;
@@ -1107,7 +1107,7 @@ class FE_Search_AI_Settings {
 
 		// Get sync status from the dedicated runtime state option so that it is
 		// not affected by settings sanitization.
-		$sync_state  = get_option( 'fe_ai_search_sync_state', [] );
+		$sync_state  = get_option( 'fe_search_ai_sync_state', [] );
 		$sync_status = $sync_state['status'] ?? [];
 		$last_sync   = $sync_status['last_sync_timestamp'] ?? 0;
 		?>
@@ -1220,7 +1220,7 @@ class FE_Search_AI_Settings {
 	public function delete_system_logs_ui_field_html() {
 		?>
 		<p class="description">
-			<?php esc_html_e( 'This will delete all system logs stored in the `{prefix}fe_ai_search_system_logs` table. Use this if logs have grown unexpectedly large or contain information you no longer wish to keep.', 'fe-ai-search' ); ?>
+			<?php esc_html_e( 'This will delete all system logs stored in the `{prefix}fe_search_ai_system_logs` table. Use this if logs have grown unexpectedly large or contain information you no longer wish to keep.', 'fe-ai-search' ); ?>
 		</p>
 		<button type="button" id="fe_search_ai_delete_system_logs_button" class="button button-secondary">
 			<?php esc_html_e( 'Delete all system logs', 'fe-ai-search' ); ?>
@@ -1242,7 +1242,7 @@ class FE_Search_AI_Settings {
 	public function delete_conversation_logs_ui_field_html() {
 		?>
 		<p class="description">
-			<?php esc_html_e( 'This will delete all conversation logs stored in the `{prefix}fe_ai_search_logs` table. Use this if conversations have grown unexpectedly large or contain information you no longer wish to keep.', 'fe-ai-search' ); ?>
+			<?php esc_html_e( 'This will delete all conversation logs stored in the `{prefix}fe_search_ai_logs` table. Use this if conversations have grown unexpectedly large or contain information you no longer wish to keep.', 'fe-ai-search' ); ?>
 		</p>
 		<button type="button" id="fe_search_ai_delete_conversation_logs_button" class="button button-secondary">
 			<?php esc_html_e( 'Delete all conversation logs', 'fe-ai-search' ); ?>
@@ -1288,7 +1288,7 @@ class FE_Search_AI_Settings {
 		}
 
 		global $wpdb;
-		$table_name = $wpdb->prefix . 'fe_ai_search_logs';
+		$table_name = $wpdb->prefix . 'fe_search_ai_logs';
 
 		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) === $table_name ) {
 			$wpdb->query( "TRUNCATE TABLE `{$table_name}`" );
@@ -1328,14 +1328,14 @@ class FE_Search_AI_Settings {
 		];
 		$floating_options = wp_parse_args( $floating_options, $defaults );
 		?>
-		<fieldset id="fe_ai_search_settings_display_floating">
+		<fieldset id="fe_search_ai_settings_display_floating">
 			<div id="fe-ai-search-floating-display-accordion" class="fe-ai-search-accordion-wrapper">
 				<div class="post-type-accordion-item">
 					<h4 class="accordion-title">
 						<label>
 							<input
 								type="checkbox"
-								name="fe_ai_search_settings[display][floating][enable_floating_mode]"
+								name="fe_search_ai_settings[display][floating][enable_floating_mode]"
 								value="1" <?php checked( $floating_options['enable_floating_mode'] ); ?>
 							>
 							<strong><?php esc_html_e( 'Enable floating chat', 'fe-ai-search' ); ?></strong>
@@ -1351,7 +1351,7 @@ class FE_Search_AI_Settings {
 									<label>
 										<input
 											type="checkbox"
-											name="fe_ai_search_settings[display][floating][show_to_logged_in_users]"
+											name="fe_search_ai_settings[display][floating][show_to_logged_in_users]"
 											value="1" <?php checked( ! empty( $floating_options['show_to_logged_in_users'] ) ); ?>
 										>
 										<?php esc_html_e( 'Show to logged-in users', 'fe-ai-search' ); ?>
@@ -1359,7 +1359,7 @@ class FE_Search_AI_Settings {
 									<label>
 										<input
 											type="checkbox"
-											name="fe_ai_search_settings[display][floating][show_to_guests]"
+											name="fe_search_ai_settings[display][floating][show_to_guests]"
 											value="1" <?php checked( ! empty( $floating_options['show_to_guests'] ) ); ?>
 										>
 										<?php esc_html_e( 'Show to non-logged-in users', 'fe-ai-search' ); ?>
@@ -1373,14 +1373,14 @@ class FE_Search_AI_Settings {
 									<label>
 										<input
 											type="checkbox"
-											name="fe_ai_search_settings[display][floating][display_on_pc]"
+											name="fe_search_ai_settings[display][floating][display_on_pc]"
 											value="1" <?php checked( $floating_options['display_on_pc'] ); ?>
 										> <?php esc_html_e( 'Show on PC', 'fe-ai-search' ); ?>
 									</label>
 									<label>
 										<input
 											type="checkbox"
-											name="fe_ai_search_settings[display][floating][display_on_mobile]"
+											name="fe_search_ai_settings[display][floating][display_on_mobile]"
 											value="1" <?php checked( $floating_options['display_on_mobile'] ); ?>
 										> <?php esc_html_e( 'Show on Mobile', 'fe-ai-search' ); ?>
 									</label>
@@ -1395,7 +1395,7 @@ class FE_Search_AI_Settings {
 									<label>
 										<input
 											type="checkbox"
-											name="fe_ai_search_settings[display][floating][display_rules][show_on_front_page]"
+											name="fe_search_ai_settings[display][floating][display_rules][show_on_front_page]"
 											value="1" <?php checked( $floating_options['display_rules']['show_on_front_page'] ); ?>
 										>
 										<?php esc_html_e( 'Home', 'fe-ai-search' ); ?>
@@ -1403,7 +1403,7 @@ class FE_Search_AI_Settings {
 									<label>
 										<input
 											type="checkbox"
-											name="fe_ai_search_settings[display][floating][display_rules][show_on_archives]"
+											name="fe_search_ai_settings[display][floating][display_rules][show_on_archives]"
 											value="1" <?php checked( $floating_options['display_rules']['show_on_archives'] ); ?>
 										>
 										<?php esc_html_e( 'Archive', 'fe-ai-search' ); ?>
@@ -1411,7 +1411,7 @@ class FE_Search_AI_Settings {
 									<label>
 										<input
 											type="checkbox"
-											name="fe_ai_search_settings[display][floating][display_rules][show_on_search]"
+											name="fe_search_ai_settings[display][floating][display_rules][show_on_search]"
 											value="1" <?php checked( $floating_options['display_rules']['show_on_search'] ); ?>
 										>
 										<?php esc_html_e( 'Search result page', 'fe-ai-search' ); ?>
@@ -1419,7 +1419,7 @@ class FE_Search_AI_Settings {
 									<label>
 										<input
 											type="checkbox"
-											name="fe_ai_search_settings[display][floating][display_rules][show_on_404]"
+											name="fe_search_ai_settings[display][floating][display_rules][show_on_404]"
 											value="1" <?php checked( ! empty( $floating_options['display_rules']['show_on_404'] ) ); ?>
 										>
 										<?php esc_html_e( '404 page', 'fe-ai-search' ); ?>
@@ -1427,7 +1427,7 @@ class FE_Search_AI_Settings {
 									<label>
 										<input
 											type="checkbox"
-											name="fe_ai_search_settings[display][floating][display_rules][show_on_singular]"
+											name="fe_search_ai_settings[display][floating][display_rules][show_on_singular]"
 											value="1" <?php checked( ! empty( $floating_options['display_rules']['show_on_singular'] ) ); ?>
 										>
 										<?php esc_html_e( 'Single pages', 'fe-ai-search' ); ?>
@@ -1444,7 +1444,7 @@ class FE_Search_AI_Settings {
 									<input
 										type="text"
 										id="fe_search_ai_include_ids"
-										name="fe_ai_search_settings[display][floating][display_rules][include_ids]"
+										name="fe_search_ai_settings[display][floating][display_rules][include_ids]"
 										value="<?php echo esc_attr( $floating_options['display_rules']['include_ids'] ); ?>"
 										class="regular-text"
 										placeholder="<?php esc_attr_e( 'e.g.', 'fe-ai-search' ); ?> 10, 25, 103"
@@ -1461,7 +1461,7 @@ class FE_Search_AI_Settings {
 									<input
 										type="text"
 										id="fe_search_ai_exclude_ids"
-										name="fe_ai_search_settings[display][floating][display_rules][exclude_ids]"
+										name="fe_search_ai_settings[display][floating][display_rules][exclude_ids]"
 										value="<?php echo esc_attr( $floating_options['display_rules']['exclude_ids'] ); ?>"
 										class="regular-text"
 										placeholder="<?php esc_attr_e( 'e.g.', 'fe-ai-search' ); ?> 15, 30"
@@ -1495,7 +1495,7 @@ class FE_Search_AI_Settings {
 		?>
 		<input
 			type="number"
-			name="fe_ai_search_settings[advanced][log_retention_days]"
+			name="fe_search_ai_settings[advanced][log_retention_days]"
 			value="<?php echo esc_attr( $days ); ?>"
 			class="small-text"
 			min="1"
@@ -1537,11 +1537,11 @@ class FE_Search_AI_Settings {
 			'yahoo_ma'      => __( 'Yahoo! Japanese MA API', 'fe-ai-search' ),
 		];
 
-		$has_constant = defined( 'FE_AI_SEARCH_YAHOO_APP_ID' );
-		$const_id     = $has_constant ? FE_AI_SEARCH_YAHOO_APP_ID : '';
+		$has_constant = defined( 'FE_SEARCH_AI_YAHOO_APP_ID' );
+		$const_id     = $has_constant ? FE_SEARCH_AI_YAHOO_APP_ID : '';
 		?>
 		<fieldset>
-			<select id="fe_search_ai_japanese_tokenizer_engine" name="fe_ai_search_settings[tokenizer][ja][engine]">
+			<select id="fe_search_ai_japanese_tokenizer_engine" name="fe_search_ai_settings[tokenizer][ja][engine]">
 				<?php foreach ( $engines as $key => $label ) : ?>
 					<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $engine, $key ); ?>>
 						<?php echo esc_html( $label ); ?>
@@ -1560,7 +1560,7 @@ class FE_Search_AI_Settings {
 				<input
 					id="fe_search_ai_yahoo_app_id"
 					type="password"
-					name="fe_ai_search_settings[tokenizer][ja][yahoo_id]"
+					name="fe_search_ai_settings[tokenizer][ja][yahoo_id]"
 					value="<?php echo esc_attr( $yahoo_id ); ?>"
 					class="regular-text"
 				>
@@ -1571,12 +1571,12 @@ class FE_Search_AI_Settings {
 							printf(
 								/* translators: 1: constant name, 2: truncated value */
 								esc_html__( '%1$s is defined in wp-config.php and will be used with priority over this field. (Current constant starts with: %2$s)', 'fe-ai-search' ),
-								'FE_AI_SEARCH_YAHOO_APP_ID',
+								'FE_SEARCH_AI_YAHOO_APP_ID',
 								esc_html( mb_substr( $const_id, 0, 8 ) )
 							);
 						?>
 					<?php else : ?>
-						<?php esc_html_e( 'If you also define FE_AI_SEARCH_YAHOO_APP_ID in wp-config.php, that constant will override this field.', 'fe-ai-search' ); ?>
+						<?php esc_html_e( 'If you also define FE_SEARCH_AI_YAHOO_APP_ID in wp-config.php, that constant will override this field.', 'fe-ai-search' ); ?>
 					<?php endif; ?>
 				</p>
 			</div>
@@ -1618,7 +1618,7 @@ class FE_Search_AI_Settings {
 	 */
 	public function display_fullscreen_field_html() {
 		$display_options = $this->options['display'] ?? [];
-		$should_disable  = ! ( class_exists( '\FEAISearch\Pro\Admin\FE_AI_Search_Pro_Settings' ) && $this->is_license_active );
+		$should_disable  = ! ( class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) && $this->is_license_active );
 
 		?>
 		<fieldset>
@@ -1629,7 +1629,7 @@ class FE_Search_AI_Settings {
 			<?php
 			$dropdown_html = wp_dropdown_pages(
 				[
-					'name'              => 'fe_ai_search_settings[display][fullscreen_page_id]',
+					'name'              => 'fe_search_ai_settings[display][fullscreen_page_id]',
 					'id'                => 'fe_search_ai_fullscreen_page_id',
 					'echo'              => 0,
 					'selected'          => $display_options['fullscreen_page_id'] ?? 0,
@@ -1649,7 +1649,7 @@ class FE_Search_AI_Settings {
 
 			echo $dropdown_html;
 			?>
-			<?php if ( ! class_exists( '\FEAISearch\Pro\Admin\FE_AI_Search_Pro_Settings' ) ) : ?>
+			<?php if ( ! class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) ) : ?>
 				<span class="description">(
 					<?php
 					printf(
@@ -1661,7 +1661,7 @@ class FE_Search_AI_Settings {
 							'fe-ai-search-change-model-link',
 							esc_html__( 'Pro', 'fe-ai-search' )
 						)
-					)
+					);
 					?>
 				)</span>
 			<?php endif; ?>
@@ -1717,7 +1717,7 @@ class FE_Search_AI_Settings {
 			<input
 				type="text"
 				id="fe_search_ai_window_title"
-				name="fe_ai_search_settings[display][text][window_title]"
+				name="fe_search_ai_settings[display][text][window_title]"
 				value="<?php echo esc_attr( $window_title ); ?>"
 				placeholder="<?php echo esc_attr( $defaults['window_title'] ); ?>"
 				class="regular-text"
@@ -1727,7 +1727,7 @@ class FE_Search_AI_Settings {
 			<label for="fe_search_ai_greeting_message"><?php esc_html_e( 'First greeting', 'fe-ai-search' ); ?></label>
 			<textarea
 				id="fe_search_ai_greeting_message"
-				name="fe_ai_search_settings[display][text][greeting_message]"
+				name="fe_search_ai_settings[display][text][greeting_message]"
 				rows="3"
 				class="large-text"
 				placeholder="<?php echo esc_attr( $defaults['greeting_message'] ); ?>"
@@ -1738,7 +1738,7 @@ class FE_Search_AI_Settings {
 			<input
 				type="text"
 				id="fe_search_ai_placeholder_text"
-				name="fe_ai_search_settings[display][text][placeholder_text]"
+				name="fe_search_ai_settings[display][text][placeholder_text]"
 				value="<?php echo esc_attr( $placeholder_text ); ?>"
 				placeholder="<?php echo esc_attr( $defaults['placeholder_text'] ); ?>"
 				class="regular-text"
@@ -1749,7 +1749,7 @@ class FE_Search_AI_Settings {
 			<input
 				type="text"
 				id="fe_search_ai_submit_button_text"
-				name="fe_ai_search_settings[display][text][submit_button_text]"
+				name="fe_search_ai_settings[display][text][submit_button_text]"
 				value="<?php echo esc_attr( $submit_button_text ); ?>"
 				placeholder="<?php echo esc_attr( $defaults['submit_button_text'] ); ?>"
 				class="regular-text"
@@ -1762,7 +1762,7 @@ class FE_Search_AI_Settings {
 					<input
 						type="hidden"
 						id="fe_search_ai_key_color"
-						name="fe_ai_search_settings[display][ui][key_color]"
+						name="fe_search_ai_settings[display][ui][key_color]"
 						value="<?php echo esc_attr( $key_color ); ?>"
 					>
 					<div
@@ -1784,7 +1784,7 @@ class FE_Search_AI_Settings {
 					<input
 						type="hidden"
 						id="fe_search_ai_background_color"
-						name="fe_ai_search_settings[display][ui][background_color]"
+						name="fe_search_ai_settings[display][ui][background_color]"
 						value="<?php echo esc_attr( $background_color ); ?>"
 					>
 					<div
@@ -1806,7 +1806,7 @@ class FE_Search_AI_Settings {
 					<input
 						type="hidden"
 						id="fe_search_ai_text_color"
-						name="fe_ai_search_settings[display][ui][text_color]"
+						name="fe_search_ai_settings[display][ui][text_color]"
 						value="<?php echo esc_attr( $text_color ); ?>"
 					>
 					<div
@@ -1827,7 +1827,7 @@ class FE_Search_AI_Settings {
 				<label>
 					<input
 						type="checkbox"
-						name="fe_ai_search_settings[display][ui][use_gradient]"
+						name="fe_search_ai_settings[display][ui][use_gradient]"
 						value="1"
 						<?php checked( (bool) $use_gradient ); ?>
 					>
@@ -1861,7 +1861,7 @@ class FE_Search_AI_Settings {
 			<label>
 				<input
 					type="checkbox"
-					name="fe_ai_search_settings[display][ui][enable_css]"
+					name="fe_search_ai_settings[display][ui][enable_css]"
 					value="1"
 					<?php checked( $enable_css, true ); ?>
 				/>
@@ -1874,7 +1874,7 @@ class FE_Search_AI_Settings {
 			<label>
 				<input
 					type="checkbox"
-					name="fe_ai_search_settings[display][ui][enable_js]"
+					name="fe_search_ai_settings[display][ui][enable_js]"
 					value="1"
 					<?php checked( $enable_js, true ); ?>
 				/>
@@ -1902,7 +1902,7 @@ class FE_Search_AI_Settings {
 		?>
 		<input
 			type="text"
-			name="fe_ai_search_settings[sync][include][ids]"
+			name="fe_search_ai_settings[sync][include][ids]"
 			value="<?php echo esc_attr( $ids ); ?>"
 			class="regular-text"
 		>
@@ -1927,7 +1927,7 @@ class FE_Search_AI_Settings {
 		?>
 		<input
 			type="text"
-			name="fe_ai_search_settings[sync][exclude][ids]"
+			name="fe_search_ai_settings[sync][exclude][ids]"
 			value="<?php echo esc_attr( $ids ); ?>"
 			class="regular-text"
 		>
@@ -1954,7 +1954,7 @@ class FE_Search_AI_Settings {
 		?>
 		<input
 			type="number"
-			name="fe_ai_search_settings[sync][limit]"
+			name="fe_search_ai_settings[sync][limit]"
 			value="<?php echo esc_attr( $limit ); ?>"
 			class="small-text"
 			min="-1"
@@ -1990,7 +1990,7 @@ class FE_Search_AI_Settings {
 			<label>
 				<input
 					type="checkbox"
-					name="fe_ai_search_settings[data][options][delete_on_uninstall]"
+					name="fe_search_ai_settings[data][options][delete_on_uninstall]"
 					value="1"
 					<?php checked( $delete_on_uninstall, true ); ?>
 				/>
@@ -2034,7 +2034,7 @@ class FE_Search_AI_Settings {
 			<label>
 				<input
 					type="checkbox"
-					name="fe_ai_search_settings[sync][targets][post_types][]"
+					name="fe_search_ai_settings[sync][targets][post_types][]"
 					value="<?php echo esc_attr( $post_type->name ); ?>"
 					<?php checked( in_array( $post_type->name, $saved_post_types ) ); ?>
 				/>
@@ -2148,7 +2148,7 @@ class FE_Search_AI_Settings {
 		}
 		?>
 		<textarea
-			name="fe_ai_search_settings[prompt][system_prompt]"
+			name="fe_search_ai_settings[prompt][system_prompt]"
 			rows="100"
 			class="fe-ai-search-prompt-editor large-text"
 		><?php echo esc_textarea( $prompt ); ?></textarea>
@@ -2173,7 +2173,7 @@ class FE_Search_AI_Settings {
 		?>
 		<input
 			type="number"
-			name="fe_ai_search_settings[sync][batch_size]"
+			name="fe_search_ai_settings[sync][batch_size]"
 			value="<?php echo esc_attr( $batch_size ); ?>"
 			class="small-text"
 			min="1"
@@ -2197,16 +2197,13 @@ class FE_Search_AI_Settings {
 		?>
 		<fieldset>
 			<label>
-				<input
-					type="checkbox"
-					name="fe_ai_search_settings[advanced][debug_mode]"
-					value="1"
-					<?php checked( $is_enabled, true ); ?>
-				/>
+				<input type="checkbox" name="fe_search_ai_settings[advanced][debug_mode]" value="1" <?php checked( $debug_mode ); ?>>
+				<?php esc_html_e( 'Enable Debug Mode', 'fe-ai-search' ); ?>
+				<?php echo $this->license_alert_icon; ?>
 				<?php esc_html_e( 'Enable the recording of detailed system logs for debugging purposes.', 'fe-ai-search' ); ?>
 			</label>
 			<p class="description">
-				<?php esc_html_e( 'When enabled, detailed operational logs will be saved to the `{prefix}fe_ai_search_system_logs` table (e.g. wp_fe_ai_search_system_logs if your table prefix is wp_). Only enable this when troubleshooting issues, as it can impact performance.', 'fe-ai-search' ); ?>
+				<?php esc_html_e( 'When enabled, detailed operational logs will be saved to the `{prefix}fe_search_ai_system_logs` table (e.g. wp_fe_search_ai_system_logs if your table prefix is wp_). Only enable this when troubleshooting issues, as it can impact performance.', 'fe-ai-search' ); ?>
 			</p>
 		</fieldset>
 		<?php
@@ -2225,7 +2222,7 @@ class FE_Search_AI_Settings {
 		$prompt_options = $this->options['prompt'] ?? [];
 		$site_name      = $prompt_options['site_name'] ?? get_bloginfo( 'name' );
 		?>
-		<input type="text" name="fe_ai_search_settings[prompt][site_name]" value="<?php echo esc_attr( $site_name ); ?>" class="regular-text">
+		<input type="text" name="fe_search_ai_settings[prompt][site_name]" value="<?php echo esc_attr( $site_name ); ?>" class="regular-text">
 		<p class="description"><?php esc_html_e( 'The name of the site you want the AI to recognize. If left blank, the site title will be used.', 'fe-ai-search' ); ?></p>
 		<?php
 	}
@@ -2244,7 +2241,7 @@ class FE_Search_AI_Settings {
 		$site_purpose   = $prompt_options['site_purpose'] ?? get_bloginfo( 'description' );
 
 		?>
-		<textarea name="fe_ai_search_settings[prompt][site_purpose]" rows="3" class="large-text"><?php echo esc_textarea( $site_purpose ); ?></textarea>
+		<textarea name="fe_search_ai_settings[prompt][site_purpose]" rows="3" class="large-text"><?php echo esc_textarea( $site_purpose ); ?></textarea>
 		<p class="description"><?php esc_html_e( 'Briefly explain the purpose of this site to the AI. If left blank, the site\'s tagline will be used.', 'fe-ai-search' ); ?></p>
 		<?php
 	}
@@ -2252,7 +2249,7 @@ class FE_Search_AI_Settings {
 	/**
 	 * Sanitizes the main settings array before saving to the database.
 	 *
-	 * This method is the single callback for our master 'fe_ai_search_settings' option.
+	 * This method is the single callback for our master 'fe_search_ai_settings' option.
 	 * It receives the raw input from the form, validates/cleans each part,
 	 * and merges it with the existing settings to ensure no data is lost.
 	 *
@@ -2262,7 +2259,7 @@ class FE_Search_AI_Settings {
 	 */
 	public function sanitize_main_settings( $input ) {
 		// Start with the existing, saved options.
-		$new_input = get_option( 'fe_ai_search_settings', [] );
+		$new_input = get_option( 'fe_search_ai_settings', [] );
 
 		// Provider Tab - Encrypt API keys before saving
 		$new_input['provider']['openai_key']    = FE_Search_AI_Encryption_Helper::encrypt( sanitize_text_field( $input['provider']['openai_key'] ?? '' ) );
@@ -2371,7 +2368,7 @@ class FE_Search_AI_Settings {
 		$new_input['advanced']['delete_on_uninstall'] = ! empty( $input['advanced']['delete_on_uninstall'] );
 		$new_input['advanced']['debug_mode']          = ! empty( $input['advanced']['debug_mode'] );
 
-		// License data is managed by a dedicated option (fe_ai_search_license).
+		// License data is managed by a dedicated option (fe_search_ai_license).
 		// DB version is handled by the activator, not here.
 		$new_input['advanced']['db_version'] = $this->options['advanced']['db_version'] ?? '1.0';
 
@@ -2380,7 +2377,7 @@ class FE_Search_AI_Settings {
 		// directly via update_option(). Those runtime fields are not part of the settings
 		// form submission, so they would be dropped if we didn't explicitly carry them
 		// over from the existing saved options.
-		$existing_options = get_option( 'fe_ai_search_settings', [] );
+		$existing_options = get_option( 'fe_search_ai_settings', [] );
 
 		$existing_sync = $existing_options['sync'] ?? [];
 		if ( is_array( $existing_sync ) ) {
@@ -2563,7 +2560,7 @@ class FE_Search_AI_Settings {
 				<input
 					type="range"
 					id="fe_search_ai_animation_speed_slider"
-					name="fe_ai_search_settings[display][ui][animation_speed]"
+					name="fe_search_ai_settings[display][ui][animation_speed]"
 					min="1" max="10" step="1"
 					value="<?php echo esc_attr( $animation_speed ); ?>"
 				>
@@ -2579,8 +2576,8 @@ class FE_Search_AI_Settings {
 		</div>
 
 		<div>
-			<label for="fe_ai_search_send_mode"><?php esc_html_e( 'Send Key Settings (Default)', 'fe-ai-search' ); ?></label>
-			<select name="fe_ai_search_settings[display][ui][send_mode]" id="fe_ai_search_send_mode">
+			<label for="fe_search_ai_send_mode"><?php esc_html_e( 'Send Key Settings (Default)', 'fe-ai-search' ); ?></label>
+			<select name="fe_search_ai_settings[display][ui][send_mode]" id="fe_search_ai_send_mode">
 				<option value="enter" <?php selected( $send_mode, 'enter' ); ?>>
 					<?php esc_html_e( 'Enter (Shift+Enter for newline)', 'fe-ai-search' ); ?>
 				</option>
@@ -2609,11 +2606,11 @@ class FE_Search_AI_Settings {
 		$links_options = $this->options['display']['links'] ?? [];
 		?>
 		<div>
-			<label for="fe_ai_search_terms_page_id"><?php esc_html_e( 'Terms of Service Page', 'fe-ai-search' ); ?></label>
+			<label for="fe_search_ai_terms_page_id"><?php esc_html_e( 'Terms of Service Page', 'fe-ai-search' ); ?></label>
 			<?php
 			wp_dropdown_pages(
 				[
-					'name'              => 'fe_ai_search_settings[display][links][terms_page_id]',
+					'name'              => 'fe_search_ai_settings[display][links][terms_page_id]',
 					'selected'          => $links_options['terms_page_id'] ?? 0,
 					'show_option_none'  => '— ' . __( 'Not selected', 'fe-ai-search' ) . ' —',
 					'option_none_value' => '0',
@@ -2623,11 +2620,11 @@ class FE_Search_AI_Settings {
 		</div>
 
 		<div>
-			<label for="fe_ai_search_privacy_page_id"><?php esc_html_e( 'Privacy Policy Page', 'fe-ai-search' ); ?></label>
+			<label for="fe_search_ai_privacy_page_id"><?php esc_html_e( 'Privacy Policy Page', 'fe-ai-search' ); ?></label>
 			<?php
 			wp_dropdown_pages(
 				[
-					'name'              => 'fe_ai_search_settings[display][links][privacy_page_id]',
+					'name'              => 'fe_search_ai_settings[display][links][privacy_page_id]',
 					'selected'          => $links_options['privacy_page_id'] ?? 0,
 					'show_option_none'  => '— ' . __( 'Not selected', 'fe-ai-search' ) . ' —',
 					'option_none_value' => '0',

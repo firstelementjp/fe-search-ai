@@ -38,7 +38,7 @@ class FE_Search_AI_Sync_Hooks {
 	 * Holds the master array of all plugin settings.
 	 *
 	 * This property is populated in the constructor by fetching the
-	 * 'fe_ai_search_settings' option from the database. This allows
+	 * 'fe_search_ai_settings' option from the database. This allows
 	 * all methods in this class to access settings without repeated
 	 * database calls, improving performance.
 	 *
@@ -66,7 +66,7 @@ class FE_Search_AI_Sync_Hooks {
 	 * @param  \FESearchAI\Ajax\FE_Search_AI_Sync_Handler $sync_handler The main sync handler instance.
 	 */
 	public function __construct( $sync_handler ) {
-		$this->options      = get_option( 'fe_ai_search_settings', [] );
+		$this->options      = get_option( 'fe_search_ai_settings', [] );
 		$this->sync_handler = $sync_handler;
 
 		add_action( 'save_post', [ $this, 'sync_single_post_on_update' ], 10, 2 );
@@ -127,7 +127,7 @@ class FE_Search_AI_Sync_Hooks {
 		 * @param  int     $post_id   The ID of the post being indexed.
 		 * @param  WP_Post $post      The post object.
 		 */
-		$lang_code = apply_filters( 'fe_ai_search_post_language_code', $lang_code, $post_id, $post );
+		$lang_code = apply_filters( 'fe_search_ai_post_language_code', $lang_code, $post_id, $post );
 
 		$this->delete_post_from_index( $post_id );
 
@@ -145,8 +145,8 @@ class FE_Search_AI_Sync_Hooks {
 
 		if ( ! is_wp_error( $embedding_response ) && ! empty( $embedding_response['data'] ) ) {
 			global $wpdb;
-			$vectors_table = $wpdb->prefix . 'fe_ai_search_vectors';
-			$index_table   = $wpdb->prefix . 'fe_ai_search_keyword_index';
+			$vectors_table = $wpdb->prefix . 'fe_search_ai_vectors';
+			$index_table   = $wpdb->prefix . 'fe_search_ai_keyword_index';
 
 			$vectors_data = $embedding_response['data'];
 
@@ -197,7 +197,7 @@ class FE_Search_AI_Sync_Hooks {
 
 			// Update runtime sync status in the dedicated state option so it is not
 			// affected by main settings sanitization.
-			$state = get_option( 'fe_ai_search_sync_state', [] );
+			$state = get_option( 'fe_search_ai_sync_state', [] );
 			if ( ! is_array( $state ) ) {
 				$state = [];
 			}
@@ -205,7 +205,7 @@ class FE_Search_AI_Sync_Hooks {
 				$state['status'] = [];
 			}
 			$state['status']['last_sync_timestamp'] = current_time( 'timestamp' );
-			update_option( 'fe_ai_search_sync_state', $state );
+			update_option( 'fe_search_ai_sync_state', $state );
 		}
 	}
 
@@ -220,8 +220,8 @@ class FE_Search_AI_Sync_Hooks {
 	 */
 	public function delete_post_from_index( $post_id ) {
 		global $wpdb;
-		$vectors_table = $wpdb->prefix . 'fe_ai_search_vectors';
-		$index_table   = $wpdb->prefix . 'fe_ai_search_keyword_index';
+		$vectors_table = $wpdb->prefix . 'fe_search_ai_vectors';
+		$index_table   = $wpdb->prefix . 'fe_search_ai_keyword_index';
 
 		// Find all vector IDs for the post.
 		$vector_ids = $wpdb->get_col( $wpdb->prepare( "SELECT id FROM `{$vectors_table}` WHERE `post_id` = %d", $post_id ) );

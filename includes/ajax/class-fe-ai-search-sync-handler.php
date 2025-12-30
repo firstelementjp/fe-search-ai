@@ -2,7 +2,7 @@
 /**
  * Handles all content synchronization and data retrieval tasks.
  *
- * This file defines the fe_ai_search_Sync_Handler class, which is responsible for
+ * This file defines the fe_search_ai_Sync_Handler class, which is responsible for
  * all processes related to indexing content, creating vector embeddings, and
  * retrieving relevant information from the database for the chat handler.
  *
@@ -49,10 +49,10 @@ class FE_Search_AI_Sync_Handler {
 	 */
 	public function __construct() {
 
-		$this->options   = get_option( 'fe_ai_search_settings', [] );
+		$this->options   = get_option( 'fe_search_ai_settings', [] );
 		$this->segmenter = new TinySegmenter();
 
-		$license_data = get_option( 'fe_ai_search_license', [] );
+		$license_data = get_option( 'fe_search_ai_license', [] );
 		$status       = $license_data['status'] ?? 'inactive';
 		$data         = $license_data['data'] ?? [];
 		$product_id   = isset( $data['productId'] ) ? (int) $data['productId'] : 0;
@@ -88,8 +88,8 @@ class FE_Search_AI_Sync_Handler {
 		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
 
 		global $wpdb;
-		$vectors_table = $wpdb->prefix . 'fe_ai_search_vectors';
-		$index_table   = $wpdb->prefix . 'fe_ai_search_keyword_index';
+		$vectors_table = $wpdb->prefix . 'fe_search_ai_vectors';
+		$index_table   = $wpdb->prefix . 'fe_search_ai_keyword_index';
 		$wpdb->query( "TRUNCATE TABLE `{$vectors_table}`" );
 		$wpdb->query( "TRUNCATE TABLE `{$index_table}`" );
 
@@ -171,7 +171,7 @@ class FE_Search_AI_Sync_Handler {
 		 *
 		 * @param array $args The array of query arguments passed to `get_posts()`.
 		 */
-		$args = apply_filters( 'fe_ai_search_sync_query_args', $args );
+		$args = apply_filters( 'fe_search_ai_sync_query_args', $args );
 
 		$all_post_ids = get_posts( $args );
 		$total_posts  = count( $all_post_ids );
@@ -205,7 +205,7 @@ class FE_Search_AI_Sync_Handler {
 		}
 
 		// Use the new sync schema for static configuration: enabled post types,
-		// limits, etc. are stored under fe_ai_search_settings['sync'].
+		// limits, etc. are stored under fe_search_ai_settings['sync'].
 		$sync_root = $this->options['sync'] ?? [];
 		if ( ! is_array( $sync_root ) ) {
 			$sync_root = [];
@@ -214,9 +214,9 @@ class FE_Search_AI_Sync_Handler {
 		$sync_limit = isset( $sync_root['limit'] ) ? (int) $sync_root['limit'] : -1;
 
 		// Runtime state (status/settings) is stored separately in
-		// fe_ai_search_sync_state to avoid interference from settings sanitization
-		// or other code paths that update fe_ai_search_settings.
-		$sync_state         = get_option( 'fe_ai_search_sync_state', [] );
+		// fe_search_ai_sync_state to avoid interference from settings sanitization
+		// or other code paths that update fe_search_ai_settings.
+		$sync_state         = get_option( 'fe_search_ai_sync_state', [] );
 		$sync_status        = isset( $sync_state['status'] ) && is_array( $sync_state['status'] ) ? $sync_state['status'] : [];
 		$state_settings     = isset( $sync_state['settings'] ) && is_array( $sync_state['settings'] ) ? $sync_state['settings'] : [];
 		$post_types_to_sync = [];
@@ -274,7 +274,7 @@ class FE_Search_AI_Sync_Handler {
 
 		// Find deleted posts
 		global $wpdb;
-		$vectors_table         = $wpdb->prefix . 'fe_ai_search_vectors';
+		$vectors_table         = $wpdb->prefix . 'fe_search_ai_vectors';
 		$indexed_post_ids      = array_map( 'intval', $wpdb->get_col( "SELECT DISTINCT post_id FROM {$vectors_table}" ) );
 		$all_existing_post_ids = array_map(
 			'intval',
@@ -291,7 +291,7 @@ class FE_Search_AI_Sync_Handler {
 
 		if ( ! empty( $deleted_post_ids ) ) {
 			foreach ( $deleted_post_ids as $post_id ) {
-				$GLOBALS['fe_ai_search_sync_hooks']->delete_post_from_index( $post_id );
+				$GLOBALS['fe_search_ai_sync_hooks']->delete_post_from_index( $post_id );
 			}
 		}
 
@@ -344,7 +344,7 @@ class FE_Search_AI_Sync_Handler {
 
 		// After a successful sync, the settings hash should be updated.
 		// We do this here, assuming the JS process will complete.
-		// update_option( 'fe_ai_search_last_settings_hash', $current_settings_hash );
+		// update_option( 'fe_search_ai_last_settings_hash', $current_settings_hash );
 
 		wp_send_json_success(
 			[
@@ -364,7 +364,7 @@ class FE_Search_AI_Sync_Handler {
 		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
 
 		// Pull the freshest static sync configuration from the main settings.
-		$options   = get_option( 'fe_ai_search_settings', [] );
+		$options   = get_option( 'fe_search_ai_settings', [] );
 		$sync_root = isset( $options['sync'] ) && is_array( $options['sync'] ) ? $options['sync'] : [];
 
 		// Derive the same settings snapshot used in ajax_start_smart_sync by
@@ -375,7 +375,7 @@ class FE_Search_AI_Sync_Handler {
 
 		// Runtime state (status/settings) is stored in a dedicated option so that
 		// it is not affected by settings sanitization or other writers.
-		$state = get_option( 'fe_ai_search_sync_state', [] );
+		$state = get_option( 'fe_search_ai_sync_state', [] );
 		if ( ! is_array( $state ) ) {
 			$state = [];
 		}
@@ -394,7 +394,7 @@ class FE_Search_AI_Sync_Handler {
 		$state['settings']['hash']                = $current_settings_hash;
 		$state['settings']['last_sync_timestamp'] = (int) $state['status']['last_sync_timestamp'];
 
-		update_option( 'fe_ai_search_sync_state', $state );
+		update_option( 'fe_search_ai_sync_state', $state );
 
 		wp_send_json_success();
 	}
@@ -447,7 +447,7 @@ class FE_Search_AI_Sync_Handler {
 			$lang_code = strstr( $locale, '_', true ) ?: $locale;
 
 			// Read Pro vector store configuration to determine if Qdrant is enabled.
-			$pro_settings  = get_option( 'fe_ai_search_pro_settings', [] );
+			$pro_settings  = get_option( 'fe_search_ai_pro_settings', [] );
 			$vector_config = isset( $pro_settings['vector'] ) && is_array( $pro_settings['vector'] ) ? $pro_settings['vector'] : [];
 			$qdrant_config = isset( $vector_config['qdrant'] ) && is_array( $vector_config['qdrant'] ) ? $vector_config['qdrant'] : [];
 			$vector_store  = $vector_config['store'] ?? 'mariadb';
@@ -483,8 +483,8 @@ class FE_Search_AI_Sync_Handler {
 					$embedding_model = $embedding_response['embedding_model'] ?? '';
 					$embedding_dim   = (int) ( $embedding_response['embedding_dim'] ?? 0 );
 					global $wpdb;
-					$vectors_table = $wpdb->prefix . 'fe_ai_search_vectors';
-					$index_table   = $wpdb->prefix . 'fe_ai_search_keyword_index';
+					$vectors_table = $wpdb->prefix . 'fe_search_ai_vectors';
+					$index_table   = $wpdb->prefix . 'fe_search_ai_keyword_index';
 					$vectors_data  = $embedding_response['data'];
 
 					foreach ( $vectors_data as $index => $vector_item ) {
@@ -563,8 +563,8 @@ class FE_Search_AI_Sync_Handler {
 		$now = current_time( 'timestamp' );
 
 		// Runtime state is stored in a dedicated option to avoid interference
-		// from settings sanitization or other writers of fe_ai_search_settings.
-		$state = get_option( 'fe_ai_search_sync_state', [] );
+		// from settings sanitization or other writers of fe_search_ai_settings.
+		$state = get_option( 'fe_search_ai_sync_state', [] );
 		if ( ! is_array( $state ) ) {
 			$state = [];
 		}
@@ -572,7 +572,7 @@ class FE_Search_AI_Sync_Handler {
 			$state['status'] = [];
 		}
 		$state['status']['last_sync_timestamp'] = $now;
-		update_option( 'fe_ai_search_sync_state', $state );
+		update_option( 'fe_search_ai_sync_state', $state );
 		// Keep an in-memory mirror if needed by this request lifecycle.
 		$this->options['sync_status'] = $state['status'];
 
@@ -590,8 +590,8 @@ class FE_Search_AI_Sync_Handler {
 		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
 
 		global $wpdb;
-		$vectors_table = $wpdb->prefix . 'fe_ai_search_vectors';
-		$index_table   = $wpdb->prefix . 'fe_ai_search_keyword_index';
+		$vectors_table = $wpdb->prefix . 'fe_search_ai_vectors';
+		$index_table   = $wpdb->prefix . 'fe_search_ai_keyword_index';
 
 		$wpdb->query( "TRUNCATE TABLE `{$vectors_table}`" );
 		$wpdb->query( "TRUNCATE TABLE `{$index_table}`" );
@@ -605,7 +605,7 @@ class FE_Search_AI_Sync_Handler {
 			if ( isset( $options['sync']['options'] ) && is_array( $options['sync']['options'] ) ) {
 				$options['sync']['options']['last_sync_timestamp'] = 0;
 			}
-			update_option( 'fe_ai_search_settings', $options );
+			update_option( 'fe_search_ai_settings', $options );
 			$this->options = $options;
 		}
 
@@ -655,7 +655,7 @@ class FE_Search_AI_Sync_Handler {
 			 * @param \WP_Post $post           The post being processed.
 			 * @param array    $chunk          The chunk data including 'content_chunk' and 'permalink'.
 			 */
-			$snippet_length = (int) apply_filters( 'fe_ai_search_qdrant_snippet_length', 1000, $post, $chunk );
+			$snippet_length = (int) apply_filters( 'fe_search_ai_qdrant_snippet_length', 1000, $post, $chunk );
 			if ( $snippet_length <= 0 ) {
 				$snippet_length = 1000;
 			}
@@ -860,7 +860,7 @@ class FE_Search_AI_Sync_Handler {
 	 */
 	public function find_similar_chunks( $question ) {
 		// When Qdrant is enabled in Pro settings, prefer vector search via Qdrant.
-		$pro_settings  = get_option( 'fe_ai_search_pro_settings', [] );
+		$pro_settings  = get_option( 'fe_search_ai_pro_settings', [] );
 		$vector_config = isset( $pro_settings['vector'] ) && is_array( $pro_settings['vector'] ) ? $pro_settings['vector'] : [];
 		$qdrant_config = isset( $vector_config['qdrant'] ) && is_array( $vector_config['qdrant'] ) ? $vector_config['qdrant'] : [];
 		$vector_store  = $vector_config['store'] ?? 'mariadb';
@@ -880,8 +880,8 @@ class FE_Search_AI_Sync_Handler {
 		}
 
 		global $wpdb;
-		$vectors_table = $wpdb->prefix . 'fe_ai_search_vectors';
-		$index_table   = $wpdb->prefix . 'fe_ai_search_keyword_index';
+		$vectors_table = $wpdb->prefix . 'fe_search_ai_vectors';
+		$index_table   = $wpdb->prefix . 'fe_search_ai_keyword_index';
 
 		// Use the finalized tokenize_text method to extract keywords from the question.
 		$keywords = array_unique( $this->tokenize_text( $question ) );
@@ -923,7 +923,7 @@ class FE_Search_AI_Sync_Handler {
 		 * @param int    $max_chunks Default maximum number of chunks.
 		 * @param string $question   The end user's question text.
 		 */
-		$max_chunks = (int) apply_filters( 'fe_ai_search_max_chunks_for_llm', 100, $question );
+		$max_chunks = (int) apply_filters( 'fe_search_ai_max_chunks_for_llm', 100, $question );
 		if ( $max_chunks <= 0 ) {
 			$max_chunks = 100;
 		}
@@ -1061,7 +1061,7 @@ class FE_Search_AI_Sync_Handler {
 				$taxonomy_lines[] = $line;
 			}
 			if ( ! empty( $taxonomy_lines ) ) {
-				$taxonomy_lines = apply_filters( 'fe_ai_search_taxonomy_lines', $taxonomy_lines, $post, $pt_options );
+				$taxonomy_lines = apply_filters( 'fe_search_ai_taxonomy_lines', $taxonomy_lines, $post, $pt_options );
 				$prefix_line    = 'The following taxonomy metadata is associated with this article:';
 				$has_prefix     = false;
 				foreach ( $taxonomy_lines as $line ) {
@@ -1108,7 +1108,7 @@ class FE_Search_AI_Sync_Handler {
 			}
 			if ( ! empty( $cf_pairs ) ) {
 				$custom_fields_line = implode( ', ', $cf_pairs );
-				$custom_fields_line = apply_filters( 'fe_ai_search_custom_fields_line', $custom_fields_line, $post, $cf_pairs, $pt_options );
+				$custom_fields_line = apply_filters( 'fe_search_ai_custom_fields_line', $custom_fields_line, $post, $cf_pairs, $pt_options );
 				if ( '' !== trim( (string) $custom_fields_line ) ) {
 					$prefix_line = 'The following custom field metadata is associated with this article:';
 					if ( 0 !== strpos( trim( (string) $custom_fields_line ), $prefix_line ) ) {
@@ -1136,7 +1136,7 @@ class FE_Search_AI_Sync_Handler {
 
 		/**
 		 * A filter hook for customizing the chunk size used when splitting text.
-		 * Hook name: fe_ai_search_chunk_size
+		 * Hook name: fe_search_ai_chunk_size
 		 *
 		 * The chunk size controls how much context each piece carries when
 		 * creating text chunks for embeddings and keyword indexing.
@@ -1144,7 +1144,7 @@ class FE_Search_AI_Sync_Handler {
 		 * @param int      $chunk_size Default chunk size in characters.
 		 * @param \WP_Post $post       The post being processed.
 		 */
-		$chunk_size = (int) apply_filters( 'fe_ai_search_chunk_size', 1000, $post );
+		$chunk_size = (int) apply_filters( 'fe_search_ai_chunk_size', 1000, $post );
 		$chunks     = [];
 		$meta_text  = trim( (string) $meta_text );
 		$body_text  = trim( (string) $body_text );
@@ -1270,12 +1270,12 @@ class FE_Search_AI_Sync_Handler {
 
 		/**
 		 * A filter hook for interposing your own embedding provider processing.
-		 * Hook name: fe_ai_search_embedding_result_for_{provider slug}
+		 * Hook name: fe_search_ai_embedding_result_for_{provider slug}
 		 *
 		 * @param WP_Error|array|null $result Result. If null, the default processing will be performed.
 		 * @param array               $texts  Array of text to vectorize.
 		 */
-		$result = apply_filters( "fe_ai_search_embedding_result_for_{$provider}", null, $texts );
+		$result = apply_filters( "fe_search_ai_embedding_result_for_{$provider}", null, $texts );
 
 		if ( null !== $result ) {
 			return $result;
@@ -1565,7 +1565,7 @@ class FE_Search_AI_Sync_Handler {
 
 		/**
 		 * A filter hook for customizing the stop-word list used during tokenization.
-		 * Hook name: fe_ai_search_stop_words
+		 * Hook name: fe_search_ai_stop_words
 		 *
 		 * This allows site owners and developers to add or remove language-specific
 		 * stop words before keyword extraction.
@@ -1573,7 +1573,7 @@ class FE_Search_AI_Sync_Handler {
 		 * @param array  $stop_words The default stop-word list loaded for the locale.
 		 * @param string $locale     The full locale string (e.g. "en_US", "ja").
 		 */
-		$stop_words = apply_filters( 'fe_ai_search_stop_words', $stop_words, $locale );
+		$stop_words = apply_filters( 'fe_search_ai_stop_words', $stop_words, $locale );
 
 		// Tokenize
 		if ( 'ja' === $lang_code ) {
@@ -1593,7 +1593,7 @@ class FE_Search_AI_Sync_Handler {
 		/**
 		 * A filter hook for customizing raw tokens per language before stop-word
 		 * removal and stemming.
-		 * Hook name: fe_ai_search_tokens_for_lang
+		 * Hook name: fe_search_ai_tokens_for_lang
 		 *
 		 * This allows developers to plug in their own tokenization logic for
 		 * languages that do not use whitespace-separated words (e.g. Chinese,
@@ -1603,7 +1603,7 @@ class FE_Search_AI_Sync_Handler {
 		 * @param string $text_normalized The normalized input text.
 		 * @param string $lang_code       Two-letter language code (e.g. 'en', 'ja', 'zh', 'ko').
 		 */
-		$words = apply_filters( 'fe_ai_search_tokens_for_lang', $words, $text_normalized, $lang_code );
+		$words = apply_filters( 'fe_search_ai_tokens_for_lang', $words, $text_normalized, $lang_code );
 
 		// Remove stop words
 		$words_after_diff = array_diff( (array) $words, (array) $stop_words );
@@ -1640,7 +1640,7 @@ class FE_Search_AI_Sync_Handler {
 
 		/**
 		 * A filter hook for customizing the final keyword list returned by tokenize_text.
-		 * Hook name: fe_ai_search_tokenize_text
+		 * Hook name: fe_search_ai_tokenize_text
 		 *
 		 * This allows site owners and developers to post-process or augment the
 		 * extracted keywords (for example, adding custom synonyms or removing
@@ -1650,7 +1650,7 @@ class FE_Search_AI_Sync_Handler {
 		 * @param string $text_normalized The normalized input text.
 		 * @param string $locale          The full locale string (e.g. "en_US", "ja").
 		 */
-		$final_words = apply_filters( 'fe_ai_search_tokenize_text', $final_words, $text_normalized, $locale );
+		$final_words = apply_filters( 'fe_search_ai_tokenize_text', $final_words, $text_normalized, $locale );
 
 		return $final_words;
 	}
@@ -1787,9 +1787,9 @@ class FE_Search_AI_Sync_Handler {
 	 * Renders an administrator notification about internationalization
 	 */
 	public function render_i18n_notice() {
-		error_log( 'FEAS i18n: transient=' . ( get_transient( 'fe_ai_search_i18n_notice_dismissed' ) ? '1' : '0' ) . ' locale=' . get_locale() );
+		error_log( 'FEAS i18n: transient=' . ( get_transient( 'fe_search_ai_i18n_notice_dismissed' ) ? '1' : '0' ) . ' locale=' . get_locale() );
 		// Do not show the notice if it was recently dismissed.
-		if ( get_transient( 'fe_ai_search_i18n_notice_dismissed' ) ) {
+		if ( get_transient( 'fe_search_ai_i18n_notice_dismissed' ) ) {
 			return;
 		}
 
@@ -1808,7 +1808,7 @@ class FE_Search_AI_Sync_Handler {
 		// What happens when a user clicks on a "hidden" link?
 		if ( isset( $_GET['fe-ai-search-dismiss-i18n-notice'] ) ) {
 			// Flag to hide this notification for one week
-			set_transient( 'fe_ai_search_i18n_notice_dismissed', true, WEEK_IN_SECONDS );
+			set_transient( 'fe_search_ai_i18n_notice_dismissed', true, WEEK_IN_SECONDS );
 			return;
 		}
 		?>
@@ -1834,7 +1834,7 @@ class FE_Search_AI_Sync_Handler {
 					try {
 						var formData = new URLSearchParams();
 						formData.append('action', 'dismiss-wp-pointer');
-						formData.append('pointer', 'fe_ai_search_i18n_notice_dismissed');
+						formData.append('pointer', 'fe_search_ai_i18n_notice_dismissed');
 						if (typeof ajaxurl !== 'undefined') {
 							fetch(ajaxurl, {
 								method: 'POST',
@@ -1892,7 +1892,7 @@ class FE_Search_AI_Sync_Handler {
 		 * @param string $status_text        The HTML snippet describing the tokenizer.
 		 * @param string $japanese_tokenizer The current tokenizer identifier (e.g. 'tinysegmenter', 'mecab').
 		 */
-		$status_text = apply_filters( 'fe_ai_search_japanese_tokenizer_status_text', $status_text, $this->japanese_tokenizer );
+		$status_text = apply_filters( 'fe_search_ai_japanese_tokenizer_status_text', $status_text, $this->japanese_tokenizer );
 
 		$statuses[] = $status_label . ' ' . $status_text;
 		return $statuses;

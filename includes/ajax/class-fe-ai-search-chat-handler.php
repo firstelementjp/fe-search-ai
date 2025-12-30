@@ -2,7 +2,7 @@
 /**
  * Handles all AJAX and REST API communication for the chat functionality.
  *
- * This file defines the FEAS_AI_Chat_Handler class, which is responsible for
+ * This file defines the FE_Search_AI_Chat_Handler class, which is responsible for
  * registering API endpoints, processing incoming chat requests (streaming and non-streaming),
  * dispatching them to the correct AI model, and handling conversation logging.
  *
@@ -53,7 +53,7 @@ class FE_Search_AI_Chat_Handler {
 	 * @return void
 	 */
 	public function __construct( $sync_handler ) {
-		$this->options           = get_option( 'fe_ai_search_settings', [] );
+		$this->options           = get_option( 'fe_search_ai_settings', [] );
 		$this->is_license_active = FE_Search_AI_License::is_pro_active();
 		$this->sync_handler      = $sync_handler;
 
@@ -322,7 +322,7 @@ class FE_Search_AI_Chat_Handler {
 	 *
 	 * The response is streamed back to the caller via Server-Sent Events (SSE)
 	 * format, and key events (start, errors, etc.) are recorded using
-	 * FE_AI_Search_Logger when debug logging is enabled.
+	 * FE_Search_AI_Logger when debug logging is enabled.
 	 *
 	 * @param string $question        The end user's original question.
 	 * @param array  $context_chunks  Retrieved context chunks to be added to the prompt.
@@ -552,7 +552,7 @@ class FE_Search_AI_Chat_Handler {
 	 *
 	 * The response is streamed back to the caller via Server-Sent Events (SSE)
 	 * compatible output, and key events (start, errors, etc.) are recorded
-	 * using FE_AI_Search_Logger when debug logging is enabled.
+	 * using FE_Search_AI_Logger when debug logging is enabled.
 	 *
 	 * @param string $question        The end user's original question.
 	 * @param array  $context_chunks  Retrieved context chunks to be added to the prompt.
@@ -586,8 +586,8 @@ class FE_Search_AI_Chat_Handler {
 
 		$model = 'gemini-2.5-flash-lite'; // Default
 		if ( $this->is_license_active ) {
-			// Read Gemini model settings from Pro options (fe_ai_search_pro_settings).
-			$pro_settings   = get_option( 'fe_ai_search_pro_settings', [] );
+			// Read Gemini model settings from Pro options (fe_search_ai_pro_settings).
+			$pro_settings   = get_option( 'fe_search_ai_pro_settings', [] );
 			$google_options = $pro_settings['model']['google_model'] ?? [];
 			if ( is_array( $google_options ) ) {
 				$type   = $google_options['type'] ?? '';
@@ -776,7 +776,7 @@ class FE_Search_AI_Chat_Handler {
 	 *
 	 * The response is streamed back to the caller via Server-Sent Events (SSE)
 	 * compatible output, and key events (start, errors, etc.) are recorded
-	 * using FE_AI_Search_Logger when debug logging is enabled.
+	 * using FE_Search_AI_Logger when debug logging is enabled.
 	 *
 	 * @param string $question        The end user's original question.
 	 * @param array  $context_chunks  Retrieved context chunks to be added to the prompt.
@@ -1271,14 +1271,14 @@ Instead, answer based only on the remaining visible text.
 	 * @uses     wpdb::insert()       Inserts the log entry into the database.
 	 *
 	 * @hook     wp_ajax_fe_search_ai_log_query
-	 * @hook     wp_ajax_nopriv_feas_ai_log_query
+	 * @hook     wp_ajax_nopriv_fe_search_ai_log_query
 	 */
 	public function ajax_log_query() {
-		// Use the same "Debug Mode" flag as the system logs (stored in fe_ai_search_settings[advanced][debug_mode]).
-		$settings      = get_option( 'fe_ai_search_settings', [] );
+		// Use the same "Debug Mode" flag as the system logs (stored in fe_search_ai_settings[advanced][debug_mode]).
+		$settings      = get_option( 'fe_search_ai_settings', [] );
 		$advanced      = $settings['advanced'] ?? [];
 		$debug_mode_on = ! empty( $advanced['debug_mode'] );
-		$is_pro_active = class_exists( 'FEAISearch\Pro\Admin\FE_AI_Search_Pro_Settings' );
+		$is_pro_active = class_exists( 'FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' );
 		if ( ! $is_pro_active || ! $debug_mode_on ) {
 			wp_send_json_success( [ 'log_id' => 0 ] );
 			return;
@@ -1287,7 +1287,7 @@ Instead, answer based only on the remaining visible text.
 		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
 
 		global $wpdb;
-		$logs_table = $wpdb->prefix . 'fe_ai_search_logs';
+		$logs_table = $wpdb->prefix . 'fe_search_ai_logs';
 
 		$question = isset( $_POST['question'] ) ? sanitize_text_field( $_POST['question'] ) : '';
 		$answer   = isset( $_POST['answer'] ) ? wp_kses_post( $_POST['answer'] ) : '';
@@ -1302,7 +1302,7 @@ Instead, answer based only on the remaining visible text.
 
 		// Check if question logging is enabled via constant or filter
 		$enable_question_logging = (
-			defined( 'FE_AI_SEARCH_LOG_QUESTIONS' ) && FE_AI_SEARCH_LOG_QUESTIONS
+			defined( 'FE_SEARCH_AI_LOG_QUESTIONS' ) && FE_SEARCH_AI_LOG_QUESTIONS
 		) || apply_filters( 'fe_search_ai_enable_question_logging', false );
 
 		// For privacy protection, do not store the full question text by default.
@@ -1330,7 +1330,7 @@ Instead, answer based only on the remaining visible text.
 	/**
 	 * AJAX handler: Logs the user's privacy consent decision to the system logs.
 
-	 * Records a simple INFO-level event in the {prefix}fe_ai_search_system_logs table
+	 * Records a simple INFO-level event in the {prefix}fe_search_ai_system_logs table
 	 * when the user accepts the privacy consent overlay in the frontend chat UI.
 	 *
 	 * @since 1.0.0
@@ -1374,7 +1374,7 @@ Instead, answer based only on the remaining visible text.
 		}
 
 		global $wpdb;
-		$logs_table = $wpdb->prefix . 'fe_ai_search_logs';
+		$logs_table = $wpdb->prefix . 'fe_search_ai_logs';
 
 		// Get logs for this session with rating information
 		$logs = $wpdb->get_results(
@@ -1413,7 +1413,7 @@ Instead, answer based only on the remaining visible text.
 		}
 
 		global $wpdb;
-		$logs_table = $wpdb->prefix . 'fe_ai_search_logs';
+		$logs_table = $wpdb->prefix . 'fe_search_ai_logs';
 
 		$updated = $wpdb->update(
 			$logs_table,
@@ -1575,7 +1575,7 @@ Instead, answer based only on the remaining visible text.
 	 */
 	public function filter_basic_injection_phrases( $text ) {
 		$all_injection_phrases = [];
-		$i18n_dir              = FE_AI_SEARCH_PLUGIN_DIR . 'includes/i18n/';
+		$i18n_dir              = FE_SEARCH_AI_PLUGIN_DIR . 'includes/i18n/';
 
 		// Find all language files in the i18n directory.
 		$lang_files = glob( $i18n_dir . '*.php' );
@@ -1661,7 +1661,7 @@ Instead, answer based only on the remaining visible text.
 	 * Handles the AJAX request to activate or deactivate the Pro license.
 	 *
 	 * This method communicates with the License_Handler and updates the
-	 * single master settings array ('fe_ai_search_settings') with the new
+	 * single master settings array ('fe_search_ai_settings') with the new
 	 * license key, status, and data.
 	 *
 	 * @since 1.0.0
@@ -1694,7 +1694,7 @@ Instead, answer based only on the remaining visible text.
 			$product_id = \FESearchAI\Core\FE_Search_AI_License::PRODUCT_ID_PRO;
 		}
 
-		$all_licenses = get_option( 'fe_ai_search_license', [] );
+		$all_licenses = get_option( 'fe_search_ai_license', [] );
 
 		// Ensure we have a proper array, handle legacy string format
 		if ( is_string( $all_licenses ) ) {
@@ -1727,7 +1727,7 @@ Instead, answer based only on the remaining visible text.
 				];
 			}
 
-			update_option( 'fe_ai_search_license', $all_licenses );
+			update_option( 'fe_search_ai_license', $all_licenses );
 			delete_transient( 'fe_search_ai_license_error' );
 			$send_response = 'wp_send_json_success';
 
@@ -1740,7 +1740,7 @@ Instead, answer based only on the remaining visible text.
 				];
 			}
 
-			update_option( 'fe_ai_search_license', $all_licenses );
+			update_option( 'fe_search_ai_license', $all_licenses );
 			set_transient( 'fe_search_ai_license_error', $result['message'], 60 );
 			$send_response = 'wp_send_json_error';
 		}

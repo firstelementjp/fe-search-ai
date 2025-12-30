@@ -14,14 +14,14 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
 
-if ( get_option( 'feas_ai_delete_on_uninstall' ) ) {
+if ( get_option( 'fe_search_ai_delete_on_uninstall' ) ) {
 	global $wpdb;
 
 	// Delete custom table
 	$table_names = array(
-		$wpdb->prefix . 'feas_ai_vectors',
-		$wpdb->prefix . 'feas_ai_logs',
-		$wpdb->prefix . 'feas_ai_keyword_index',
+		$wpdb->prefix . 'fe_search_ai_vectors',
+		$wpdb->prefix . 'fe_search_ai_logs',
+		$wpdb->prefix . 'fe_search_ai_keyword_index',
 	);
 
 	foreach ( $table_names as $table_name ) {
@@ -30,23 +30,23 @@ if ( get_option( 'feas_ai_delete_on_uninstall' ) ) {
 
 	// Delete option
 	$option_names = array(
-		'feas_ai_chat_provider',
-		'feas_ai_embedding_provider',
-		'feas_ai_openai_api_key',
-		'feas_ai_google_api_key',
-		'feas_ai_anthropic_api_key',
-		'feas_ai_log_retention_days',
-		'feas_ai_sync_post_types',
-		'feas_ai_include_post_ids',
-		'feas_ai_exclude_post_ids',
-		'feas_ai_sync_limit',
+		'fe_search_ai_chat_provider',
+		'fe_search_ai_embedding_provider',
+		'fe_search_ai_openai_api_key',
+		'fe_search_ai_google_api_key',
+		'fe_search_ai_anthropic_api_key',
+		'fe_search_ai_log_retention_days',
+		'fe_search_ai_sync_post_types',
+		'fe_search_ai_include_post_ids',
+		'fe_search_ai_exclude_post_ids',
+		'fe_search_ai_sync_limit',
 	);
 
 	foreach ( $option_names as $option_name ) {
 		delete_option( $option_name );
 	}
-	delete_option( 'feas_ai_delete_on_uninstall' );
+	delete_option( 'fe_search_ai_delete_on_uninstall' );
 
 	// Delete Cron Job
-	wp_clear_scheduled_hook( 'feas_ai_daily_log_rotation_event' );
+	wp_clear_scheduled_hook( 'fe_search_ai_daily_log_rotation_event' );
 }

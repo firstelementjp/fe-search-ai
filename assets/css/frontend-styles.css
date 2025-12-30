@@ -9,7 +9,7 @@
 	Chat Container & Window (Base Styles)
 	========================================================================== */
 
-#fe_ai_search_chat_window {
+#fe_search_ai_chat_window {
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
@@ -17,7 +17,7 @@
 	position: relative; /* For consent overlay positioning */
 }
 
-#fe_ai_search_chat_window.hidden {
+#fe_search_ai_chat_window.hidden {
 	display: none;
 }
 
@@ -32,7 +32,7 @@
 	z-index: 10000;
 }
 
-.fe-ai-search-mode-float #fe_ai_search_chat_bubble {
+.fe-ai-search-mode-float #fe_search_ai_chat_bubble {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -48,16 +48,16 @@
 	position: relative;
 }
 
-#fe_ai_search_chat_bubble:hover {
+#fe_search_ai_chat_bubble:hover {
 	width: 75px;
 	height: 75px;
 }
 
-#fe_ai_search_chat_bubble.hidden {
+#fe_search_ai_chat_bubble.hidden {
 	display: none;
 }
 
-#fe_ai_search_chat_bubble_icon {
+#fe_search_ai_chat_bubble_icon {
 	width: 42px;
 	height: 42px;
 	position: absolute;
@@ -65,7 +65,7 @@
 	transition: all 0.2s ease-in-out;
 }
 
-#fe_ai_search_chat_bubble_icon_face {
+#fe_search_ai_chat_bubble_icon_face {
 	width: 42px;
 	height: 42px;
 	position: absolute;
@@ -73,13 +73,13 @@
 	transition: all 0.2s ease-in-out;
 }
 
-#fe_ai_search_chat_bubble:hover #fe_ai_search_chat_bubble_icon {
+#fe_search_ai_chat_bubble:hover #fe_search_ai_chat_bubble_icon {
 	/* width: 52px;
 	height: 52px; */
 	opacity: 0;
 }
 
-#fe_ai_search_chat_bubble:hover #fe_ai_search_chat_bubble_icon_face {
+#fe_search_ai_chat_bubble:hover #fe_search_ai_chat_bubble_icon_face {
 	/* width: 52px;
 	height: 52px; */
 	opacity: 1;
@@ -100,7 +100,7 @@
 	100% { transform: scale(1); }
 }
 
-#fe_ai_search_chat_bubble {
+#fe_search_ai_chat_bubble {
 	animation: shimmer 6s ease-in-out infinite alternate,
 	           pulse 4s ease-in-out infinite,
 			   opacity 3s linear infinite alternate;
@@ -108,7 +108,7 @@
 	background-size: 500% 500%;
 }
 
-.fe-ai-search-mode-float #fe_ai_search_chat_window {
+.fe-ai-search-mode-float #fe_search_ai_chat_window {
 	width: 370px;
 	height: 550px;
 	max-width: 90vw;
@@ -117,11 +117,11 @@
 	box-shadow: 0 5px 15px rgba(0,0,0,0.3);
 }
 
-#fe_ai_search_chat_footer {
+#fe_search_ai_chat_footer {
 	border-top: 1px solid #eee;
 }
 
-#fe_ai_search_chat_footer_actions {
+#fe_search_ai_chat_footer_actions {
 	position: relative;
 	display: flex;
 	justify-content: flex-end;
@@ -130,7 +130,7 @@
 	border-left: 1px solid var(--feais-border);
 }
 
-#fe_ai_search_privacy_notice {
+#fe_search_ai_privacy_notice {
 	font-size: 11px;
 	color: var(--feais-text);
 	text-align: left;
@@ -141,11 +141,11 @@
 	width: 100%;
 }
 
-#fe_ai_search_privacy_notice p {
+#fe_search_ai_privacy_notice p {
 	margin: 0;
 }
 
-#fe_ai_search_options_toggle {
+#fe_search_ai_options_toggle {
 	background: none;
 	border: none;
 	padding: 5px;
@@ -154,15 +154,15 @@
 	opacity: 0.2;
 }
 
-#fe_ai_search_options_toggle:hover {
+#fe_search_ai_options_toggle:hover {
 	opacity: 1;
 }
 
-#fe_ai_search_options_toggle svg {
+#fe_search_ai_options_toggle svg {
 	display: block;
 }
 
-#fe_ai_search_options_menu {
+#fe_search_ai_options_menu {
 	position: absolute;
 	bottom: 100%;
 	right: 3px;
@@ -175,17 +175,17 @@
 	white-space: nowrap;
 }
 
-#fe_ai_search_options_menu.hidden {
+#fe_search_ai_options_menu.hidden {
 	display: none;
 }
 
-#fe_ai_search_options_menu label {
+#fe_search_ai_options_menu label {
 	display: flex;
 	flex-direction: row;
 	color: var(--feais-text);
 }
 
-#fe_ai_search_options_menu label [type=checkbox] {
+#fe_search_ai_options_menu label [type=checkbox] {
 	margin: 0 0.5em 0 0;
 }
 
@@ -230,7 +230,7 @@
 	margin-bottom: 1.5em;
 }
 
-.fe-ai-search-mode-embed #fe_ai_search_chat_window {
+.fe-ai-search-mode-embed #fe_search_ai_chat_window {
 	width: 100%;
 	height: 100%;
 	border: 1px solid var(--feais-border);
@@ -238,13 +238,13 @@
 	box-shadow: none;
 }
 
-.fe-ai-search-mode-embed #fe_ai_search_chat_bubble,
-.fe-ai-search-mode-embed #fe_ai_search_chat_close,
-.fe-ai-search-mode-embed #fe_ai_search_chat_fullscreen_toggle {
+.fe-ai-search-mode-embed #fe_search_ai_chat_bubble,
+.fe-ai-search-mode-embed #fe_search_ai_chat_close,
+.fe-ai-search-mode-embed #fe_search_ai_chat_fullscreen_toggle {
 	display: none;
 }
 
-.fe-ai-search-mode-embed #fe_ai_search_chat_window.hidden {
+.fe-ai-search-mode-embed #fe_search_ai_chat_window.hidden {
 	display: flex; /* Embed mode is always visible */
 }
 
@@ -252,7 +252,7 @@
 	Full Screen Mode (.is-fullscreen)
 	========================================================================== */
 
-.is-fullscreen #fe_ai_search_chat_window {
+.is-fullscreen #fe_search_ai_chat_window {
 	position: fixed;
 	top: 0;
 	left: 0;
@@ -264,28 +264,28 @@
 	border: none;
 }
 
-.is-fullscreen #fe_ai_search_chat_header {
+.is-fullscreen #fe_search_ai_chat_header {
 	border-radius: 0;
 }
 
-.is-fullscreen #fe_ai_search_chat_messages {
+.is-fullscreen #fe_search_ai_chat_messages {
 	height: calc(100vh - 120px); /* Full viewport height minus header/footer */
 }
 
 .is-fullscreen .icon-maximize { display: none; }
 .is-fullscreen .icon-minimize { display: block !important; }
 
-.is-fullscreen #fe_ai_search_chat_bubble,
-.is-fullscreen #fe_ai_search_chat_close {
+.is-fullscreen #fe_search_ai_chat_bubble,
+.is-fullscreen #fe_search_ai_chat_close {
 	display: none;
 }
 
-.is-fullscreen #fe_ai_search_chat_home_link {
+.is-fullscreen #fe_search_ai_chat_home_link {
 	display: inline-flex;
 	align-items: center;
 }
 
-.is-fullscreen #fe_ai_search_chat_header h3 {
+.is-fullscreen #fe_search_ai_chat_header h3 {
 	margin-left: 0;
 }
 
@@ -293,7 +293,7 @@
 	Chat Header
 	========================================================================== */
 
-#fe_ai_search_chat_header {
+#fe_search_ai_chat_header {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
@@ -302,7 +302,7 @@
 	border-bottom: 1px solid var(--feais-border);
 }
 
-#fe_ai_search_chat_header h3 {
+#fe_search_ai_chat_header h3 {
 	margin: 0;
 	font-size: 16px;
 	color: var(--feais-text);
@@ -330,10 +330,10 @@
 	color: var(--feais-text);
 }
 
-#fe_ai_search_chat_home_link { display: none; margin-right: 10px; }
-#fe_ai_search_chat_home_link svg,
-#fe_ai_search_chat_fullscreen_toggle svg,
-#fe_ai_search_chat_close svg {
+#fe_search_ai_chat_home_link { display: none; margin-right: 10px; }
+#fe_search_ai_chat_home_link svg,
+#fe_search_ai_chat_fullscreen_toggle svg,
+#fe_search_ai_chat_close svg {
 	width: 20px;
 	height: 20px;
 	fill: currentColor;
@@ -345,7 +345,7 @@
 	Chat Messages Area
 	========================================================================== */
 
-#fe_ai_search_chat_messages {
+#fe_search_ai_chat_messages {
 	flex-grow: 1;
 	padding: 15px;
 	overflow-y: auto;
@@ -411,7 +411,7 @@
 	font-weight: 600;
 }
 
-#fe_ai_search_send_mode_toggle {
+#fe_search_ai_send_mode_toggle {
 	width: fit-content;
 	color: var(--feais-text);
     font-size: 0.9rem;
@@ -520,17 +520,17 @@
 	Chat Footer (Input Form)
 	========================================================================== */
 
-#fe_ai_search_chat_footer {
+#fe_search_ai_chat_footer {
 	border-top: 1px solid var(--feais-border);
 }
 
-#fe_ai_search_chat_form {
+#fe_search_ai_chat_form {
 	display: flex;
 	padding: 10px;
 	gap: 10px;
 }
 
-#fe_ai_search_chat_input {
+#fe_search_ai_chat_input {
 	flex-grow: 1;
 	padding: 8px 12px;
 	border: none;
@@ -542,12 +542,12 @@
 	box-shadow: none;
 }
 
-#fe_ai_search_chat_input::placeholder {
+#fe_search_ai_chat_input::placeholder {
 	color: var(--feais-text);
 	opacity: 0.7;
 }
 
-#fe_ai_search_chat_form button {
+#fe_search_ai_chat_form button {
 	opacity: 0.7;
 	padding: 8px 15px;
 	background: linear-gradient(25deg, var(--feais-accent-top, var(--feais-accent)) 0%, var(--feais-accent-bottom, var(--feais-accent)) 55%);
@@ -561,16 +561,16 @@
 	background: linear-gradient(135deg, #7878ff, #3c84e7, #daa5e0);
 }
 
-#fe_ai_search_chat_form button:hover {
+#fe_search_ai_chat_form button:hover {
 	opacity: 1;
 }
 
-#fe_ai_search_chat_form button:disabled {
+#fe_search_ai_chat_form button:disabled {
 	background: #ccc;
 	cursor: not-allowed;
 }
 
-#fe_ai_search_chat_options {
+#fe_search_ai_chat_options {
 	display: flex;
 	flex-direction: row;
 	justify-content: space-between;

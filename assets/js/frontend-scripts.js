@@ -49,11 +49,11 @@ const FE_AI_SEARCH_CONFIG = {
 
 	// Storage keys
 	STORAGE: {
-		SESSION_ID: 'fe_ai_search_session_id',
-		CHAT_HISTORY: 'fe_ai_search_chat_history',
-		SEND_MODE: 'fe_ai_search_send_mode',
-		USER_CONSENT: 'fe_ai_search_user_consented',
-		SESSION_LOGS: 'fe_ai_search_session_logs',
+		SESSION_ID: 'fe_search_ai_session_id',
+		CHAT_HISTORY: 'fe_search_ai_chat_history',
+		SEND_MODE: 'fe_search_ai_send_mode',
+		USER_CONSENT: 'fe_search_ai_user_consented',
+		SESSION_LOGS: 'fe_search_ai_session_logs',
 	},
 
 	// UI update intervals
@@ -200,23 +200,23 @@ async function safeExecuteAsync(fn, context = 'unknown', fallback = null) {
  */
 function getChatDOMElements() {
 	// Essential elements - if any are missing, we cannot initialize
-	const bubble = document.getElementById('fe_ai_search_chat_bubble');
-	const chatWindowElement = document.getElementById('fe_ai_search_chat_window');
-	const form = document.getElementById('fe_ai_search_chat_form');
-	const input = document.getElementById('fe_ai_search_chat_input');
-	const messagesContainer = document.getElementById('fe_ai_search_chat_messages');
-	const container = document.getElementById('fe_ai_search_chat_container');
+	const bubble = document.getElementById('fe_search_ai_chat_bubble');
+	const chatWindowElement = document.getElementById('fe_search_ai_chat_window');
+	const form = document.getElementById('fe_search_ai_chat_form');
+	const input = document.getElementById('fe_search_ai_chat_input');
+	const messagesContainer = document.getElementById('fe_search_ai_chat_messages');
+	const container = document.getElementById('fe_search_ai_chat_container');
 
 	if (!bubble || !form || !input || !messagesContainer || !container) {
 		return null;
 	}
 
 	// Additional elements that are only needed if basic elements exist
-	const closeBtn = document.getElementById('fe_ai_search_chat_close');
-	const fullscreenBtn = document.getElementById('fe_ai_search_chat_fullscreen_toggle');
-	const optionsToggle = document.getElementById('fe_ai_search_options_toggle');
-	const optionsMenu = document.getElementById('fe_ai_search_options_menu');
-	const shiftEnterToggle = document.getElementById('fe_ai_search_send_mode_toggle');
+	const closeBtn = document.getElementById('fe_search_ai_chat_close');
+	const fullscreenBtn = document.getElementById('fe_search_ai_chat_fullscreen_toggle');
+	const optionsToggle = document.getElementById('fe_search_ai_options_toggle');
+	const optionsMenu = document.getElementById('fe_search_ai_options_menu');
+	const shiftEnterToggle = document.getElementById('fe_search_ai_send_mode_toggle');
 
 	return {
 		bubble,

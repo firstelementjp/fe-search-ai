@@ -57,9 +57,9 @@ class FE_Search_AI_Activator {
 		self::create_tables();
 		self::schedule_cron_jobs();
 
-		$options                           = get_option( 'fe_ai_search_settings', [] );
+		$options                           = get_option( 'fe_search_ai_settings', [] );
 		$options['advanced']['db_version'] = self::DB_VERSION;
-		update_option( 'fe_ai_search_settings', $options );
+		update_option( 'fe_search_ai_settings', $options );
 	}
 
 	/**
@@ -71,7 +71,7 @@ class FE_Search_AI_Activator {
 	 */
 	public static function deactivate() {
 		// Canceling Cron Job
-		wp_clear_scheduled_hook( 'fe_ai_search_daily_log_rotation_event' );
+		wp_clear_scheduled_hook( 'fe_search_ai_daily_log_rotation_event' );
 	}
 
 	/**
@@ -84,7 +84,7 @@ class FE_Search_AI_Activator {
 	 * @since 1.0.0
 	 */
 	public static function check_db_version() {
-		$options           = get_option( 'fe_ai_search_settings', [] );
+		$options           = get_option( 'fe_search_ai_settings', [] );
 		$installed_version = $options['advanced']['db_version'] ?? '1.0';
 
 		if ( version_compare( $installed_version, self::DB_VERSION, '<' ) ) {
@@ -93,7 +93,7 @@ class FE_Search_AI_Activator {
 
 			// Update the DB version in the master options array
 			$options['advanced']['db_version'] = self::DB_VERSION;
-			update_option( 'fe_ai_search_settings', $options );
+			update_option( 'fe_search_ai_settings', $options );
 		}
 	}
 
@@ -111,7 +111,7 @@ class FE_Search_AI_Activator {
 		$charset_collate = $wpdb->get_charset_collate();
 
 		// Vector Storage Table
-		$table_name_vectors = $wpdb->prefix . 'fe_ai_search_vectors';
+		$table_name_vectors = $wpdb->prefix . 'fe_search_ai_vectors';
 		$sql_vectors        = "CREATE TABLE `{$table_name_vectors}` (
 			`id` mediumint(9) NOT NULL AUTO_INCREMENT,
 			`post_id` bigint(20) UNSIGNED NOT NULL,
@@ -128,7 +128,7 @@ class FE_Search_AI_Activator {
 		dbDelta( $sql_vectors );
 
 		// Keyword Index Table
-		$table_name_index = $wpdb->prefix . 'fe_ai_search_keyword_index';
+		$table_name_index = $wpdb->prefix . 'fe_search_ai_keyword_index';
 		$sql_index        = "CREATE TABLE `{$table_name_index}` (
 			`keyword` varchar(100) NOT NULL,
 			`vector_id` mediumint(9) NOT NULL,
@@ -140,7 +140,7 @@ class FE_Search_AI_Activator {
 		dbDelta( $sql_index );
 
 		// System Logs Table
-		$table_name = $wpdb->prefix . 'fe_ai_search_system_logs';
+		$table_name = $wpdb->prefix . 'fe_search_ai_system_logs';
 		$sql        = "CREATE TABLE $table_name (
 			`id` bigint(20) NOT NULL AUTO_INCREMENT,
 			`level` varchar(20) NOT NULL DEFAULT 'INFO',
@@ -153,7 +153,7 @@ class FE_Search_AI_Activator {
 		dbDelta( $sql );
 
 		// Conversation Logs Table
-		$table_name_logs = $wpdb->prefix . 'fe_ai_search_logs';
+		$table_name_logs = $wpdb->prefix . 'fe_search_ai_logs';
 		$sql_logs        = "CREATE TABLE {$table_name_logs} (
 			`id` bigint(20) NOT NULL AUTO_INCREMENT,
 			`session_id` varchar(64) NOT NULL DEFAULT '',
@@ -176,8 +176,8 @@ class FE_Search_AI_Activator {
 	 */
 	public static function schedule_cron_jobs() {
 		// Registering Cron Job
-		if ( ! wp_next_scheduled( 'fe_ai_search_daily_log_rotation_event' ) ) {
-			wp_schedule_event( time(), 'daily', 'fe_ai_search_daily_log_rotation_event' );
+		if ( ! wp_next_scheduled( 'fe_search_ai_daily_log_rotation_event' ) ) {
+			wp_schedule_event( time(), 'daily', 'fe_search_ai_daily_log_rotation_event' );
 		}
 	}
 }

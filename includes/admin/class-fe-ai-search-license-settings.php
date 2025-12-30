@@ -62,12 +62,12 @@ class FE_Search_AI_License_Settings {
 	public function __construct() {
 
 		// Retrieve all configuration data
-		$this->options = get_option( 'fe_ai_search_settings', [] );
+		$this->options = get_option( 'fe_search_ai_settings', [] );
 
 		/**
 		 * Check the status of the license (stored in its own option).
 		 */
-		$license_data = get_option( 'fe_ai_search_license', [] );
+		$license_data = get_option( 'fe_search_ai_license', [] );
 		$status       = $license_data['status'] ?? 'inactive';
 		$data         = $license_data['data'] ?? [];
 		$product_id   = isset( $data['productId'] ) ? (int) $data['productId'] : 0;
@@ -96,7 +96,7 @@ class FE_Search_AI_License_Settings {
 	 */
 	public function add_tab() {
 		$icon = '';
-		if ( class_exists( '\\FEAISearch\\Pro\\Admin\\FE_AI_Search_Pro_Settings' ) && ! $this->is_license_active ) {
+		if ( class_exists( '\\FESearchAI\\Pro\\Admin\\FE_AI_Search_Pro_Settings' ) && ! $this->is_license_active ) {
 			$icon = '<span class="dashicons dashicons-warning" style="color: #f59e0b;"></span>';
 		}
 		echo '<a href="#tab_license" class="nav-tab">' . esc_html__( 'License', 'fe-ai-search' ) . ' ' . wp_kses_post( $icon ) . '</a>';
@@ -112,10 +112,10 @@ class FE_Search_AI_License_Settings {
 		<div id="tab_license" class="tab-content">
 			<table class="form-table">
 				<?php
-				do_settings_fields( 'fe-ai-search', 'fe_ai_search_license_section' );
+				do_settings_fields( 'fe-ai-search', 'fe_search_ai_license_section' );
 				?>
 			</table>
-			<?php if ( ! class_exists( '\\FEAISearch\\Pro\\Admin\\FE_AI_Search_Pro_Settings' ) || ! $this->is_license_active ) : ?>
+			<?php if ( ! class_exists( '\\FESearchAI\\Pro\\Admin\\FE_AI_Search_Pro_Settings' ) || ! $this->is_license_active ) : ?>
 				<div class="fe-ai-search-pro-promo">
 					<hr>
 					<h3>
@@ -281,7 +281,7 @@ class FE_Search_AI_License_Settings {
 	 */
 	public function register_settings() {
 		add_settings_section(
-			'fe_ai_search_license_section',
+			'fe_search_ai_license_section',
 			__( 'License Activation', 'fe-ai-search' ),
 			null,
 			'fe-ai-search'
@@ -289,15 +289,15 @@ class FE_Search_AI_License_Settings {
 
 		register_setting(
 			'fe-ai-settings',
-			'fe_ai_search_license_key'
+			'fe_search_ai_license_key'
 		);
 
 		add_settings_field(
-			'fe_ai_search_license_key',
+			'fe_search_ai_license_key',
 			__( 'License Key', 'fe-ai-search' ),
 			[ $this, 'field_html' ],
 			'fe-ai-search',
-			'fe_ai_search_license_section'
+			'fe_search_ai_license_section'
 		);
 	}
 
@@ -307,7 +307,7 @@ class FE_Search_AI_License_Settings {
 	 * @since 1.0.0
 	 */
 	public function field_html() {
-		$license_data = get_option( 'fe_ai_search_license', [] );
+		$license_data = get_option( 'fe_search_ai_license', [] );
 
 		$license_key    = isset( $license_data['key'] ) ? $license_data['key'] : '';
 		$license_status = isset( $license_data['status'] ) ? $license_data['status'] : 'inactive';

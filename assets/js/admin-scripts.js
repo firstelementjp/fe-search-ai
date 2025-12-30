@@ -204,17 +204,17 @@ document.addEventListener('DOMContentLoaded', () => {
 	if (settingsForm) {
 		settingsForm.addEventListener('submit', e => {
 			const consentCheckbox = document.querySelector(
-				'input[name="fe_ai_search_pro_settings[privacy][enable_consent]"]'
+				'input[name="fe_search_ai_pro_settings[privacy][enable_consent]"]'
 			);
 			if (!consentCheckbox || !consentCheckbox.checked) {
 				return;
 			}
 
 			const termsSelect = document.querySelector(
-				'select[name="fe_ai_search_settings[display][links][terms_page_id]"]'
+				'select[name="fe_search_ai_settings[display][links][terms_page_id]"]'
 			);
 			const privacySelect = document.querySelector(
-				'select[name="fe_ai_search_settings[display][links][privacy_page_id]"]'
+				'select[name="fe_search_ai_settings[display][links][privacy_page_id]"]'
 			);
 
 			const termsVal = termsSelect ? termsSelect.value : '0';
