@@ -18,8 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use FEAISearch\Core\FE_AI_Search_License;
-use FEAISearch\Core\FE_AI_Search_Encryption_Helper;
+use FESearchAI\Core\FE_Search_AI_Encryption_Helper;
+use FESearchAI\Core\FE_Search_AI_License;
 
 /**
  * The main settings page UI controller for the plugin.
@@ -47,7 +47,7 @@ class FE_Search_AI_Settings {
 
 		// Treat the license as active when the status is "active" and the product ID
 		// matches the Pro add-on (productId = 65 in License Manager for WooCommerce).
-		$this->is_license_active = FE_AI_Search_License::is_pro_active();
+		$this->is_license_active = FE_Search_AI_License::is_pro_active();
 
 		if ( class_exists( '\\FEAISearch\\Pro\\Admin\\FE_AI_Search_Pro_Settings' ) && ! $this->is_license_active ) {
 			$this->license_alert_icon = '<a href="' . admin_url( 'admin.php' )
@@ -72,7 +72,7 @@ class FE_Search_AI_Settings {
 	public static function render_page() {
 		// Determine if the Pro license is active and the Pro add-on is installed.
 		$has_pro_class = class_exists( '\\FEAISearch\\Pro\\Admin\\FE_AI_Search_Pro_Settings' );
-		$is_pro        = ( FE_AI_Search_License::is_pro_active() && $has_pro_class );
+		$is_pro        = ( FE_Search_AI_License::is_pro_active() && $has_pro_class );
 		?>
 		<div class="wrap">
 
@@ -484,7 +484,7 @@ class FE_Search_AI_Settings {
 		$endpoint      = $vector['qdrant']['endpoint'] ?? '';
 		$collection    = $vector['qdrant']['collection'] ?? '';
 		$encrypted_key = $vector['qdrant']['api_key'] ?? '';
-		$api_key       = FE_AI_Search_Encryption_Helper::decrypt( $encrypted_key );
+		$api_key       = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
 		?>
 		<div class="fe-ai-search-boxed-option">
 			<p class="description">
@@ -683,7 +683,7 @@ class FE_Search_AI_Settings {
 	 */
 	public function openai_api_key_field_html() {
 		$encrypted_key = $this->options['provider']['openai_key'] ?? '';
-		$api_key       = FE_AI_Search_Encryption_Helper::decrypt( $encrypted_key );
+		$api_key       = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
 
 		$model_to_display = 'gpt-4o-mini';
 		if ( $this->is_license_active ) {
@@ -750,7 +750,7 @@ class FE_Search_AI_Settings {
 	 */
 	public function google_api_key_field_html() {
 		$encrypted_key = $this->options['provider']['google_key'] ?? '';
-		$api_key       = FE_AI_Search_Encryption_Helper::decrypt( $encrypted_key );
+		$api_key       = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
 
 		$model_to_display = 'gemini-2.5-flash-lite';
 		if ( $this->is_license_active ) {
@@ -817,7 +817,7 @@ class FE_Search_AI_Settings {
 	 */
 	public function anthropic_api_key_field_html() {
 		$encrypted_key = $this->options['provider']['anthropic_key'] ?? '';
-		$api_key       = FE_AI_Search_Encryption_Helper::decrypt( $encrypted_key );
+		$api_key       = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
 
 		$model_to_display = 'claude-haiku-4-5-20251001';
 		if ( $this->is_license_active ) {
@@ -1262,14 +1262,10 @@ class FE_Search_AI_Settings {
 		check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error(
-				[
-					'message' => __( 'You do not have permission to perform this action.', 'fe-ai-search' ),
-				]
-			);
+			wp_send_json_error( __( 'You do not have sufficient permissions to perform this action.', 'fe-ai-search' ) );
 		}
 
-		\FEAISearch\Core\FE_AI_Search_Logger::clear_logs();
+		\FESearchAI\Core\FE_Search_AI_Logger::clear_logs();
 
 		wp_send_json_success( __( 'All system logs have been deleted.', 'fe-ai-search' ) );
 	}
@@ -1534,7 +1530,7 @@ class FE_Search_AI_Settings {
 		$tokenizer_options  = $this->options['tokenizer']['ja'] ?? [];
 		$engine             = $tokenizer_options['engine'] ?? 'tinysegmenter';
 		$encrypted_yahoo_id = $tokenizer_options['yahoo_id'] ?? '';
-		$yahoo_id           = FE_AI_Search_Encryption_Helper::decrypt( $encrypted_yahoo_id );
+		$yahoo_id           = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_yahoo_id );
 
 		$engines = [
 			'tinysegmenter' => __( 'Built-in (TinySegmenter)', 'fe-ai-search' ),
@@ -1698,7 +1694,7 @@ class FE_Search_AI_Settings {
 		$ui_options      = $this->options['display']['ui'] ?? [];
 
 		// Shared defaults for chat text (used by both settings placeholders and frontend UI).
-		$defaults = \FEAISearch\Core\FE_AI_Search_Defaults::get_display_text_defaults();
+		$defaults = \FESearchAI\Core\FE_Search_AI_Defaults::get_display_text_defaults();
 		// Add legacy color defaults for this settings section.
 		$defaults += [
 			'key_color'        => '#0073aa',
@@ -2269,14 +2265,14 @@ class FE_Search_AI_Settings {
 		$new_input = get_option( 'fe_ai_search_settings', [] );
 
 		// Provider Tab - Encrypt API keys before saving
-		$new_input['provider']['openai_key']    = FE_AI_Search_Encryption_Helper::encrypt( sanitize_text_field( $input['provider']['openai_key'] ?? '' ) );
-		$new_input['provider']['google_key']    = FE_AI_Search_Encryption_Helper::encrypt( sanitize_text_field( $input['provider']['google_key'] ?? '' ) );
-		$new_input['provider']['anthropic_key'] = FE_AI_Search_Encryption_Helper::encrypt( sanitize_text_field( $input['provider']['anthropic_key'] ?? '' ) );
+		$new_input['provider']['openai_key']    = FE_Search_AI_Encryption_Helper::encrypt( sanitize_text_field( $input['provider']['openai_key'] ?? '' ) );
+		$new_input['provider']['google_key']    = FE_Search_AI_Encryption_Helper::encrypt( sanitize_text_field( $input['provider']['google_key'] ?? '' ) );
+		$new_input['provider']['anthropic_key'] = FE_Search_AI_Encryption_Helper::encrypt( sanitize_text_field( $input['provider']['anthropic_key'] ?? '' ) );
 		$new_input['provider']['embedding']     = sanitize_key( $input['provider']['embedding'] ?? 'openai' );
 		$new_input['provider']['chat']          = sanitize_key( $input['provider']['chat'] ?? 'openai' );
 
 		// OpenAI-Compatible key (stored in Free version settings)
-		$new_input['provider']['openai_compatible_key'] = FE_AI_Search_Encryption_Helper::encrypt( sanitize_text_field( $input['provider']['openai_compatible_key'] ?? '' ) );
+		$new_input['provider']['openai_compatible_key'] = FE_Search_AI_Encryption_Helper::encrypt( sanitize_text_field( $input['provider']['openai_compatible_key'] ?? '' ) );
 
 		// Prompt Tab
 		$new_input['prompt']['site_name']     = sanitize_text_field( $input['prompt']['site_name'] ?? '' );
@@ -2350,7 +2346,7 @@ class FE_Search_AI_Settings {
 		if ( '' === trim( (string) $new_api_key ) && '' !== $existing_api_key ) {
 			$new_input['vector']['qdrant']['api_key'] = $existing_api_key;
 		} else {
-			$new_input['vector']['qdrant']['api_key'] = FE_AI_Search_Encryption_Helper::encrypt( sanitize_text_field( $new_api_key ) );
+			$new_input['vector']['qdrant']['api_key'] = FE_Search_AI_Encryption_Helper::encrypt( sanitize_text_field( $new_api_key ) );
 		}
 
 		// Display Tab
@@ -2369,7 +2365,7 @@ class FE_Search_AI_Settings {
 			$engine = 'tinysegmenter';
 		}
 		$new_input['tokenizer']['ja']['engine']   = $engine;
-		$new_input['tokenizer']['ja']['yahoo_id'] = FE_AI_Search_Encryption_Helper::encrypt( sanitize_text_field( $tokenizer_input['yahoo_id'] ?? '' ) );
+		$new_input['tokenizer']['ja']['yahoo_id'] = FE_Search_AI_Encryption_Helper::encrypt( sanitize_text_field( $tokenizer_input['yahoo_id'] ?? '' ) );
 
 		// Data Tab
 		$new_input['advanced']['delete_on_uninstall'] = ! empty( $input['advanced']['delete_on_uninstall'] );

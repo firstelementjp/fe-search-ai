@@ -452,7 +452,7 @@ class FE_Search_AI_Sync_Handler {
 			$qdrant_config = isset( $vector_config['qdrant'] ) && is_array( $vector_config['qdrant'] ) ? $vector_config['qdrant'] : [];
 			$vector_store  = $vector_config['store'] ?? 'mariadb';
 
-			\FEAISearch\Core\FE_AI_Search_Logger::log(
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'INFO',
 				'Qdrant config check in ajax_process_batch.',
 				[
@@ -623,7 +623,7 @@ class FE_Search_AI_Sync_Handler {
 	 * @return void
 	 */
 	private function upsert_vectors_to_qdrant( $post, $lang_code, $chunks_with_meta, $vectors_data, $qdrant_config ) {
-		\FEAISearch\Core\FE_AI_Search_Logger::log(
+		\FESearchAI\Core\FE_Search_AI_Logger::log(
 			'INFO',
 			'Qdrant upsert invoked.',
 			[ 'post_id' => $post->ID ]
@@ -698,7 +698,7 @@ class FE_Search_AI_Sync_Handler {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			\FEAISearch\Core\FE_AI_Search_Logger::log(
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'ERROR',
 				'Qdrant upsert request failed.',
 				[
@@ -717,7 +717,7 @@ class FE_Search_AI_Sync_Handler {
 			if ( mb_strlen( $body_text ) > 1000 ) {
 				$body_summary .= '...(truncated)';
 			}
-			\FEAISearch\Core\FE_AI_Search_Logger::log(
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'ERROR',
 				'Qdrant upsert returned non-2xx status.',
 				[
@@ -779,7 +779,7 @@ class FE_Search_AI_Sync_Handler {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			\FEAISearch\Core\FE_AI_Search_Logger::log(
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'ERROR',
 				'Qdrant search request failed.',
 				[
@@ -793,7 +793,7 @@ class FE_Search_AI_Sync_Handler {
 		$status_code = wp_remote_retrieve_response_code( $response );
 		if ( $status_code < 200 || $status_code >= 300 ) {
 			$body_text = wp_remote_retrieve_body( $response );
-			\FEAISearch\Core\FE_AI_Search_Logger::log(
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'ERROR',
 				'Qdrant search returned non-2xx status.',
 				[
@@ -829,7 +829,7 @@ class FE_Search_AI_Sync_Handler {
 			];
 		}
 
-		\FEAISearch\Core\FE_AI_Search_Logger::log(
+		\FESearchAI\Core\FE_Search_AI_Logger::log(
 			'INFO',
 			'Qdrant search succeeded.',
 			[
@@ -899,7 +899,7 @@ class FE_Search_AI_Sync_Handler {
 		);
 
 		// DEBUG: Log keyword extraction results.
-		\FEAISearch\Core\FE_AI_Search_Logger::log(
+		\FESearchAI\Core\FE_Search_AI_Logger::log(
 			'DEBUG',
 			'Keyword extraction from user question.',
 			[
@@ -932,7 +932,7 @@ class FE_Search_AI_Sync_Handler {
 		$vector_ids   = $wpdb->get_col( $wpdb->prepare( $sql, $valid_keywords ) );
 
 		// DEBUG: Log index search results.
-		\FEAISearch\Core\FE_AI_Search_Logger::log(
+		\FESearchAI\Core\FE_Search_AI_Logger::log(
 			'DEBUG',
 			'Keyword index search completed.',
 			[
@@ -1257,7 +1257,7 @@ class FE_Search_AI_Sync_Handler {
 	 */
 	public function get_embeddings_via_selected_provider( $texts ) {
 
-		\FEAISearch\Core\fe_ai_search_Logger::log(
+		\FESearchAI\Core\FE_Search_AI_Logger::log(
 			'INFO',
 			'Embedding process started.',
 			[
@@ -1306,7 +1306,7 @@ class FE_Search_AI_Sync_Handler {
 		$api_key = $this->options['provider']['openai_key'] ?? '';
 		if ( empty( $api_key ) ) {
 			// Log the error before returning.
-			\FEAISearch\Core\FE_AI_Search_Logger::log( 'ERROR', 'OpenAI Embedding API call skipped: API Key is not set.' );
+			\FESearchAI\Core\FE_Search_AI_Logger::log( 'ERROR', 'OpenAI Embedding API call skipped: API Key is not set.' );
 			return new \WP_Error( 'api_key_missing', __( 'The OpenAI API key is not configured.', 'fe-ai-search' ) );
 		}
 
@@ -1343,7 +1343,7 @@ class FE_Search_AI_Sync_Handler {
 
 		if ( is_wp_error( $response ) ) {
 			// Log the connection failure.
-			\FEAISearch\Core\FE_AI_Search_Logger::log(
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'ERROR',
 				'OpenAI Embedding API call failed.',
 				[
@@ -1364,7 +1364,7 @@ class FE_Search_AI_Sync_Handler {
 				: __( 'Unknown API Error', 'fe-ai-search' );
 
 			// Log the API error.
-			\FEAISearch\Core\FE_AI_Search_Logger::log(
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'ERROR',
 				'OpenAI Embedding API call failed (API Error).',
 				[
@@ -1389,7 +1389,7 @@ class FE_Search_AI_Sync_Handler {
 		$response_body['embedding_dim']   = $embedding_dim;
 
 		// Log the successful call.
-		\FEAISearch\Core\FE_AI_Search_Logger::log(
+		\FESearchAI\Core\FE_Search_AI_Logger::log(
 			'INFO',
 			'OpenAI Embedding API call succeeded.',
 			[
@@ -1421,7 +1421,7 @@ class FE_Search_AI_Sync_Handler {
 		$api_key = $this->options['provider']['google_key'] ?? '';
 		if ( empty( $api_key ) ) {
 			// Log the error before returning.
-			\FEAISearch\Core\FE_AI_Search_Logger::log( 'ERROR', 'Gemini Embedding API call skipped: API Key is not set.' );
+			\FESearchAI\Core\FE_Search_AI_Logger::log( 'ERROR', 'Gemini Embedding API call skipped: API Key is not set.' );
 			return new \WP_Error( 'api_key_missing', __( 'The Google Cloud API key is not configured.', 'fe-ai-search' ) );
 		}
 
@@ -1455,7 +1455,7 @@ class FE_Search_AI_Sync_Handler {
 
 		if ( is_wp_error( $response ) ) {
 			// Log the connection failure.
-			\FEAISearch\Core\fe_ai_search_Logger::log(
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'ERROR',
 				'Gemini Embedding API call failed.',
 				[
@@ -1476,7 +1476,7 @@ class FE_Search_AI_Sync_Handler {
 				: __( 'Unknown API Error', 'fe-ai-search' );
 
 			// Log the API error.
-			\FEAISearch\Core\fe_ai_search_Logger::log(
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'ERROR',
 				'Gemini Embedding API call failed (API Error).',
 				[
@@ -1514,7 +1514,7 @@ class FE_Search_AI_Sync_Handler {
 		$embedding_model = 'text-embedding-004';
 
 		// Log success.
-		\FEAISearch\Core\FE_AI_Search_Logger::log(
+		\FESearchAI\Core\FE_Search_AI_Logger::log(
 			'INFO',
 			'Gemini Embedding API call succeeded.',
 			[
@@ -1706,7 +1706,7 @@ class FE_Search_AI_Sync_Handler {
 
 		$debug_mode = ! empty( $this->options['advanced']['debug_mode'] );
 		if ( $debug_mode ) {
-			\FEAISearch\Core\FE_AI_Search_Logger::log(
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'INFO',
 				'Yahoo MA API request prepared.',
 				[
@@ -1731,7 +1731,7 @@ class FE_Search_AI_Sync_Handler {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			\FEAISearch\Core\FE_AI_Search_Logger::log(
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'ERROR',
 				'Yahoo MA API call failed.',
 				[
@@ -1747,7 +1747,7 @@ class FE_Search_AI_Sync_Handler {
 		$data = json_decode( $raw, true );
 
 		if ( 200 !== $code || ! isset( $data['result']['tokens'] ) || ! is_array( $data['result']['tokens'] ) ) {
-			\FEAISearch\Core\FE_AI_Search_Logger::log(
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'ERROR',
 				'Yahoo MA API returned unexpected response.',
 				[
@@ -1770,7 +1770,7 @@ class FE_Search_AI_Sync_Handler {
 		}
 
 		if ( $debug_mode ) {
-			\FEAISearch\Core\FE_AI_Search_Logger::log(
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'INFO',
 				'Yahoo MA API call succeeded.',
 				[

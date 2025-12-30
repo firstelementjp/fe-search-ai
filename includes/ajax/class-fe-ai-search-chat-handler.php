@@ -19,8 +19,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use FEAISearch\Core\FE_AI_Search_License;
-use FEAISearch\Core\FE_AI_Search_Encryption_Helper;
+use FESearchAI\Core\FE_Search_AI_Encryption_Helper;
+use FESearchAI\Core\FE_Search_AI_License;
 
 /**
  * Main controller for all frontend chat interactions.
@@ -54,7 +54,7 @@ class FE_Search_AI_Chat_Handler {
 	 */
 	public function __construct( $sync_handler ) {
 		$this->options           = get_option( 'fe_ai_search_settings', [] );
-		$this->is_license_active = FE_AI_Search_License::is_pro_active();
+		$this->is_license_active = FE_Search_AI_License::is_pro_active();
 		$this->sync_handler      = $sync_handler;
 
 		add_action( 'rest_api_init', [ $this, 'register_endpoints' ] );
@@ -336,12 +336,12 @@ class FE_Search_AI_Chat_Handler {
 		if ( 'openai_compatible' === $provider ) {
 			$api_url       = $this->options['provider']['openai_compatible_endpoint'] ?? '';
 			$encrypted_key = $this->options['provider']['openai_compatible_key'] ?? '';
-			$api_key       = FE_AI_Search_Encryption_Helper::decrypt( $encrypted_key );
+			$api_key       = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
 		} else {
 			$api_url = 'https://api.openai.com/v1/chat/completions';
 			// Admin UI stores the key at provider.openai_key.
 			$encrypted_key = $this->options['provider']['openai_key'] ?? '';
-			$api_key       = FE_AI_Search_Encryption_Helper::decrypt( $encrypted_key );
+			$api_key       = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
 		}
 
 		if ( empty( $api_key ) || empty( $api_url ) ) {
@@ -568,7 +568,7 @@ class FE_Search_AI_Chat_Handler {
 
 		// Admin UI stores the key at provider.google_key.
 		$encrypted_key = $this->options['provider']['google_key'] ?? '';
-		$api_key       = FE_AI_Search_Encryption_Helper::decrypt( $encrypted_key );
+		$api_key       = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
 		if ( empty( $api_key ) ) {
 			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'ERROR',
@@ -789,7 +789,7 @@ class FE_Search_AI_Chat_Handler {
 
 		// Admin UI stores the key at provider.anthropic_key.
 		$encrypted_key = $this->options['provider']['anthropic_key'] ?? '';
-		$api_key       = FE_AI_Search_Encryption_Helper::decrypt( $encrypted_key );
+		$api_key       = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
 		if ( empty( $api_key ) ) {
 			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'ERROR',
@@ -1639,7 +1639,7 @@ Instead, answer based only on the remaining visible text.
 		}
 
 		// Perform the license action.
-		$handler = new \FEAISearch\Core\FE_AI_Search_License_Handler();
+		$handler = new \FESearchAI\Core\FE_Search_AI_License_Handler();
 		$result  = ( 'activate' === $action ) ? $handler->activate( $license_key ) : $handler->deactivate( $license_key );
 
 		// Determine the product ID from the remote response. If it's missing,
@@ -1647,8 +1647,8 @@ Instead, answer based only on the remaining visible text.
 		$product_id = 0;
 		if ( isset( $result['data']['productId'] ) ) {
 			$product_id = (int) $result['data']['productId'];
-		} elseif ( class_exists( '\FEAISearch\\Core\\FE_AI_Search_License' ) ) {
-			$product_id = \FEAISearch\Core\FE_AI_Search_License::PRODUCT_ID_PRO;
+		} elseif ( class_exists( '\\FESearchAI\\Core\\FE_Search_AI_License' ) ) {
+			$product_id = \FESearchAI\Core\FE_Search_AI_License::PRODUCT_ID_PRO;
 		}
 
 		$all_licenses = get_option( 'fe_ai_search_license', [] );
@@ -1674,7 +1674,7 @@ Instead, answer based only on the remaining visible text.
 
 			if ( $product_id > 0 ) {
 				// Debug: Log encryption attempt
-				$encrypted_key = FE_AI_Search_Encryption_Helper::encrypt( $license_key );
+				$encrypted_key = \FESearchAI\Core\FE_Search_AI_Encryption_Helper::encrypt( $license_key );
 				error_log( 'FE AI Search: License key encryption test - Original: ' . substr( $license_key, 0, 10 ) . '... Encrypted: ' . substr( $encrypted_key, 0, 20 ) . '...' );
 
 				$all_licenses['products'][ $product_id ] = [
@@ -1691,7 +1691,7 @@ Instead, answer based only on the remaining visible text.
 		} else {
 			if ( $product_id > 0 ) {
 				$all_licenses['products'][ $product_id ] = [
-					'key'    => FE_AI_Search_Encryption_Helper::encrypt( $license_key ),
+					'key'    => \FESearchAI\Core\FE_Search_AI_Encryption_Helper::encrypt( $license_key ),
 					'status' => 'inactive',
 					'data'   => $result['data'] ?? [],
 				];

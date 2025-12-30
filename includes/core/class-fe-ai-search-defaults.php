@@ -9,9 +9,9 @@
  * @subpackage Core
  */
 
-namespace FEAISearch\Core;
+namespace FESearchAI\Core;
 
-class FE_AI_Search_Defaults {
+class FE_Search_AI_Defaults {
 	/**
 	 * Returns the default display text values for the chat UI.
 	 *

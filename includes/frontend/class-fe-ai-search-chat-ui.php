@@ -227,7 +227,7 @@ class FE_Search_AI_Chat_UI {
 		$privacy_page_id     = $links_options['privacy_page_id'] ?? 0;
 
 		// Ensure text fields fall back to shared defaults when empty or not set.
-		$defaults = \FEAISearch\Core\FE_AI_Search_Defaults::get_display_text_defaults();
+		$defaults = \FESearchAI\Core\FE_Search_AI_Defaults::get_display_text_defaults();
 
 		$window_title = trim( $text_options['window_title'] ?? '' );
 		if ( '' === $window_title ) {

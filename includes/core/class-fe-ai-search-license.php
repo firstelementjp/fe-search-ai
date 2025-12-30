@@ -6,13 +6,13 @@
  * @subpackage Core
  */
 
-namespace FEAISearch\Core;
+namespace FESearchAI\Core;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class FE_AI_Search_License {
+class FE_Search_AI_License {
 	/**
 	 * Product IDs for each paid add-on.
 	 *
