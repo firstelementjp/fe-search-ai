@@ -54,7 +54,7 @@ class FE_Search_AI_Assets {
 
 		// Pro settings (used for rate limiting and privacy configuration).
 		$pro_options = [];
-		if ( $is_license_active && class_exists( '\\FESearchAI\\Pro\\Admin\\FE_AI_Search_Pro_Settings' ) ) {
+		if ( $is_license_active && class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) ) {
 			$pro_options = get_option( 'fe_search_ai_pro_settings', [] );
 		}
 
@@ -249,7 +249,7 @@ class FE_Search_AI_Assets {
 				'rest_nonce'         => wp_create_nonce( 'wp_rest' ),
 				'nonce'              => wp_create_nonce( 'fe_search_ai_ajax_nonce' ),
 				'animation_speed'    => (int) $animation_speed,
-				'is_pro_active'      => class_exists( '\\FESearchAI\\Pro\\Admin\\FE_AI_Search_Pro_Settings' ),
+				'is_pro_active'      => class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ),
 				'is_license_active'  => $is_license_active,
 				'ip_limit_count'     => (int) $ip_limit_count,
 				'send_mode'          => $send_mode,

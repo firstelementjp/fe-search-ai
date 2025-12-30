@@ -96,7 +96,7 @@ class FE_Search_AI_License_Settings {
 	 */
 	public function add_tab() {
 		$icon = '';
-		if ( class_exists( '\\FESearchAI\\Pro\\Admin\\FE_AI_Search_Pro_Settings' ) && ! $this->is_license_active ) {
+		if ( class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) && ! $this->is_license_active ) {
 			$icon = '<span class="dashicons dashicons-warning" style="color: #f59e0b;"></span>';
 		}
 		echo '<a href="#tab_license" class="nav-tab">' . esc_html__( 'License', 'fe-ai-search' ) . ' ' . wp_kses_post( $icon ) . '</a>';
@@ -115,7 +115,7 @@ class FE_Search_AI_License_Settings {
 				do_settings_fields( 'fe-ai-search', 'fe_search_ai_license_section' );
 				?>
 			</table>
-			<?php if ( ! class_exists( '\\FESearchAI\\Pro\\Admin\\FE_AI_Search_Pro_Settings' ) || ! $this->is_license_active ) : ?>
+			<?php if ( ! class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) || ! $this->is_license_active ) : ?>
 				<div class="fe-ai-search-pro-promo">
 					<hr>
 					<h3>
