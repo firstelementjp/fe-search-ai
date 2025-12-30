@@ -58,17 +58,19 @@ class FE_Search_AI_Chat_Handler {
 		$this->sync_handler      = $sync_handler;
 
 		add_action( 'rest_api_init', [ $this, 'register_endpoints' ] );
-		add_action( 'wp_ajax_nopriv_fe_ai_search_log_query', [ $this, 'ajax_log_query' ] );
-		add_action( 'wp_ajax_fe_ai_search_log_query', [ $this, 'ajax_log_query' ] );
-		add_action( 'wp_ajax_nopriv_fe_ai_search_log_consent', [ $this, 'ajax_log_consent' ] );
-		add_action( 'wp_ajax_fe_ai_search_log_consent', [ $this, 'ajax_log_consent' ] );
-		add_action( 'wp_ajax_nopriv_fe_ai_search_get_session_logs', [ $this, 'ajax_get_session_logs' ] );
-		add_action( 'wp_ajax_fe_ai_search_get_session_logs', [ $this, 'ajax_get_session_logs' ] );
-		add_action( 'wp_ajax_fe_ai_search_test_api_key', [ $this, 'ajax_test_api_key' ] );
-		add_action( 'wp_ajax_fe_ai_search_manage_license', [ $this, 'ajax_manage_license' ] );
-		add_filter( 'fe_ai_search_filter_user_question', [ $this, 'filter_personal_data' ], 10 );
-		add_filter( 'fe_ai_search_filter_user_question', [ $this, 'filter_basic_injection_phrases' ], 20 );
-		add_filter( 'fe_ai_search_filter_model_response', [ $this, 'filter_basic_injection_phrases' ], 20 );
+		add_action( 'wp_ajax_nopriv_fe_search_ai_log_query', [ $this, 'ajax_log_query' ] );
+		add_action( 'wp_ajax_fe_search_ai_log_query', [ $this, 'ajax_log_query' ] );
+		add_action( 'wp_ajax_nopriv_fe_search_ai_log_consent', [ $this, 'ajax_log_consent' ] );
+		add_action( 'wp_ajax_fe_search_ai_log_consent', [ $this, 'ajax_log_consent' ] );
+		add_action( 'wp_ajax_nopriv_fe_search_ai_get_session_logs', [ $this, 'ajax_get_session_logs' ] );
+		add_action( 'wp_ajax_fe_search_ai_get_session_logs', [ $this, 'ajax_get_session_logs' ] );
+		add_action( 'wp_ajax_nopriv_fe_search_ai_rate_answer', [ $this, 'ajax_rate_answer' ] );
+		add_action( 'wp_ajax_fe_search_ai_rate_answer', [ $this, 'ajax_rate_answer' ] );
+		add_action( 'wp_ajax_fe_search_ai_test_api_key', [ $this, 'ajax_test_api_key' ] );
+		add_action( 'wp_ajax_fe_search_ai_manage_license', [ $this, 'ajax_manage_license' ] );
+		add_filter( 'fe_search_ai_filter_user_question', [ $this, 'filter_personal_data' ], 10 );
+		add_filter( 'fe_search_ai_filter_user_question', [ $this, 'filter_basic_injection_phrases' ], 20 );
+		add_filter( 'fe_search_ai_filter_model_response', [ $this, 'filter_basic_injection_phrases' ], 20 );
 	}
 
 	/**
@@ -83,7 +85,7 @@ class FE_Search_AI_Chat_Handler {
 	 */
 	public function register_endpoints() {
 		register_rest_route(
-			'fe-ai-search/v1',
+			'fe-search-ai/v1',
 			'/stream',
 			[
 				'methods'             => 'POST',
@@ -122,7 +124,7 @@ class FE_Search_AI_Chat_Handler {
 		 *
 		 * @param array $default_limits The default hardcoded limits.
 		 */
-		$rate_limit_options = apply_filters( 'fe_ai_search_rate_limit_settings', $default_limits );
+		$rate_limit_options = apply_filters( 'fe_search_ai_rate_limit_settings', $default_limits );
 		$rate_limit_options = wp_parse_args( $rate_limit_options, $default_limits );
 
 		$ip_limit_count     = (int) $rate_limit_options['ip_limit_count'];
@@ -131,7 +133,7 @@ class FE_Search_AI_Chat_Handler {
 		$notify_email       = $rate_limit_options['notify_email'];
 
 		if ( $ip_limit_count >= 0 ) {
-			$ip_transient_key = 'fe_ai_search_rl_ip_' . md5( $_SERVER['REMOTE_ADDR'] );
+			$ip_transient_key = 'fe_search_ai_rl_ip_' . md5( $_SERVER['REMOTE_ADDR'] );
 			$ip_request_count = get_transient( $ip_transient_key );
 
 			if ( $ip_request_count > $ip_limit_count ) {
@@ -143,7 +145,7 @@ class FE_Search_AI_Chat_Handler {
 		}
 
 		if ( $global_limit_count >= 0 ) {
-			$global_transient_key = 'fe_ai_search_rl_global_day';
+			$global_transient_key = 'fe_search_ai_rl_global_day';
 			$global_request_count = get_transient( $global_transient_key );
 
 			if ( $global_request_count > $global_limit_count ) {
@@ -158,12 +160,12 @@ class FE_Search_AI_Chat_Handler {
 			$threshold_count = ( $global_limit_count * $threshold_percent ) / 100;
 
 			if ( $new_global_count > $threshold_count ) {
-				if ( ! get_transient( 'fe_ai_search_rl_notify_sent' ) ) {
+				if ( ! get_transient( 'fe_search_ai_rl_notify_sent' ) ) {
 					$subject = get_bloginfo( 'name' ) . ' - AI Search Limit Warning';
 					$message = "Your site's daily AI request limit is about to be reached. "
 					. $new_global_count . ' / ' . $global_limit_count . ' requests have been used.';
 					wp_mail( $notify_email, $subject, $message ); // Use the final email address
-					set_transient( 'fe_ai_search_rl_notify_sent', true, DAY_IN_SECONDS );
+					set_transient( 'fe_search_ai_rl_notify_sent', true, DAY_IN_SECONDS );
 				}
 			}
 		}
@@ -209,7 +211,7 @@ class FE_Search_AI_Chat_Handler {
 			 *
 			 * @param string $question The sanitized user's question.
 			 */
-			$question = apply_filters( 'fe_ai_search_filter_user_question', $question );
+			$question = apply_filters( 'fe_search_ai_filter_user_question', $question );
 			if ( empty( $question ) ) {
 				return;
 			}
@@ -231,7 +233,7 @@ class FE_Search_AI_Chat_Handler {
 				 * @param array  $similar_chunks An array of the retrieved chunk items.
 				 * @param string $question       The original user's question.
 				 */
-				$similar_chunks = apply_filters( 'fe_ai_search_retrieved_chunks', $similar_chunks, $question );
+				$similar_chunks = apply_filters( 'fe_search_ai_retrieved_chunks', $similar_chunks, $question );
 
 			} catch ( \Throwable $t ) {
 				// Fail safely: log the error and continue without context.
@@ -259,7 +261,7 @@ class FE_Search_AI_Chat_Handler {
 			) . "\n\n";
 			flush();
 
-			$this->stream_chat_completion( $question, $similar_chunks, $history, $provider );
+			$this->stream_chat_completion( $question, $similar_chunks, $provider, $history );
 
 		} catch ( \Exception $e ) {
 			echo 'data: ' . json_encode( [ 'error' => 'An error occurred during processing.' ] ) . "\n\n";
@@ -283,7 +285,7 @@ class FE_Search_AI_Chat_Handler {
 	 * @param string $provider       The AI provider to use.
 	 * @return void Outputs streamed response directly.
 	 */
-	public function stream_chat_completion( $question, $context_chunks, $history = [], $provider ) {
+	public function stream_chat_completion( $question, $context_chunks, $provider, $history = [] ) {
 
 		/**
 		 * Fires before the default stream completion handlers.
@@ -294,7 +296,7 @@ class FE_Search_AI_Chat_Handler {
 		 * @param array  $context_chunks Relevant context chunks.
 		 * @param array  $history        Conversation history.
 		 */
-		do_action( "fe_ai_search_stream_for_{$provider}", $question, $context_chunks, $history, $provider );
+		do_action( "fe_search_ai_stream_for_{$provider}", $question, $context_chunks, $history, $provider );
 
 		switch ( $provider ) {
 			case 'google':
@@ -444,7 +446,7 @@ class FE_Search_AI_Chat_Handler {
 							 *
 							 * @param string $content The text chunk generated by the AI model.
 							 */
-							$content = apply_filters( 'fe_ai_search_filter_model_response', $chunk['choices'][0]['delta']['content'] );
+							$content = apply_filters( 'fe_search_ai_filter_model_response', $chunk['choices'][0]['delta']['content'] );
 
 							echo 'data: ' . json_encode( [ 'text' => $content ] ) . "\n\n";
 							if ( ob_get_level() > 0 ) {
@@ -715,7 +717,7 @@ class FE_Search_AI_Chat_Handler {
 							 *
 							 * @param string $content The text chunk generated by the AI model.
 							 */
-							$content = apply_filters( 'fe_ai_search_filter_model_response', $content );
+							$content = apply_filters( 'fe_search_ai_filter_model_response', $content );
 
 							echo 'data: ' . json_encode( [ 'text' => $content ] ) . "\n\n";
 							if ( ob_get_level() > 0 ) {
@@ -879,7 +881,7 @@ class FE_Search_AI_Chat_Handler {
 							 *
 							 * @param string $content The text chunk generated by the AI model.
 							 */
-							$content = apply_filters( 'fe_ai_search_filter_model_response', $content );
+							$content = apply_filters( 'fe_search_ai_filter_model_response', $content );
 
 							echo 'data: ' . json_encode( [ 'text' => $content ] ) . "\n\n";
 
@@ -1027,7 +1029,7 @@ class FE_Search_AI_Chat_Handler {
 		 * @param string $system_prompt The system prompt string to be sent to the AI model.
 		 * @param string $provider      The slug of the current AI provider (e.g., 'openai', 'google').
 		 */
-		$system_prompt = apply_filters( 'fe_ai_search_system_prompt', $system_prompt, $provider );
+		$system_prompt = apply_filters( 'fe_search_ai_system_prompt', $system_prompt, $provider );
 
 		// Initialize context string.
 		$context_str = '';
@@ -1268,7 +1270,7 @@ Instead, answer based only on the remaining visible text.
 	 * @uses     check_ajax_referer() Verifies the AJAX request to prevent CSRF.
 	 * @uses     wpdb::insert()       Inserts the log entry into the database.
 	 *
-	 * @hook     wp_ajax_fe_ai_search_log_query
+	 * @hook     wp_ajax_fe_search_ai_log_query
 	 * @hook     wp_ajax_nopriv_feas_ai_log_query
 	 */
 	public function ajax_log_query() {
@@ -1282,7 +1284,7 @@ Instead, answer based only on the remaining visible text.
 			return;
 		}
 
-		check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
+		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
 
 		global $wpdb;
 		$logs_table = $wpdb->prefix . 'fe_ai_search_logs';
@@ -1301,7 +1303,7 @@ Instead, answer based only on the remaining visible text.
 		// Check if question logging is enabled via constant or filter
 		$enable_question_logging = (
 			defined( 'FE_AI_SEARCH_LOG_QUESTIONS' ) && FE_AI_SEARCH_LOG_QUESTIONS
-		) || apply_filters( 'fe_ai_search_enable_question_logging', false );
+		) || apply_filters( 'fe_search_ai_enable_question_logging', false );
 
 		// For privacy protection, do not store the full question text by default.
 		// Only create a log entry when both a session ID and an answer are available.
@@ -1335,7 +1337,7 @@ Instead, answer based only on the remaining visible text.
 	 * @return void
 	 */
 	public function ajax_log_consent() {
-		check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
+		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
 
 		$session_id = isset( $_POST['session_id'] ) ? sanitize_key( wp_unslash( $_POST['session_id'] ) ) : '';
 		$source     = isset( $_POST['source'] ) ? sanitize_text_field( wp_unslash( $_POST['source'] ) ) : 'chat_overlay';
@@ -1362,7 +1364,7 @@ Instead, answer based only on the remaining visible text.
 	 * @return void
 	 */
 	public function ajax_get_session_logs() {
-		check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
+		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
 
 		$session_id = isset( $_POST['session_id'] ) ? sanitize_key( wp_unslash( $_POST['session_id'] ) ) : '';
 
@@ -1389,12 +1391,53 @@ Instead, answer based only on the remaining visible text.
 	}
 
 	/**
+	 * AJAX handler: Stores a user feedback rating for a conversation log entry.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public function ajax_rate_answer() {
+		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
+
+		$log_id = isset( $_POST['log_id'] ) ? absint( $_POST['log_id'] ) : 0;
+		$rating = isset( $_POST['rating'] ) ? (int) $_POST['rating'] : 0;
+
+		if ( $log_id <= 0 ) {
+			wp_send_json_error( [ 'message' => __( 'Log ID is required.', 'fe-ai-search' ) ] );
+			return;
+		}
+
+		if ( ! in_array( $rating, [ -1, 0, 1 ], true ) ) {
+			wp_send_json_error( [ 'message' => __( 'Invalid rating.', 'fe-ai-search' ) ] );
+			return;
+		}
+
+		global $wpdb;
+		$logs_table = $wpdb->prefix . 'fe_ai_search_logs';
+
+		$updated = $wpdb->update(
+			$logs_table,
+			[ 'rating' => $rating ],
+			[ 'id' => $log_id ],
+			[ '%d' ],
+			[ '%d' ]
+		);
+
+		if ( false === $updated ) {
+			wp_send_json_error( [ 'message' => __( 'Failed to save rating.', 'fe-ai-search' ) ] );
+			return;
+		}
+
+		wp_send_json_success();
+	}
+
+	/**
 	 * Handles the AJAX request to test an AI provider's API key.
 	 *
 	 * This method receives a provider slug and an API key. It attempts to
 	 * authenticate against the provider's endpoint.
 	 *
-	 * It first checks a filter ('fe_ai_search_handle_custom_api_test') to allow
+	 * It first checks a filter ('fe_search_ai_handle_custom_api_test') to allow
 	 * add-ons (like the Pro version) to handle their own provider tests.
 	 * If not handled by an add-on, it proceeds to test the built-in
 	 * providers (OpenAI, Google, Anthropic).
@@ -1402,10 +1445,10 @@ Instead, answer based only on the remaining visible text.
 	 * It sends a JSON response indicating success or failure.
 	 *
 	 * @since 1.0.0
-	 * @hook wp_ajax_fe_ai_search_test_api_key
+	 * @hook wp_ajax_fe_search_ai_test_api_key
 	 */
 	public function ajax_test_api_key() {
-		check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
+		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
 		$provider = isset( $_POST['provider'] ) ? sanitize_key( $_POST['provider'] ) : '';
 		$api_key  = isset( $_POST['api_key'] ) ? sanitize_text_field( $_POST['api_key'] ) : '';
 
@@ -1424,7 +1467,7 @@ Instead, answer based only on the remaining visible text.
 		 * @param string     $provider The provider slug being tested.
 		 * @param string     $api_key  The API key being tested.
 		 */
-		$result = apply_filters( 'fe_ai_search_handle_custom_api_test', $result, $provider, $api_key );
+		$result = apply_filters( 'fe_search_ai_handle_custom_api_test', $result, $provider, $api_key );
 
 		if ( is_array( $result ) ) {
 
@@ -1602,7 +1645,7 @@ Instead, answer based only on the remaining visible text.
 		 *
 		 * @param array $patterns Default regex patterns for personal data.
 		 */
-		$patterns = apply_filters( 'fe_ai_search_personal_data_patterns', $patterns );
+		$patterns = apply_filters( 'fe_search_ai_personal_data_patterns', $patterns );
 
 		$filtered = preg_replace( $patterns, __( '[REDACTED]', 'fe-ai-search' ), $text );
 
@@ -1622,10 +1665,10 @@ Instead, answer based only on the remaining visible text.
 	 * license key, status, and data.
 	 *
 	 * @since 1.0.0
-	 * @hook wp_ajax_fe_ai_search_manage_license
+	 * @hook wp_ajax_fe_search_ai_manage_license
 	 */
 	public function ajax_manage_license() {
-		check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
+		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( [ 'message' => 'Permission denied.' ] );
@@ -1685,7 +1728,7 @@ Instead, answer based only on the remaining visible text.
 			}
 
 			update_option( 'fe_ai_search_license', $all_licenses );
-			delete_transient( 'fe_ai_search_license_error' );
+			delete_transient( 'fe_search_ai_license_error' );
 			$send_response = 'wp_send_json_success';
 
 		} else {
@@ -1698,7 +1741,7 @@ Instead, answer based only on the remaining visible text.
 			}
 
 			update_option( 'fe_ai_search_license', $all_licenses );
-			set_transient( 'fe_ai_search_license_error', $result['message'], 60 );
+			set_transient( 'fe_search_ai_license_error', $result['message'], 60 );
 			$send_response = 'wp_send_json_error';
 		}
 

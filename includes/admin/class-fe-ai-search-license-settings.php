@@ -83,8 +83,8 @@ class FE_Search_AI_License_Settings {
 		}
 
 		add_action( 'admin_init', [ $this, 'register_settings' ] );
-		add_action( 'fe_ai_search_settings_tabs', [ $this, 'add_tab' ] );
-		add_action( 'fe_ai_search_settings_tabs_content', [ $this, 'render_content' ] );
+		add_action( 'fe_search_ai_settings_tabs', [ $this, 'add_tab' ] );
+		add_action( 'fe_search_ai_settings_tabs_content', [ $this, 'render_content' ] );
 	}
 
 	/**
@@ -315,15 +315,15 @@ class FE_Search_AI_License_Settings {
 		<input
 			type="password"
 			autocomplete="off"
-			id="fe_ai_search_license_key_input"
-			name="fe_ai_search_license_key_input"
+			id="fe_search_ai_license_key_input"
+			name="fe_search_ai_license_key_input"
 			value="<?php echo esc_attr( $license_key ); ?>"
 			class="regular-text"
-			style="width: 300px;"
+			style="max-width: 300px;"
 		>
 		<button
 			type="button"
-			id="fe_ai_search_license_toggle_visibility"
+			id="fe_search_ai_license_toggle_visibility"
 			class="button button-secondary"
 			style="margin-left: 8px;"
 		>
@@ -332,7 +332,7 @@ class FE_Search_AI_License_Settings {
 
 		<?php if ( 'active' === $license_status ) : ?>
 
-			<button type="button" id="fe_ai_search_license_deactivate" class="button button-secondary"><?php esc_html_e( 'Deactivate', 'fe-ai-search' ); ?></button>
+			<button type="button" id="fe_search_ai_license_deactivate" class="button button-secondary"><?php esc_html_e( 'Deactivate', 'fe-ai-search' ); ?></button>
 			<p class="description" style="color: green; font-weight: bold;">
 				<?php esc_html_e( 'The license is valid.', 'fe-ai-search' ); ?>
 			</p>
@@ -386,18 +386,18 @@ class FE_Search_AI_License_Settings {
 
 		<?php else : ?>
 
-			<button type="button" id="fe_ai_search_license_activate" class="button button-primary"><?php esc_html_e( 'Activate', 'fe-ai-search' ); ?></button>
+			<button type="button" id="fe_search_ai_license_activate" class="button button-primary"><?php esc_html_e( 'Activate', 'fe-ai-search' ); ?></button>
 			<p class="description">
 				<?php esc_html_e( 'Enter the license key you received at the time of purchase and press the "Activate" button.', 'fe-ai-search' ); ?>
 			</p>
 
 			<?php
-			$error = get_transient( 'fe_ai_search_license_error' );
+			$error = get_transient( 'fe_search_ai_license_error' );
 			if ( $error ) :
 				?>
 				<p style="color: red;"><?php echo esc_html( $error ); ?></p>
 				<?php
-				delete_transient( 'fe_ai_search_license_error' );
+				delete_transient( 'fe_search_ai_license_error' );
 			endif;
 			?>
 

@@ -211,7 +211,7 @@ textarea {
 	padding: 1rem;
 } */
 
-#fe_ai_search_settings_inner {
+#fe_search_ai_settings_inner {
 	background: white;
 	padding: 1rem;
 }
@@ -319,11 +319,11 @@ a.nav-tab:last-of-type {
 	border-top: 1px solid #ddd;
 }
 
-#fe_ai_search_prompt_accordion .accordion-inner {
+#fe_search_ai_prompt_accordion .accordion-inner {
 	padding: 0;
 }
 
-#fe_ai_search_prompt_accordion .accordion-content {
+#fe_search_ai_prompt_accordion .accordion-content {
 	border: none;
 	margin-top: -1px;
 }
@@ -352,7 +352,7 @@ a.nav-tab:last-of-type {
 	border-radius: 4px;
 }
 
-#fe_ai_search_sync_wrapper button {
+#fe_search_ai_sync_wrapper button {
 	margin-right: 10px;
 }
 
@@ -363,37 +363,39 @@ a.nav-tab:last-of-type {
 	border-radius: 5px;
 }
 
-#fe_ai_search_tokenizer_status {
+#fe_search_ai_tokenizer_status {
 	border: 1px solid #c3c4c7;
 	padding: 10px 10px;
 	margin-bottom: 1em;
 	border-radius: 4px;
 }
 
-#fe_ai_search_tokenizer_status p {
+#fe_search_ai_tokenizer_status p {
 	margin: 0;
 }
 
-#fe_ai_search_condition_for_displaying_the_chat {
+#fe_search_ai_condition_for_displaying_the_chat {
 	padding: 1em;
 	background: #f0f0f1;
 	margin: 0 -1em -1em;
 }
-#fe_ai_search_floating_display_accordion .accordion-inner {
+
+#fe_search_ai_floating_display_accordion .accordion-inner {
 	padding-bottom: 0;
 }
-#fe_ai_search_settings_display_floating_enable_floating_mode {
+
+#fe_search_ai_settings_display_floating_enable_floating_mode {
 	padding: 1em;
 	border: 1px solid silver;
 	border-radius: 5px;
 	margin: 0 auto 1em -1em;
 }
 
-#fe_ai_search_settings_display_floating_enable_floating_mode label {
+#fe_search_ai_settings_display_floating_enable_floating_mode label {
 	margin: 0 !important;
 }
 
-#fe_ai_search_animation_speed_value {
+#fe_search_ai_animation_speed_value {
 	display: inline-block;
 	vertical-align: middle;
 	width: 2em;
@@ -438,16 +440,16 @@ a:has(.dashicons-warning) span {
 	vertical-align: middle;
 }
 
-#fe_ai_search_progress_bar_wrapper {
+#fe_search_ai_progress_bar_wrapper {
 	padding: 0 5px;
 }
 
-#fe_ai_search_sync_status {
+#fe_search_ai_sync_status {
 	display: flex;
 	align-items: center;
 }
 
-#fe_ai_search_sync_status .spin {
+#fe_search_ai_sync_status .spin {
 	display: none;
 	float: none;
 	vertical-align: middle;
@@ -456,7 +458,7 @@ a:has(.dashicons-warning) span {
 }
 
 /* Sync UI Styles */
-#fe_ai_search_progress_container {
+#fe_search_ai_progress_container {
 	display: none;
 	width: 100%;
 	background-color: #eee;
@@ -466,7 +468,7 @@ a:has(.dashicons-warning) span {
 	overflow: hidden;
 }
 
-#fe_ai_search_progress_bar {
+#fe_search_ai_progress_bar {
 	width: 0%; /* Initial width is 0% */
 	height: 20px;
 	line-height: 20px;
@@ -479,7 +481,7 @@ a:has(.dashicons-warning) span {
 	transition: width 0.3s ease-in-out;
 }
 
-#fe_ai_search_progress_container .status-text {
+#fe_search_ai_progress_container .status-text {
 	padding: 5px;
 	display: block;
 }
@@ -677,8 +679,8 @@ a:has(.dashicons-warning) span {
 	margin: 0 0 1em;
 }
 
-#fe_ai_search_delete_logs_status,
-#fe_ai_search_delete_conversation_logs_status {
+#fe_search_ai_delete_logs_status,
+#fe_search_ai_delete_conversation_logs_status {
 	padding: 10px 0;
 }
 
@@ -718,7 +720,7 @@ a:has(.dashicons-warning) span {
 	padding: 0 1em;
 }
 
-#fe_ai_search_pro_rate_limit_options h4 {
+#fe_search_ai_pro_rate_limit_options h4 {
 	margin: 0 0 1em;
 }
 .rate-limit-group {
@@ -728,7 +730,7 @@ a:has(.dashicons-warning) span {
 	margin: 0.5em 0 !important;
 }
 
-#fe_ai_search_api_usage_limits code {
+#fe_search_ai_api_usage_limits code {
 	display: inline-block;
 	padding: 0 0.5em;
 	margin: 0;
@@ -739,11 +741,11 @@ a:has(.dashicons-warning) span {
 	width: fit-content;
 }
 
-#fe_ai_search_settings_footer {
+#fe_search_ai_settings_footer {
 	display: flex;
 	justify-content: space-between;
 }
-#fe_ai_search_settings_footer span {
+#fe_search_ai_settings_footer span {
 	margin-right: 0 !important;
 }
 
@@ -764,7 +766,7 @@ a:has(.dashicons-warning) span {
 	margin-right: 1em !important;
 }
 
-.fe-ai-search-tax-config-wrapper input[type="text"] {
+.fe-ai-search-tax-config-wrapper input[type='text'] {
 	width: 100%;
 	max-width: 400px;
 }
@@ -776,7 +778,7 @@ a:has(.dashicons-warning) span {
 	color: #666;
 }
 
-.fe-ai-search-tax-config-wrapper div[style*="margin"] {
+.fe-ai-search-tax-config-wrapper div[style*='margin'] {
 	margin: 1em 0 !important;
 }
 
@@ -798,48 +800,48 @@ a:has(.dashicons-warning) span {
 
 /* Sync Options Table Styles */
 .form-table.widefat.striped {
-    border: 1px solid #ccd0d4;
-    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+	border: 1px solid #ccd0d4;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
 }
 
 .form-table.widefat.striped th {
-    font-weight: 600;
-    background-color: #f6f7f7;
-    border-bottom: 1px solid #ccd0d4;
+	font-weight: 600;
+	background-color: #f6f7f7;
+	border-bottom: 1px solid #ccd0d4;
 }
 
 .form-table.widefat.striped td {
-    vertical-align: top;
-    padding: 15px 10px;
-    border-bottom: 1px solid #ccd0d4;
+	vertical-align: top;
+	padding: 15px 10px;
+	border-bottom: 1px solid #ccd0d4;
 }
 
 .form-table.widefat.striped tr:nth-child(odd) td {
-    background-color: #f9f9f9;
+	background-color: #f9f9f9;
 }
 
 .form-table.widefat.striped tr:nth-child(even) td {
-    background-color: #ffffff;
+	background-color: #ffffff;
 }
 
 /* Taxonomy configuration wrapper in table */
 .form-table.widefat.striped .fe-ai-search-tax-config-wrapper {
-    margin-top: 8px;
-    padding: 8px;
-    background-color: #f8f9f9;
-    border: 1px solid #ddd;
-    border-radius: 3px;
+	margin-top: 8px;
+	padding: 8px;
+	background-color: #f8f9f9;
+	border: 1px solid #ddd;
+	border-radius: 3px;
 }
 
 .form-table.widefat.striped .fe-ai-search-custom-fields-wrapper {
-    margin-top: 8px;
+	margin-top: 8px;
 }
 
 .form-table.widefat.striped fieldset label {
-    display: block !important;
-    margin-bottom: 0.5em !important;
+	display: block !important;
+	margin-bottom: 0.5em !important;
 }
 
-.form-table.widefat.striped fieldset label input[type="radio"] {
-    margin-right: 0.5em;
+.form-table.widefat.striped fieldset label input[type='radio'] {
+	margin-right: 0.5em;
 }

@@ -63,13 +63,13 @@ class FE_Search_AI_Sync_Handler {
 
 		// $this->is_license_active = true; // Debug override
 
-		add_filter( 'fe_ai_search_tokenizer_status', [ $this, 'add_japanese_tokenizer_status' ] );
-		add_action( 'wp_ajax_fe_ai_search_start_sync', [ $this, 'ajax_start_sync' ] );
-		add_action( 'wp_ajax_fe_ai_search_process_batch', [ $this, 'ajax_process_batch' ] );
-		add_action( 'wp_ajax_fe_ai_search_update_sync_timestamp', [ $this, 'ajax_update_sync_timestamp' ] );
-		add_action( 'wp_ajax_fe_ai_search_delete_vectors', [ $this, 'ajax_delete_vectors' ] );
-		add_action( 'wp_ajax_fe_ai_search_start_smart_sync', [ $this, 'ajax_start_smart_sync' ] );
-		add_action( 'wp_ajax_fe_ai_search_update_settings_hash', [ $this, 'ajax_update_settings_hash' ] );
+		add_filter( 'fe_search_ai_tokenizer_status', [ $this, 'add_japanese_tokenizer_status' ] );
+		add_action( 'wp_ajax_fe_search_ai_start_sync', [ $this, 'ajax_start_sync' ] );
+		add_action( 'wp_ajax_fe_search_ai_process_batch', [ $this, 'ajax_process_batch' ] );
+		add_action( 'wp_ajax_fe_search_ai_update_sync_timestamp', [ $this, 'ajax_update_sync_timestamp' ] );
+		add_action( 'wp_ajax_fe_search_ai_delete_vectors', [ $this, 'ajax_delete_vectors' ] );
+		add_action( 'wp_ajax_fe_search_ai_start_smart_sync', [ $this, 'ajax_start_smart_sync' ] );
+		add_action( 'wp_ajax_fe_search_ai_update_settings_hash', [ $this, 'ajax_update_settings_hash' ] );
 
 		if ( is_admin() ) {
 			add_action( 'admin_notices', [ $this, 'render_i18n_notice' ] );
@@ -85,7 +85,7 @@ class FE_Search_AI_Sync_Handler {
 	 * @return void
 	 */
 	public function ajax_start_sync() {
-		check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
+		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
 
 		global $wpdb;
 		$vectors_table = $wpdb->prefix . 'fe_ai_search_vectors';
@@ -199,7 +199,7 @@ class FE_Search_AI_Sync_Handler {
 	 * @return void
 	 */
 	public function ajax_start_smart_sync() {
-		check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
+		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( [ 'message' => 'Permission denied.' ] );
 		}
@@ -361,7 +361,7 @@ class FE_Search_AI_Sync_Handler {
 	 * This is called after a successful sync process.
 	 */
 	public function ajax_update_settings_hash() {
-		check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
+		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
 
 		// Pull the freshest static sync configuration from the main settings.
 		$options   = get_option( 'fe_ai_search_settings', [] );
@@ -412,7 +412,7 @@ class FE_Search_AI_Sync_Handler {
 			set_time_limit( 0 );
 			ob_start();
 
-			check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
+			check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
 
 			// Process input data
 			$page          = isset( $_POST['page'] ) ? absint( $_POST['page'] ) : 1;
@@ -558,7 +558,7 @@ class FE_Search_AI_Sync_Handler {
 	 * @return void
 	 */
 	public function ajax_update_sync_timestamp() {
-		check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
+		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
 
 		$now = current_time( 'timestamp' );
 
@@ -587,7 +587,7 @@ class FE_Search_AI_Sync_Handler {
 	 * @return void
 	 */
 	public function ajax_delete_vectors() {
-		check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
+		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
 
 		global $wpdb;
 		$vectors_table = $wpdb->prefix . 'fe_ai_search_vectors';
@@ -1855,7 +1855,7 @@ class FE_Search_AI_Sync_Handler {
 	/**
 	 * Adds the Japanese tokenizer status to the sync page UI.
 	 *
-	 * This method hooks into the 'fe_ai_search_tokenizer_status' filter.
+	 * This method hooks into the 'fe_search_ai_tokenizer_status' filter.
 	 *
 	 * @since 1.0.0
 	 * @param array $statuses The existing status messages.

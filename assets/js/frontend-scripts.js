@@ -9,7 +9,7 @@
  * @since      1.0.0
  */
 
-/* global fe_ai_search_ajax_obj, marked */
+/* global fe_search_ai_ajax_obj, marked */
 
 // Initialize WordPress internationalization functions.
 const { __ } = wp.i18n;
@@ -103,7 +103,7 @@ const FE_AI_SEARCH_CONFIG = {
  */
 async function wpPost(action, data = {}) {
 	const formData = new URLSearchParams({ action, ...data });
-	const response = await fetch(fe_ai_search_ajax_obj.ajax_url, {
+	const response = await fetch(fe_search_ai_ajax_obj.ajax_url, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
 		body: formData,
@@ -123,7 +123,7 @@ function handleError(error, context = 'unknown', showMessage = true) {
 	let errorMessage = FE_AI_SEARCH_CONFIG.ERRORS.MESSAGES.unknown_error;
 
 	// Log error for debugging (only in development or if debug mode is enabled)
-	if (typeof fe_ai_search_ajax_obj !== 'undefined' && fe_ai_search_ajax_obj.debug) {
+	if (typeof fe_search_ai_ajax_obj !== 'undefined' && fe_search_ai_ajax_obj.debug) {
 		console.error(`[FE AI Search] Error in ${context}:`, error);
 	}
 
@@ -399,7 +399,7 @@ function setupSendModeEventListener(shiftEnterToggle, setSendMode) {
  */
 function initializeSendModeSettings(shiftEnterToggle) {
 	const storedSendMode = localStorage.getItem(FE_AI_SEARCH_CONFIG.STORAGE.SEND_MODE);
-	let sendMode = storedSendMode || fe_ai_search_ajax_obj.send_mode || 'enter';
+	let sendMode = storedSendMode || fe_search_ai_ajax_obj.send_mode || 'enter';
 
 	if (!FE_AI_SEARCH_CONFIG.SEND_MODES.includes(sendMode)) {
 		sendMode = 'enter';
@@ -466,7 +466,7 @@ function initFEAIChat() {
 	let typingCharsPerTick = 3;
 	let typingInterval = 50;
 	let typingImmediate = false; // true の場合、チャンク到着時に即レンダリングを試みる
-	const privacyConfig = fe_ai_search_ajax_obj.privacy || {};
+	const privacyConfig = fe_search_ai_ajax_obj.privacy || {};
 	const consentStorageKey = FE_AI_SEARCH_CONFIG.STORAGE.USER_CONSENT;
 
 	// Initialize Settings
@@ -547,8 +547,8 @@ function initFEAIChat() {
 			}
 			setUserConsented();
 			try {
-				wpPost('fe_ai_search_log_consent', {
-					nonce: fe_ai_search_ajax_obj.nonce,
+				wpPost('fe_search_ai_log_consent', {
+					nonce: fe_search_ai_ajax_obj.nonce,
 					session_id: sessionId,
 					source: 'chat_overlay',
 				});
@@ -589,7 +589,7 @@ function initFEAIChat() {
 		}
 
 		// Check session message limit
-		const SESSION_LIMIT = fe_ai_search_ajax_obj.ip_limit_count;
+		const SESSION_LIMIT = fe_search_ai_ajax_obj.ip_limit_count;
 		if (SESSION_LIMIT > 0 && sessionHistory.length > SESSION_LIMIT * 2) {
 			addMessage(
 				'<p>' +
@@ -628,10 +628,10 @@ function initFEAIChat() {
 
 		startRenderingQueue();
 
-		fetch(fe_ai_search_ajax_obj.rest_url, {
+		fetch(fe_search_ai_ajax_obj.rest_url, {
 			method: 'POST',
 			headers: {
-				'X-WP-Nonce': fe_ai_search_ajax_obj.rest_nonce,
+				'X-WP-Nonce': fe_search_ai_ajax_obj.rest_nonce,
 				'X-FE-AI-Session': sessionId,
 			},
 			body: new URLSearchParams({
@@ -754,8 +754,8 @@ function initFEAIChat() {
 
 			if (!logId || !rating) return;
 
-			wpPost('fe_ai_search_rate_answer', {
-				nonce: fe_ai_search_ajax_obj.nonce,
+			wpPost('fe_search_ai_rate_answer', {
+				nonce: fe_search_ai_ajax_obj.nonce,
 				log_id: logId,
 				rating,
 			});
@@ -878,8 +878,8 @@ function initFEAIChat() {
 
 		return safeExecuteAsync(
 			async () => {
-				const response = await wpPost('fe_ai_search_log_query', {
-					nonce: fe_ai_search_ajax_obj.nonce,
+				const response = await wpPost('fe_search_ai_log_query', {
+					nonce: fe_search_ai_ajax_obj.nonce,
 					session_id: sessionId,
 					question: '',
 					question_length: questionLength,
@@ -929,8 +929,8 @@ function initFEAIChat() {
 	async function getSessionLogs() {
 		return safeExecuteAsync(
 			async () => {
-				const response = await wpPost('fe_ai_search_get_session_logs', {
-					nonce: fe_ai_search_ajax_obj.nonce,
+				const response = await wpPost('fe_search_ai_get_session_logs', {
+					nonce: fe_search_ai_ajax_obj.nonce,
 					session_id: sessionId,
 				});
 
@@ -955,7 +955,7 @@ function initFEAIChat() {
 	 */
 	function configureTypingSpeed() {
 		let speed =
-			fe_ai_search_ajax_obj.animation_speed || FE_AI_SEARCH_CONFIG.ANIMATION.DEFAULT_SPEED;
+			fe_search_ai_ajax_obj.animation_speed || FE_AI_SEARCH_CONFIG.ANIMATION.DEFAULT_SPEED;
 		if (typeof speed !== 'number') {
 			speed = parseInt(speed, 10) || FE_AI_SEARCH_CONFIG.ANIMATION.DEFAULT_SPEED;
 		}
@@ -1085,10 +1085,10 @@ function initFEAIChat() {
 			let message = __('An error occurred. Please try again.', 'fe-ai-search');
 			if (error && error.message === 'rate_limit') {
 				if (
-					typeof fe_ai_search_ajax_obj !== 'undefined' &&
-					fe_ai_search_ajax_obj.rate_limit_message
+					typeof fe_search_ai_ajax_obj !== 'undefined' &&
+					fe_search_ai_ajax_obj.rate_limit_message
 				) {
-					message = fe_ai_search_ajax_obj.rate_limit_message;
+					message = fe_search_ai_ajax_obj.rate_limit_message;
 				} else {
 					message = __('Rate limit exceeded. Please try again later.', 'fe-ai-search');
 				}

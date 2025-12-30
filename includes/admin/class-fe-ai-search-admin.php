@@ -154,7 +154,7 @@ class FE_Search_AI_Admin {
 		$allowed_hooks = [
 			'toplevel_page_fe-ai-search',
 		];
-		$allowed_hooks = apply_filters( 'fe_ai_search_admin_allowed_hooks', $allowed_hooks );
+		$allowed_hooks = apply_filters( 'fe_search_ai_admin_allowed_hooks', $allowed_hooks );
 
 		if ( ! in_array( $hook_suffix, $allowed_hooks ) ) {
 			return;
@@ -166,13 +166,13 @@ class FE_Search_AI_Admin {
 
 		// Color picker (Pickr) styles.
 		wp_enqueue_style(
-			'fe-ai-search-pickr',
+			'fe-search-ai-pickr',
 			'https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/classic.min.css',
 			[],
 			FE_AI_SEARCH_VERSION
 		);
 		wp_enqueue_script(
-			'fe-ai-search-pickr',
+			'fe-search-ai-pickr',
 			plugin_dir_url( FE_AI_SEARCH_PLUGIN_FILE ) . 'assets/vendor/pickr.min.js',
 			[],
 			FE_AI_SEARCH_VERSION,
@@ -183,7 +183,7 @@ class FE_Search_AI_Admin {
 			'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.css'
 		);
 		wp_enqueue_style(
-			'fe-ai-search-admin-style',
+			'fe-search-ai-admin-style',
 			plugin_dir_url( FE_AI_SEARCH_PLUGIN_FILE ) . $admin_css,
 			[],
 			FE_AI_SEARCH_VERSION
@@ -204,25 +204,25 @@ class FE_Search_AI_Admin {
 			true
 		);
 		wp_enqueue_script(
-			'fe-ai-search-admin-sync',
+			'fe-search-ai-admin-sync',
 			plugin_dir_url( FE_AI_SEARCH_PLUGIN_FILE ) . $admin_js,
-			[ 'wp-i18n', 'codemirror-js', 'fe-ai-search-pickr' ],
+			[ 'wp-i18n', 'codemirror-js', 'fe-search-ai-pickr' ],
 			FE_AI_SEARCH_VERSION,
 			true
 		);
 
 		wp_set_script_translations(
-			'fe-ai-search-admin-sync',
+			'fe-search-ai-admin-sync',
 			'fe-ai-search',
 			plugin_dir_path( FE_AI_SEARCH_PLUGIN_FILE ) . 'languages'
 		);
 
 		wp_localize_script(
-			'fe-ai-search-admin-sync',
-			'fe_ai_search_sync_obj',
+			'fe-search-ai-admin-sync',
+			'fe_search_ai_sync_obj',
 			[
 				'ajax_url' => admin_url( 'admin-ajax.php' ),
-				'nonce'    => wp_create_nonce( 'fe_ai_search_ajax_nonce' ),
+				'nonce'    => wp_create_nonce( 'fe_search_ai_ajax_nonce' ),
 			]
 		);
 	}

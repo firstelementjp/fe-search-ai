@@ -45,18 +45,18 @@ class FE_Search_AI_Assets {
 	 * Load scripts and styles for the front end.
 	 */
 	public function enqueue_assets() {
-		// Pro settings (used for rate limiting and privacy configuration).
-		$pro_options = [];
-		if ( $is_license_active && class_exists( '\\FEAISearch\\Pro\\Admin\\FE_AI_Search_Pro_Settings' ) ) {
-			$pro_options = get_option( 'fe_ai_search_pro_settings', [] );
-		}
-
 		// License settings values
 		$license_data      = get_option( 'fe_ai_search_license', [] );
 		$status            = $license_data['status'] ?? 'inactive';
 		$data              = $license_data['data'] ?? [];
 		$product_id        = isset( $data['productId'] ) ? (int) $data['productId'] : 0;
 		$is_license_active = ( 'active' === $status && 65 === $product_id ); // 65 is the product ID for the Pro add-on.
+
+		// Pro settings (used for rate limiting and privacy configuration).
+		$pro_options = [];
+		if ( $is_license_active && class_exists( '\\FEAISearch\\Pro\\Admin\\FE_AI_Search_Pro_Settings' ) ) {
+			$pro_options = get_option( 'fe_ai_search_pro_settings', [] );
+		}
 
 		// UI settings values
 		$ui_options        = $this->options['display']['ui'] ?? [];
@@ -133,7 +133,7 @@ class FE_Search_AI_Assets {
 		 * Allows external code (themes/plugins) to adjust the rate limit settings
 		 * using $default_limits as the base configuration.
 		 */
-		$rate_limit_config = apply_filters( 'fe_ai_search_rate_limit_settings', $default_limits );
+		$rate_limit_config = apply_filters( 'fe_search_ai_rate_limit_settings', $default_limits );
 
 		// Ensure any missing keys are filled with defaults to avoid notices/warnings.
 		$rate_limit_config  = wp_parse_args( $rate_limit_config, $default_limits );
@@ -148,7 +148,7 @@ class FE_Search_AI_Assets {
 
 		if ( $enable_css ) {
 			wp_enqueue_style(
-				'fe-ai-search-frontend-styles',
+				'fe-search-ai-frontend-styles',
 				plugin_dir_url( FE_AI_SEARCH_PLUGIN_FILE ) . $frontend_css,
 				[],
 				FE_AI_SEARCH_VERSION
@@ -193,7 +193,7 @@ class FE_Search_AI_Assets {
 			 *                          "accent", "background", and "text".
 			 */
 			$color_css = apply_filters(
-				'fe_ai_search_frontend_color_css',
+				'fe_search_ai_frontend_color_css',
 				$color_css,
 				[
 					'accent'         => $key_color,
@@ -210,7 +210,7 @@ class FE_Search_AI_Assets {
 			);
 
 			if ( ! empty( $color_css ) ) {
-				wp_add_inline_style( 'fe-ai-search-frontend-styles', $color_css );
+				wp_add_inline_style( 'fe-search-ai-frontend-styles', $color_css );
 			}
 		}
 
@@ -220,7 +220,7 @@ class FE_Search_AI_Assets {
 		}
 
 		wp_enqueue_script(
-			'fe-ai-search-frontend-scripts',
+			'fe-search-ai-frontend-scripts',
 			plugin_dir_url( FE_AI_SEARCH_PLUGIN_FILE ) . $frontend_js,
 			[ 'wp-i18n' ],
 			FE_AI_SEARCH_VERSION,
@@ -228,26 +228,26 @@ class FE_Search_AI_Assets {
 		);
 
 		wp_set_script_translations(
-			'fe-ai-search-frontend-scripts',
+			'fe-search-ai-frontend-scripts',
 			'fe-ai-search',
 			plugin_dir_path( FE_AI_SEARCH_PLUGIN_FILE ) . 'languages'
 		);
 
 		// Pass data to JavaScript.
 		$rate_limit_message = apply_filters(
-			'fe_ai_search_rate_limit_message',
+			'fe_search_ai_rate_limit_message',
 			__( '(You have reached the request limit. Please wait a while before trying again.)', 'fe-ai-search' )
 		);
 
 		// Expose configuration and runtime data to the frontend chat script.
 		wp_localize_script(
-			'fe-ai-search-frontend-scripts',
-			'fe_ai_search_ajax_obj',
+			'fe-search-ai-frontend-scripts',
+			'fe_search_ai_ajax_obj',
 			[
 				'ajax_url'           => admin_url( 'admin-ajax.php' ),
-				'rest_url'           => rest_url( 'fe-ai-search/v1/stream' ),
+				'rest_url'           => rest_url( 'fe-search-ai/v1/stream' ),
 				'rest_nonce'         => wp_create_nonce( 'wp_rest' ),
-				'nonce'              => wp_create_nonce( 'fe_ai_search_ajax_nonce' ),
+				'nonce'              => wp_create_nonce( 'fe_search_ai_ajax_nonce' ),
 				'animation_speed'    => (int) $animation_speed,
 				'is_pro_active'      => class_exists( '\\FEAISearch\\Pro\\Admin\\FE_AI_Search_Pro_Settings' ),
 				'is_license_active'  => $is_license_active,

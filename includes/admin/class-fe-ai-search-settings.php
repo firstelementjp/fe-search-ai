@@ -56,8 +56,8 @@ class FE_Search_AI_Settings {
 		}
 
 		add_action( 'admin_init', [ $this, 'settings_init' ] );
-		add_action( 'wp_ajax_fe_ai_search_delete_system_logs', [ $this, 'ajax_delete_system_logs' ] );
-		add_action( 'wp_ajax_fe_ai_search_delete_conversation_logs', [ $this, 'ajax_delete_conversation_logs' ] );
+		add_action( 'wp_ajax_fe_search_ai_delete_system_logs', [ $this, 'ajax_delete_system_logs' ] );
+		add_action( 'wp_ajax_fe_search_ai_delete_conversation_logs', [ $this, 'ajax_delete_conversation_logs' ] );
 	}
 
 	/**
@@ -108,19 +108,19 @@ class FE_Search_AI_Settings {
 				 *
 				 * @since 1.0.0
 				 */
-				do_action( 'fe_ai_search_settings_tabs' );
+				do_action( 'fe_search_ai_settings_tabs' );
 				?>
 			</div>
 
 			<form action="options.php" method="post">
-				<div id="fe_ai_search_settings_inner">
+				<div id="fe_search_ai_settings_inner">
 					<?php
 					// Use the correct settings group name defined in settings_init()
 					settings_fields( 'fe-ai-search-settings-group' );
 					?>
 
 					<div id="tab_provider" class="tab-content">
-						<details id="fe_ai_search_api_usage_limits">
+						<details id="fe_search_ai_api_usage_limits">
 							<summary>
 								<?php esc_html_e( 'API usage limits and costs', 'fe-ai-search' ); ?>
 							</summary>
@@ -270,11 +270,11 @@ class FE_Search_AI_Settings {
 					 *
 					 * @since 1.0.0
 					 */
-					do_action( 'fe_ai_search_settings_tabs_content' );
+					do_action( 'fe_search_ai_settings_tabs_content' );
 					?>
 				</div>
 
-				<div id="fe_ai_search_settings_footer">
+				<div id="fe_search_ai_settings_footer">
 					<?php submit_button( __( 'Save Settings', 'fe-ai-search' ) ); ?>
 					<?php if ( 'ja' === $locale || 'ja_JP' === $locale ) : ?>
 						<!-- Begin Yahoo! JAPAN Web Services Attribution Snippet -->
@@ -693,7 +693,7 @@ class FE_Search_AI_Settings {
 		?>
 		<input
 			type="password"
-			id="fe_ai_search_openai_api_key"
+			id="fe_search_ai_openai_api_key"
 			name="fe_ai_search_settings[provider][openai_key]"
 			value="<?php echo esc_attr( $api_key ); ?>"
 			class="regular-text"
@@ -760,7 +760,7 @@ class FE_Search_AI_Settings {
 		?>
 		<input
 			type="password"
-			id="fe_ai_search_google_api_key"
+			id="fe_search_ai_google_api_key"
 			name="fe_ai_search_settings[provider][google_key]"
 			value="<?php echo esc_attr( $api_key ); ?>"
 			class="regular-text"
@@ -827,7 +827,7 @@ class FE_Search_AI_Settings {
 		?>
 		<input
 			type="password"
-			id="fe_ai_search_anthropic_api_key"
+			id="fe_search_ai_anthropic_api_key"
 			name="fe_ai_search_settings[provider][anthropic_key]"
 			value="<?php echo esc_attr( $api_key ); ?>"
 			class="regular-text"
@@ -894,7 +894,7 @@ class FE_Search_AI_Settings {
 
 		$string = __( 'Select the post types to target for AI search and the related data to include in chunk data passed to AI. If no items are checked under "include in Chunk Data" for a post type, that post type will be skipped during synchronization.', 'fe-ai-search' );
 		echo '<p class="description">' . wp_kses_post( $string ) . '</p>';
-		echo '<div id="fe_ai_search_sync_options_accordion" class="fe-ai-search-accordion-wrapper">';
+		echo '<div id="fe_search_ai_sync_options_accordion" class="fe-ai-search-accordion-wrapper">';
 
 		foreach ( $post_types as $post_type ) {
 			if ( in_array( $post_type->name, $excluded_post_types, true ) ) {
@@ -1130,7 +1130,7 @@ class FE_Search_AI_Settings {
 				?>
 			</p>
 
-			<div id="fe_ai_search_sync_wrapper">
+			<div id="fe_search_ai_sync_wrapper">
 				<?php
 				$vector_store = $this->options['vector']['store'] ?? 'mariadb';
 				if ( 'qdrant' !== $vector_store ) {
@@ -1143,11 +1143,11 @@ class FE_Search_AI_Settings {
 					 * @since 1.0.0
 					 * @param array $statuses An array of HTML strings, each representing a status line.
 					 */
-					$tokenizer_statuses = apply_filters( 'fe_ai_search_tokenizer_status', [] );
+					$tokenizer_statuses = apply_filters( 'fe_search_ai_tokenizer_status', [] );
 
 					if ( ! empty( $tokenizer_statuses ) ) :
 						?>
-						<div id="fe_ai_search_tokenizer_status">
+						<div id="fe_search_ai_tokenizer_status">
 							<?php
 							foreach ( $tokenizer_statuses as $status_html ) {
 								echo '<p>' . wp_kses_post( $status_html ) . '</p>';
@@ -1160,19 +1160,19 @@ class FE_Search_AI_Settings {
 				?>
 
 				<div class="fe-ai-search-wrapper">
-					<button id="fe_ai_search_smart_sync" class="button button-primary">
+					<button id="fe_search_ai_smart_sync" class="button button-primary">
 						<?php esc_html_e( 'Sync Changes (Recommended)', 'fe-ai-search' ); ?>
 					</button>
-					<button id="fe_ai_search_start_sync" class="button button-secondary">
+					<button id="fe_search_ai_start_sync" class="button button-secondary">
 						<?php esc_html_e( 'Rebuild Index', 'fe-ai-search' ); ?>
 					</button>
 				</div>
 
-				<div id="fe_ai_search_progress_container">
-					<div id="fe_ai_search_progress_bar_wrapper">
-						<div id="fe_ai_search_progress_bar">0%</div>
+				<div id="fe_search_ai_progress_container">
+					<div id="fe_search_ai_progress_bar_wrapper">
+						<div id="fe_search_ai_progress_bar">0%</div>
 					</div>
-					<div id="fe_ai_search_sync_status">
+					<div id="fe_search_ai_sync_status">
 						<span class="dashicons dashicons-update-alt spin"></span>
 						<span class="status-text"></span>
 					</div>
@@ -1200,11 +1200,11 @@ class FE_Search_AI_Settings {
 		<p class="description">
 			<?php esc_html_e( 'This will delete all synced vector data and keyword indexes. AI search will no longer work until you sync again.', 'fe-ai-search' ); ?>
 		</p>
-		<button type="button" id="fe_ai_search_delete_vectors_button" class="button button-secondary">
+		<button type="button" id="fe_search_ai_delete_vectors_button" class="button button-secondary">
 			<?php esc_html_e( 'Delete all synced data', 'fe-ai-search' ); ?>
 		</button>
 		<span class="spinner"></span>
-		<p id="fe_ai_search_delete_status"></p>
+		<p id="fe_search_ai_delete_status"></p>
 		<?php
 	}
 
@@ -1222,11 +1222,11 @@ class FE_Search_AI_Settings {
 		<p class="description">
 			<?php esc_html_e( 'This will delete all system logs stored in the `{prefix}fe_ai_search_system_logs` table. Use this if logs have grown unexpectedly large or contain information you no longer wish to keep.', 'fe-ai-search' ); ?>
 		</p>
-		<button type="button" id="fe_ai_search_delete_system_logs_button" class="button button-secondary">
+		<button type="button" id="fe_search_ai_delete_system_logs_button" class="button button-secondary">
 			<?php esc_html_e( 'Delete all system logs', 'fe-ai-search' ); ?>
 		</button>
 		<span class="spinner"></span>
-		<p id="fe_ai_search_delete_logs_status"></p>
+		<p id="fe_search_ai_delete_logs_status"></p>
 		<?php
 	}
 
@@ -1244,11 +1244,11 @@ class FE_Search_AI_Settings {
 		<p class="description">
 			<?php esc_html_e( 'This will delete all conversation logs stored in the `{prefix}fe_ai_search_logs` table. Use this if conversations have grown unexpectedly large or contain information you no longer wish to keep.', 'fe-ai-search' ); ?>
 		</p>
-		<button type="button" id="fe_ai_search_delete_conversation_logs_button" class="button button-secondary">
+		<button type="button" id="fe_search_ai_delete_conversation_logs_button" class="button button-secondary">
 			<?php esc_html_e( 'Delete all conversation logs', 'fe-ai-search' ); ?>
 		</button>
 		<span class="spinner"></span>
-		<p id="fe_ai_search_delete_conversation_logs_status"></p>
+		<p id="fe_search_ai_delete_conversation_logs_status"></p>
 		<?php
 	}
 
@@ -1259,7 +1259,7 @@ class FE_Search_AI_Settings {
 	 * @return void
 	 */
 	public function ajax_delete_system_logs() {
-		check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
+		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( __( 'You do not have sufficient permissions to perform this action.', 'fe-ai-search' ) );
@@ -1277,7 +1277,7 @@ class FE_Search_AI_Settings {
 	 * @return void
 	 */
 	public function ajax_delete_conversation_logs() {
-		check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
+		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error(
@@ -1387,7 +1387,7 @@ class FE_Search_AI_Settings {
 								</p>
 							</div>
 
-							<div id="fe_ai_search_condition_for_displaying_the_chat">
+							<div id="fe_search_ai_condition_for_displaying_the_chat">
 								<div class="option-header">
 									<?php esc_html_e( 'Conditions for Displaying the Chat', 'fe-ai-search' ); ?>:
 								</div>
@@ -1438,12 +1438,12 @@ class FE_Search_AI_Settings {
 									<?php esc_html_e( 'Overwrite rules by individual ID', 'fe-ai-search' ); ?>:
 								</div>
 								<p>
-									<label for="fe_ai_search_include_ids">
+									<label for="fe_search_ai_include_ids">
 										<?php esc_html_e( 'Display only with these post IDs', 'fe-ai-search' ); ?>:
 									</label>
 									<input
 										type="text"
-										id="fe_ai_search_include_ids"
+										id="fe_search_ai_include_ids"
 										name="fe_ai_search_settings[display][floating][display_rules][include_ids]"
 										value="<?php echo esc_attr( $floating_options['display_rules']['include_ids'] ); ?>"
 										class="regular-text"
@@ -1455,19 +1455,19 @@ class FE_Search_AI_Settings {
 								</p>
 
 								<p>
-									<label for="fe_ai_search_exclude_ids">
+									<label for="fe_search_ai_exclude_ids">
 										<?php esc_html_e( 'Do not display with these post IDs.', 'fe-ai-search' ); ?>:
 									</label>
 									<input
 										type="text"
-										id="fe_ai_search_exclude_ids"
+										id="fe_search_ai_exclude_ids"
 										name="fe_ai_search_settings[display][floating][display_rules][exclude_ids]"
 										value="<?php echo esc_attr( $floating_options['display_rules']['exclude_ids'] ); ?>"
 										class="regular-text"
 										placeholder="<?php esc_attr_e( 'e.g.', 'fe-ai-search' ); ?> 15, 30"
 									>
 								</p>
-							</div><!-- #fe_ai_search_condition_for_displaying_the_chat -->
+							</div><!-- #fe_search_ai_condition_for_displaying_the_chat -->
 
 						</div><!-- .accordion-inner -->
 					</div><!-- .accordion-content -->
@@ -1541,7 +1541,7 @@ class FE_Search_AI_Settings {
 		$const_id     = $has_constant ? FE_AI_SEARCH_YAHOO_APP_ID : '';
 		?>
 		<fieldset>
-			<select id="fe_ai_search_japanese_tokenizer_engine" name="fe_ai_search_settings[tokenizer][ja][engine]">
+			<select id="fe_search_ai_japanese_tokenizer_engine" name="fe_ai_search_settings[tokenizer][ja][engine]">
 				<?php foreach ( $engines as $key => $label ) : ?>
 					<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $engine, $key ); ?>>
 						<?php echo esc_html( $label ); ?>
@@ -1554,11 +1554,11 @@ class FE_Search_AI_Settings {
 			</p>
 
 			<div style="margin-top:1em;">
-				<label for="fe_ai_search_yahoo_app_id">
+				<label for="fe_search_ai_yahoo_app_id">
 					<?php esc_html_e( 'Yahoo! App ID (optional)', 'fe-ai-search' ); ?>
 				</label>
 				<input
-					id="fe_ai_search_yahoo_app_id"
+					id="fe_search_ai_yahoo_app_id"
 					type="password"
 					name="fe_ai_search_settings[tokenizer][ja][yahoo_id]"
 					value="<?php echo esc_attr( $yahoo_id ); ?>"
@@ -1623,14 +1623,14 @@ class FE_Search_AI_Settings {
 		?>
 		<fieldset>
 			<?php echo $this->license_alert_icon; ?>
-			<label for="fe_ai_search_fullscreen_page_id">
+			<label for="fe_search_ai_fullscreen_page_id">
 				<?php esc_html_e( 'Select Chat-Only Page', 'fe-ai-search' ); ?>
 			</label>
 			<?php
 			$dropdown_html = wp_dropdown_pages(
 				[
 					'name'              => 'fe_ai_search_settings[display][fullscreen_page_id]',
-					'id'                => 'fe_ai_search_fullscreen_page_id',
+					'id'                => 'fe_search_ai_fullscreen_page_id',
 					'echo'              => 0,
 					'selected'          => $display_options['fullscreen_page_id'] ?? 0,
 					'show_option_none'  => __( '— Don\'t use a dedicated page —', 'fe-ai-search' ),
@@ -1713,10 +1713,10 @@ class FE_Search_AI_Settings {
 		$use_gradient     = $ui_options['use_gradient'] ?? true;
 		?>
 		<p>
-			<label for="fe_ai_search_window_title"><?php esc_html_e( 'Chat window title', 'fe-ai-search' ); ?></label>
+			<label for="fe_search_ai_window_title"><?php esc_html_e( 'Chat window title', 'fe-ai-search' ); ?></label>
 			<input
 				type="text"
-				id="fe_ai_search_window_title"
+				id="fe_search_ai_window_title"
 				name="fe_ai_search_settings[display][text][window_title]"
 				value="<?php echo esc_attr( $window_title ); ?>"
 				placeholder="<?php echo esc_attr( $defaults['window_title'] ); ?>"
@@ -1724,9 +1724,9 @@ class FE_Search_AI_Settings {
 			>
 		</p>
 		<p>
-			<label for="fe_ai_search_greeting_message"><?php esc_html_e( 'First greeting', 'fe-ai-search' ); ?></label>
+			<label for="fe_search_ai_greeting_message"><?php esc_html_e( 'First greeting', 'fe-ai-search' ); ?></label>
 			<textarea
-				id="fe_ai_search_greeting_message"
+				id="fe_search_ai_greeting_message"
 				name="fe_ai_search_settings[display][text][greeting_message]"
 				rows="3"
 				class="large-text"
@@ -1734,10 +1734,10 @@ class FE_Search_AI_Settings {
 			><?php echo esc_textarea( $greeting_message ); ?></textarea>
 		</p>
 		<p>
-			<label for="fe_ai_search_placeholder_text"><?php esc_html_e( 'Input field placeholders', 'fe-ai-search' ); ?></label>
+			<label for="fe_search_ai_placeholder_text"><?php esc_html_e( 'Input field placeholders', 'fe-ai-search' ); ?></label>
 			<input
 				type="text"
-				id="fe_ai_search_placeholder_text"
+				id="fe_search_ai_placeholder_text"
 				name="fe_ai_search_settings[display][text][placeholder_text]"
 				value="<?php echo esc_attr( $placeholder_text ); ?>"
 				placeholder="<?php echo esc_attr( $defaults['placeholder_text'] ); ?>"
@@ -1745,10 +1745,10 @@ class FE_Search_AI_Settings {
 			>
 		</p>
 		<p>
-			<label for="fe_ai_search_submit_button_text"><?php esc_html_e( 'Submit button text', 'fe-ai-search' ); ?></label>
+			<label for="fe_search_ai_submit_button_text"><?php esc_html_e( 'Submit button text', 'fe-ai-search' ); ?></label>
 			<input
 				type="text"
-				id="fe_ai_search_submit_button_text"
+				id="fe_search_ai_submit_button_text"
 				name="fe_ai_search_settings[display][text][submit_button_text]"
 				value="<?php echo esc_attr( $submit_button_text ); ?>"
 				placeholder="<?php echo esc_attr( $defaults['submit_button_text'] ); ?>"
@@ -1761,18 +1761,18 @@ class FE_Search_AI_Settings {
 				<div class="color-picker-box-left">
 					<input
 						type="hidden"
-						id="fe_ai_search_key_color"
+						id="fe_search_ai_key_color"
 						name="fe_ai_search_settings[display][ui][key_color]"
 						value="<?php echo esc_attr( $key_color ); ?>"
 					>
 					<div
 						class="fe-ai-search-color-picker"
-						data-target-input="fe_ai_search_key_color"
+						data-target-input="fe_search_ai_key_color"
 						data-default-color="<?php echo esc_attr( $key_color ); ?>"
 					></div>
 				</div>
 				<div class="color-picker-box-right">
-					<label for="fe_ai_search_key_color"><?php esc_html_e( 'Key Color', 'fe-ai-search' ); ?></label>
+					<label for="fe_search_ai_key_color"><?php esc_html_e( 'Key Color', 'fe-ai-search' ); ?></label>
 					<span class="description"><?php esc_html_e( 'Select the basic colors for chat bubbles and user speech balloons.', 'fe-ai-search' ); ?></span>
 				</div>
 			</div>
@@ -1783,18 +1783,18 @@ class FE_Search_AI_Settings {
 				<div class="color-picker-box-left">
 					<input
 						type="hidden"
-						id="fe_ai_search_background_color"
+						id="fe_search_ai_background_color"
 						name="fe_ai_search_settings[display][ui][background_color]"
 						value="<?php echo esc_attr( $background_color ); ?>"
 					>
 					<div
 						class="fe-ai-search-color-picker"
-						data-target-input="fe_ai_search_background_color"
+						data-target-input="fe_search_ai_background_color"
 						data-default-color="<?php echo esc_attr( $background_color ); ?>"
 					></div>
 				</div>
 				<div class="color-picker-box-right">
-					<label for="fe_ai_search_background_color"><?php esc_html_e( 'Chat window background color', 'fe-ai-search' ); ?></label>
+					<label for="fe_search_ai_background_color"><?php esc_html_e( 'Chat window background color', 'fe-ai-search' ); ?></label>
 					<span class="description"><?php esc_html_e( 'Background color for the chat window and message area.', 'fe-ai-search' ); ?></span>
 				</div>
 			</div>
@@ -1805,18 +1805,18 @@ class FE_Search_AI_Settings {
 				<div class="color-picker-box-left">
 					<input
 						type="hidden"
-						id="fe_ai_search_text_color"
+						id="fe_search_ai_text_color"
 						name="fe_ai_search_settings[display][ui][text_color]"
 						value="<?php echo esc_attr( $text_color ); ?>"
 					>
 					<div
 						class="fe-ai-search-color-picker"
-						data-target-input="fe_ai_search_text_color"
+						data-target-input="fe_search_ai_text_color"
 						data-default-color="<?php echo esc_attr( $text_color ); ?>"
 					></div>
 				</div>
 				<div class="color-picker-box-right">
-					<label for="fe_ai_search_text_color"><?php esc_html_e( 'Base text color', 'fe-ai-search' ); ?></label>
+					<label for="fe_search_ai_text_color"><?php esc_html_e( 'Base text color', 'fe-ai-search' ); ?></label>
 					<span class="description"><?php esc_html_e( 'Default text color used for chat content and labels.', 'fe-ai-search' ); ?></span>
 				</div>
 			</div>
@@ -2562,13 +2562,13 @@ class FE_Search_AI_Settings {
 				<span><?php esc_html_e( 'Smooth', 'fe-ai-search' ); ?></span>
 				<input
 					type="range"
-					id="fe_ai_search_animation_speed_slider"
+					id="fe_search_ai_animation_speed_slider"
 					name="fe_ai_search_settings[display][ui][animation_speed]"
 					min="1" max="10" step="1"
 					value="<?php echo esc_attr( $animation_speed ); ?>"
 				>
 				<span><?php esc_html_e( 'Fast', 'fe-ai-search' ); ?></span>
-				<span id="fe_ai_search_animation_speed_value">
+				<span id="fe_search_ai_animation_speed_value">
 					<?php echo esc_html( $animation_speed ); ?>
 				</span>
 			</div>

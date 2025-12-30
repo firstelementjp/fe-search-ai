@@ -9,7 +9,7 @@
  * @since   1.0.0
  */
 
-/* global ajaxurl, fe_ai_search_sync_obj, CodeMirror */
+/* global ajaxurl, fe_search_ai_sync_obj, CodeMirror */
 
 document.addEventListener('DOMContentLoaded', () => {
 	// Initialize WordPress internationalization functions.
@@ -18,20 +18,20 @@ document.addEventListener('DOMContentLoaded', () => {
 	// ==========================================================================
 	// DOM Element Caching
 	// ==========================================================================
-	const progressContainer = document.querySelector('#fe_ai_search_progress_container');
-	const progressBar = document.querySelector('#fe_ai_search_progress_bar');
-	const statusDiv = document.querySelector('#fe_ai_search_sync_status');
+	const progressContainer = document.querySelector('#fe_search_ai_progress_container');
+	const progressBar = document.querySelector('#fe_search_ai_progress_bar');
+	const statusDiv = document.querySelector('#fe_search_ai_sync_status');
 	const statusSpinner = statusDiv?.querySelector('.spin');
 	const statusText = statusDiv?.querySelector('.status-text');
-	const deleteButton = document.querySelector('#fe_ai_search_delete_vectors_button');
-	const deleteStatus = document.querySelector('#fe_ai_search_delete_status');
-	const deleteLogsButton = document.querySelector('#fe_ai_search_delete_system_logs_button');
-	const deleteLogsStatus = document.querySelector('#fe_ai_search_delete_logs_status');
+	const deleteButton = document.querySelector('#fe_search_ai_delete_vectors_button');
+	const deleteStatus = document.querySelector('#fe_search_ai_delete_status');
+	const deleteLogsButton = document.querySelector('#fe_search_ai_delete_system_logs_button');
+	const deleteLogsStatus = document.querySelector('#fe_search_ai_delete_logs_status');
 	const deleteConversationLogsButton = document.querySelector(
-		'#fe_ai_search_delete_conversation_logs_button'
+		'#fe_search_ai_delete_conversation_logs_button'
 	);
 	const deleteConversationLogsStatus = document.querySelector(
-		'#fe_ai_search_delete_conversation_logs_status'
+		'#fe_search_ai_delete_conversation_logs_status'
 	);
 	const tabsWrapper = document.querySelector('.nav-tab-wrapper');
 
@@ -140,8 +140,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	// Manual Synchronization
 	// ==========================================================================
 
-	const rebuildBtn = document.querySelector('#fe_ai_search_start_sync');
-	const smartSyncBtn = document.querySelector('#fe_ai_search_smart_sync');
+	const rebuildBtn = document.querySelector('#fe_search_ai_start_sync');
+	const smartSyncBtn = document.querySelector('#fe_search_ai_smart_sync');
 
 	/**
 	 * Initiates a sync process (either full rebuild or smart sync).
@@ -167,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		try {
 			const response = await wpPost(action, {
-				nonce: fe_ai_search_sync_obj.nonce,
+				nonce: fe_search_ai_sync_obj.nonce,
 			});
 
 			if (!response.success) {
@@ -236,23 +236,23 @@ document.addEventListener('DOMContentLoaded', () => {
 	// --- Event Listeners for Sync Buttons ---
 
 	// Handler for the "Rebuild Index" button
-	rebuildBtn?.addEventListener('click', e => {
+	rebuildBtn.addEventListener('click', e => {
 		e.preventDefault();
 		const message = __(
 			'Are you sure you want to delete all existing indexes and rebuild them? This is a resource-intensive process.',
 			'fe-ai-search'
 		);
-		startSyncProcess('fe_ai_search_start_sync', message);
+		startSyncProcess('fe_search_ai_start_sync', message);
 	});
 
 	// Handler for the "Sync Changes" button
-	smartSyncBtn?.addEventListener('click', e => {
+	smartSyncBtn.addEventListener('click', e => {
 		e.preventDefault();
 		const message = __(
 			'Are you sure you want to sync recent changes? This will process new, updated, and deleted posts.',
 			'fe-ai-search'
 		);
-		startSyncProcess('fe_ai_search_start_smart_sync', message);
+		startSyncProcess('fe_search_ai_start_smart_sync', message);
 	});
 
 	/**
@@ -278,8 +278,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		try {
 			const formData = new URLSearchParams({
-				action: 'fe_ai_search_process_batch',
-				nonce: fe_ai_search_sync_obj.nonce,
+				action: 'fe_search_ai_process_batch',
+				nonce: fe_search_ai_sync_obj.nonce,
 				page: currentPage,
 				post_ids: JSON.stringify(postIDsToSync),
 			});
@@ -309,12 +309,12 @@ document.addEventListener('DOMContentLoaded', () => {
 					smartSyncBtn.disabled = false;
 					statusSpinner.style.display = 'none';
 
-					await wpPost('fe_ai_search_update_sync_timestamp', {
-						nonce: fe_ai_search_sync_obj.nonce,
+					await wpPost('fe_search_ai_update_sync_timestamp', {
+						nonce: fe_search_ai_sync_obj.nonce,
 					});
 
-					await wpPost('fe_ai_search_update_settings_hash', {
-						nonce: fe_ai_search_sync_obj.nonce,
+					await wpPost('fe_search_ai_update_settings_hash', {
+						nonce: fe_search_ai_sync_obj.nonce,
 					});
 
 					// Reload the page so that the "Last Sync" label reflects the updated timestamp.
@@ -334,12 +334,12 @@ document.addEventListener('DOMContentLoaded', () => {
 					smartSyncBtn.disabled = false;
 					statusSpinner.style.display = 'none';
 
-					await wpPost('fe_ai_search_update_sync_timestamp', {
-						nonce: fe_ai_search_sync_obj.nonce,
+					await wpPost('fe_search_ai_update_sync_timestamp', {
+						nonce: fe_search_ai_sync_obj.nonce,
 					});
 
-					await wpPost('fe_ai_search_update_settings_hash', {
-						nonce: fe_ai_search_sync_obj.nonce,
+					await wpPost('fe_search_ai_update_settings_hash', {
+						nonce: fe_search_ai_sync_obj.nonce,
 					});
 
 					// Reload the page so that the "Last Sync" label reflects the updated timestamp.
@@ -373,7 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	document.querySelectorAll('.fe-ai-search-test-api').forEach(button => {
 		button.addEventListener('click', async () => {
 			const provider = button.dataset.provider;
-			const apiKeyId = button.dataset.apiKeyId || `fe_ai_search_${provider}_api_key`; // Build the default input ID
+			const apiKeyId = button.dataset.apiKeyId || `fe_search_ai_${provider}_api_key`; // Build the default input ID
 			const endpointId = button.dataset.endpointId;
 			const apiKeyInput = document.getElementById(apiKeyId);
 			const apiKey = apiKeyInput ? apiKeyInput.value : '';
@@ -395,7 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			// Prepare the data to send via AJAX
 			const postData = {
-				nonce: fe_ai_search_sync_obj.nonce,
+				nonce: fe_search_ai_sync_obj.nonce,
 				provider,
 				api_key: apiKey,
 			};
@@ -409,7 +409,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 
 			try {
-				const response = await wpPost('fe_ai_search_test_api_key', postData);
+				const response = await wpPost('fe_search_ai_test_api_key', postData);
 				status.innerHTML = response.data;
 			} catch {
 				status.innerHTML = `<span style="color:red;">✖${__('A communication error has occurred.', 'fe-ai-search')}</span>`;
@@ -437,8 +437,8 @@ document.addEventListener('DOMContentLoaded', () => {
 		spinner.style.visibility = 'visible';
 		deleteStatus.textContent = '';
 		try {
-			const response = await wpPost('fe_ai_search_delete_vectors', {
-				nonce: fe_ai_search_sync_obj.nonce,
+			const response = await wpPost('fe_search_ai_delete_vectors', {
+				nonce: fe_search_ai_sync_obj.nonce,
 			});
 			if (response.success) {
 				deleteStatus.style.color = 'green';
@@ -474,8 +474,8 @@ document.addEventListener('DOMContentLoaded', () => {
 		spinner.style.visibility = 'visible';
 		deleteConversationLogsStatus.textContent = '';
 		try {
-			const response = await wpPost('fe_ai_search_delete_conversation_logs', {
-				nonce: fe_ai_search_sync_obj.nonce,
+			const response = await wpPost('fe_search_ai_delete_conversation_logs', {
+				nonce: fe_search_ai_sync_obj.nonce,
 			});
 			if (response.success) {
 				deleteConversationLogsStatus.style.color = 'green';
@@ -513,8 +513,8 @@ document.addEventListener('DOMContentLoaded', () => {
 		spinner.style.visibility = 'visible';
 		deleteLogsStatus.textContent = '';
 		try {
-			const response = await wpPost('fe_ai_search_delete_system_logs', {
-				nonce: fe_ai_search_sync_obj.nonce,
+			const response = await wpPost('fe_search_ai_delete_system_logs', {
+				nonce: fe_search_ai_sync_obj.nonce,
 			});
 			if (response.success) {
 				deleteLogsStatus.style.color = 'green';
@@ -535,24 +535,23 @@ document.addEventListener('DOMContentLoaded', () => {
 	});
 
 	// "Change Model" Link Handler
-	document
-		.querySelectorAll('.fe-ai-search-change-model-link')
-		.forEach((link) => {
-			link.addEventListener('click', (e) => {
-				e.preventDefault();
-				const targetTabId = link.getAttribute('href');
-				const targetTab = document
-					.querySelector(`.nav-tab-wrapper a.nav-tab[href="${targetTabId}"]`);
-				if (targetTab) {
-					targetTab.click();
-				}
-			});
+	document.querySelectorAll('.fe-ai-search-change-model-link').forEach(link => {
+		link.addEventListener('click', e => {
+			e.preventDefault();
+			const targetTabId = link.getAttribute('href');
+			const targetTab = document.querySelector(
+				`.nav-tab-wrapper a.nav-tab[href="${targetTabId}"]`
+			);
+			if (targetTab) {
+				targetTab.click();
+			}
 		});
+	});
 
 	// --- Animation Speed Slider UI ---
-	const animationSpeedSlider = document.querySelector('#fe_ai_search_animation_speed_slider');
+	const animationSpeedSlider = document.querySelector('#fe_search_ai_animation_speed_slider');
 	if (animationSpeedSlider) {
-		const animationSpeedValue = document.querySelector('#fe_ai_search_animation_speed_value');
+		const animationSpeedValue = document.querySelector('#fe_search_ai_animation_speed_value');
 
 		animationSpeedSlider.addEventListener('input', () => {
 			animationSpeedValue.textContent = animationSpeedSlider.value;
@@ -598,9 +597,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	const settingsWrapper = document.querySelector('.wrap');
 	if (settingsWrapper) {
 		// If there is any .accordion-content.open initially, show it and add a class to the title.
-		settingsWrapper
-			.querySelectorAll('.accordion-content.open')
-			.forEach((content) => {
+		settingsWrapper.querySelectorAll('.accordion-content.open').forEach(content => {
 			content.style.display = 'block';
 			const title = content.previousElementSibling;
 			if (title && title.classList.contains('accordion-title')) {
@@ -608,7 +605,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 		});
 
-		settingsWrapper.addEventListener('click', (e) => {
+		settingsWrapper.addEventListener('click', e => {
 			// Check if an accordion title was the target of the click.
 			const title = e.target.closest('.accordion-title');
 			if (!title) {
@@ -634,13 +631,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				// If it was just opened, initialize any CodeMirror instances inside.
 				if (!isOpen) {
-					content
-						.querySelectorAll('.fe-ai-search-prompt-editor')
-						.forEach((textarea) => {
-							initializeCodeMirror(textarea);
-						});
+					content.querySelectorAll('.fe-ai-search-prompt-editor').forEach(textarea => {
+						initializeCodeMirror(textarea);
+					});
 					// Also explicitly refresh any that might already exist.
-					content.querySelectorAll('.CodeMirror').forEach((cm) => {
+					content.querySelectorAll('.CodeMirror').forEach(cm => {
 						if (cm.CodeMirror) {
 							cm.CodeMirror.refresh();
 						}
@@ -654,9 +649,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	if (tabsWrapper) {
 		const tabContents = document.querySelectorAll('.tab-content');
-		tabContents.forEach((content) => (content.style.display = 'none'));
+		tabContents.forEach(content => (content.style.display = 'none'));
 
-		const activateTab = (targetId) => {
+		const activateTab = targetId => {
 			if (!targetId || !document.querySelector(targetId)) {
 				return;
 			}
@@ -666,24 +661,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			tabsWrapper
 				.querySelectorAll('.nav-tab')
-				.forEach((tab) => tab.classList.remove('nav-tab-active'));
-			tabContents.forEach((content) => (content.style.display = 'none'));
+				.forEach(tab => tab.classList.remove('nav-tab-active'));
+			tabContents.forEach(content => (content.style.display = 'none'));
 
 			if (targetTab && targetContent) {
 				targetTab.classList.add('nav-tab-active');
 				targetContent.style.display = 'block';
 
 				// When a tab becomes visible, initialize any CodeMirror editors inside it.
-				targetContent
-					.querySelectorAll('.fe-ai-search-prompt-editor')
-					.forEach((textarea) => {
-						initializeCodeMirror(textarea);
-					});
+				targetContent.querySelectorAll('.fe-ai-search-prompt-editor').forEach(textarea => {
+					initializeCodeMirror(textarea);
+				});
 			}
 
 			// Remember the last active tab so that it can be restored after saving settings.
 			try {
-				window.localStorage.setItem('fe_ai_search_active_tab', targetId);
+				window.localStorage.setItem('fe_search_ai_active_tab', targetId);
 			} catch (e) {
 				// Silently ignore storage errors.
 			}
@@ -695,7 +688,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 		};
 
-		tabsWrapper.addEventListener('click', (e) => {
+		tabsWrapper.addEventListener('click', e => {
 			if (e.target.classList.contains('nav-tab')) {
 				e.preventDefault();
 				activateTab(e.target.getAttribute('href'));
@@ -714,7 +707,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				// 2) If there is no hash, try the tab ID stored in localStorage.
 				let storedTabId = null;
 				try {
-					storedTabId = window.localStorage.getItem('fe_ai_search_active_tab');
+					storedTabId = window.localStorage.getItem('fe_search_ai_active_tab');
 				} catch (e) {
 					storedTabId = null;
 				}
@@ -736,8 +729,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	// ==========================================================================
 
 	// License key visibility toggle (Show/Hide password).
-	const licenseInput = document.getElementById('fe_ai_search_license_key_input');
-	const licenseToggle = document.getElementById('fe_ai_search_license_toggle_visibility');
+	const licenseInput = document.getElementById('fe_search_ai_license_key_input');
+	const licenseToggle = document.getElementById('fe_search_ai_license_toggle_visibility');
 	if (licenseInput && licenseToggle) {
 		licenseToggle.addEventListener('click', () => {
 			const isPassword = licenseInput.type === 'password';
@@ -753,10 +746,10 @@ document.addEventListener('DOMContentLoaded', () => {
 	document.body.addEventListener('click', async e => {
 		let action = '';
 		let button = null;
-		if (e.target.id === 'fe_ai_search_license_activate') {
+		if (e.target.id === 'fe_search_ai_license_activate') {
 			action = 'activate';
 			button = e.target;
-		} else if (e.target.id === 'fe_ai_search_license_deactivate') {
+		} else if (e.target.id === 'fe_search_ai_license_deactivate') {
 			action = 'deactivate';
 			button = e.target;
 		}
@@ -766,17 +759,15 @@ document.addEventListener('DOMContentLoaded', () => {
 			return;
 		}
 
-		const licenseKeyInput = document.getElementById(
-			'fe_ai_search_license_key_input'
-		);
+		const licenseKeyInput = document.getElementById('fe_search_ai_license_key_input');
 		const licenseKey = licenseKeyInput ? licenseKeyInput.value : '';
 		const spinner = button.parentElement.querySelector('.spinner');
 		button.disabled = true;
 		spinner.style.visibility = 'visible';
 		try {
 			// Use the wpPost helper function we already defined.
-			const response = await wpPost('fe_ai_search_manage_license', {
-				nonce: fe_ai_search_sync_obj.nonce,
+			const response = await wpPost('fe_search_ai_manage_license', {
+				nonce: fe_search_ai_sync_obj.nonce,
 				license_key: licenseKey,
 				license_action: action,
 			});
@@ -810,38 +801,30 @@ document.addEventListener('DOMContentLoaded', () => {
 			wrap.insertBefore(firstNotice, header);
 		}
 
-// Taxonomy configuration toggle functionality
-document.addEventListener('change', function(event) {
-if (
-event.target.matches(
-'input[name*="[snippet_taxonomies]"][name*="[enabled]"]'
-)
-) {
-const checkbox = event.target;
-const wrapper = checkbox
-.closest('td')
-.querySelector('fe-ai-search-tax-config-wrapper');
-if (wrapper) {
-wrapper.style.display = checkbox.checked ? 'block' : 'none';
-}
-}
-});
+		// Taxonomy configuration toggle functionality
+		document.addEventListener('change', function (event) {
+			if (event.target.matches('input[name*="[snippet_taxonomies]"][name*="[enabled]"]')) {
+				const checkbox = event.target;
+				const wrapper = checkbox
+					.closest('td')
+					.querySelector('fe-ai-search-tax-config-wrapper');
+				if (wrapper) {
+					wrapper.style.display = checkbox.checked ? 'block' : 'none';
+				}
+			}
+		});
 
-// Custom fields toggle functionality
-document.addEventListener('change', function(event) {
-if (
-event.target.matches(
-'input[name*="[enable_custom_fields]"]'
-)
-) {
-const checkbox = event.target;
-const wrapper = checkbox
-.closest('td')
-.querySelector('fe-ai-search-custom-fields-wrapper');
-if (wrapper) {
-wrapper.style.display = checkbox.checked ? 'block' : 'none';
-}
-}
-});
+		// Custom fields toggle functionality
+		document.addEventListener('change', function (event) {
+			if (event.target.matches('input[name*="[enable_custom_fields]"]')) {
+				const checkbox = event.target;
+				const wrapper = checkbox
+					.closest('td')
+					.querySelector('fe-ai-search-custom-fields-wrapper');
+				if (wrapper) {
+					wrapper.style.display = checkbox.checked ? 'block' : 'none';
+				}
+			}
+		});
 	}
 });
