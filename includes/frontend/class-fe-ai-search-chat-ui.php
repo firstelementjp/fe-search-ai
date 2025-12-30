@@ -13,7 +13,7 @@
  * @license    GPL-2.0-or-later
  */
 
-namespace FEAISearch\Frontend;
+namespace FESearchAI\Frontend;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -32,12 +32,23 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
-class FE_AI_Search_Chat_UI {
+class FE_Search_AI_Chat_UI {
 
 	private $options            = [];
 	private static $is_rendered = false;
 	private $assets_handler;
 
+	/**
+	 * Constructor: Initializes the chat UI with dependencies and hooks.
+	 *
+	 * Sets up the frontend chat interface by loading plugin options, storing
+	 * the assets handler reference for CSS/JS management, and registering
+	 * WordPress hooks for shortcode, dynamic styles, and floating chat output.
+	 *
+	 * @since 1.0.0
+	 * @param \FESearchAI\Core\FE_Search_AI_Assets $assets_handler The assets handler instance for CSS/JS management.
+	 * @return void
+	 */
 	public function __construct( $assets_handler ) {
 		$this->options        = get_option( 'fe_ai_search_settings', [] );
 		$this->assets_handler = $assets_handler;
@@ -47,10 +58,30 @@ class FE_AI_Search_Chat_UI {
 		add_action( 'wp_footer', [ $this, 'maybe_render_floating_chat' ] );
 	}
 
+	/**
+	 * Registers the [fe_ai_search] shortcode for manual chat placement.
+	 *
+	 * This method registers the WordPress shortcode that allows users to
+	 * manually place the chat interface anywhere in their content using
+	 * the [fe_ai_search] shortcode tag.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
 	public function register_shortcode() {
 		add_shortcode( 'fe_ai_search', [ $this, 'render_chat_shortcode' ] );
 	}
 
+	/**
+	 * Renders the chat interface for shortcode output.
+	 *
+	 * This method outputs the chat interface HTML when the [fe_ai_search]
+	 * shortcode is used. It prevents duplicate rendering and enqueues
+	 * necessary CSS/JS assets before returning the chat HTML.
+	 *
+	 * @since 1.0.0
+	 * @return string The chat interface HTML or empty string if already rendered.
+	 */
 	public function render_chat_shortcode() {
 		if ( self::$is_rendered ) {
 			return '';
@@ -104,7 +135,7 @@ class FE_AI_Search_Chat_UI {
 		$rules          = $this->options['display']['floating']['display_rules'] ?? [];
 		$should_display = false;
 
-		// Optional: hide on 404 pages when configured via show_on_404 flag.
+		// Hide on 404 pages when configured via show_on_404 flag.
 		if ( is_404() && empty( $rules['show_on_404'] ) ) {
 			return;
 		}
@@ -156,10 +187,16 @@ class FE_AI_Search_Chat_UI {
 		 *
 		 * @param bool $should_display Whether the chat UI should be displayed.
 		 */
-		if ( apply_filters( 'fe_ai_search_should_display_chat', $should_display ) ) {
+		// Temporary force display for debugging
+		if ( true || apply_filters( 'fe_ai_search_should_display_chat', $should_display ) ) {
+			error_log( 'FE AI Search: About to output HTML' );
 			self::$is_rendered = true;
 			$this->assets_handler->enqueue_assets();
-			echo $this->get_chat_ui_html( 'float' );
+			$html = $this->get_chat_ui_html( 'float' );
+			error_log( 'FE AI Search: Generated HTML length: ' . strlen( $html ) );
+			echo $html;
+		} else {
+			error_log( 'FE AI Search: Display conditions not met' );
 		}
 	}
 
@@ -175,6 +212,9 @@ class FE_AI_Search_Chat_UI {
 	 * @return string The final, filterable HTML for the chat UI.
 	 */
 	public function get_chat_ui_html( $mode = 'float' ) {
+		// Debug: Log when HTML generation starts
+		error_log( 'FE AI Search: get_chat_ui_html() called with mode: ' . $mode );
+
 		// Get settings from the master options array (cached in constructor)
 		$ui_options    = $this->options['display']['ui'] ?? [];
 		$text_options  = $this->options['display']['text'] ?? [];

@@ -13,7 +13,7 @@
  * @license    GPL-2.0-or-later
  */
 
-namespace FEAISearch\Core;
+namespace FESearchAI\Core;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -32,7 +32,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
-class FE_AI_Search_Sync_Hooks {
+class FE_Search_AI_Sync_Hooks {
 
 	/**
 	 * Holds the master array of all plugin settings.
@@ -53,7 +53,7 @@ class FE_AI_Search_Sync_Hooks {
 	 *
 	 * @since  1.0.0
 	 * @access private
-	 * @var    \FEAISearch\Ajax\FE_AI_Search_Sync_Handler $sync_handler The main sync handler instance.
+	 * @var    \FESearchAI\Ajax\FE_Search_AI_Sync_Handler $sync_handler The main sync handler instance.
 	 */
 	private $sync_handler;
 
@@ -63,7 +63,7 @@ class FE_AI_Search_Sync_Hooks {
 	 * Stores the sync handler dependency and registers the necessary WordPress hooks.
 	 *
 	 * @since  1.0.0
-	 * @param  \FEAISearch\Ajax\FE_AI_Search_Sync_Handler $sync_handler The main sync handler instance.
+	 * @param  \FESearchAI\Ajax\FE_Search_AI_Sync_Handler $sync_handler The main sync handler instance.
 	 */
 	public function __construct( $sync_handler ) {
 		$this->options      = get_option( 'fe_ai_search_settings', [] );

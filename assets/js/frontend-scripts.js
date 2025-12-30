@@ -15,6 +15,87 @@
 const { __ } = wp.i18n;
 
 /**
+ * Configuration constants for FE AI Search
+ */
+const FE_AI_SEARCH_CONFIG = {
+	// Animation speed settings (1-10 scale)
+	ANIMATION: {
+		MIN_SPEED: 1,
+		MAX_SPEED: 10,
+		DEFAULT_SPEED: 3,
+		INTERVALS: {
+			1: 160, // Very slow
+			2: 110, // Slow
+			3: 70, // Normal
+		},
+		FAST_END_INTERVAL: 25, // Speed 9 equivalent
+		IMMEDIATE_INTERVAL: 20, // Speed 10 fallback
+		IMMEDIATE_CHARS: 10000, // Speed 10 character count
+		MIN_CHARS_FAST: 2, // Minimum chars at speed 4
+		MAX_CHARS_FAST: 15, // Maximum chars at speed 9
+	},
+
+	// Chat settings
+	CHAT: {
+		HISTORY_LIMIT: 10, // Number of messages to include in history
+		FEEDBACK_RATINGS: {
+			GOOD: '1',
+			BAD: '-1',
+		},
+		HTTP_STATUS: {
+			RATE_LIMIT: 429,
+		},
+	},
+
+	// Storage keys
+	STORAGE: {
+		SESSION_ID: 'fe_ai_search_session_id',
+		CHAT_HISTORY: 'fe_ai_search_chat_history',
+		SEND_MODE: 'fe_ai_search_send_mode',
+		USER_CONSENT: 'fe_ai_search_user_consented',
+		SESSION_LOGS: 'fe_ai_search_session_logs',
+	},
+
+	// UI update intervals
+	INTERVALS: {
+		QUEUE_CHECK: 50, // ms to check if queue is empty
+	},
+
+	// Send mode options
+	SEND_MODES: ['enter', 'shift_enter', 'cmd_enter'],
+
+	// Stream parsing
+	STREAM: {
+		DATA_PREFIX_LENGTH: 6, // Length of "data: " prefix
+	},
+
+	// Error handling
+	ERRORS: {
+		TYPES: {
+			NETWORK: 'network_error',
+			RATE_LIMIT: 'rate_limit',
+			STORAGE: 'storage_error',
+			PARSE: 'parse_error',
+			LOGGING: 'logging_error',
+			UNKNOWN: 'unknown_error',
+		},
+		MESSAGES: {
+			network_error: __(
+				'Network error occurred. Please check your connection.',
+				'fe-ai-search'
+			),
+			rate_limit: __('Rate limit exceeded. Please try again later.', 'fe-ai-search'),
+			storage_error: __(
+				'Storage error occurred. Some features may not work properly.',
+				'fe-ai-search'
+			),
+			parse_error: __('Data parsing error occurred. Please try again.', 'fe-ai-search'),
+			unknown_error: __('An error occurred. Please try again.', 'fe-ai-search'),
+		},
+	},
+};
+
+/**
  * A simple wrapper for WordPress AJAX calls using the Fetch API.
  * @param {string} action - The wp_ajax_{action} hook to target.
  * @param {Object} data   - Additional data to send in the request body.
@@ -31,44 +112,353 @@ async function wpPost(action, data = {}) {
 }
 
 /**
- * Main function to initialize the chat interface.
+ * Handles errors in a consistent way across the application.
+ *
+ * @param {Error|string} error       - The error object or error type string.
+ * @param {string}       context     - Context where the error occurred.
+ * @param {boolean}      showMessage - Whether to show error message to user.
  */
-function initFEAIChat() {
-	const container = document.getElementById('fe_ai_search_chat_container');
-	if (!container || container.dataset.initialized) {
-		return; // Already initialized or element not found.
-	}
-	container.dataset.initialized = 'true';
+function handleError(error, context = 'unknown', showMessage = true) {
+	let errorType = FE_AI_SEARCH_CONFIG.ERRORS.TYPES.UNKNOWN;
+	let errorMessage = FE_AI_SEARCH_CONFIG.ERRORS.MESSAGES.unknown_error;
 
-	// --- 1. DOM Element Caching ---
+	// Log error for debugging (only in development or if debug mode is enabled)
+	if (typeof fe_ai_search_ajax_obj !== 'undefined' && fe_ai_search_ajax_obj.debug) {
+		console.error(`[FE AI Search] Error in ${context}:`, error);
+	}
+
+	// Determine error type and message
+	if (typeof error === 'string') {
+		errorType = error;
+		errorMessage = FE_AI_SEARCH_CONFIG.ERRORS.MESSAGES[error] || errorMessage;
+	} else if (error instanceof Error) {
+		// Categorize error based on message or type
+		if (error.message.includes('fetch') || error.message.includes('network')) {
+			errorType = FE_AI_SEARCH_CONFIG.ERRORS.TYPES.NETWORK;
+			errorMessage = FE_AI_SEARCH_CONFIG.ERRORS.MESSAGES.network_error;
+		} else if (error.message.includes('rate_limit') || error.message.includes('429')) {
+			errorType = FE_AI_SEARCH_CONFIG.ERRORS.TYPES.RATE_LIMIT;
+			errorMessage = FE_AI_SEARCH_CONFIG.ERRORS.MESSAGES.rate_limit;
+		} else if (error.message.includes('storage') || error.message.includes('localStorage')) {
+			errorType = FE_AI_SEARCH_CONFIG.ERRORS.TYPES.STORAGE;
+			errorMessage = FE_AI_SEARCH_CONFIG.ERRORS.MESSAGES.storage_error;
+		} else if (error.message.includes('parse') || error.message.includes('JSON')) {
+			errorType = FE_AI_SEARCH_CONFIG.ERRORS.TYPES.PARSE;
+			errorMessage = FE_AI_SEARCH_CONFIG.ERRORS.MESSAGES.parse_error;
+		}
+	}
+
+	// Show error message to user if requested and addMessage function is available
+	if (showMessage && typeof window.addMessage === 'function') {
+		window.addMessage(
+			`<p><strong>${__('Error', 'fe-ai-search')}:</strong> ${errorMessage}</p>`,
+			'system'
+		);
+	}
+
+	return { errorType, errorMessage };
+}
+
+/**
+ * Safely executes a function with error handling.
+ *
+ * @param {Function} fn       - Function to execute.
+ * @param {string}   context  - Context for error logging.
+ * @param {*}        fallback - Fallback value if function fails.
+ * @return {*} Result of function or fallback value.
+ */
+function safeExecute(fn, context = 'unknown', fallback = null) {
+	try {
+		return fn();
+	} catch (error) {
+		handleError(error, context, false); // Don't show message for internal operations
+		return fallback;
+	}
+}
+
+/**
+ * Safely executes an async function with error handling.
+ *
+ * @param {Function} fn       - Async function to execute.
+ * @param {string}   context  - Context for error logging.
+ * @param {*}        fallback - Fallback value if function fails.
+ * @return {Promise<*>} Result of function or fallback value.
+ */
+async function safeExecuteAsync(fn, context = 'unknown', fallback = null) {
+	try {
+		return await fn();
+	} catch (error) {
+		handleError(error, context, false); // Don't show message for internal operations
+		return fallback;
+	}
+}
+
+/**
+ * Retrieves and validates all required DOM elements for the chat interface.
+ *
+ * @return {Object|null} Object containing DOM elements or null if essential elements are missing.
+ */
+function getChatDOMElements() {
+	// Essential elements - if any are missing, we cannot initialize
 	const bubble = document.getElementById('fe_ai_search_chat_bubble');
-	const windowEl = document.getElementById('fe_ai_search_chat_window');
-	const closeBtn = document.getElementById('fe_ai_search_chat_close');
+	const chatWindowElement = document.getElementById('fe_ai_search_chat_window');
 	const form = document.getElementById('fe_ai_search_chat_form');
 	const input = document.getElementById('fe_ai_search_chat_input');
 	const messagesContainer = document.getElementById('fe_ai_search_chat_messages');
+	const container = document.getElementById('fe_ai_search_chat_container');
+
+	if (!bubble || !form || !input || !messagesContainer || !container) {
+		return null;
+	}
+
+	// Additional elements that are only needed if basic elements exist
+	const closeBtn = document.getElementById('fe_ai_search_chat_close');
 	const fullscreenBtn = document.getElementById('fe_ai_search_chat_fullscreen_toggle');
 	const optionsToggle = document.getElementById('fe_ai_search_options_toggle');
 	const optionsMenu = document.getElementById('fe_ai_search_options_menu');
 	const shiftEnterToggle = document.getElementById('fe_ai_search_send_mode_toggle');
 
-	if (!bubble || !form || !input || !messagesContainer) return;
+	return {
+		bubble,
+		chatWindowElement,
+		form,
+		input,
+		messagesContainer,
+		container,
+		closeBtn,
+		fullscreenBtn,
+		optionsToggle,
+		optionsMenu,
+		shiftEnterToggle,
+	};
+}
+
+/**
+ * Initializes session management for the chat.
+ *
+ * @return {Object} Session management object containing sessionId and sessionHistory.
+ */
+function initializeSessionManagement() {
+	let sessionId = safeExecute(
+		() => sessionStorage.getItem(FE_AI_SEARCH_CONFIG.STORAGE.SESSION_ID),
+		'initializeSessionManagement.get_session'
+	);
+
+	if (!sessionId) {
+		sessionId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+		safeExecute(
+			() => sessionStorage.setItem(FE_AI_SEARCH_CONFIG.STORAGE.SESSION_ID, sessionId),
+			'initializeSessionManagement.set_session'
+		);
+	}
+
+	const sessionHistory = safeExecute(
+		() => JSON.parse(sessionStorage.getItem(FE_AI_SEARCH_CONFIG.STORAGE.CHAT_HISTORY)) || [],
+		'initializeSessionManagement.parse_history',
+		[]
+	);
+
+	return { sessionId, sessionHistory };
+}
+
+/**
+ * Sets up UI event listeners for the chat interface.
+ *
+ * @param {Object}      elements                   - DOM elements object.
+ * @param {HTMLElement} elements.bubble            - Chat bubble element.
+ * @param {HTMLElement} elements.chatWindowElement - Chat window element.
+ * @param {HTMLElement} elements.closeBtn          - Close button element.
+ * @param {HTMLElement} elements.fullscreenBtn     - Fullscreen button element.
+ * @param {HTMLElement} elements.optionsToggle     - Options toggle element.
+ * @param {HTMLElement} elements.optionsMenu       - Options menu element.
+ * @param {HTMLElement} elements.messagesContainer - Messages container element.
+ * @param {HTMLElement} elements.container         - Main container element.
+ * @param {Function}    ensureConsentUI            - Function to ensure consent UI is shown.
+ */
+function setupUIEventListeners(elements, ensureConsentUI) {
+	const {
+		bubble,
+		chatWindowElement,
+		messagesContainer,
+		container,
+		closeBtn,
+		fullscreenBtn,
+		optionsToggle,
+		optionsMenu,
+	} = elements;
+
+	// Toggle chat window
+	bubble.addEventListener('click', () => {
+		chatWindowElement.classList.remove('hidden');
+		bubble.classList.add('hidden');
+		// Ensure the latest messages are visible when opening the window.
+		messagesContainer.scrollTop = messagesContainer.scrollHeight;
+		ensureConsentUI();
+	});
+
+	// Close button event listener (if close button exists)
+	if (closeBtn) {
+		closeBtn.addEventListener('click', () => {
+			chatWindowElement.classList.add('hidden');
+			bubble.classList.remove('hidden');
+		});
+	}
+
+	// Fullscreen button event listener (if fullscreen button exists)
+	if (fullscreenBtn) {
+		fullscreenBtn.addEventListener('click', () => {
+			container.classList.toggle('is-fullscreen');
+		});
+	}
+
+	// Options toggle event listener (if options elements exist)
+	if (optionsToggle && optionsMenu) {
+		optionsToggle.addEventListener('click', () => {
+			optionsMenu.classList.toggle('hidden');
+		});
+	}
+}
+
+/**
+ * Sets up keyboard event listener for chat input.
+ *
+ * @param {HTMLElement} input       - Chat input element.
+ * @param {HTMLElement} form        - Chat form element.
+ * @param {Function}    getSendMode - Function to get current send mode.
+ */
+function setupKeyboardEventListener(input, form, getSendMode) {
+	/**
+	 * Handles keyboard input ("Gatekeeper").
+	 * Decides whether to submit the form or create a new line.
+	 */
+	input.addEventListener('keydown', event => {
+		if (event.isComposing || event.key !== 'Enter') {
+			return;
+		}
+
+		// Prevent default Enter action (form submission or newline).
+		event.preventDefault();
+
+		// Get current send mode dynamically
+		const sendMode = getSendMode();
+
+		// --- Cmd/Ctrl+Enter mode ---
+		if (sendMode === 'cmd_enter') {
+			const modifierPressed = event.metaKey || event.ctrlKey;
+			if (modifierPressed) {
+				// Programmatically trigger the 'submit' event.
+				form.dispatchEvent(new Event('submit', { cancelable: true }));
+			} else {
+				// Cmd/Ctrl+Enter required but only Enter pressed -> newline.
+				input.value += '\n';
+			}
+			return;
+		}
+
+		// --- Shift+Enter and Enter modes ---
+		const shiftPressed = event.shiftKey;
+		const modifierPressed = event.metaKey || event.ctrlKey;
+		const shouldSubmit =
+			// Shift+Enter mode: submit only on Shift+Enter (no Cmd/Ctrl).
+			(sendMode === 'shift_enter' && shiftPressed && !modifierPressed) ||
+			// Enter mode: submit only on bare Enter (no Shift, no Cmd/Ctrl).
+			(sendMode === 'enter' && !shiftPressed && !modifierPressed);
+
+		if (shouldSubmit) {
+			// Programmatically trigger the 'submit' event.
+			form.dispatchEvent(new Event('submit', { cancelable: true }));
+		} else if (sendMode === 'shift_enter' && !shiftPressed) {
+			// Shift+Enter required but only Enter pressed -> newline.
+			input.value += '\n';
+		}
+	});
+}
+
+/**
+ * Sets up send mode event listener.
+ *
+ * @param {HTMLElement} shiftEnterToggle - Send mode toggle element.
+ * @param {Function}    setSendMode      - Function to update send mode.
+ */
+function setupSendModeEventListener(shiftEnterToggle, setSendMode) {
+	shiftEnterToggle.addEventListener('change', () => {
+		let nextMode = shiftEnterToggle.value;
+		if (!FE_AI_SEARCH_CONFIG.SEND_MODES.includes(nextMode)) {
+			nextMode = 'enter';
+		}
+		setSendMode(nextMode);
+		localStorage.setItem(FE_AI_SEARCH_CONFIG.STORAGE.SEND_MODE, nextMode);
+	});
+}
+
+/**
+ * Initializes send mode settings.
+ *
+ * @param {HTMLElement} shiftEnterToggle - The send mode toggle element.
+ * @return {string} The configured send mode.
+ */
+function initializeSendModeSettings(shiftEnterToggle) {
+	const storedSendMode = localStorage.getItem(FE_AI_SEARCH_CONFIG.STORAGE.SEND_MODE);
+	let sendMode = storedSendMode || fe_ai_search_ajax_obj.send_mode || 'enter';
+
+	if (!FE_AI_SEARCH_CONFIG.SEND_MODES.includes(sendMode)) {
+		sendMode = 'enter';
+	}
+
+	// Reflect initial state in the dropdown
+	if (shiftEnterToggle) {
+		shiftEnterToggle.value = sendMode;
+	}
+
+	return sendMode;
+}
+
+/**
+ * Initializes the FE AI Search chat interface.
+ *
+ * This function sets up the entire chat UI including:
+ * - DOM element caching and validation
+ * - Session management (ID generation and history)
+ * - Event listeners for user interactions
+ * - Privacy consent handling
+ * - Form submission and streaming response handling
+ *
+ * @return {void}
+ */
+function initFEAIChat() {
+	// DOM Element Caching
+	const domElements = getChatDOMElements();
+	if (!domElements) {
+		return; // Essential DOM elements are missing
+	}
+
+	const {
+		bubble,
+		chatWindowElement,
+		form,
+		input,
+		messagesContainer,
+		container,
+		shiftEnterToggle,
+	} = domElements;
+
+	// Prevent duplicate initialization
+	if (container.dataset.initialized) {
+		return; // Already initialized.
+	}
+	container.dataset.initialized = 'true';
 
 	// Handle fullscreen mode on load
 	if (container.classList.contains('is-fullscreen')) {
-		windowEl.classList.remove('hidden');
+		chatWindowElement.classList.remove('hidden');
 		bubble.classList.add('hidden');
 	}
 
-	// --- 2. State Variables ---
-	let sessionId = sessionStorage.getItem('fe_ai_search_session_id');
-	if (!sessionId) {
-		sessionId = Date.now().toString(36) + Math.random().toString(36).substr(2);
-		sessionStorage.setItem('fe_ai_search_session_id', sessionId);
-	}
+	// Session Management
+	const { sessionId, sessionHistory } = initializeSessionManagement();
 
-	const sessionHistory = JSON.parse(sessionStorage.getItem('fe_ai_search_chat_history')) || [];
-	let charQueue = [];
+	// State Variables
+	let characterQueue = [];
 	let renderInterval;
 	let currentAiMessageElement = null;
 	let fullResponse = '';
@@ -77,44 +467,45 @@ function initFEAIChat() {
 	let typingInterval = 50;
 	let typingImmediate = false; // true の場合、チャンク到着時に即レンダリングを試みる
 	const privacyConfig = fe_ai_search_ajax_obj.privacy || {};
-	const consentStorageKey = 'fe_ai_search_user_consented';
+	const consentStorageKey = FE_AI_SEARCH_CONFIG.STORAGE.USER_CONSENT;
 
-	// --- 3. Initialize Settings (send mode) ---
-	// The chat window uses the site-wide default send_mode as the
-	// initial value, but each user can override it per-browser via
-	// localStorage.
-	// Supported values: 'enter', 'shift_enter', 'cmd_enter'.
-	const storedSendMode = localStorage.getItem('fe_ai_search_send_mode');
-	let sendMode = storedSendMode || fe_ai_search_ajax_obj.send_mode || 'enter';
-	if (!['enter', 'shift_enter', 'cmd_enter'].includes(sendMode)) {
-		sendMode = 'enter';
-	}
+	// Initialize Settings
+	const sendMode = initializeSendModeSettings(shiftEnterToggle);
 
-	// Reflect initial state in the dropdown.
-	if (shiftEnterToggle) {
-		shiftEnterToggle.value = sendMode;
-	}
+	// Event Listeners
 
-	// --- 4. Event Listeners ---
+	// Privacy Consent Handling
 
-	// --- 4-a. Privacy Consent Handling ---
-
+	/**
+	 * Checks if the user has given consent for privacy.
+	 *
+	 * @return {boolean} True if user has consented, false otherwise.
+	 */
 	function hasUserConsented() {
-		try {
-			return localStorage.getItem(consentStorageKey) === '1';
-		} catch (e) {
-			return false;
-		}
+		return safeExecute(
+			() => localStorage.getItem(consentStorageKey) === '1',
+			'hasUserConsented',
+			false
+		);
 	}
 
+	/**
+	 * Sets the user's consent status in localStorage.
+	 *
+	 * @return {void}
+	 */
 	function setUserConsented() {
-		try {
-			localStorage.setItem(consentStorageKey, '1');
-		} catch (e) {
-			// Silently ignore storage errors.
-		}
+		safeExecute(() => localStorage.setItem(consentStorageKey, '1'), 'setUserConsented');
 	}
 
+	/**
+	 * Ensures the consent UI is displayed if required.
+	 *
+	 * This function checks if consent is required and not yet given,
+	 * then displays the consent UI and locks the chat form.
+	 *
+	 * @return {void}
+	 */
 	function ensureConsentUI() {
 		if (!privacyConfig.enable_consent || hasUserConsented()) {
 			return;
@@ -144,7 +535,7 @@ function initFEAIChat() {
 		`;
 
 		// Insert consent UI as an overlay inside the chat window.
-		windowEl.appendChild(consentWrapper);
+		chatWindowElement.appendChild(consentWrapper);
 
 		const checkbox = consentWrapper.querySelector('.fe-ai-search-consent-checkbox');
 		const acceptBtn = consentWrapper.querySelector('.fe-ai-search-consent-accept');
@@ -169,84 +560,20 @@ function initFEAIChat() {
 		});
 	}
 
-	// Toggle chat window
-	bubble.addEventListener('click', () => {
-		windowEl.classList.remove('hidden');
-		bubble.classList.add('hidden');
-		// Ensure the latest messages are visible when opening the window.
-		messagesContainer.scrollTop = messagesContainer.scrollHeight;
-		ensureConsentUI();
-	});
+	// Event Listeners Setup
 
-	closeBtn.addEventListener('click', () => {
-		windowEl.classList.add('hidden');
-		bubble.classList.remove('hidden');
-	});
+	// Setup UI event listeners
+	setupUIEventListeners(domElements, ensureConsentUI);
 
-	// Toggle fullscreen mode
-	fullscreenBtn.addEventListener('click', () => {
-		container.classList.toggle('is-fullscreen');
-	});
+	// Setup send mode event listener with a setter function
+	let currentSendMode = sendMode;
+	const setSendMode = newMode => {
+		currentSendMode = newMode;
+	};
+	setupSendModeEventListener(shiftEnterToggle, setSendMode);
 
-	// Toggle settings menu
-	optionsToggle.addEventListener('click', () => {
-		optionsMenu.classList.toggle('hidden');
-	});
-
-	// Handle send mode dropdown change (per-user override).
-	// This persists the user's preference in localStorage so that
-	// it overrides the site-wide default on subsequent visits.
-	shiftEnterToggle.addEventListener('change', () => {
-		let nextMode = shiftEnterToggle.value;
-		if (!['enter', 'shift_enter', 'cmd_enter'].includes(nextMode)) {
-			nextMode = 'enter';
-		}
-		sendMode = nextMode;
-		localStorage.setItem('fe_ai_search_send_mode', sendMode);
-	});
-
-	/**
-	 * Handles keyboard input ("Gatekeeper").
-	 * Decides whether to submit the form or create a new line.
-	 */
-	input.addEventListener('keydown', e => {
-		if (e.isComposing || e.key !== 'Enter') {
-			return;
-		}
-
-		// Prevent default Enter action (form submission or newline).
-		e.preventDefault();
-
-		// --- Cmd/Ctrl+Enter mode ---
-		if (sendMode === 'cmd_enter') {
-			const modifierPressed = e.metaKey || e.ctrlKey;
-			if (modifierPressed) {
-				// Cmd/Ctrl + Enter -> submit
-				form.dispatchEvent(new Event('submit', { cancelable: true }));
-			} else {
-				// Enter alone -> newline
-				input.value += '\n';
-			}
-			return;
-		}
-
-		// --- Enter / Shift+Enter modes ---
-		const shiftPressed = e.shiftKey;
-		const modifierPressed = e.metaKey || e.ctrlKey;
-		const shouldSubmit =
-			// Shift+Enter mode: submit only on Shift+Enter with no Cmd/Ctrl.
-			(sendMode === 'shift_enter' && shiftPressed && !modifierPressed) ||
-			// Enter mode: submit only on bare Enter (no Shift, no Cmd/Ctrl).
-			(sendMode === 'enter' && !shiftPressed && !modifierPressed);
-
-		if (shouldSubmit) {
-			// Programmatically trigger the 'submit' event.
-			form.dispatchEvent(new Event('submit', { cancelable: true }));
-		} else if (sendMode === 'shift_enter' && !shiftPressed) {
-			// Shift+Enter required but only Enter pressed -> newline.
-			input.value += '\n';
-		}
-	});
+	// Setup keyboard event listener with dynamic send mode
+	setupKeyboardEventListener(input, form, () => currentSendMode);
 
 	/**
 	 * Handles the actual form submission ("Worker").
@@ -280,10 +607,10 @@ function initFEAIChat() {
 		if (!question) return;
 
 		// Update the session history variable
-		const aiMessageWrapper = addMessage(`<p>${question}</p>`, 'user');
+		addMessage(`<p>${question}</p>`, 'user');
 		sessionHistory.push({ role: 'user', content: question });
 
-		const recentHistory = sessionHistory.slice(-10);
+		const recentHistory = sessionHistory.slice(-FE_AI_SEARCH_CONFIG.CHAT.HISTORY_LIMIT);
 		input.value = '';
 		input.style.height = 'auto'; // Reset height
 		disableForm();
@@ -315,7 +642,7 @@ function initFEAIChat() {
 			.then(response => {
 				if (!response.ok) {
 					// Handle HTTP errors explicitly so the UI is not stuck.
-					if (response.status === 429) {
+					if (response.status === FE_AI_SEARCH_CONFIG.CHAT.HTTP_STATUS.RATE_LIMIT) {
 						handleError(new Error('rate_limit'));
 					} else {
 						handleError(new Error('network_error'));
@@ -341,7 +668,7 @@ function initFEAIChat() {
 										content: fullResponse,
 									});
 									sessionStorage.setItem(
-										'fe_ai_search_chat_history',
+										FE_AI_SEARCH_CONFIG.STORAGE.CHAT_HISTORY,
 										JSON.stringify(sessionHistory)
 									);
 
@@ -354,10 +681,10 @@ function initFEAIChat() {
 													document.createElement('div');
 												feedbackWrapper.className = 'fe-ai-search-feedback';
 												feedbackWrapper.innerHTML = `
-											<button class="feedback-btn good" data-log-id="${currentLogId}" data-rating="1" title="Good">
+											<button class="feedback-btn good" data-log-id="${currentLogId}" data-rating="${FE_AI_SEARCH_CONFIG.CHAT.FEEDBACK_RATINGS.GOOD}" title="Good">
 												<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none"/><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
 											</button>
-											<button class="feedback-btn bad" data-log-id="${currentLogId}" data-rating="-1" title="Bad">
+											<button class="feedback-btn bad" data-log-id="${currentLogId}" data-rating="${FE_AI_SEARCH_CONFIG.CHAT.FEEDBACK_RATINGS.BAD}" title="Bad">
 												<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none"/><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
 											</button>
 										`;
@@ -366,7 +693,7 @@ function initFEAIChat() {
 												);
 											}
 										})
-										.catch(error => {
+										.catch(() => {
 											// Swallow logging errors to avoid impacting the chat UI.
 										});
 
@@ -379,7 +706,9 @@ function initFEAIChat() {
 							const lines = chunk.split('\n\n');
 							lines.forEach(line => {
 								if (line.startsWith('data: ')) {
-									const dataContent = line.substring(6).trim();
+									const dataContent = line
+										.substring(FE_AI_SEARCH_CONFIG.STREAM.DATA_PREFIX_LENGTH)
+										.trim();
 									if (dataContent === '[DONE]') return;
 									try {
 										const jsonData = JSON.parse(dataContent);
@@ -388,12 +717,12 @@ function initFEAIChat() {
 										}
 										if (jsonData.text) {
 											if (isFirstChunk) {
-												charQueue = [];
+												characterQueue = [];
 												isFirstChunk = false;
 											}
-											charQueue.push(...jsonData.text.split(''));
+											characterQueue.push(...jsonData.text.split(''));
 										}
-									} catch (e) {
+									} catch (parseError) {
 										// Silently ignore malformed JSON chunks in the stream.
 									}
 								}
@@ -402,14 +731,14 @@ function initFEAIChat() {
 						})
 						.catch(error => {
 							// Handle stream errors gracefully.
-							handleError(error);
+							handleStreamError(error);
 						});
 				}
 				processStream();
 			})
 			.catch(error => {
 				// Handle fetch errors gracefully.
-				handleError(error);
+				handleError(error, 'fetch_request');
 			});
 	});
 
@@ -444,7 +773,10 @@ function initFEAIChat() {
 		}
 	});
 
-	// Helper Functions
+	/* ========================================================================
+	 * Helper Functions
+	 * ========================================================================
+	 */
 
 	/**
 	 * Adds a message to the chat UI.
@@ -463,13 +795,24 @@ function initFEAIChat() {
 
 	/**
 	 * Restores the session history from sessionStorage into the visible chat UI.
+	 * Also restores feedback buttons for assistant messages based on server logs.
 	 *
 	 * @return {void}
 	 */
-	function restoreSessionHistory() {
+	async function restoreSessionHistory() {
 		if (!Array.isArray(sessionHistory) || sessionHistory.length === 0) {
 			return;
 		}
+
+		// Get session logs from server to check rating status
+		const sessionLogs = await getSessionLogs();
+		const logMap = new Map();
+		sessionLogs.forEach(log => {
+			logMap.set(log.answer, {
+				logId: log.id,
+				rating: log.rating,
+			});
+		});
 
 		sessionHistory.forEach(entry => {
 			if (!entry || typeof entry.content !== 'string') {
@@ -480,11 +823,47 @@ function initFEAIChat() {
 				addMessage(`<p>${entry.content}</p>`, 'user');
 			} else if (entry.role === 'assistant') {
 				// Assistant messages are stored as plain markdown text.
-				addMessage(marked.parse(entry.content), 'ai');
+				const messageElement = addMessage(marked.parse(entry.content), 'ai');
+
+				// Check if this message has a log entry and restore feedback UI
+				const logInfo = logMap.get(entry.content);
+				if (logInfo && logInfo.logId) {
+					restoreFeedbackUI(messageElement, logInfo.logId, logInfo.rating);
+				}
 			} else if (entry.role === 'system') {
 				addMessage(`<p>${entry.content}</p>`, 'system');
 			}
 		});
+	}
+
+	/**
+	 * Restores feedback UI for a message based on rating status.
+	 * @param {HTMLElement} messageElement - The message element to add feedback to.
+	 * @param {number}      logId          - The log ID for the feedback.
+	 * @param {string|null} rating         - The rating status ('1', '-1', '0', or null).
+	 */
+	function restoreFeedbackUI(messageElement, logId, rating) {
+		// Only show thanks message if rating is explicitly set (1 or -1)
+		if (rating === '1' || rating === '-1') {
+			// Already rated - show thanks message
+			const thanksMessage = document.createElement('span');
+			thanksMessage.className = 'fe-ai-search-feedback-thanks';
+			thanksMessage.textContent = __('Thank you for your feedback!', 'fe-ai-search');
+			messageElement.appendChild(thanksMessage);
+		} else {
+			// Not rated yet (rating is null, 0, or undefined) - show feedback buttons
+			const feedbackWrapper = document.createElement('div');
+			feedbackWrapper.className = 'fe-ai-search-feedback';
+			feedbackWrapper.innerHTML = `
+				<button class="feedback-btn good" data-log-id="${logId}" data-rating="${FE_AI_SEARCH_CONFIG.CHAT.FEEDBACK_RATINGS.GOOD}" title="Good">
+					<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none"/><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+				</button>
+				<button class="feedback-btn bad" data-log-id="${logId}" data-rating="${FE_AI_SEARCH_CONFIG.CHAT.FEEDBACK_RATINGS.BAD}" title="Bad">
+					<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none"/><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
+				</button>
+			`;
+			messageElement.appendChild(feedbackWrapper);
+		}
 	}
 
 	/**
@@ -497,23 +876,72 @@ function initFEAIChat() {
 	async function logConversation(question, answer, contextFound) {
 		const questionLength = typeof question === 'string' ? question.length : 0;
 
-		try {
-			const response = await wpPost('fe_ai_search_log_query', {
-				nonce: fe_ai_search_ajax_obj.nonce,
-				session_id: sessionId,
-				question: '',
-				question_length: questionLength,
-				answer,
-				context_found: contextFound ? '1' : '0',
-			});
+		return safeExecuteAsync(
+			async () => {
+				const response = await wpPost('fe_ai_search_log_query', {
+					nonce: fe_ai_search_ajax_obj.nonce,
+					session_id: sessionId,
+					question: '',
+					question_length: questionLength,
+					answer,
+					context_found: contextFound ? '1' : '0',
+				});
 
-			if (response.success && response.data && response.data.log_id) {
-				return response.data.log_id;
-			}
-		} catch (error) {
-			// Swallow logging errors to avoid impacting the chat UI.
-		}
-		return null;
+				if (response.success && response.data && response.data.log_id) {
+					// Save log_id to sessionStorage for feedback restoration
+					saveLogIdToSession(response.data.log_id, question, answer);
+					return response.data.log_id;
+				}
+				return null;
+			},
+			'logConversation',
+			null
+		);
+	}
+
+	/**
+	 * Saves log_id and conversation data to sessionStorage for feedback restoration.
+	 * @param {number} logId    - The log ID from the server.
+	 * @param {string} question - The user's question.
+	 * @param {string} answer   - The AI's answer.
+	 */
+	function saveLogIdToSession(logId, question, answer) {
+		safeExecute(() => {
+			const sessionLogs =
+				JSON.parse(sessionStorage.getItem(FE_AI_SEARCH_CONFIG.STORAGE.SESSION_LOGS)) || [];
+			sessionLogs.push({
+				logId,
+				question,
+				answer,
+				timestamp: Date.now(),
+			});
+			sessionStorage.setItem(
+				FE_AI_SEARCH_CONFIG.STORAGE.SESSION_LOGS,
+				JSON.stringify(sessionLogs)
+			);
+		}, 'saveLogIdToSession');
+	}
+
+	/**
+	 * Retrieves session logs from the server for feedback restoration.
+	 * @return {Promise<Array>} Array of log objects with rating information.
+	 */
+	async function getSessionLogs() {
+		return safeExecuteAsync(
+			async () => {
+				const response = await wpPost('fe_ai_search_get_session_logs', {
+					nonce: fe_ai_search_ajax_obj.nonce,
+					session_id: sessionId,
+				});
+
+				if (response.success && response.data && response.data.logs) {
+					return response.data.logs;
+				}
+				return [];
+			},
+			'getSessionLogs',
+			[]
+		);
 	}
 
 	/**
@@ -526,12 +954,16 @@ function initFEAIChat() {
 	 * - 10 feels almost instantaneous, outputting large chunks at once.
 	 */
 	function configureTypingSpeed() {
-		let speed = fe_ai_search_ajax_obj.animation_speed || 3;
+		let speed =
+			fe_ai_search_ajax_obj.animation_speed || FE_AI_SEARCH_CONFIG.ANIMATION.DEFAULT_SPEED;
 		if (typeof speed !== 'number') {
-			speed = parseInt(speed, 10) || 3;
+			speed = parseInt(speed, 10) || FE_AI_SEARCH_CONFIG.ANIMATION.DEFAULT_SPEED;
 		}
 		// Clamp to [1, 10]
-		speed = Math.max(1, Math.min(10, speed));
+		speed = Math.max(
+			FE_AI_SEARCH_CONFIG.ANIMATION.MIN_SPEED,
+			Math.min(FE_AI_SEARCH_CONFIG.ANIMATION.MAX_SPEED, speed)
+		);
 
 		// Default to the normal mode (rendering the queue in small chunks).
 		typingImmediate = false;
@@ -541,39 +973,34 @@ function initFEAIChat() {
 		//  1 => ~160ms, 2 => ~110ms, 3 => ~70ms
 		// 4–9: Linearly interpolate from the value at 3 to the fast value at 9 (~25ms)
 		if (speed <= 3) {
-			const intervals = {
-				1: 160,
-				2: 110,
-				3: 70,
-			};
-			typingInterval = intervals[speed];
+			typingInterval = FE_AI_SEARCH_CONFIG.ANIMATION.INTERVALS[speed];
 		} else if (speed < 10) {
 			// Normalize speed 4..9 to 0..1 and interpolate 70ms -> 25ms.
 			// Use an easing curve so it accelerates more in the higher range.
 			const fastRatioLinear = (speed - 3) / 6; // 4..9 => 1/6..1
 			const fastRatio = Math.pow(fastRatioLinear, 1.5); // 4,5,6 are slower, 7–9 accelerate quickly
-			const startInterval = 70; // Equivalent to speed=3
-			const endInterval = 25; // Equivalent to speed=9
+			const startInterval = FE_AI_SEARCH_CONFIG.ANIMATION.INTERVALS[3]; // Equivalent to speed=3
+			const endInterval = FE_AI_SEARCH_CONFIG.ANIMATION.FAST_END_INTERVAL; // Equivalent to speed=9
 			typingInterval = Math.round(startInterval - (startInterval - endInterval) * fastRatio);
 		} else {
-			// speed=10: Handled as \"immediate mode\", but keep a minimum value as a fallback.
-			typingInterval = 20;
+			// speed=10: Handled as "immediate mode", but keep a minimum value as a fallback.
+			typingInterval = FE_AI_SEARCH_CONFIG.ANIMATION.IMMEDIATE_INTERVAL;
 		}
 
 		// --- Characters-per-tick configuration ---
 		// 1–3: Always 1 character per tick
 		// 4–9: Linearly increase from 2 characters up to ~15 characters at speed 9
 		// 10: Immediate mode (render the entire queue at once)
-		if (speed === 10) {
+		if (speed === FE_AI_SEARCH_CONFIG.ANIMATION.MAX_SPEED) {
 			typingImmediate = true;
-			typingCharsPerTick = 10000;
+			typingCharsPerTick = FE_AI_SEARCH_CONFIG.ANIMATION.IMMEDIATE_CHARS;
 		} else if (speed <= 3) {
 			typingCharsPerTick = 1;
 		} else {
 			// Normalize speed 4..9 to 0..1 and linearly increase from 2 to 15 characters.
 			const charsRatio = (speed - 4) / 5; // 4..9 => 0..1
-			const minChars = 2; // About 2 characters at speed=4
-			const maxChars = 15;
+			const minChars = FE_AI_SEARCH_CONFIG.ANIMATION.MIN_CHARS_FAST; // About 2 characters at speed=4
+			const maxChars = FE_AI_SEARCH_CONFIG.ANIMATION.MAX_CHARS_FAST;
 			const rawChars = minChars + (maxChars - minChars) * charsRatio;
 			typingCharsPerTick = Math.max(1, Math.round(rawChars));
 		}
@@ -593,15 +1020,15 @@ function initFEAIChat() {
 		if (
 			currentAiMessageElement &&
 			currentAiMessageElement.querySelector('.fe-ai-search-spinner') &&
-			charQueue.length > 0
+			characterQueue.length > 0
 		) {
 			currentAiMessageElement.innerHTML = '';
 		}
-		if (charQueue.length === 0) return;
+		if (characterQueue.length === 0) return;
 
 		// In immediate mode, render the entire queue at once.
-		const takeCount = typingImmediate ? charQueue.length : typingCharsPerTick;
-		const charsToRender = charQueue.splice(0, takeCount).join('');
+		const takeCount = typingImmediate ? characterQueue.length : typingCharsPerTick;
+		const charsToRender = characterQueue.splice(0, takeCount).join('');
 		fullResponse += charsToRender;
 
 		currentAiMessageElement.innerHTML = marked.parse(fullResponse);
@@ -623,11 +1050,11 @@ function initFEAIChat() {
 	function waitForQueueToEmpty() {
 		return new Promise(resolve => {
 			const interval = setInterval(() => {
-				if (charQueue.length === 0) {
+				if (characterQueue.length === 0) {
 					clearInterval(interval);
 					resolve();
 				}
-			}, 50);
+			}, FE_AI_SEARCH_CONFIG.INTERVALS.QUEUE_CHECK);
 		});
 	}
 
@@ -652,7 +1079,7 @@ function initFEAIChat() {
 	 * Handles fetch or stream errors.
 	 * @param {Error} error - The error object.
 	 */
-	function handleError(error) {
+	function handleStreamError(error) {
 		clearInterval(renderInterval);
 		if (currentAiMessageElement) {
 			let message = __('An error occurred. Please try again.', 'fe-ai-search');
@@ -663,13 +1090,10 @@ function initFEAIChat() {
 				) {
 					message = fe_ai_search_ajax_obj.rate_limit_message;
 				} else {
-					message = __(
-						'(You have reached the request limit. Please wait a while before trying again.)',
-						'fe-ai-search'
-					);
+					message = __('Rate limit exceeded. Please try again later.', 'fe-ai-search');
 				}
 			}
-			currentAiMessageElement.innerHTML = '<p>' + message + '</p>';
+			addMessage(`<p>${message}</p>`, 'system', currentAiMessageElement);
 		}
 		enableForm();
 	}

@@ -12,7 +12,7 @@
  * @license    GPL-2.0-or-later
  */
 
-namespace FEAISearch\Core;
+namespace FESearchAI\Core;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -34,7 +34,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
-class FE_AI_Search_Activator {
+class FE_Search_AI_Activator {
 
 	/**
 	 * The current database version.

@@ -12,13 +12,13 @@
  * @license    GPL-2.0-or-later
  */
 
-namespace FEAISearch\Admin;
+namespace FESearchAI\Admin;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use FEAISearch\Admin\FE_AI_Search_Settings;
+use FESearchAI\Admin\FE_Search_AI_Settings;
 
 /**
  * The admin-specific functionality of the plugin.
@@ -32,11 +32,11 @@ use FEAISearch\Admin\FE_AI_Search_Settings;
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
-class FE_AI_Search_Admin {
+class FE_Search_AI_Admin {
 
 	public function __construct() {
 
-		new FE_AI_Search_Settings();
+		new FE_Search_AI_Settings();
 
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_admin_assets' ] );
 		add_action( 'admin_menu', [ $this, 'add_admin_menu' ] );
@@ -133,7 +133,7 @@ class FE_AI_Search_Admin {
 			'FE Search AI',
 			'manage_options',
 			$parent_slug,
-			[ FE_AI_Search_Settings::class, 'render_page' ],
+			[ FE_Search_AI_Settings::class, 'render_page' ],
 			'dashicons-search',
 			80
 		);
@@ -143,7 +143,7 @@ class FE_AI_Search_Admin {
 			__( 'Settings', 'fe-ai-search' ),
 			'manage_options',
 			$parent_slug,
-			[ FE_AI_Search_Settings::class, 'render_page' ]
+			[ FE_Search_AI_Settings::class, 'render_page' ]
 		);
 	}
 

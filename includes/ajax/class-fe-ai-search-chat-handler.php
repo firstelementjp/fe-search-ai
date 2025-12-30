@@ -13,11 +13,14 @@
  * @license    GPL-2.0-or-later
  */
 
-namespace FEAISearch\Ajax;
+namespace FESearchAI\Ajax;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+
+use FEAISearch\Core\FE_AI_Search_License;
+use FEAISearch\Core\FE_AI_Search_Encryption_Helper;
 
 /**
  * Main controller for all frontend chat interactions.
@@ -32,28 +35,26 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
-class FE_AI_Search_Chat_Handler {
+class FE_Search_AI_Chat_Handler {
 
 	private $options           = [];
 	private $is_license_active = '';
 	private $sync_handler;
 
+	/**
+	 * Constructor: Initializes the chat handler with dependencies and hooks.
+	 *
+	 * Sets up the chat functionality by loading plugin options, checking license
+	 * status for Pro features, storing the sync handler reference, and registering
+	 * REST API endpoints and AJAX action handlers for chat operations.
+	 *
+	 * @since 1.0.0
+	 * @param FE_Search_AI_Sync_Handler $sync_handler The sync handler instance for data retrieval.
+	 * @return void
+	 */
 	public function __construct( $sync_handler ) {
-
-		// Retrieve all configuration data
-		$this->options = get_option( 'fe_ai_search_settings', [] );
-
-		/**
-		 * Check the status of the license (stored in its own option).
-		 */
-		$license_data = get_option( 'fe_ai_search_license', [] );
-		$status       = $license_data['status'] ?? 'inactive';
-		$data         = $license_data['data'] ?? [];
-		$product_id   = isset( $data['productId'] ) ? (int) $data['productId'] : 0;
-
-		// Treat the license as active when the status is "active" and the product ID
-		// matches the Pro add-on (productId = 65 in License Manager for WooCommerce).
-		$this->is_license_active = ( 'active' === $status && 65 === $product_id );
+		$this->options           = get_option( 'fe_ai_search_settings', [] );
+		$this->is_license_active = FE_AI_Search_License::is_pro_active();
 		$this->sync_handler      = $sync_handler;
 
 		add_action( 'rest_api_init', [ $this, 'register_endpoints' ] );
@@ -61,6 +62,8 @@ class FE_AI_Search_Chat_Handler {
 		add_action( 'wp_ajax_fe_ai_search_log_query', [ $this, 'ajax_log_query' ] );
 		add_action( 'wp_ajax_nopriv_fe_ai_search_log_consent', [ $this, 'ajax_log_consent' ] );
 		add_action( 'wp_ajax_fe_ai_search_log_consent', [ $this, 'ajax_log_consent' ] );
+		add_action( 'wp_ajax_nopriv_fe_ai_search_get_session_logs', [ $this, 'ajax_get_session_logs' ] );
+		add_action( 'wp_ajax_fe_ai_search_get_session_logs', [ $this, 'ajax_get_session_logs' ] );
 		add_action( 'wp_ajax_fe_ai_search_test_api_key', [ $this, 'ajax_test_api_key' ] );
 		add_action( 'wp_ajax_fe_ai_search_manage_license', [ $this, 'ajax_manage_license' ] );
 		add_filter( 'fe_ai_search_filter_user_question', [ $this, 'filter_personal_data' ], 10 );
@@ -69,7 +72,14 @@ class FE_AI_Search_Chat_Handler {
 	}
 
 	/**
-	 * Register REST API endpoints for streaming and non-streaming
+	 * Registers REST API endpoints for streaming and non-streaming chat.
+	 *
+	 * This method registers the /stream endpoint for real-time chat responses
+	 * and the /chat endpoint for standard API requests. Both endpoints handle
+	 * AI model communication with proper permission callbacks.
+	 *
+	 * @since 1.0.0
+	 * @return void
 	 */
 	public function register_endpoints() {
 		register_rest_route(
@@ -120,7 +130,7 @@ class FE_AI_Search_Chat_Handler {
 		$threshold_percent  = (int) $rate_limit_options['notify_threshold'];
 		$notify_email       = $rate_limit_options['notify_email'];
 
-		if ( $ip_limit_count > 0 ) {
+		if ( $ip_limit_count >= 0 ) {
 			$ip_transient_key = 'fe_ai_search_rl_ip_' . md5( $_SERVER['REMOTE_ADDR'] );
 			$ip_request_count = get_transient( $ip_transient_key );
 
@@ -132,7 +142,7 @@ class FE_AI_Search_Chat_Handler {
 			set_transient( $ip_transient_key, ( (int) $ip_request_count + 1 ), HOUR_IN_SECONDS );
 		}
 
-		if ( $global_limit_count > 0 ) {
+		if ( $global_limit_count >= 0 ) {
 			$global_transient_key = 'fe_ai_search_rl_global_day';
 			$global_request_count = get_transient( $global_transient_key );
 
@@ -225,7 +235,7 @@ class FE_AI_Search_Chat_Handler {
 
 			} catch ( \Throwable $t ) {
 				// Fail safely: log the error and continue without context.
-				\FEAISearch\Core\FE_AI_Search_Logger::log(
+				\FESearchAI\Core\FE_Search_AI_Logger::log(
 					'ERROR',
 					'Context retrieval failed in stream_handler.',
 					[
@@ -260,7 +270,18 @@ class FE_AI_Search_Chat_Handler {
 	}
 
 	/**
-	 * Command tower for switching response-generating AI
+	 * Command tower for switching response-generating AI providers.
+	 *
+	 * This method routes streaming chat requests to the appropriate AI provider
+	 * (OpenAI, Google, Anthropic, etc.) based on the provider parameter. It allows
+	 * Pro add-ons to override default handlers via action hooks.
+	 *
+	 * @since 1.0.0
+	 * @param string $question       User's question text.
+	 * @param array  $context_chunks Relevant context chunks for the AI.
+	 * @param array  $history        Chat history for conversation context.
+	 * @param string $provider       The AI provider to use.
+	 * @return void Outputs streamed response directly.
 	 */
 	public function stream_chat_completion( $question, $context_chunks, $history = [], $provider ) {
 
@@ -313,16 +334,18 @@ class FE_AI_Search_Chat_Handler {
 		$start_time = microtime( true );
 
 		if ( 'openai_compatible' === $provider ) {
-			$api_url = $this->options['provider']['openai_compatible_endpoint'] ?? '';
-			$api_key = $this->options['provider']['openai_compatible_key'] ?? '';
+			$api_url       = $this->options['provider']['openai_compatible_endpoint'] ?? '';
+			$encrypted_key = $this->options['provider']['openai_compatible_key'] ?? '';
+			$api_key       = FE_AI_Search_Encryption_Helper::decrypt( $encrypted_key );
 		} else {
 			$api_url = 'https://api.openai.com/v1/chat/completions';
 			// Admin UI stores the key at provider.openai_key.
-			$api_key = $this->options['provider']['openai_key'] ?? '';
+			$encrypted_key = $this->options['provider']['openai_key'] ?? '';
+			$api_key       = FE_AI_Search_Encryption_Helper::decrypt( $encrypted_key );
 		}
 
 		if ( empty( $api_key ) || empty( $api_url ) ) {
-			\FEAISearch\Core\FE_AI_Search_Logger::log(
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'ERROR',
 				'Chat completion failed: API Key or Endpoint URL is not set.',
 				[ 'provider' => $provider ]
@@ -363,7 +386,7 @@ class FE_AI_Search_Chat_Handler {
 		}
 
 		// Log the start of the API call.
-		\FEAISearch\Core\FE_AI_Search_Logger::log(
+		\FESearchAI\Core\FE_Search_AI_Logger::log(
 			'INFO',
 			'Chat completion stream started.',
 			[
@@ -459,7 +482,7 @@ class FE_AI_Search_Chat_Handler {
 		// Check for cURL errors after execution.
 		if ( curl_errno( $ch ) ) {
 			// ERROR: Log the cURL (connection) failure.
-			\FEAISearch\Core\FE_AI_Search_Logger::log(
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'ERROR',
 				'Chat completion stream failed (cURL Error).',
 				[
@@ -472,7 +495,7 @@ class FE_AI_Search_Chat_Handler {
 			);
 		} else {
 			// INFO: Log the successful completion of the stream.
-			\FEAISearch\Core\FE_AI_Search_Logger::log(
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'INFO',
 				'Chat completion stream finished successfully.',
 				[
@@ -503,11 +526,11 @@ class FE_AI_Search_Chat_Handler {
 		}
 
 		$subject = sprintf(
-			'[FE AI Search] Rate limit reached: %s',
+			'[FE Search AI] Rate limit reached: %s',
 			$context
 		);
 
-		$body  = "A rate limit error occurred in FE AI Search.\n\n";
+		$body  = "A rate limit error occurred in FE Search AI.\n\n";
 		$body .= sprintf( "Context: %s\n", $context );
 		foreach ( $details as $key => $value ) {
 			$body .= sprintf( "%s: %s\n", $key, $value );
@@ -544,9 +567,10 @@ class FE_AI_Search_Chat_Handler {
 		}
 
 		// Admin UI stores the key at provider.google_key.
-		$api_key = $this->options['provider']['google_key'] ?? '';
+		$encrypted_key = $this->options['provider']['google_key'] ?? '';
+		$api_key       = FE_AI_Search_Encryption_Helper::decrypt( $encrypted_key );
 		if ( empty( $api_key ) ) {
-			\FEAISearch\Core\FE_AI_Search_Logger::log(
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'ERROR',
 				'Chat completion failed: API Key or Endpoint URL is not set.',
 				[ 'provider' => $provider ]
@@ -579,7 +603,7 @@ class FE_AI_Search_Chat_Handler {
 		}
 
 		// INFO: Log the start of the API call.
-		\FEAISearch\Core\FE_AI_Search_Logger::log(
+		\FESearchAI\Core\FE_Search_AI_Logger::log(
 			'INFO',
 			'Chat completion stream started.',
 			[
@@ -715,7 +739,7 @@ class FE_AI_Search_Chat_Handler {
 
 		// Check for cURL errors after execution.
 		if ( curl_errno( $ch ) ) {
-			\FEAISearch\Core\FE_AI_Search_Logger::log(
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'ERROR',
 				'Chat completion stream failed (cURL Error).',
 				[
@@ -726,7 +750,7 @@ class FE_AI_Search_Chat_Handler {
 				]
 			);
 		} else {
-			\FEAISearch\Core\FE_AI_Search_Logger::log(
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'INFO',
 				'Chat completion stream finished successfully.',
 				[
@@ -764,9 +788,10 @@ class FE_AI_Search_Chat_Handler {
 		$start_time = microtime( true );
 
 		// Admin UI stores the key at provider.anthropic_key.
-		$api_key = $this->options['provider']['anthropic_key'] ?? '';
+		$encrypted_key = $this->options['provider']['anthropic_key'] ?? '';
+		$api_key       = FE_AI_Search_Encryption_Helper::decrypt( $encrypted_key );
 		if ( empty( $api_key ) ) {
-			\FEAISearch\Core\FE_AI_Search_Logger::log(
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'ERROR',
 				'Chat completion failed: API Key or Endpoint URL is not set.',
 				[ 'provider' => $provider ]
@@ -787,7 +812,7 @@ class FE_AI_Search_Chat_Handler {
 		}
 
 		// INFO: Log the start of the API call.
-		\FEAISearch\Core\FE_AI_Search_Logger::log(
+		\FESearchAI\Core\FE_Search_AI_Logger::log(
 			'INFO',
 			'Chat completion stream started.',
 			[
@@ -877,7 +902,7 @@ class FE_AI_Search_Chat_Handler {
 		$duration = round( ( microtime( true ) - $start_time ) * 1000 );
 
 		if ( curl_errno( $ch ) ) {
-			\FEAISearch\Core\FE_AI_Search_Logger::log(
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'ERROR',
 				'Chat completion stream failed (cURL Error).',
 				[
@@ -888,7 +913,7 @@ class FE_AI_Search_Chat_Handler {
 				]
 			);
 		} else {
-			\FEAISearch\Core\FE_AI_Search_Logger::log(
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'INFO',
 				'Chat completion stream finished successfully.',
 				[
@@ -981,6 +1006,16 @@ class FE_AI_Search_Chat_Handler {
 		$system_prompt .= "\n\n## Language Rule\n" .
 			"All of your responses must be written in the language corresponding to the current WordPress locale code '{$answer_lang_code}'. ";
 
+		// Add Gemini-specific constraints to prevent hallucination
+		if ( $provider === 'google' ) {
+			$system_prompt .= "\n\nGEMINI INSTRUCTIONS:\n" .
+				"You MUST only use the job postings listed under 'REAL JOB POSTINGS FROM THE WEBSITE'.\n" .
+				"Do NOT create any fake job information.\n" .
+				"Use the exact URLs provided.\n" .
+				"If no relevant jobs exist, say: 申し訳ありませんが、その情報は見つかりませんでした。サイト内で関連情報をお探しいただけますでしょうか？\n" .
+				"Follow the response format examples provided below.\n";
+		}
+
 		/**
 		 * Filters the final system prompt before it is sent to the AI.
 		 *
@@ -994,12 +1029,15 @@ class FE_AI_Search_Chat_Handler {
 		 */
 		$system_prompt = apply_filters( 'fe_ai_search_system_prompt', $system_prompt, $provider );
 
+		// Initialize context string.
+		$context_str = '';
+
 		// Legal links are managed under the Display > Text/Links settings.
 		$links           = $this->options['display']['links'] ?? [];
 		$terms_page_id   = $links['terms_page_id'] ?? 0;
 		$privacy_page_id = $links['privacy_page_id'] ?? 0;
 
-		// Add the legal document at the beginning of the context.
+		// Build legal document context.
 		$legal_context = '';
 		if ( $terms_page_id ) {
 			$page = get_post( $terms_page_id );
@@ -1013,19 +1051,41 @@ class FE_AI_Search_Chat_Handler {
 				$legal_context .= "--- START: Privacy Policy ---\n" . wp_strip_all_tags( $page->post_content ) . "\n--- END: Privacy Policy ---\n\n";
 			}
 		}
+
+		// Construct site information context from content chunks.
+		if ( ! empty( $context_chunks ) ) {
+			if ( $provider === 'google' ) {
+				// Gemini: Use simple direct format without complex markers
+				$context_str .= "REAL JOB POSTINGS FROM THE WEBSITE:\n\n";
+				foreach ( $context_chunks as $chunk ) {
+					$context_str .= "JOB POSTING:\n";
+					$context_str .= 'URL: ' . $chunk['permalink'] . "\n";
+					$context_str .= 'DETAILS: ' . $chunk['content_chunk'] . "\n\n";
+				}
+				$context_str .= "END OF JOB POSTINGS\n\n";
+			} else {
+				// Other providers: Keep the enhanced format
+				$context_str .= "Site Information:\n";
+				$context_str .= "=== START OF ACTUAL SITE CONTENT ===\n";
+				$context_str .= "THE FOLLOWING IS REAL CONTENT FROM THE WEBSITE. USE THIS INFORMATION TO ANSWER:\n\n";
+				foreach ( $context_chunks as $chunk ) {
+					$context_str .= "--- START OF REAL JOB POSTING ---\n" .
+									' Source URL: ' . $chunk['permalink'] . "\n" .
+									"Content:\n" . $chunk['content_chunk'] . "\n" .
+									"--- END OF REAL JOB POSTING ---\n\n";
+				}
+				$context_str .= "=== END OF ACTUAL SITE CONTENT ===\n";
+			}
+		}
+
+		// Append legal documents after site information, if any.
 		if ( ! empty( $legal_context ) ) {
 			$context_str .= "Mandatory Compliance Documents:\n" . $legal_context;
 		}
 
-		// Construct a context string
-		if ( ! empty( $context_chunks ) ) {
-			$context_str = "Site Information:\n";
-			foreach ( $context_chunks as $chunk ) {
-				$context_str .= "--- START OF ARTICLE ---\n" .
-								'Source URL: ' . $chunk['permalink'] . "\n" .
-								"Content:\n" . $chunk['content_chunk'] . "\n" .
-								"--- END OF ARTICLE ---\n\n";
-			}
+		// Ensure there is at least a Site Information header when no context exists.
+		if ( '' === $context_str ) {
+			$context_str = "Site Information:\n[NO SITE CONTENT AVAILABLE - The site search returned no relevant information for this query]\n";
 		}
 
 		/**
@@ -1044,7 +1104,26 @@ class FE_AI_Search_Chat_Handler {
 			}
 		);
 
-		$user_question_with_context = $context_str . "\n\nBased on the Site Information provided above, answer the following question:\n" . $question;
+		$user_question_with_context = $context_str . "\n\nBased on the Site Information provided above, answer the following question.\n\nIMPORTANT: Before answering, you MUST verify that the Site Information contains actual relevant content. If the Site Information does not contain specific job postings or relevant information for this query, you MUST respond with \"申し訳ありませんが、その情報は見つかりませんでした。サイト内で関連情報をお探しいただけますでしょうか？\"\n\n";
+
+		// Add Gemini-specific warning in the user question
+		if ( $provider === 'google' ) {
+			$user_question_with_context .= "GEMINI: Use ONLY the job postings listed above. Do not create fake information.\n\n";
+		}
+
+		$user_question_with_context .= 'Question: ' . $question;
+
+		// Debug: Log the context being sent to AI
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( 'FE AI Search - Context sent to AI: ' . $context_str );
+			error_log( 'FE AI Search - Number of context chunks: ' . count( $context_chunks ) );
+		}
+
+		// Debug: Log the full prompt for Gemini to investigate context recognition issues
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG && $provider === 'google' ) {
+			error_log( 'FE AI Search - Full system prompt for Gemini: ' . $system_prompt );
+			error_log( 'FE AI Search - Full user question for Gemini: ' . $user_question_with_context );
+		}
 
 		$messages[] = [
 			'role'    => 'user',
@@ -1073,8 +1152,12 @@ Based on the provided \"Site Information\" and \"Conversation History,\" please 
 ## Thought Process
 1. Accurately understand the intent of the user's latest question.
 2. Read the \"Site Information\" and identify the parts most relevant to the question.
-3. If no relevant information is found in the \"Site Information,\" honestly state, \"I could not find an answer to your question from the information on this site.\".
-4. If relevant information is available, generate a clear and concise summary based solely on that information.
+3. **CRITICAL VERIFICATION STEP**: Before answering, you MUST check if the Site Information contains actual job postings or relevant content. If you only see general information or no specific job details, you MUST respond with \"申し訳ありませんが、その情報は見つかりませんでした。サイト内で関連情報をお探しいただけますでしょうか？\"
+4. **GEMINI-SPECIFIC STEP**: If you see \"=== START OF ACTUAL SITE CONTENT ===\" above, you MUST extract and present the ACTUAL job postings from that content. You are FORBIDDEN from creating generic information.
+5. If no relevant information is found in the \"Site Information,\" honestly state, \"I could not find an answer to your question from the information on this site.\".
+6. If relevant information is available, generate a clear and concise summary based ONLY on that information.
+7. **FINAL CHECK**: Verify that every piece of information in your answer exists in the provided context. If not, revise your answer or refuse to answer.
+8. **GEMINI FINAL VERIFICATION**: Did you use the actual content from \"=== START OF ACTUAL SITE CONTENT ===\"? If not, you are violating the constraints.
 
 ## Domain and URL Restrictions
 - You must treat '{site_url}' and its subpages as the ONLY authoritative website for this chat.
@@ -1084,6 +1167,60 @@ Based on the provided \"Site Information\" and \"Conversation History,\" please 
   - Recommend third-party sites as reference URLs.
 - When you need to mention a source, only use URLs that are within the '{site_url}' domain (including its subpaths).
 - If you cannot find a relevant page within '{site_url}', you must say you could not find an answer from this site and must NOT fabricate any URL.
+
+## Critical Constraints - NO HALLUCINATION
+IMPORTANT: You MUST ONLY use information from the provided Site Information and Mandatory Compliance Documents sections above.
+- NEVER create or invent job postings, products, services, or any information that is not explicitly mentioned in the provided context
+- NEVER make up URLs, addresses, phone numbers, prices, or any specific details
+- If the provided context does not contain relevant information to answer the user's question, respond with \"申し訳ありませんが、その情報は見つかりませんでした。サイト内で関連情報をお探しいただけますでしょうか？\"
+- DO NOT fabricate examples or sample data
+- ONLY reference actual content from the provided articles and documents
+- If you find relevant information, use the exact URLs and details from the source articles
+- If no relevant information exists, be honest and say so rather than making things up
+- **CRITICAL**: If you see \"[NO SITE CONTENT AVAILABLE]\" in the Site Information section, you MUST respond with \"申し訳ありませんが、その情報は見つかりませんでした。サイト内で関連情報をお探しいただけますでしょうか？\" - DO NOT attempt to answer or create content
+- **ABSOLUTE PROHIBITION**: You are FORBIDDEN from creating any job postings, company names, or specific details that are not in the provided context
+- **MANDATORY REQUIREMENT**: Before answering, you MUST verify that every piece of information you provide exists in the provided context
+- **ZERO TOLERANCE**: Any violation of these rules will result in completely fabricated information. You MUST refuse to answer rather than create fake information
+
+## Response Format Examples
+Please follow these examples for the response format:
+
+Example 1 - Job Posting:
+営業補佐兼事務員募集
+
+- 勤務地: 東京都千代田区
+- 雇用形態: 正社員、契約社員
+- 月収: ～40万円
+- 募集状況: 募集中
+- 詳細: 昇給随時、賞与年3回、社員旅行あり（自由参加）。感染症対策も万全です。
+
+詳細を見る
+
+Example 2 - Product Information:
+製品名: 高性能ノートPC
+
+- 価格: 98,000円
+- 仕様: CPU Intel Core i7, RAM 16GB, SSD 512GB
+- 在庫: あり
+- 特徴: 軽量デザイン、バッテリー10時間駆動
+
+詳細を見る
+
+Example 3 - Service Information:
+ウェブサイト制作サービス
+
+- 料金: 50万円～
+- 納期: 1ヶ月～2ヶ月
+- 対応: レスポンシブデザイン、SEO対策込み
+- 特典: 1年間の無料保守付き
+
+お問い合わせはこちら
+
+Key Guidelines:
+- Use clear, concise bullet points for key information
+- Include a call-to-action link at the end
+- Keep responses structured and easy to scan
+- Provide the most relevant information first
 
 ## Redacted Content Handling
 Some parts of the user input may be replaced with the token \"[REDACTED]\" to protect security or privacy.
@@ -1161,14 +1298,22 @@ Instead, answer based only on the remaining visible text.
 		$question_len  = isset( $_POST['question_length'] ) ? intval( $_POST['question_length'] ) : 0;
 		$log_id        = 0;
 
-		// For privacy protection, do not store the full question text. Only create a log entry
-		// when both a session ID and an answer are available.
+		// Check if question logging is enabled via constant or filter
+		$enable_question_logging = (
+			defined( 'FE_AI_SEARCH_LOG_QUESTIONS' ) && FE_AI_SEARCH_LOG_QUESTIONS
+		) || apply_filters( 'fe_ai_search_enable_question_logging', false );
+
+		// For privacy protection, do not store the full question text by default.
+		// Only create a log entry when both a session ID and an answer are available.
 		if ( ! empty( $session_id ) && ! empty( $answer ) ) {
+			// Store actual question text if logging is enabled, otherwise store length info only
+			$question_text = $enable_question_logging ? $question : sprintf( 'User question is not logged. (length: %d chars)', max( 0, $question_len ) );
+
 			$wpdb->insert(
 				$logs_table,
 				[
 					'session_id'    => $session_id,
-					'question'      => sprintf( 'User question is not logged. (length: %d chars)', max( 0, $question_len ) ),
+					'question'      => $question_text,
 					'answer'        => $answer,
 					'context_found' => $context_found,
 					'created_at'    => current_time( 'mysql' ),
@@ -1195,7 +1340,7 @@ Instead, answer based only on the remaining visible text.
 		$session_id = isset( $_POST['session_id'] ) ? sanitize_key( wp_unslash( $_POST['session_id'] ) ) : '';
 		$source     = isset( $_POST['source'] ) ? sanitize_text_field( wp_unslash( $_POST['source'] ) ) : 'chat_overlay';
 
-		\FEAISearch\Core\FE_AI_Search_Logger::log(
+		\FESearchAI\Core\FE_Search_AI_Logger::log(
 			'INFO',
 			'User accepted privacy consent for AI chat.',
 			[
@@ -1205,6 +1350,42 @@ Instead, answer based only on the remaining visible text.
 		);
 
 		wp_send_json_success();
+	}
+
+	/**
+	 * AJAX handler: Retrieves session logs with rating status for restoring feedback buttons.
+	 *
+	 * Returns logs for the given session ID including rating information so that
+	 * feedback buttons can be restored when the chat UI is reopened.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public function ajax_get_session_logs() {
+		check_ajax_referer( 'fe_ai_search_ajax_nonce', 'nonce' );
+
+		$session_id = isset( $_POST['session_id'] ) ? sanitize_key( wp_unslash( $_POST['session_id'] ) ) : '';
+
+		if ( empty( $session_id ) ) {
+			wp_send_json_error( __( 'Session ID is required.', 'fe-ai-search' ) );
+			return;
+		}
+
+		global $wpdb;
+		$logs_table = $wpdb->prefix . 'fe_ai_search_logs';
+
+		// Get logs for this session with rating information
+		$logs = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT id, question, answer, rating, created_at 
+			 FROM {$logs_table} 
+			 WHERE session_id = %s 
+			 ORDER BY created_at ASC",
+				$session_id
+			)
+		);
+
+		wp_send_json_success( [ 'logs' => $logs ] );
 	}
 
 	/**
@@ -1378,7 +1559,7 @@ Instead, answer based only on the remaining visible text.
 
 		// SECURITY: Log if a basic security filter was triggered.
 		if ( $filtered_text !== $text ) {
-			\FEAISearch\Core\FE_AI_Search_Logger::log(
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'SECURITY',
 				'Basic prompt injection filter triggered.',
 				[ 'original_text' => mb_substr( $text, 0, 100 ) . '...' ] // Log a snippet for context
@@ -1460,28 +1641,63 @@ Instead, answer based only on the remaining visible text.
 		// Perform the license action.
 		$handler = new \FEAISearch\Core\FE_AI_Search_License_Handler();
 		$result  = ( 'activate' === $action ) ? $handler->activate( $license_key ) : $handler->deactivate( $license_key );
+
+		// Determine the product ID from the remote response. If it's missing,
+		// fall back to the main Pro product ID.
+		$product_id = 0;
+		if ( isset( $result['data']['productId'] ) ) {
+			$product_id = (int) $result['data']['productId'];
+		} elseif ( class_exists( '\FEAISearch\\Core\\FE_AI_Search_License' ) ) {
+			$product_id = \FEAISearch\Core\FE_AI_Search_License::PRODUCT_ID_PRO;
+		}
+
+		$all_licenses = get_option( 'fe_ai_search_license', [] );
+
+		// Ensure we have a proper array, handle legacy string format
+		if ( is_string( $all_licenses ) ) {
+			$all_licenses = maybe_unserialize( $all_licenses );
+		}
+
+		if ( ! is_array( $all_licenses ) ) {
+			$all_licenses = [];
+		}
+
+		if ( ! isset( $all_licenses['products'] ) || ! is_array( $all_licenses['products'] ) ) {
+			$all_licenses['products'] = [];
+		}
+
 		if ( $result && $result['success'] ) {
 			// Determine the local license status based on the requested action.
 			// For this site, a successful deactivation should always be treated as inactive,
 			// even if the remote license itself remains valid for other activations.
 			$local_status = ( 'activate' === $action ) ? 'active' : 'inactive';
 
-			$license = [
-				'key'    => $license_key,
-				'status' => $local_status,
-				'data'   => $result['data'] ?? [],
-			];
-			update_option( 'fe_ai_search_license', $license );
+			if ( $product_id > 0 ) {
+				// Debug: Log encryption attempt
+				$encrypted_key = FE_AI_Search_Encryption_Helper::encrypt( $license_key );
+				error_log( 'FE AI Search: License key encryption test - Original: ' . substr( $license_key, 0, 10 ) . '... Encrypted: ' . substr( $encrypted_key, 0, 20 ) . '...' );
+
+				$all_licenses['products'][ $product_id ] = [
+					'key'    => $encrypted_key,
+					'status' => $local_status,
+					'data'   => $result['data'] ?? [],
+				];
+			}
+
+			update_option( 'fe_ai_search_license', $all_licenses );
 			delete_transient( 'fe_ai_search_license_error' );
 			$send_response = 'wp_send_json_success';
 
 		} else {
-			$license = [
-				'key'    => $license_key,
-				'status' => 'inactive',
-				'data'   => $result['data'] ?? [],
-			];
-			update_option( 'fe_ai_search_license', $license );
+			if ( $product_id > 0 ) {
+				$all_licenses['products'][ $product_id ] = [
+					'key'    => FE_AI_Search_Encryption_Helper::encrypt( $license_key ),
+					'status' => 'inactive',
+					'data'   => $result['data'] ?? [],
+				];
+			}
+
+			update_option( 'fe_ai_search_license', $all_licenses );
 			set_transient( 'fe_ai_search_license_error', $result['message'], 60 );
 			$send_response = 'wp_send_json_error';
 		}

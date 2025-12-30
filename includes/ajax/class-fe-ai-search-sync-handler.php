@@ -13,7 +13,7 @@
  * @license    GPL-2.0-or-later
  */
 
-namespace FEAISearch\Ajax;
+namespace FESearchAI\Ajax;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -35,7 +35,7 @@ use WP_Error;
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
-class FE_AI_Search_Sync_Handler {
+class FE_Search_AI_Sync_Handler {
 
 	private $options = [];
 	private $is_license_active;
@@ -923,9 +923,9 @@ class FE_AI_Search_Sync_Handler {
 		 * @param int    $max_chunks Default maximum number of chunks.
 		 * @param string $question   The end user's question text.
 		 */
-		$max_chunks = (int) apply_filters( 'fe_ai_search_max_chunks_for_llm', 500, $question );
+		$max_chunks = (int) apply_filters( 'fe_ai_search_max_chunks_for_llm', 100, $question );
 		if ( $max_chunks <= 0 ) {
-			$max_chunks = 500;
+			$max_chunks = 100;
 		}
 		$placeholders = implode( ', ', array_fill( 0, count( $valid_keywords ), '%s' ) );
 		$sql          = "SELECT DISTINCT `vector_id` FROM `{$index_table}` WHERE `keyword` IN ( {$placeholders} ) LIMIT {$max_chunks}";
@@ -1814,7 +1814,7 @@ class FE_AI_Search_Sync_Handler {
 		?>
 		<div class="notice notice-info is-dismissible" data-dismiss-url="<?php echo esc_url( add_query_arg( 'fe-ai-search-dismiss-i18n-notice', '1' ) ); ?>">
 			<p>
-				<b>FE AI Search:</b> <?php esc_html_e( 'Your site language is not fully optimized for keyword search. We welcome contributions for new languages!', 'fe-ai-search' ); ?>
+				<b>FE Search AI:</b> <?php esc_html_e( 'Your site language is not fully optimized for keyword search. We welcome contributions for new languages!', 'fe-ai-search' ); ?>
 				<a href="https://github.com/firstelementjp/fe-ai-search" target="_blank" style="margin-left: 10px;"><?php esc_html_e( 'Contribute on GitHub', 'fe-ai-search' ); ?></a>
 			</p>
 		</div>
