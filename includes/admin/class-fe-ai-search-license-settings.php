@@ -64,17 +64,8 @@ class FE_Search_AI_License_Settings {
 		// Retrieve all configuration data
 		$this->options = get_option( 'fe_search_ai_settings', [] );
 
-		/**
-		 * Check the status of the license (stored in its own option).
-		 */
-		$license_data = get_option( 'fe_search_ai_license', [] );
-		$status       = $license_data['status'] ?? 'inactive';
-		$data         = $license_data['data'] ?? [];
-		$product_id   = isset( $data['productId'] ) ? (int) $data['productId'] : 0;
-
-		// Treat the license as active when the status is "active" and the product ID
-		// matches the Pro add-on (productId = 65 in License Manager for WooCommerce).
-		$this->is_license_active = ( 'active' === $status && 65 === $product_id );
+		// Use the centralized license check
+		$this->is_license_active = \FESearchAI\Core\FE_Search_AI_License::is_pro_active();
 
 		if ( ! $this->is_license_active ) {
 			$this->license_alert_icon = '<a href="' . admin_url( 'admin.php' )
@@ -308,9 +299,16 @@ class FE_Search_AI_License_Settings {
 	 */
 	public function field_html() {
 		$license_data = get_option( 'fe_search_ai_license', [] );
+		$products = $license_data['products'] ?? [];
 
-		$license_key    = isset( $license_data['key'] ) ? $license_data['key'] : '';
-		$license_status = isset( $license_data['status'] ) ? $license_data['status'] : 'inactive';
+		// Get and decrypt the Pro license key (product ID 65)
+		$license_key = '';
+		if ( isset( $products[65]['key'] ) ) {
+			$encrypted_key = $products[65]['key'];
+			$license_key = \FESearchAI\Core\FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
+		}
+
+		$license_status = \FESearchAI\Core\FE_Search_AI_License::is_pro_active() ? 'active' : 'inactive';
 		?>
 		<input
 			type="password"

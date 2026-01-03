@@ -1688,7 +1688,9 @@ Instead, answer based only on the remaining visible text.
 		// Determine the product ID from the remote response. If it's missing,
 		// fall back to the main Pro product ID.
 		$product_id = 0;
-		if ( isset( $result['data']['productId'] ) ) {
+		if ( isset( $result['data']['data']['productId'] ) ) {
+			$product_id = (int) $result['data']['data']['productId'];
+		} elseif ( isset( $result['data']['productId'] ) ) {
 			$product_id = (int) $result['data']['productId'];
 		} elseif ( class_exists( '\\FESearchAI\\Core\\FE_Search_AI_License' ) ) {
 			$product_id = \FESearchAI\Core\FE_Search_AI_License::PRODUCT_ID_PRO;

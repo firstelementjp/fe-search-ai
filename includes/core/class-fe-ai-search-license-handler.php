@@ -66,22 +66,31 @@ class FE_Search_AI_License_Handler {
 			return [ 'success' => false, 'message' => __( 'The license key has not been entered.', 'fe-ai-search' ) ];
 		}
 
+		$product_id = (int) FE_Search_AI_License::PRODUCT_ID_PRO;
+		if ( defined( 'FE_AI_SEARCH_PRO_PRODUCT_ID' ) ) {
+			$product_id = (int) FE_AI_SEARCH_PRO_PRODUCT_ID;
+		}
+
 		// Call the vendor's proxy API instead of the LMFWC REST API directly so that
 		// sensitive consumer keys remain on the server side only.
 		if ( ! defined( 'FE_AI_SEARCH_LICENSE_API_URL' ) || empty( FE_AI_SEARCH_LICENSE_API_URL ) ) {
 			return [ 'success' => false, 'message' => __( 'FE Search AI Pro is not installed or activated, so the license management feature is not available.', 'fe-ai-search' ) ];
 		}
 
+		$request_body = [
+			'action'      => $action,
+			'license_key' => $license_key,
+			'instance'    => home_url(),
+			'site_url'    => home_url(),
+			'product_id'  => $product_id,
+			'productId'   => $product_id,
+		];
+
 		$response = wp_remote_post(
 			FE_AI_SEARCH_LICENSE_API_URL,
 			[
 				'timeout' => 20,
-				'body'    => [
-					'action'      => $action,
-					'license_key' => $license_key,
-					'instance'    => home_url(),
-					'product_id'  => FE_AI_SEARCH_PRO_PRODUCT_ID,
-				],
+				'body'    => $request_body,
 			]
 		);
 
@@ -90,13 +99,23 @@ class FE_Search_AI_License_Handler {
 			return [ 'success' => false, 'message' => __( 'Could not connect to the license server', 'fe-ai-search' ) . ': ' . $response->get_error_message() ];
 		}
 
-		$body = wp_remote_retrieve_body( $response );
-		$data = json_decode( $body, true );
+		$http_code = (int) wp_remote_retrieve_response_code( $response );
+		$body      = wp_remote_retrieve_body( $response );
+		$data      = json_decode( $body, true );
 
 		// Handle invalid responses from the server.
-		if ( wp_remote_retrieve_response_code( $response ) >= 400 || empty( $data ) || ! isset( $data['success'] ) ) {
+		if ( $http_code >= 400 || empty( $data ) || ! isset( $data['success'] ) ) {
+			$body_snippet  = is_string( $body ) ? substr( $body, 0, 300 ) : '';
 			$error_message = $data['message'] ?? __( 'An invalid response was received from the license server.', 'fe-ai-search' );
-			return [ 'success' => false, 'message' => $error_message ];
+			return [
+				'success' => false,
+				'message' => sprintf(
+					'%s (HTTP %d) %s',
+					(string) $error_message,
+					$http_code,
+					$body_snippet
+				),
+			];
 		}
 
 		$license_status = 'inactive';
