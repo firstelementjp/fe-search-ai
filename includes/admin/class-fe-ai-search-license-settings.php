@@ -335,9 +335,13 @@ class FE_Search_AI_License_Settings {
 				<?php esc_html_e( 'The license is valid.', 'fe-ai-search' ); ?>
 			</p>
 			<?php
-				$expires_at          = $license_data['data']['expiresAt'] ?? '';
-				$times_activated     = $license_data['data']['timesActivated'] ?? null;
-				$times_activated_max = $license_data['data']['timesActivatedMax'] ?? null;
+				// Get license data from the correct structure
+				$products = $license_data['products'] ?? [];
+				$pro_data = $products[65]['data'] ?? [];
+				
+				$expires_at          = $pro_data['expiresAt'] ?? '';
+				$times_activated     = $pro_data['timesActivated'] ?? null;
+				$times_activated_max = $pro_data['timesActivatedMax'] ?? null;
 				$remaining_days      = '';
 
 			if ( ! empty( $expires_at ) ) {
