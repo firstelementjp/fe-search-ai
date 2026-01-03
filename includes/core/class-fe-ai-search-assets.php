@@ -229,14 +229,14 @@ class FE_Search_AI_Assets {
 
 		wp_set_script_translations(
 			'fe-search-ai-frontend-scripts',
-			'fe-ai-search',
+			'fe-search-ai',
 			plugin_dir_path( FE_AI_SEARCH_PLUGIN_FILE ) . 'languages'
 		);
 
 		// Pass data to JavaScript.
 		$rate_limit_message = apply_filters(
 			'fe_search_ai_rate_limit_message',
-			__( '(You have reached the request limit. Please wait a while before trying again.)', 'fe-ai-search' )
+			__( '(You have reached the request limit. Please wait a while before trying again.)', 'fe-search-ai' )
 		);
 
 		// Expose configuration and runtime data to the frontend chat script.

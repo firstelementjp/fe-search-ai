@@ -63,7 +63,7 @@ class FE_Search_AI_License_Handler {
 	 */
 	private function send_request( string $action, string $license_key ): array {
 		if ( empty( $license_key ) ) {
-			return [ 'success' => false, 'message' => __( 'The license key has not been entered.', 'fe-ai-search' ) ];
+			return [ 'success' => false, 'message' => __( 'The license key has not been entered.', 'fe-search-ai' ) ];
 		}
 
 		$product_id = (int) FE_Search_AI_License::PRODUCT_ID_PRO;
@@ -74,7 +74,7 @@ class FE_Search_AI_License_Handler {
 		// Call the vendor's proxy API instead of the LMFWC REST API directly so that
 		// sensitive consumer keys remain on the server side only.
 		if ( ! defined( 'FE_AI_SEARCH_LICENSE_API_URL' ) || empty( FE_AI_SEARCH_LICENSE_API_URL ) ) {
-			return [ 'success' => false, 'message' => __( 'FE Search AI Pro is not installed or activated, so the license management feature is not available.', 'fe-ai-search' ) ];
+			return [ 'success' => false, 'message' => __( 'FE Search AI Pro is not installed or activated, so the license management feature is not available.', 'fe-search-ai' ) ];
 		}
 
 		$request_body = [
@@ -96,7 +96,7 @@ class FE_Search_AI_License_Handler {
 
 		// Handle connection errors.
 		if ( is_wp_error( $response ) ) {
-			return [ 'success' => false, 'message' => __( 'Could not connect to the license server', 'fe-ai-search' ) . ': ' . $response->get_error_message() ];
+			return [ 'success' => false, 'message' => __( 'Could not connect to the license server', 'fe-search-ai' ) . ': ' . $response->get_error_message() ];
 		}
 
 		$http_code = (int) wp_remote_retrieve_response_code( $response );
@@ -106,7 +106,7 @@ class FE_Search_AI_License_Handler {
 		// Handle invalid responses from the server.
 		if ( $http_code >= 400 || empty( $data ) || ! isset( $data['success'] ) ) {
 			$body_snippet  = is_string( $body ) ? substr( $body, 0, 300 ) : '';
-			$error_message = $data['message'] ?? __( 'An invalid response was received from the license server.', 'fe-ai-search' );
+			$error_message = $data['message'] ?? __( 'An invalid response was received from the license server.', 'fe-search-ai' );
 			return [
 				'success' => false,
 				'message' => sprintf(
@@ -125,7 +125,7 @@ class FE_Search_AI_License_Handler {
 
 		return [
 			'success' => $data['success'],
-			'message' => $data['message'] ?? ( $data['success'] ? __( 'The operation was successful.', 'fe-ai-search' ) : __( 'The operation failed.', 'fe-ai-search' ) ),
+			'message' => $data['message'] ?? ( $data['success'] ? __( 'The operation was successful.', 'fe-search-ai' ) : __( 'The operation failed.', 'fe-search-ai' ) ),
 			'status'  => $license_status,
 			'data'    => $data['data'] ?? [],
 		];

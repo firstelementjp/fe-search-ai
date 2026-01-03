@@ -138,7 +138,7 @@ class FE_Search_AI_Chat_Handler {
 
 			if ( $ip_request_count > $ip_limit_count ) {
 				status_header( 429 );
-				echo 'data: ' . json_encode( [ 'text' => __( 'You have exceeded the request limit. Please try again later.', 'fe-ai-search' ) ] ) . "\n\n";
+				echo 'data: ' . json_encode( [ 'text' => __( 'You have exceeded the request limit. Please try again later.', 'fe-search-ai' ) ] ) . "\n\n";
 				exit;
 			}
 			set_transient( $ip_transient_key, ( (int) $ip_request_count + 1 ), HOUR_IN_SECONDS );
@@ -150,7 +150,7 @@ class FE_Search_AI_Chat_Handler {
 
 			if ( $global_request_count > $global_limit_count ) {
 				status_header( 429 );
-				echo 'data: ' . json_encode( [ 'text' => __( 'The site-wide request limit for today has been reached.', 'fe-ai-search' ) ] ) . "\n\n";
+				echo 'data: ' . json_encode( [ 'text' => __( 'The site-wide request limit for today has been reached.', 'fe-search-ai' ) ] ) . "\n\n";
 				exit;
 			}
 
@@ -353,7 +353,7 @@ class FE_Search_AI_Chat_Handler {
 				[ 'provider' => $provider ]
 			);
 
-			echo 'data: ' . json_encode( [ 'text' => __( 'Error: OpenAI API key not set.', 'fe-ai-search' ) ] ) . "\n\n";
+			echo 'data: ' . json_encode( [ 'text' => __( 'Error: OpenAI API key not set.', 'fe-search-ai' ) ] ) . "\n\n";
 			echo "data: [DONE]\n\n";
 			flush();
 			return;
@@ -578,7 +578,7 @@ class FE_Search_AI_Chat_Handler {
 				[ 'provider' => $provider ]
 			);
 
-			echo 'data: ' . json_encode( [ 'text' => __( 'Error: Google API key is not set.', 'fe-ai-search' ) ] ) . "\n\n";
+			echo 'data: ' . json_encode( [ 'text' => __( 'Error: Google API key is not set.', 'fe-search-ai' ) ] ) . "\n\n";
 			echo "data: [DONE]\n\n";
 			flush();
 			return;
@@ -800,7 +800,7 @@ class FE_Search_AI_Chat_Handler {
 			);
 
 			echo 'data: ' . json_encode(
-				[ 'text' => __( 'Error: Anthropic API key not set.', 'fe-ai-search' ) ]
+				[ 'text' => __( 'Error: Anthropic API key not set.', 'fe-search-ai' ) ]
 			) . "\n\n";
 			echo "data: [DONE]\n\n";
 			flush();
@@ -1369,7 +1369,7 @@ Instead, answer based only on the remaining visible text.
 		$session_id = isset( $_POST['session_id'] ) ? sanitize_key( wp_unslash( $_POST['session_id'] ) ) : '';
 
 		if ( empty( $session_id ) ) {
-			wp_send_json_error( __( 'Session ID is required.', 'fe-ai-search' ) );
+			wp_send_json_error( __( 'Session ID is required.', 'fe-search-ai' ) );
 			return;
 		}
 
@@ -1403,12 +1403,12 @@ Instead, answer based only on the remaining visible text.
 		$rating = isset( $_POST['rating'] ) ? (int) $_POST['rating'] : 0;
 
 		if ( $log_id <= 0 ) {
-			wp_send_json_error( [ 'message' => __( 'Log ID is required.', 'fe-ai-search' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Log ID is required.', 'fe-search-ai' ) ] );
 			return;
 		}
 
 		if ( ! in_array( $rating, [ -1, 0, 1 ], true ) ) {
-			wp_send_json_error( [ 'message' => __( 'Invalid rating.', 'fe-ai-search' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Invalid rating.', 'fe-search-ai' ) ] );
 			return;
 		}
 
@@ -1424,7 +1424,7 @@ Instead, answer based only on the remaining visible text.
 		);
 
 		if ( false === $updated ) {
-			wp_send_json_error( [ 'message' => __( 'Failed to save rating.', 'fe-ai-search' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Failed to save rating.', 'fe-search-ai' ) ] );
 			return;
 		}
 
@@ -1453,7 +1453,7 @@ Instead, answer based only on the remaining visible text.
 		$api_key  = isset( $_POST['api_key'] ) ? sanitize_text_field( $_POST['api_key'] ) : '';
 
 		if ( empty( $provider ) ) {
-			wp_send_json_error( __( 'Provider missing.', 'fe-ai-search' ) );
+			wp_send_json_error( __( 'Provider missing.', 'fe-search-ai' ) );
 		}
 
 		$result = null;
@@ -1482,7 +1482,7 @@ Instead, answer based only on the remaining visible text.
 			switch ( $provider ) {
 				case 'openai':
 					if ( empty( $api_key ) ) {
-						$error_message = __( 'API key is missing.', 'fe-ai-search' );
+						$error_message = __( 'API key is missing.', 'fe-search-ai' );
 						break;
 					}
 					$response = wp_remote_get(
@@ -1494,13 +1494,13 @@ Instead, answer based only on the remaining visible text.
 					if ( ! is_wp_error( $response ) && wp_remote_retrieve_response_code( $response ) === 200 ) {
 						$is_valid = true;
 					} else {
-						$error_message = is_wp_error( $response ) ? $response->get_error_message() : __( 'Authentication failed.', 'fe-ai-search' );
+						$error_message = is_wp_error( $response ) ? $response->get_error_message() : __( 'Authentication failed.', 'fe-search-ai' );
 					}
 					break;
 
 				case 'google':
 					if ( empty( $api_key ) ) {
-						$error_message = __( 'API key is missing.', 'fe-ai-search' );
+						$error_message = __( 'API key is missing.', 'fe-search-ai' );
 						break;
 					}
 					$api_url  = 'https://generativelanguage.googleapis.com/v1beta/models?key=' . $api_key;
@@ -1509,7 +1509,7 @@ Instead, answer based only on the remaining visible text.
 					if ( ! is_wp_error( $response ) && wp_remote_retrieve_response_code( $response ) === 200 ) {
 						$is_valid = true;
 					} else {
-						$error_message = __( 'Authentication failed.', 'fe-ai-search' );
+						$error_message = __( 'Authentication failed.', 'fe-search-ai' );
 						if ( ! is_wp_error( $response ) ) {
 							$body          = json_decode( wp_remote_retrieve_body( $response ), true );
 							$error_message = $body['error']['message'] ?? $error_message;
@@ -1519,7 +1519,7 @@ Instead, answer based only on the remaining visible text.
 
 				case 'anthropic':
 					if ( empty( $api_key ) ) {
-						$error_message = __( 'API key is missing.', 'fe-ai-search' );
+						$error_message = __( 'API key is missing.', 'fe-search-ai' );
 						break;
 					}
 					$response = wp_remote_post(
@@ -1543,7 +1543,7 @@ Instead, answer based only on the remaining visible text.
 					if ( ! is_wp_error( $response ) && wp_remote_retrieve_response_code( $response ) === 200 ) {
 						$is_valid = true;
 					} else {
-						$error_message = __( 'Authentication failed.', 'fe-ai-search' );
+						$error_message = __( 'Authentication failed.', 'fe-search-ai' );
 						if ( ! is_wp_error( $response ) ) {
 							$body          = json_decode( wp_remote_retrieve_body( $response ), true );
 							$error_message = $body['error']['message'] ?? $error_message;
@@ -1552,15 +1552,15 @@ Instead, answer based only on the remaining visible text.
 					break;
 
 				default:
-					$error_message = __( 'Unknown provider.', 'fe-ai-search' );
+					$error_message = __( 'Unknown provider.', 'fe-search-ai' );
 			}
 			$result = [ 'is_valid' => $is_valid, 'message' => $error_message ];
 		}
 
 		if ( $result['is_valid'] ) {
-			wp_send_json_success( '<span style="color: green;">✔ ' . __( 'Connection successful', 'fe-ai-search' ) . '</span>' );
+			wp_send_json_success( '<span style="color: green;">✔ ' . __( 'Connection successful', 'fe-search-ai' ) . '</span>' );
 		} else {
-			wp_send_json_error( '<span style="color: red;">✖ ' . __( 'Connection failed', 'fe-ai-search' ) . ': ' . $result['message'] . '</span>' );
+			wp_send_json_error( '<span style="color: red;">✖ ' . __( 'Connection failed', 'fe-search-ai' ) . ': ' . $result['message'] . '</span>' );
 		}
 	}
 
@@ -1598,7 +1598,7 @@ Instead, answer based only on the remaining visible text.
 		}
 
 		// Filter the text against the comprehensive list of phrases.
-		$filtered_text = str_ireplace( $all_injection_phrases, __( '[REDACTED]', 'fe-ai-search' ), $text );
+		$filtered_text = str_ireplace( $all_injection_phrases, __( '[REDACTED]', 'fe-search-ai' ), $text );
 
 		// SECURITY: Log if a basic security filter was triggered.
 		if ( $filtered_text !== $text ) {
@@ -1647,7 +1647,7 @@ Instead, answer based only on the remaining visible text.
 		 */
 		$patterns = apply_filters( 'fe_search_ai_personal_data_patterns', $patterns );
 
-		$filtered = preg_replace( $patterns, __( '[REDACTED]', 'fe-ai-search' ), $text );
+		$filtered = preg_replace( $patterns, __( '[REDACTED]', 'fe-search-ai' ), $text );
 
 		if ( null === $filtered ) {
 			// If a regex error occurs, fail safely by returning the original text.

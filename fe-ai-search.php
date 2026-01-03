@@ -6,7 +6,7 @@
  * Version:     1.0.0
  * Author:      FirstElement, Inc.
  * Author URI:  https://www.firstelement.co.jp/
- * Text Domain: fe-ai-search
+ * Text Domain: fe-search-ai
  * Domain Path: /languages/
  */
 
@@ -129,6 +129,11 @@ add_action(
 add_action(
 	'init',
 	static function () {
+		load_plugin_textdomain(
+			'fe-search-ai',
+			false,
+			dirname( plugin_basename( __FILE__ ) ) . '/languages/'
+		);
 		load_plugin_textdomain(
 			'fe-ai-search',
 			false,

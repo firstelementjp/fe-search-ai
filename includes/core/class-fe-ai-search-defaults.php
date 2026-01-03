@@ -24,10 +24,10 @@ class FE_Search_AI_Defaults {
 	 */
 	public static function get_display_text_defaults() {
 		return [
-			'window_title'       => __( 'FE Search AI', 'fe-ai-search' ),
-			'greeting_message'   => __( 'Hello! I am FE Search AI. How can I help you today?', 'fe-ai-search' ),
-			'placeholder_text'   => __( 'Ask a question about this site…', 'fe-ai-search' ),
-			'submit_button_text' => __( 'Send', 'fe-ai-search' ),
+			'window_title'       => __( 'FE Search AI', 'fe-search-ai' ),
+			'greeting_message'   => __( 'Hello! I am FE Search AI. How can I help you today?', 'fe-search-ai' ),
+			'placeholder_text'   => __( 'Ask a question about this site…', 'fe-search-ai' ),
+			'submit_button_text' => __( 'Send', 'fe-search-ai' ),
 		];
 	}
 }

@@ -269,7 +269,7 @@ class FE_Search_AI_Sync_Handler {
 		$last_sync_timestamp   = (int) ( $state_settings['last_sync_timestamp'] ?? 0 );
 
 		if ( $last_sync_timestamp && $current_settings_hash !== $last_settings_hash ) {
-			wp_send_json_error( [ 'message' => __( 'Sync settings have changed. Please use "Rebuild All" to apply the new settings.', 'fe-ai-search' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Sync settings have changed. Please use "Rebuild All" to apply the new settings.', 'fe-search-ai' ) ] );
 		}
 
 		// Find deleted posts
@@ -307,7 +307,7 @@ class FE_Search_AI_Sync_Handler {
 					'total_pages' => 0,
 					'total_posts' => 0,
 					'post_ids'    => [],
-					'message'     => __( 'No previous sync baseline found. Please run "Rebuild Index" once before using "Sync Changes".', 'fe-ai-search' ),
+					'message'     => __( 'No previous sync baseline found. Please run "Rebuild Index" once before using "Sync Changes".', 'fe-search-ai' ),
 				]
 			);
 		}
@@ -609,7 +609,7 @@ class FE_Search_AI_Sync_Handler {
 			$this->options = $options;
 		}
 
-		wp_send_json_success( __( 'All sync data has been deleted.', 'fe-ai-search' ) );
+		wp_send_json_success( __( 'All sync data has been deleted.', 'fe-search-ai' ) );
 	}
 
 	/**
@@ -1307,7 +1307,7 @@ class FE_Search_AI_Sync_Handler {
 		if ( empty( $api_key ) ) {
 			// Log the error before returning.
 			\FESearchAI\Core\FE_Search_AI_Logger::log( 'ERROR', 'OpenAI Embedding API call skipped: API Key is not set.' );
-			return new \WP_Error( 'api_key_missing', __( 'The OpenAI API key is not configured.', 'fe-ai-search' ) );
+			return new \WP_Error( 'api_key_missing', __( 'The OpenAI API key is not configured.', 'fe-search-ai' ) );
 		}
 
 		$api_url = 'https://api.openai.com/v1/embeddings';
@@ -1361,7 +1361,7 @@ class FE_Search_AI_Sync_Handler {
 		if ( $response_code !== 200 ) {
 			$error_message = isset( $response_body['error']['message'] )
 				? $response_body['error']['message']
-				: __( 'Unknown API Error', 'fe-ai-search' );
+				: __( 'Unknown API Error', 'fe-search-ai' );
 
 			// Log the API error.
 			\FESearchAI\Core\FE_Search_AI_Logger::log(
@@ -1374,7 +1374,7 @@ class FE_Search_AI_Sync_Handler {
 				]
 			);
 
-			return new WP_Error( 'api_error', __( 'API Error', 'fe-ai-search' ) . ': ' . $error_message );
+			return new WP_Error( 'api_error', __( 'API Error', 'fe-search-ai' ) . ': ' . $error_message );
 		}
 
 		$usage = $response_body['usage'] ?? [];
@@ -1422,7 +1422,7 @@ class FE_Search_AI_Sync_Handler {
 		if ( empty( $api_key ) ) {
 			// Log the error before returning.
 			\FESearchAI\Core\FE_Search_AI_Logger::log( 'ERROR', 'Gemini Embedding API call skipped: API Key is not set.' );
-			return new \WP_Error( 'api_key_missing', __( 'The Google Cloud API key is not configured.', 'fe-ai-search' ) );
+			return new \WP_Error( 'api_key_missing', __( 'The Google Cloud API key is not configured.', 'fe-search-ai' ) );
 		}
 
 		$api_url = 'https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:batchEmbedContents?key=' . $api_key;
@@ -1473,7 +1473,7 @@ class FE_Search_AI_Sync_Handler {
 		if ( $response_code !== 200 ) {
 			$error_message = isset( $response_body['error']['message'] )
 				? $response_body['error']['message']
-				: __( 'Unknown API Error', 'fe-ai-search' );
+				: __( 'Unknown API Error', 'fe-search-ai' );
 
 			// Log the API error.
 			\FESearchAI\Core\FE_Search_AI_Logger::log(
@@ -1486,7 +1486,7 @@ class FE_Search_AI_Sync_Handler {
 				]
 			);
 
-			return new WP_Error( 'api_error', __( 'API Error', 'fe-ai-search' ) . ': ' . $error_message );
+			return new WP_Error( 'api_error', __( 'API Error', 'fe-search-ai' ) . ': ' . $error_message );
 		}
 
 		// The structure for extracting vector data from the response is different
@@ -1814,8 +1814,8 @@ class FE_Search_AI_Sync_Handler {
 		?>
 		<div class="notice notice-info is-dismissible" data-dismiss-url="<?php echo esc_url( add_query_arg( 'fe-ai-search-dismiss-i18n-notice', '1' ) ); ?>">
 			<p>
-				<b>FE Search AI:</b> <?php esc_html_e( 'Your site language is not fully optimized for keyword search. We welcome contributions for new languages!', 'fe-ai-search' ); ?>
-				<a href="https://github.com/firstelementjp/fe-ai-search" target="_blank" style="margin-left: 10px;"><?php esc_html_e( 'Contribute on GitHub', 'fe-ai-search' ); ?></a>
+				<b>FE Search AI:</b> <?php esc_html_e( 'Your site language is not fully optimized for keyword search. We welcome contributions for new languages!', 'fe-search-ai' ); ?>
+				<a href="https://github.com/firstelementjp/fe-ai-search" target="_blank" style="margin-left: 10px;"><?php esc_html_e( 'Contribute on GitHub', 'fe-search-ai' ); ?></a>
 			</p>
 		</div>
 		<script>
@@ -1866,18 +1866,18 @@ class FE_Search_AI_Sync_Handler {
 			return $statuses;
 		}
 
-		$status_label = '<strong>' . esc_html__( 'Japanese Tokenizer Status', 'fe-ai-search' ) . ':</strong>';
+		$status_label = '<strong>' . esc_html__( 'Japanese Tokenizer Status', 'fe-search-ai' ) . ':</strong>';
 		$engine       = $this->get_japanese_tokenizer_engine();
 		$yahoo_id     = $this->get_yahoo_app_id();
 		if ( 'yahoo_ma' === $engine && ! empty( $yahoo_id ) ) {
 			$this->japanese_tokenizer = 'yahoo_ma';
-			$status_text              = '<span style="color:#46b450;">' . esc_html__( 'Yahoo! Japanese MA API (App ID configured)', 'fe-ai-search' ) . '</span>';
+			$status_text              = '<span style="color:#46b450;">' . esc_html__( 'Yahoo! Japanese MA API (App ID configured)', 'fe-search-ai' ) . '</span>';
 		} elseif ( 'yahoo_ma' === $engine ) {
 			$this->japanese_tokenizer = 'yahoo_ma';
-			$status_text              = '<span style="color:#dc3232;">' . esc_html__( 'Yahoo! Japanese MA API (App ID missing)', 'fe-ai-search' ) . '</span>';
+			$status_text              = '<span style="color:#dc3232;">' . esc_html__( 'Yahoo! Japanese MA API (App ID missing)', 'fe-search-ai' ) . '</span>';
 		} else {
 			$this->japanese_tokenizer = 'tinysegmenter';
-			$status_text              = '<span style="color:#a0a5aa;">' . esc_html__( 'Built-in (TinySegmenter)', 'fe-ai-search' ) . '</span>';
+			$status_text              = '<span style="color:#a0a5aa;">' . esc_html__( 'Built-in (TinySegmenter)', 'fe-search-ai' ) . '</span>';
 		}
 
 		/**

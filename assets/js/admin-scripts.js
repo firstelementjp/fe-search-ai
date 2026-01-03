@@ -160,7 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		rebuildBtn.disabled = true;
 		smartSyncBtn.disabled = true;
 		statusSpinner.style.display = 'inline-block';
-		statusText.textContent = __('Preparing for synchronization…', 'fe-ai-search');
+		statusText.textContent = __('Preparing for synchronization…', 'fe-search-ai');
 		progressContainer.style.display = 'block';
 		progressBar.style.width = '0%';
 		progressBar.textContent = '0%';
@@ -181,13 +181,118 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (total_pages > 0) {
 				processBatch(1, total_pages, total_posts, batch_size);
 			} else {
-				statusText.textContent = __('There are no posts to sync.', 'fe-ai-search');
+				statusText.textContent = __('There are no posts to sync.', 'fe-search-ai');
 				statusSpinner.style.display = 'none';
 				rebuildBtn.disabled = false;
 				smartSyncBtn.disabled = false;
 			}
 		} catch (error) {
-			statusText.innerHTML = `<span style="color:red;">${__('Error:', 'fe-ai-search')} ${error.message}</span>`;
+			statusText.innerHTML = `<span style="color:red;">${__('Error:', 'fe-search-ai')} ${error.message}</span>`;
+			statusSpinner.style.display = 'none';
+			rebuildBtn.disabled = false;
+			smartSyncBtn.disabled = false;
+		}
+	}
+
+	/**
+	 * Processes a single batch of posts during synchronization.
+	 *
+	 * @param {number} currentPage The current batch page.
+	 * @param {number} totalPages  The total number of batch pages.
+	 * @param {number} totalPosts  The total number of posts to sync.
+	 * @param {number} batch_size  Number of posts to process in each batch.
+	 * @return {void}
+	 */
+	async function processBatch(currentPage, totalPages, totalPosts, batch_size) {
+		const processed = Math.min((currentPage - 1) * batch_size, totalPosts);
+		const progress = totalPosts ? Math.round((processed / totalPosts) * 100) : 0;
+
+		progressBar.style.width = `${progress}%`;
+		progressBar.textContent = `${progress}%`;
+		statusText.textContent = `${__('Processing posts…', 'fe-search-ai')} (${processed} / ${totalPosts})`;
+		statusSpinner.style.display = 'inline-block';
+
+		let responseText = '';
+		try {
+			const formData = new URLSearchParams({
+				action: 'fe_search_ai_process_batch',
+				nonce: fe_search_ai_sync_obj.nonce,
+				page: currentPage,
+				post_ids: JSON.stringify(postIDsToSync),
+			});
+
+			responseText = await (
+				await fetch(ajaxurl, {
+					method: 'POST',
+					body: formData,
+				})
+			).text();
+
+			const response = JSON.parse(responseText);
+			if (response.success) {
+				if (response.data && response.data.message === 'No more posts to process.') {
+					progressBar.style.width = '100%';
+					progressBar.textContent = '100%';
+					statusText.innerHTML = `<strong style="color:green;">${__(
+						'Synchronization complete!',
+						'fe-search-ai'
+					)} (${totalPosts} ${__('items', 'fe-search-ai')})</strong>`;
+
+					rebuildBtn.disabled = false;
+					smartSyncBtn.disabled = false;
+					statusSpinner.style.display = 'none';
+
+					await wpPost('fe_search_ai_update_sync_timestamp', {
+						nonce: fe_search_ai_sync_obj.nonce,
+					});
+
+					await wpPost('fe_search_ai_update_settings_hash', {
+						nonce: fe_search_ai_sync_obj.nonce,
+					});
+
+					location.reload();
+					return;
+				}
+
+				if (currentPage >= totalPages) {
+					progressBar.style.width = '100%';
+					progressBar.textContent = '100%';
+					statusText.innerHTML = `<strong style="color:green;">${__(
+						'Synchronization complete!',
+						'fe-search-ai'
+					)} (${totalPosts} ${__('items', 'fe-search-ai')})</strong>`;
+
+					rebuildBtn.disabled = false;
+					smartSyncBtn.disabled = false;
+					statusSpinner.style.display = 'none';
+
+					await wpPost('fe_search_ai_update_sync_timestamp', {
+						nonce: fe_search_ai_sync_obj.nonce,
+					});
+
+					await wpPost('fe_search_ai_update_settings_hash', {
+						nonce: fe_search_ai_sync_obj.nonce,
+					});
+
+					location.reload();
+					return;
+				}
+
+				await processBatch(currentPage + 1, totalPages, totalPosts, batch_size);
+				return;
+			}
+
+			throw new Error(response.data.message || 'Batch processing failed.');
+		} catch (error) {
+			if (error instanceof SyntaxError) {
+				// eslint-disable-next-line no-console
+				console.error('Failed to parse JSON. See the raw response above for details.');
+			}
+			statusText.innerHTML = `<span style="color:red;">${__(
+				'Error: A problem occurred while processing batch',
+				'fe-search-ai'
+			)} ${currentPage}.</span>`;
+
 			statusSpinner.style.display = 'none';
 			rebuildBtn.disabled = false;
 			smartSyncBtn.disabled = false;
@@ -219,150 +324,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			const termsVal = termsSelect ? termsSelect.value : '0';
 			const privacyVal = privacySelect ? privacySelect.value : '0';
-
-			if (termsVal === '0' || privacyVal === '0') {
+			if ('0' === termsVal || '0' === privacyVal) {
 				e.preventDefault();
 				// eslint-disable-next-line no-alert
 				alert(
 					__(
 						'To enable user consent (opt-in), please select both the Terms of Service Page and Privacy Policy Page in the Display > Text/Links settings.',
-						'fe-ai-search'
+						'fe-search-ai'
 					)
 				);
 			}
 		});
-	}
-
-	// --- Event Listeners for Sync Buttons ---
-
-	// Handler for the "Rebuild Index" button
-	rebuildBtn.addEventListener('click', e => {
-		e.preventDefault();
-		const message = __(
-			'Are you sure you want to delete all existing indexes and rebuild them? This is a resource-intensive process.',
-			'fe-ai-search'
-		);
-		startSyncProcess('fe_search_ai_start_sync', message);
-	});
-
-	// Handler for the "Sync Changes" button
-	smartSyncBtn.addEventListener('click', e => {
-		e.preventDefault();
-		const message = __(
-			'Are you sure you want to sync recent changes? This will process new, updated, and deleted posts.',
-			'fe-ai-search'
-		);
-		startSyncProcess('fe_search_ai_start_smart_sync', message);
-	});
-
-	/**
-	 * Recursively processes one batch of posts at a time.
-	 *
-	 * @param {number} currentPage The current batch number to process.
-	 * @param {number} totalPages  The total number of batches.
-	 * @param {number} totalPosts  The total number of posts to sync.
-	 * @param {number} batch_size  Number of posts to process in each batch.
-	 * @return {void}
-	 */
-	async function processBatch(currentPage, totalPages, totalPosts, batch_size) {
-		const processed = Math.min((currentPage - 1) * batch_size, totalPosts);
-		const progress = totalPosts ? Math.round((processed / totalPosts) * 100) : 0;
-
-		progressBar.style.width = `${progress}%`;
-		progressBar.textContent = `${progress}%`;
-		statusText.textContent = `${__('Processing posts…', 'fe-ai-search')} (${processed} / ${totalPosts})`;
-		statusSpinner.style.display = 'inline-block';
-
-		// Holds the raw text response from the server
-		let responseText = '';
-
-		try {
-			const formData = new URLSearchParams({
-				action: 'fe_search_ai_process_batch',
-				nonce: fe_search_ai_sync_obj.nonce,
-				page: currentPage,
-				post_ids: JSON.stringify(postIDsToSync),
-			});
-
-			// Use fetch directly and first receive the response as plain text
-			const rawResponse = await fetch(ajaxurl, {
-				method: 'POST',
-				body: formData,
-			});
-			responseText = await rawResponse.text();
-
-			// Parse the received text as JSON
-			const response = JSON.parse(responseText);
-
-			if (response.success) {
-				// If the server reports there are no more posts, treat this as a
-				// normal completion regardless of currentPage / totalPages.
-				if (response.data && response.data.message === 'No more posts to process.') {
-					progressBar.style.width = '100%';
-					progressBar.textContent = '100%';
-					statusText.innerHTML = `<strong style="color:green;">${__(
-						'Synchronization complete!',
-						'fe-ai-search'
-					)} (${totalPosts} ${__('items', 'fe-ai-search')})</strong>`;
-
-					rebuildBtn.disabled = false;
-					smartSyncBtn.disabled = false;
-					statusSpinner.style.display = 'none';
-
-					await wpPost('fe_search_ai_update_sync_timestamp', {
-						nonce: fe_search_ai_sync_obj.nonce,
-					});
-
-					await wpPost('fe_search_ai_update_settings_hash', {
-						nonce: fe_search_ai_sync_obj.nonce,
-					});
-
-					// Reload the page so that the "Last Sync" label reflects the updated timestamp.
-					location.reload();
-				} else if (currentPage < totalPages) {
-					await processBatch(currentPage + 1, totalPages, totalPosts, batch_size);
-				} else {
-					// Final batch is complete.
-					progressBar.style.width = '100%';
-					progressBar.textContent = '100%';
-					statusText.innerHTML = `<strong style="color:green;">${__(
-						'Synchronization complete!',
-						'fe-ai-search'
-					)} (${totalPosts} ${__('items', 'fe-ai-search')})</strong>`;
-
-					rebuildBtn.disabled = false;
-					smartSyncBtn.disabled = false;
-					statusSpinner.style.display = 'none';
-
-					await wpPost('fe_search_ai_update_sync_timestamp', {
-						nonce: fe_search_ai_sync_obj.nonce,
-					});
-
-					await wpPost('fe_search_ai_update_settings_hash', {
-						nonce: fe_search_ai_sync_obj.nonce,
-					});
-
-					// Reload the page so that the "Last Sync" label reflects the updated timestamp.
-					location.reload();
-				}
-			} else {
-				throw new Error(response.data.message || 'Batch processing failed.');
-			}
-		} catch (error) {
-			// If JSON parsing fails, log an error to the console
-			if (error instanceof SyntaxError) {
-				// eslint-disable-next-line no-console
-				console.error('Failed to parse JSON. See the raw response above for details.');
-			}
-			statusText.innerHTML = `<span style="color:red;">${__(
-				'Error: A problem occurred while processing batch',
-				'fe-ai-search'
-			)} ${currentPage}.</span>`;
-
-			statusSpinner.style.display = 'none';
-			rebuildBtn.disabled = false;
-			smartSyncBtn.disabled = false;
-		}
 	}
 
 	// ==========================================================================
@@ -382,7 +354,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				// Even if the API key is empty, do not warn for endpoint tests (the key may not be required)
 				if (!endpointId) {
 					// eslint-disable-next-line no-alert
-					alert(__('Please enter an API key.', 'fe-ai-search'));
+					alert(__('Please enter an API key.', 'fe-search-ai'));
 					return;
 				}
 			}
@@ -412,7 +384,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				const response = await wpPost('fe_search_ai_test_api_key', postData);
 				status.innerHTML = response.data;
 			} catch {
-				status.innerHTML = `<span style="color:red;">✖${__('A communication error has occurred.', 'fe-ai-search')}</span>`;
+				status.innerHTML = `<span style="color:red;">✖${__('A communication error has occurred.', 'fe-search-ai')}</span>`;
 			} finally {
 				spinner.style.visibility = 'hidden';
 			}
@@ -426,7 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			!confirm(
 				__(
 					'Are you sure you want to delete all synced data? This action cannot be undone.',
-					'fe-ai-search'
+					'fe-search-ai'
 				)
 			)
 		) {
@@ -449,7 +421,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 		} catch (error) {
 			deleteStatus.style.color = 'red';
-			deleteStatus.textContent = __('A communication error has occurred.', 'fe-ai-search');
+			deleteStatus.textContent = __('A communication error has occurred.', 'fe-search-ai');
 		} finally {
 			deleteButton.disabled = false;
 			spinner.style.visibility = 'hidden';
@@ -463,7 +435,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			!confirm(
 				__(
 					'Are you sure you want to delete all conversation logs? This action cannot be undone.',
-					'fe-ai-search'
+					'fe-search-ai'
 				)
 			)
 		) {
@@ -487,7 +459,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			deleteConversationLogsStatus.style.color = 'red';
 			deleteConversationLogsStatus.textContent = __(
 				'A communication error has occurred.',
-				'fe-ai-search'
+				'fe-search-ai'
 			);
 		} finally {
 			deleteConversationLogsButton.disabled = false;
@@ -502,7 +474,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			!confirm(
 				__(
 					'Are you sure you want to delete all system logs? This action cannot be undone.',
-					'fe-ai-search'
+					'fe-search-ai'
 				)
 			)
 		) {
@@ -526,7 +498,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			deleteLogsStatus.style.color = 'red';
 			deleteLogsStatus.textContent = __(
 				'A communication error has occurred.',
-				'fe-ai-search'
+				'fe-search-ai'
 			);
 		} finally {
 			deleteLogsButton.disabled = false;
@@ -736,8 +708,8 @@ document.addEventListener('DOMContentLoaded', () => {
 			const isPassword = licenseInput.type === 'password';
 			licenseInput.type = isPassword ? 'text' : 'password';
 			licenseToggle.textContent = isPassword
-				? __('Hide', 'fe-ai-search')
-				: __('Show', 'fe-ai-search');
+				? __('Hide', 'fe-search-ai')
+				: __('Show', 'fe-search-ai');
 		});
 	}
 
@@ -783,14 +755,14 @@ document.addEventListener('DOMContentLoaded', () => {
 			// eslint-disable-next-line no-alert
 			alert(
 				error.message ||
-					__('An error occurred during activation. Please try again.', 'fe-ai-search')
+					__('An error occurred during activation. Please try again.', 'fe-search-ai')
 			);
 			button.disabled = false;
 			spinner.style.visibility = 'hidden';
 		}
 	});
 
-	if (document.body.classList.contains('toplevel_page_fe-ai-search')) {
+	if (document.body.classList.contains('toplevel_page_fe-search-ai')) {
 		const wrap = document.querySelector('.wrap');
 		const header = document.querySelector('#plugin_header');
 		const firstNotice = document.querySelector('.notice.settings-error');
@@ -805,12 +777,15 @@ document.addEventListener('DOMContentLoaded', () => {
 		document.addEventListener('change', function (event) {
 			if (event.target.matches('input[name*="[snippet_taxonomies]"][name*="[enabled]"]')) {
 				const checkbox = event.target;
-				const wrapper = checkbox
-					.closest('td')
-					.querySelector('fe-ai-search-tax-config-wrapper');
-				if (wrapper) {
-					wrapper.style.display = checkbox.checked ? 'block' : 'none';
+				const wrapperClass = checkbox.dataset.targetWrapperClass;
+				const scope = checkbox.closest('td') || checkbox.closest('tr') || document;
+				const wrapper = wrapperClass
+					? scope.querySelector(`.${wrapperClass}`)
+					: scope.querySelector('.fe-ai-search-tax-config-wrapper');
+				if (!wrapper) {
+					return;
 				}
+				wrapper.style.display = checkbox.checked ? 'block' : 'none';
 			}
 		});
 
@@ -818,12 +793,12 @@ document.addEventListener('DOMContentLoaded', () => {
 		document.addEventListener('change', function (event) {
 			if (event.target.matches('input[name*="[enable_custom_fields]"]')) {
 				const checkbox = event.target;
-				const wrapper = checkbox
-					.closest('td')
-					.querySelector('fe-ai-search-custom-fields-wrapper');
-				if (wrapper) {
-					wrapper.style.display = checkbox.checked ? 'block' : 'none';
+				const scope = checkbox.closest('.accordion-inner') || checkbox.closest('td') || document;
+				const wrapper = scope.querySelector('.custom-field-input-wrapper');
+				if (!wrapper) {
+					return;
 				}
+				wrapper.style.display = checkbox.checked ? 'block' : 'none';
 			}
 		});
 	}

@@ -65,7 +65,7 @@ class FE_Search_AI_Admin {
 		<div id="plugin_header">
 			<div id="plugin_header_upper">
 				<div id="plugin_header_title">FE Search <span>AI</span></div>
-				<a href="https://www.firstelement.co.jp/" id="plugin_logo" target="_blank" title="<?php esc_attr_e( 'Go to the developer\'s website', 'fe-ai-search' ); ?>">
+				<a href="https://www.firstelement.co.jp/" id="plugin_logo" target="_blank" title="<?php esc_attr_e( 'Go to the developer\'s website', 'fe-search-ai' ); ?>">
 					<img src="<?php echo esc_url( plugin_dir_url( FE_AI_SEARCH_PLUGIN_FILE ) . '/assets/images/logo-feas-white-shadow-s@2x-min.png' ); ?>" width="106" height="27">
 				</a>
 			</div>
@@ -75,17 +75,17 @@ class FE_Search_AI_Admin {
 			<div id="plugin_support">
 				<a href="<?php echo esc_url( $docs_url ); ?>"
 					target="_blank"
-					title="<?php esc_attr_e( 'Go to the instruction manual', 'fe-ai-search' ); ?>">
-					<?php esc_html_e( 'Documentation', 'fe-ai-search' ); ?>
+					title="<?php esc_attr_e( 'Go to the instruction manual', 'fe-search-ai' ); ?>">
+					<?php esc_html_e( 'Documentation', 'fe-search-ai' ); ?>
 				</a>
 				<a href="<?php echo esc_url( $forum_url ); ?>"
 					target="_blank"
-					title="<?php esc_attr_e( 'Go to a forum', 'fe-ai-search' ); ?>">
-					<?php esc_html_e( 'Forums', 'fe-ai-search' ); ?>
+					title="<?php esc_attr_e( 'Go to a forum', 'fe-search-ai' ); ?>">
+					<?php esc_html_e( 'Forums', 'fe-search-ai' ); ?>
 				</a>
 				<a href="https://github.com/firstelementjp/fe-ai-search"
 					target="_blank"
-					title="<?php esc_attr_e( 'Go to GitHub repository', 'fe-ai-search' ); ?>"
+					title="<?php esc_attr_e( 'Go to GitHub repository', 'fe-search-ai' ); ?>"
 					class="icon icon_gh">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
@@ -102,7 +102,7 @@ class FE_Search_AI_Admin {
 				</a>
 				<a href="https://www.youtube.com/@firstelementjp"
 					target="_blank"
-					title="<?php esc_attr_e( 'Go to a YouTube channel', 'fe-ai-search' ); ?>"
+					title="<?php esc_attr_e( 'Go to a YouTube channel', 'fe-search-ai' ); ?>"
 					class="icon icon_yt">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
@@ -118,7 +118,7 @@ class FE_Search_AI_Admin {
 				</a>
 				<a href="https://x.com/feas_wp/"
 					target="_blank"
-					title="<?php esc_attr_e( 'Go to X', 'fe-ai-search' ); ?>"
+					title="<?php esc_attr_e( 'Go to X', 'fe-search-ai' ); ?>"
 					class="icon icon_tw">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
@@ -134,12 +134,12 @@ class FE_Search_AI_Admin {
 				</a>
 				<a href="https://www.facebook.com/firstelementjp/"
 					target="_blank"
-					title="<?php esc_attr_e( 'Go to Facebook page', 'fe-ai-search' ); ?>"
+					title="<?php esc_attr_e( 'Go to Facebook page', 'fe-search-ai' ); ?>"
 					class="icon icon_fb">
 				</a>
 				<a href="https://fe-search.com/contact/"
 					target="_blank"
-					title="<?php esc_attr_e( 'Go to contact form', 'fe-ai-search' ); ?>"
+					title="<?php esc_attr_e( 'Go to contact form', 'fe-search-ai' ); ?>"
 					class="icon icon_mail">
 				</a>
 			</div>
@@ -152,7 +152,7 @@ class FE_Search_AI_Admin {
 	 */
 	public function enqueue_admin_assets( $hook_suffix ) {
 		$allowed_hooks = [
-			'toplevel_page_fe-ai-search',
+			'toplevel_page_fe-search-ai',
 		];
 		$allowed_hooks = apply_filters( 'fe_search_ai_admin_allowed_hooks', $allowed_hooks );
 
@@ -213,7 +213,7 @@ class FE_Search_AI_Admin {
 
 		wp_set_script_translations(
 			'fe-search-ai-admin-sync',
-			'fe-ai-search',
+			'fe-search-ai',
 			plugin_dir_path( FE_AI_SEARCH_PLUGIN_FILE ) . 'languages'
 		);
 
@@ -231,7 +231,7 @@ class FE_Search_AI_Admin {
 	 * Add a dedicated menu to the admin panel.
 	 */
 	public function add_admin_menu() {
-		$parent_slug = 'fe-ai-search';
+		$parent_slug = 'fe-search-ai';
 		add_menu_page(
 			'FE Search AI',
 			'FE Search AI',
@@ -243,8 +243,8 @@ class FE_Search_AI_Admin {
 		);
 		add_submenu_page(
 			$parent_slug,
-			__( 'Settings', 'fe-ai-search' ),
-			__( 'Settings', 'fe-ai-search' ),
+			__( 'Settings', 'fe-search-ai' ),
+			__( 'Settings', 'fe-search-ai' ),
 			'manage_options',
 			$parent_slug,
 			[ FE_Search_AI_Settings::class, 'render_page' ]
@@ -272,7 +272,7 @@ class FE_Search_AI_Admin {
 			return;
 		}
 
-		if ( 'toplevel_page_fe-ai-search' === $screen->id ) {
+		if ( 'toplevel_page_fe-search-ai' === $screen->id ) {
 			remove_action( 'admin_notices', 'settings_errors' );
 		}
 	}

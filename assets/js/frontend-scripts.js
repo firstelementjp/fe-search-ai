@@ -82,15 +82,15 @@ const FE_AI_SEARCH_CONFIG = {
 		MESSAGES: {
 			network_error: __(
 				'Network error occurred. Please check your connection.',
-				'fe-ai-search'
+				'fe-search-ai'
 			),
-			rate_limit: __('Rate limit exceeded. Please try again later.', 'fe-ai-search'),
+			rate_limit: __('Rate limit exceeded. Please try again later.', 'fe-search-ai'),
 			storage_error: __(
 				'Storage error occurred. Some features may not work properly.',
-				'fe-ai-search'
+				'fe-search-ai'
 			),
-			parse_error: __('Data parsing error occurred. Please try again.', 'fe-ai-search'),
-			unknown_error: __('An error occurred. Please try again.', 'fe-ai-search'),
+			parse_error: __('Data parsing error occurred. Please try again.', 'fe-search-ai'),
+			unknown_error: __('An error occurred. Please try again.', 'fe-search-ai'),
 		},
 	},
 };
@@ -151,7 +151,7 @@ function handleError(error, context = 'unknown', showMessage = true) {
 	// Show error message to user if requested and addMessage function is available
 	if (showMessage && typeof window.addMessage === 'function') {
 		window.addMessage(
-			`<p><strong>${__('Error', 'fe-ai-search')}:</strong> ${errorMessage}</p>`,
+			`<p><strong>${__('Error', 'fe-search-ai')}:</strong> ${errorMessage}</p>`,
 			'system'
 		);
 	}
@@ -527,10 +527,10 @@ function initFEAIChat() {
 			</div>
 			<label class="fe-ai-search-consent-check">
 				<input type="checkbox" class="fe-ai-search-consent-checkbox">
-				<span>${__('I agree to the Terms of Service and Privacy Policy.', 'fe-ai-search')}</span>
+				<span>${__('I agree to the Terms of Service and Privacy Policy.', 'fe-search-ai')}</span>
 			</label>
 			<button type="button" class="fe-ai-search-consent-accept">
-				${__('Start chat', 'fe-ai-search')}
+				${__('Start chat', 'fe-search-ai')}
 			</button>
 		`;
 
@@ -595,7 +595,7 @@ function initFEAIChat() {
 				'<p>' +
 					__(
 						'You have reached the message limit for this session. Please refresh the page to start a new conversation.',
-						'fe-ai-search'
+						'fe-search-ai'
 					) +
 					'</p>',
 				'system'
@@ -768,7 +768,7 @@ function initFEAIChat() {
 			});
 			const thanksMessage = document.createElement('span');
 			thanksMessage.className = 'fe-ai-search-feedback-thanks';
-			thanksMessage.textContent = __('Thank you for your feedback!', 'fe-ai-search');
+			thanksMessage.textContent = __('Thank you for your feedback!', 'fe-search-ai');
 			feedbackWrapper.replaceWith(thanksMessage);
 		}
 	});
@@ -848,7 +848,7 @@ function initFEAIChat() {
 			// Already rated - show thanks message
 			const thanksMessage = document.createElement('span');
 			thanksMessage.className = 'fe-ai-search-feedback-thanks';
-			thanksMessage.textContent = __('Thank you for your feedback!', 'fe-ai-search');
+			thanksMessage.textContent = __('Thank you for your feedback!', 'fe-search-ai');
 			messageElement.appendChild(thanksMessage);
 		} else {
 			// Not rated yet (rating is null, 0, or undefined) - show feedback buttons
@@ -1082,7 +1082,7 @@ function initFEAIChat() {
 	function handleStreamError(error) {
 		clearInterval(renderInterval);
 		if (currentAiMessageElement) {
-			let message = __('An error occurred. Please try again.', 'fe-ai-search');
+			let message = __('An error occurred. Please try again.', 'fe-search-ai');
 			if (error && error.message === 'rate_limit') {
 				if (
 					typeof fe_search_ai_ajax_obj !== 'undefined' &&
@@ -1090,7 +1090,7 @@ function initFEAIChat() {
 				) {
 					message = fe_search_ai_ajax_obj.rate_limit_message;
 				} else {
-					message = __('Rate limit exceeded. Please try again later.', 'fe-ai-search');
+					message = __('Rate limit exceeded. Please try again later.', 'fe-search-ai');
 				}
 			}
 			addMessage(`<p>${message}</p>`, 'system', currentAiMessageElement);

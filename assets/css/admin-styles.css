@@ -198,7 +198,7 @@ textarea {
 	color: #6d6ddb;
 }
 
-.toplevel_page_fe-ai-search .fe-ai-search-notices .notice {
+.toplevel_page_fe-search-ai .fe-ai-search-notices .notice {
 	margin: 15px 0;
 }
 
@@ -736,7 +736,7 @@ a:has(.dashicons-warning) span {
 	margin: 0;
 }
 
-.toplevel_page_fe-ai-search .notice-info {
+.toplevel_page_fe-search-ai .notice-info {
 	margin: 15px 0 15px 2px;
 	width: fit-content;
 }
