@@ -35,7 +35,7 @@
     <rule ref="WordPress.WP.I18n">
         <properties>
             <property name="text_domain" type="array">
-                <element key="0" value="fe-ai-search"/>
+                <element key="0" value="fe-search-ai"/>
             </property>
         </properties>
     </rule>

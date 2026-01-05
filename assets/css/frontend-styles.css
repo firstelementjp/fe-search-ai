@@ -26,7 +26,7 @@
 	========================================================================== */
 
 .fe-search-ai-mode-float,
-.fe-ai-search-mode-float {
+.fe-search-ai-mode-float {
 	position: fixed;
 	bottom: 20px;
 	right: 20px;
@@ -34,7 +34,7 @@
 }
 
 .fe-search-ai-mode-float #fe_search_ai_chat_bubble,
-.fe-ai-search-mode-float #fe_search_ai_chat_bubble {
+.fe-search-ai-mode-float #fe_search_ai_chat_bubble {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -111,7 +111,7 @@
 }
 
 .fe-search-ai-mode-float #fe_search_ai_chat_window,
-.fe-ai-search-mode-float #fe_search_ai_chat_window {
+.fe-search-ai-mode-float #fe_search_ai_chat_window {
 	width: 370px;
 	height: 550px;
 	max-width: 90vw;
@@ -224,7 +224,7 @@
 }
 
 /* ==========================================================================
-	Embed Mode (.fe-ai-search-mode-embed)
+	Embed Mode (.fe-search-ai-mode-embed)
 	========================================================================== */
 
 .fe-search-ai-mode-embed {
@@ -233,7 +233,7 @@
 	margin-bottom: 1.5em;
 }
 
-.fe-ai-search-mode-embed #fe_search_ai_chat_window {
+.fe-search-ai-mode-embed #fe_search_ai_chat_window {
 	width: 100%;
 	height: 100%;
 	border: 1px solid var(--feais-border);
@@ -241,13 +241,13 @@
 	box-shadow: none;
 }
 
-.fe-ai-search-mode-embed #fe_search_ai_chat_bubble,
-.fe-ai-search-mode-embed #fe_search_ai_chat_close,
-.fe-ai-search-mode-embed #fe_search_ai_chat_fullscreen_toggle {
+.fe-search-ai-mode-embed #fe_search_ai_chat_bubble,
+.fe-search-ai-mode-embed #fe_search_ai_chat_close,
+.fe-search-ai-mode-embed #fe_search_ai_chat_fullscreen_toggle {
 	display: none;
 }
 
-.fe-ai-search-mode-embed #fe_search_ai_chat_window.hidden {
+.fe-search-ai-mode-embed #fe_search_ai_chat_window.hidden {
 	display: flex; /* Embed mode is always visible */
 }
 
@@ -329,7 +329,7 @@
 	cursor: pointer;
 }
 
-.fe-ai-search-header-icon:hover {
+.fe-search-ai-header-icon:hover {
 	color: var(--feais-text);
 }
 
@@ -363,10 +363,10 @@
 	font-size: 15px;
 }
 
-.fe-ai-search-message p,
-.fe-ai-search-message ul,
-.fe-ai-search-message ol,
-.fe-ai-search-message h3 {
+.fe-search-ai-message p,
+.fe-search-ai-message ul,
+.fe-search-ai-message ol,
+.fe-search-ai-message h3 {
 	margin: 0 0 0.75em 0;
 	padding: 10px 15px;
 	border-radius: 18px;
@@ -376,15 +376,15 @@
 	align-self: flex-start;
 }
 
-.fe-ai-search-message-ai p,
-.fe-ai-search-message-ai ul,
-.fe-ai-search-message-ai ol,
-.fe-ai-search-message-ai h3 {
+.fe-search-ai-message-ai p,
+.fe-search-ai-message-ai ul,
+.fe-search-ai-message-ai ol,
+.fe-search-ai-message-ai h3 {
 	color: var(--feais-text);
 	border-top-left-radius: 4px;
 }
 
-.fe-ai-search-message-ai p::before {
+.fe-search-ai-message-ai p::before {
 	display: block;
 	content: '';
 	border-left: 2px;
@@ -396,19 +396,19 @@
 	justify-content: flex-end;
 }
 
-.fe-ai-search-message-user p {
+.fe-search-ai-message-user p {
 	color: white;
 	border-top-right-radius: 4px;
 	background: var(--fe-search-ai-key-color);
 }
 
 /* Styling for Markdown elements */
-.fe-ai-search-message ul,
-.fe-ai-search-message ol {
+.fe-search-ai-message ul,
+.fe-search-ai-message ol {
 	padding-left: 35px;
 }
 
-.fe-ai-search-message h3 {
+.fe-search-ai-message h3 {
 	padding: 10px 15px 5px; /* Adjust padding for headings */
 	font-size: 1.1em;
 	font-weight: 600;
@@ -430,7 +430,7 @@
 	Chat Message Bubbles
 	========================================================================== */
 
-.fe-ai-search-message p {
+.fe-search-ai-message p {
 	position: relative;
 	padding: 10px 15px;
 	border-radius: 12px;
@@ -438,18 +438,18 @@
 	width: fit-content;
 }
 
-.fe-ai-search-message-ai p {
+.fe-search-ai-message-ai p {
 	color: var(--feais-text);
 	align-self: flex-start;
 }
 
-.fe-ai-search-message-user p {
+.fe-search-ai-message-user p {
 	background: var(--feais-user-bubble-bg);
 	color: var(--feais-text);
 	align-self: flex-end;
 }
 
-.fe-ai-search-message-user p::after {
+.fe-search-ai-message-user p::after {
 	content: '';
 	position: absolute;
 	top: 15px;
@@ -487,7 +487,7 @@
 	color: #333;
 }
 
-.fe-ai-search-consent-message p {
+.fe-search-ai-consent-message p {
 	margin: 0 0 0.75em 0;
 }
 
@@ -515,7 +515,7 @@
 	background: var(--fe-search-ai-key-color);
 }
 
-.fe-ai-search-consent-accept:hover {
+.fe-search-ai-consent-accept:hover {
 	opacity: 0.9;
 }
 

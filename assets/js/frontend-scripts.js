@@ -721,7 +721,7 @@ function initFEAIChat() {
 				}
 			});
 			const thanksMessage = document.createElement('span');
-			thanksMessage.className = 'fe-ai-search-feedback-thanks';
+			thanksMessage.className = 'fe-search-ai-feedback-thanks';
 			thanksMessage.textContent = __('Thank you for your feedback!', 'fe-search-ai');
 			feedbackWrapper.replaceWith(thanksMessage);
 		}
@@ -801,13 +801,13 @@ function initFEAIChat() {
 		if (rating === '1' || rating === '-1') {
 			// Already rated - show thanks message
 			const thanksMessage = document.createElement('span');
-			thanksMessage.className = 'fe-ai-search-feedback-thanks';
+			thanksMessage.className = 'fe-search-ai-feedback-thanks';
 			thanksMessage.textContent = __('Thank you for your feedback!', 'fe-search-ai');
 			messageElement.appendChild(thanksMessage);
 		} else {
 			// Not rated yet (rating is null, 0, or undefined) - show feedback buttons
 			const feedbackWrapper = document.createElement('div');
-			feedbackWrapper.className = 'fe-ai-search-feedback';
+			feedbackWrapper.className = 'fe-search-ai-feedback';
 			feedbackWrapper.innerHTML = `
 				<button class="feedback-btn good" data-log-id="${logId}" data-rating="${FE_SEARCH_AI_CONFIG.CHAT.FEEDBACK_RATINGS.GOOD}" title="Good">
 					<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none"/><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
@@ -973,7 +973,7 @@ function initFEAIChat() {
 	function renderQueue() {
 		if (
 			currentAiMessageElement &&
-			currentAiMessageElement.querySelector('.fe-ai-search-spinner') &&
+			currentAiMessageElement.querySelector('.fe-search-ai-spinner') &&
 			characterQueue.length > 0
 		) {
 			currentAiMessageElement.innerHTML = '';
