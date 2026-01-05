@@ -1,0 +1,196 @@
+name: Deploy to Staging
+
+on:
+    push:
+        branches: [main, develop]
+    workflow_dispatch:
+        inputs:
+            environment:
+                description: 'Target environment'
+                required: true
+                default: 'staging'
+                type: choice
+                options:
+                    - staging
+                    - production
+
+jobs:
+    deploy-staging:
+        name: Deploy to Staging
+        runs-on: ubuntu-latest
+        if: github.ref == 'refs/heads/develop' || github.event_name == 'workflow_dispatch'
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '18'
+                  cache: 'npm'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Build assets
+              run: |
+                  if npm run | grep -q "build"; then
+                    npm run build
+                  fi
+
+            - name: Create deployment package
+              run: |
+                  # Create deployment directory
+                  mkdir -p deploy
+
+                  # Copy plugin files (excluding development files)
+                  rsync -av --exclude-from=.deployignore \
+                    --exclude='.git' \
+                    --exclude='.github' \
+                    --exclude='node_modules' \
+                    --exclude='vendor' \
+                    --exclude='*.log' \
+                    --exclude='.envrc*' \
+                    --exclude='tests' \
+                    --exclude='*.md' \
+                    --exclude='package*.json' \
+                    --exclude='composer.lock' \
+                    --exclude='phpcs.xml.dist' \
+                    --exclude='.eslintrc.json' \
+                    --exclude='.prettierrc*' \
+                    --exclude='.gitignore' \
+                    . deploy/fe-search-ai/
+                    
+                  # Create zip file for deployment
+                  cd deploy
+                  zip -r fe-search-ai.zip fe-search-ai/
+
+            - name: Deploy to staging server via SSH
+              uses: appleboy/scp-action@v0.1.7
+              with:
+                  host: ${{ secrets.STAGING_HOST }}
+                  username: ${{ secrets.STAGING_USER }}
+                  key: ${{ secrets.STAGING_SSH_KEY }}
+                  source: 'deploy/fe-search-ai.zip'
+                  target: '/tmp/'
+                  strip_components: 2
+
+            - name: Extract and install plugin on staging
+              uses: appleboy/ssh-action@v1.0.3
+              with:
+                  host: ${{ secrets.STAGING_HOST }}
+                  username: ${{ secrets.STAGING_USER }}
+                  key: ${{ secrets.STAGING_SSH_KEY }}
+                  script: |
+                      # Backup existing plugin
+                      if [ -d "${{ secrets.STAGING_WP_PATH }}/wp-content/plugins/fe-search-ai" ]; then
+                        sudo mv "${{ secrets.STAGING_WP_PATH }}/wp-content/plugins/fe-search-ai" "${{ secrets.STAGING_WP_PATH }}/wp-content/plugins/fe-search-ai.backup.$(date +%Y%m%d_%H%M%S)"
+                      fi
+
+                      # Extract new plugin
+                      cd /tmp/
+                      unzip -q fe-search-ai.zip -d "${{ secrets.STAGING_WP_PATH }}/wp-content/plugins/"
+
+                      # Set correct permissions
+                      sudo chown -R ${{ secrets.STAGING_USER }}:${{ secrets.STAGING_WEB_USER }} "${{ secrets.STAGING_WP_PATH }}/wp-content/plugins/fe-search-ai"
+                      sudo chmod -R 755 "${{ secrets.STAGING_WP_PATH }}/wp-content/plugins/fe-search-ai"
+
+                      # Clear WordPress cache if WP-CLI is available
+                      if command -v wp &> /dev/null; then
+                        cd ${{ secrets.STAGING_WP_PATH }}
+                        wp cache flush
+                        wp plugin activate fe-search-ai
+                      fi
+
+                      echo "Deployment completed successfully!"
+
+    deploy-production:
+        name: Deploy to Production
+        runs-on: ubuntu-latest
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'))
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '18'
+                  cache: 'npm'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Build assets
+              run: |
+                  if npm run | grep -q "build"; then
+                    npm run build
+                  fi
+
+            - name: Create deployment package
+              run: |
+                  # Create deployment directory
+                  mkdir -p deploy
+
+                  # Copy plugin files (excluding development files)
+                  rsync -av --exclude-from=.deployignore \
+                    --exclude='.git' \
+                    --exclude='.github' \
+                    --exclude='node_modules' \
+                    --exclude='vendor' \
+                    --exclude='*.log' \
+                    --exclude='.envrc*' \
+                    --exclude='tests' \
+                    --exclude='*.md' \
+                    --exclude='package*.json' \
+                    --exclude='composer.lock' \
+                    --exclude='phpcs.xml.dist' \
+                    --exclude='.eslintrc.json' \
+                    --exclude='.prettierrc*' \
+                    --exclude='.gitignore' \
+                    . deploy/fe-search-ai/
+                    
+                  # Create zip file for deployment
+                  cd deploy
+                  zip -r fe-search-ai.zip fe-search-ai/
+
+            - name: Deploy to production server via SSH
+              uses: appleboy/scp-action@v0.1.7
+              with:
+                  host: ${{ secrets.PRODUCTION_HOST }}
+                  username: ${{ secrets.PRODUCTION_USER }}
+                  key: ${{ secrets.PRODUCTION_SSH_KEY }}
+                  source: 'deploy/fe-search-ai.zip'
+                  target: '/tmp/'
+                  strip_components: 2
+
+            - name: Extract and install plugin on production
+              uses: appleboy/ssh-action@v1.0.3
+              with:
+                  host: ${{ secrets.PRODUCTION_HOST }}
+                  username: ${{ secrets.PRODUCTION_USER }}
+                  key: ${{ secrets.PRODUCTION_SSH_KEY }}
+                  script: |
+                      # Backup existing plugin
+                      if [ -d "${{ secrets.PRODUCTION_WP_PATH }}/wp-content/plugins/fe-search-ai" ]; then
+                        sudo mv "${{ secrets.PRODUCTION_WP_PATH }}/wp-content/plugins/fe-search-ai" "${{ secrets.PRODUCTION_WP_PATH }}/wp-content/plugins/fe-search-ai.backup.$(date +%Y%m%d_%H%M%S)"
+                      fi
+
+                      # Extract new plugin
+                      cd /tmp/
+                      unzip -q fe-search-ai.zip -d "${{ secrets.PRODUCTION_WP_PATH }}/wp-content/plugins/"
+
+                      # Set correct permissions
+                      sudo chown -R ${{ secrets.PRODUCTION_USER }}:${{ secrets.PRODUCTION_WEB_USER }} "${{ secrets.PRODUCTION_WP_PATH }}/wp-content/plugins/fe-search-ai"
+                      sudo chmod -R 755 "${{ secrets.PRODUCTION_WP_PATH }}/wp-content/plugins/fe-search-ai"
+
+                      # Clear WordPress cache if WP-CLI is available
+                      if command -v wp &> /dev/null; then
+                        cd ${{ secrets.PRODUCTION_WP_PATH }}
+                        wp cache flush
+                        wp plugin activate fe-search-ai
+                      fi
+
+                      echo "Production deployment completed successfully!"
