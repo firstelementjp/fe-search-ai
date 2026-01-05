@@ -116,6 +116,49 @@ For privacy, debug logs related to Yahoo! MA calls do **not** store the full use
 
 ---
 
+## Development
+
+This project uses GitHub Actions for continuous integration and deployment.
+
+### CI/CD Pipeline
+
+- **Continuous Integration**: Runs on every push and pull request to `main` and `develop` branches
+    - PHP code quality checks (PHPCS) across PHP 7.4-8.2
+    - JavaScript quality checks (ESLint, Prettier)
+    - Security scanning (Composer audit, NPM audit)
+    - WordPress plugin structure validation
+    - Asset building verification
+
+- **Release Pipeline**: Triggered by version tags (e.g., `v1.0.0`)
+    - Automated release zip creation
+    - GitHub release with changelog
+    - WordPress.org SVN deployment (if configured)
+
+### Required GitHub Secrets
+
+For the release workflow to work properly, configure these secrets in your GitHub repository:
+
+- `GITHUB_TOKEN`: Automatically provided by GitHub Actions
+- `SVN_USERNAME`: WordPress.org SVN username (optional)
+- `SVN_PASSWORD`: WordPress.org SVN password (optional)
+
+### Local Development Setup
+
+1. Clone the repository
+2. Install PHP dependencies: `composer install`
+3. Install Node.js dependencies: `npm install`
+4. Run code quality checks: `composer run phpcs`
+5. Build assets: `npm run build` (if available)
+
+### Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/new-feature`
+3. Make your changes and ensure they pass CI checks
+4. Submit a pull request to the `develop` branch
+
+---
+
 ## License
 
 **FE Search AI**

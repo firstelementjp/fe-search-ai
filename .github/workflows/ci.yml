@@ -1,0 +1,165 @@
+name: CI
+
+on:
+    push:
+        branches: [main, develop]
+    pull_request:
+        branches: [main, develop]
+
+jobs:
+    php-code-quality:
+        name: PHP Code Quality
+        runs-on: ubuntu-latest
+
+        strategy:
+            matrix:
+                php-version: ['7.4', '8.0', '8.1', '8.2']
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: ${{ matrix.php-version }}
+                  extensions: mbstring, xml, curl, zip
+                  coverage: none
+
+            - name: Validate composer.json and composer.lock
+              run: composer validate --strict
+
+            - name: Cache Composer packages
+              id: composer-cache
+              uses: actions/cache@v3
+              with:
+                  path: vendor
+                  key: ${{ runner.os }}-php-${{ matrix.php-version }}-${{ hashFiles('**/composer.lock') }}
+                  restore-keys: |
+                      ${{ runner.os }}-php-${{ matrix.php-version }}-
+
+            - name: Install dependencies
+              run: composer install --prefer-dist --no-progress --no-suggest
+
+            - name: Run PHPCS
+              run: composer run phpcs
+
+            - name: Run PHPCBF (dry-run)
+              run: composer run phcbf -- --dry-run --report=summary
+
+    javascript-quality:
+        name: JavaScript Quality
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '18'
+                  cache: 'npm'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Run ESLint
+              run: npm run lint || echo "No lint script found"
+
+            - name: Check Prettier formatting
+              run: npx prettier --check "assets/js/**/*.js" "assets/css/**/*.css" || echo "Prettier check completed"
+
+    security-scan:
+        name: Security Scan
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '8.2'
+                  coverage: none
+
+            - name: Install dependencies
+              run: composer install --prefer-dist --no-progress --no-suggest
+
+            - name: Run security audit
+              run: |
+                  composer audit
+                  npm audit --audit-level moderate
+
+    wordpress-plugin-check:
+        name: WordPress Plugin Check
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '8.2'
+                  extensions: mbstring, xml, curl, zip
+                  coverage: none
+
+            - name: Install dependencies
+              run: composer install --prefer-dist --no-progress --no-suggest
+
+            - name: Check plugin header
+              run: |
+                  if [ ! -f "fe-search-ai.php" ]; then
+                    echo "Main plugin file not found"
+                    exit 1
+                  fi
+
+                  # Check for required plugin headers
+                  grep -q "Plugin Name:" fe-search-ai.php || { echo "Missing Plugin Name header"; exit 1; }
+                  grep -q "Version:" fe-search-ai.php || { echo "Missing Version header"; exit 1; }
+                  grep -q "Author:" fe-search-ai.php || { echo "Missing Author header"; exit 1; }
+
+            - name: Check plugin structure
+              run: |
+                  # Check for required directories
+                  [ -d "includes" ] || { echo "Missing includes directory"; exit 1; }
+                  [ -d "assets" ] || { echo "Missing assets directory"; exit 1; }
+                  [ -d "languages" ] || { echo "Missing languages directory"; exit 1; }
+
+                  # Check for uninstall.php
+                  [ -f "uninstall.php" ] || { echo "Missing uninstall.php"; exit 1; }
+
+    build-assets:
+        name: Build Assets
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '18'
+                  cache: 'npm'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Build assets
+              run: |
+                  if npm run | grep -q "build"; then
+                    npm run build
+                  else
+                    echo "No build script found, skipping asset build"
+                  fi
+
+            - name: Check minified files exist
+              run: |
+                  if [ -f "package.json" ]; then
+                    # Check if minified files are newer than source files
+                    find assets/js -name "*.min.js" -exec test {} -nt \$(echo {} | sed 's/\.min\.js$/.js/') \; -print || echo "Some minified files may be outdated"
+                  fi

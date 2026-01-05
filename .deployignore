@@ -1,0 +1,37 @@
+# Deployment ignore file for WordPress.org releases
+
+# Development files
+.git
+.github
+node_modules
+vendor
+*.log
+.envrc*
+tests/
+
+# Documentation and configuration
+*.md
+package*.json
+composer.lock
+phpcs.xml.dist
+.eslintrc.json
+.prettierrc*
+.gitignore
+
+# Development assets
+src/
+*.map
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+tmp/
+temp/

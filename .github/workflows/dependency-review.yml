@@ -1,0 +1,19 @@
+name: Dependency Review
+
+on:
+    pull_request:
+        branches: [main, develop]
+
+jobs:
+    dependency-review:
+        runs-on: ubuntu-latest
+        if: github.event.pull_request.head.repo.full_name == github.repository
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Dependency Review
+              uses: actions/dependency-review-action@v3
+              with:
+                  fail-on-severity: moderate
