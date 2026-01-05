@@ -6,7 +6,7 @@
  * registering API endpoints, processing incoming chat requests (streaming and non-streaming),
  * dispatching them to the correct AI model, and handling conversation logging.
  *
- * @package    fe-ai-search
+ * @package    fe-search-ai
  * @subpackage Ajax
  * @since      1.0.0
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
@@ -30,7 +30,7 @@ use FESearchAI\Core\FE_Search_AI_License;
  * and API key validation tests.
  *
  * @since      1.0.0
- * @package    fe-ai-search
+ * @package    fe-search-ai
  * @subpackage Ajax
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later

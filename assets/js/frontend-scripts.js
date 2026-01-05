@@ -1,5 +1,5 @@
 /**
- * FE AI Search Frontend Scripts
+ * FE Search AI Frontend Scripts
  *
  * This file handles all the JavaScript functionality for the public-facing
  * chat UI, including sending messages, streaming responses, handling
@@ -12,12 +12,14 @@
 /* global fe_search_ai_ajax_obj, marked */
 
 // Initialize WordPress internationalization functions.
-const { __ } = wp.i18n;
+// Fallback to identity translation to prevent the whole frontend UI from breaking
+// if wp.i18n is not available due to load order or caching issues.
+const __ = window.wp?.i18n?.__ || (text => text);
 
 /**
- * Configuration constants for FE AI Search
+ * Configuration constants for FE Search AI
  */
-const FE_AI_SEARCH_CONFIG = {
+const FE_SEARCH_AI_CONFIG = {
 	// Animation speed settings (1-10 scale)
 	ANIMATION: {
 		MIN_SPEED: 1,
@@ -119,32 +121,32 @@ async function wpPost(action, data = {}) {
  * @param {boolean}      showMessage - Whether to show error message to user.
  */
 function handleError(error, context = 'unknown', showMessage = true) {
-	let errorType = FE_AI_SEARCH_CONFIG.ERRORS.TYPES.UNKNOWN;
-	let errorMessage = FE_AI_SEARCH_CONFIG.ERRORS.MESSAGES.unknown_error;
+	let errorType = FE_SEARCH_AI_CONFIG.ERRORS.TYPES.UNKNOWN;
+	let errorMessage = FE_SEARCH_AI_CONFIG.ERRORS.MESSAGES.unknown_error;
 
 	// Log error for debugging (only in development or if debug mode is enabled)
 	if (typeof fe_search_ai_ajax_obj !== 'undefined' && fe_search_ai_ajax_obj.debug) {
-		console.error(`[FE AI Search] Error in ${context}:`, error);
+		console.error(`[FE Search AI] Error in ${context}:`, error);
 	}
 
 	// Determine error type and message
 	if (typeof error === 'string') {
 		errorType = error;
-		errorMessage = FE_AI_SEARCH_CONFIG.ERRORS.MESSAGES[error] || errorMessage;
+		errorMessage = FE_SEARCH_AI_CONFIG.ERRORS.MESSAGES[error] || errorMessage;
 	} else if (error instanceof Error) {
 		// Categorize error based on message or type
 		if (error.message.includes('fetch') || error.message.includes('network')) {
-			errorType = FE_AI_SEARCH_CONFIG.ERRORS.TYPES.NETWORK;
-			errorMessage = FE_AI_SEARCH_CONFIG.ERRORS.MESSAGES.network_error;
+			errorType = FE_SEARCH_AI_CONFIG.ERRORS.TYPES.NETWORK;
+			errorMessage = FE_SEARCH_AI_CONFIG.ERRORS.MESSAGES.network_error;
 		} else if (error.message.includes('rate_limit') || error.message.includes('429')) {
-			errorType = FE_AI_SEARCH_CONFIG.ERRORS.TYPES.RATE_LIMIT;
-			errorMessage = FE_AI_SEARCH_CONFIG.ERRORS.MESSAGES.rate_limit;
+			errorType = FE_SEARCH_AI_CONFIG.ERRORS.TYPES.RATE_LIMIT;
+			errorMessage = FE_SEARCH_AI_CONFIG.ERRORS.MESSAGES.rate_limit;
 		} else if (error.message.includes('storage') || error.message.includes('localStorage')) {
-			errorType = FE_AI_SEARCH_CONFIG.ERRORS.TYPES.STORAGE;
-			errorMessage = FE_AI_SEARCH_CONFIG.ERRORS.MESSAGES.storage_error;
+			errorType = FE_SEARCH_AI_CONFIG.ERRORS.TYPES.STORAGE;
+			errorMessage = FE_SEARCH_AI_CONFIG.ERRORS.MESSAGES.storage_error;
 		} else if (error.message.includes('parse') || error.message.includes('JSON')) {
-			errorType = FE_AI_SEARCH_CONFIG.ERRORS.TYPES.PARSE;
-			errorMessage = FE_AI_SEARCH_CONFIG.ERRORS.MESSAGES.parse_error;
+			errorType = FE_SEARCH_AI_CONFIG.ERRORS.TYPES.PARSE;
+			errorMessage = FE_SEARCH_AI_CONFIG.ERRORS.MESSAGES.parse_error;
 		}
 	}
 
@@ -240,20 +242,20 @@ function getChatDOMElements() {
  */
 function initializeSessionManagement() {
 	let sessionId = safeExecute(
-		() => sessionStorage.getItem(FE_AI_SEARCH_CONFIG.STORAGE.SESSION_ID),
+		() => sessionStorage.getItem(FE_SEARCH_AI_CONFIG.STORAGE.SESSION_ID),
 		'initializeSessionManagement.get_session'
 	);
 
 	if (!sessionId) {
 		sessionId = Date.now().toString(36) + Math.random().toString(36).substr(2);
 		safeExecute(
-			() => sessionStorage.setItem(FE_AI_SEARCH_CONFIG.STORAGE.SESSION_ID, sessionId),
+			() => sessionStorage.setItem(FE_SEARCH_AI_CONFIG.STORAGE.SESSION_ID, sessionId),
 			'initializeSessionManagement.set_session'
 		);
 	}
 
 	const sessionHistory = safeExecute(
-		() => JSON.parse(sessionStorage.getItem(FE_AI_SEARCH_CONFIG.STORAGE.CHAT_HISTORY)) || [],
+		() => JSON.parse(sessionStorage.getItem(FE_SEARCH_AI_CONFIG.STORAGE.CHAT_HISTORY)) || [],
 		'initializeSessionManagement.parse_history',
 		[]
 	);
@@ -383,11 +385,11 @@ function setupKeyboardEventListener(input, form, getSendMode) {
 function setupSendModeEventListener(shiftEnterToggle, setSendMode) {
 	shiftEnterToggle.addEventListener('change', () => {
 		let nextMode = shiftEnterToggle.value;
-		if (!FE_AI_SEARCH_CONFIG.SEND_MODES.includes(nextMode)) {
+		if (!FE_SEARCH_AI_CONFIG.SEND_MODES.includes(nextMode)) {
 			nextMode = 'enter';
 		}
 		setSendMode(nextMode);
-		localStorage.setItem(FE_AI_SEARCH_CONFIG.STORAGE.SEND_MODE, nextMode);
+		localStorage.setItem(FE_SEARCH_AI_CONFIG.STORAGE.SEND_MODE, nextMode);
 	});
 }
 
@@ -398,10 +400,10 @@ function setupSendModeEventListener(shiftEnterToggle, setSendMode) {
  * @return {string} The configured send mode.
  */
 function initializeSendModeSettings(shiftEnterToggle) {
-	const storedSendMode = localStorage.getItem(FE_AI_SEARCH_CONFIG.STORAGE.SEND_MODE);
+	const storedSendMode = localStorage.getItem(FE_SEARCH_AI_CONFIG.STORAGE.SEND_MODE);
 	let sendMode = storedSendMode || fe_search_ai_ajax_obj.send_mode || 'enter';
 
-	if (!FE_AI_SEARCH_CONFIG.SEND_MODES.includes(sendMode)) {
+	if (!FE_SEARCH_AI_CONFIG.SEND_MODES.includes(sendMode)) {
 		sendMode = 'enter';
 	}
 
@@ -414,7 +416,7 @@ function initializeSendModeSettings(shiftEnterToggle) {
 }
 
 /**
- * Initializes the FE AI Search chat interface.
+ * Initializes the FE Search AI chat interface.
  *
  * This function sets up the entire chat UI including:
  * - DOM element caching and validation
@@ -467,42 +469,30 @@ function initFEAIChat() {
 	let typingInterval = 50;
 	let typingImmediate = false; // true の場合、チャンク到着時に即レンダリングを試みる
 	const privacyConfig = fe_search_ai_ajax_obj.privacy || {};
-	const consentStorageKey = FE_AI_SEARCH_CONFIG.STORAGE.USER_CONSENT;
-
-	// Initialize Settings
-	const sendMode = initializeSendModeSettings(shiftEnterToggle);
-
-	// Event Listeners
-
-	// Privacy Consent Handling
+	const consentStorageKey = FE_SEARCH_AI_CONFIG.STORAGE.USER_CONSENT;
 
 	/**
-	 * Checks if the user has given consent for privacy.
+	 * Check if the user has already given consent.
 	 *
-	 * @return {boolean} True if user has consented, false otherwise.
+	 * @return {boolean} True when consent is not required or already granted.
 	 */
 	function hasUserConsented() {
-		return safeExecute(
-			() => localStorage.getItem(consentStorageKey) === '1',
-			'hasUserConsented',
-			false
+		if (!privacyConfig.enable_consent) {
+			return true;
+		}
+		const stored = safeExecute(
+			() => localStorage.getItem(consentStorageKey),
+			'hasUserConsented.get',
+			''
 		);
+		return stored === '1' || stored === 'true';
 	}
 
 	/**
-	 * Sets the user's consent status in localStorage.
+	 * Ensure consent UI guidance is shown.
 	 *
-	 * @return {void}
-	 */
-	function setUserConsented() {
-		safeExecute(() => localStorage.setItem(consentStorageKey, '1'), 'setUserConsented');
-	}
-
-	/**
-	 * Ensures the consent UI is displayed if required.
-	 *
-	 * This function checks if consent is required and not yet given,
-	 * then displays the consent UI and locks the chat form.
+	 * This is a minimal fallback to avoid breaking the UI when the Pro consent
+	 * overlay is not present.
 	 *
 	 * @return {void}
 	 */
@@ -510,57 +500,21 @@ function initFEAIChat() {
 		if (!privacyConfig.enable_consent || hasUserConsented()) {
 			return;
 		}
-
-		// Lock the form until consent is given.
-		disableForm();
-
-		// Avoid duplicating the consent UI.
-		if (container.querySelector('.fe-ai-search-consent')) {
-			return;
+		if (typeof window.addMessage === 'function') {
+			window.addMessage(
+				`<p><strong>${__('Notice', 'fe-search-ai')}:</strong> ${__(
+					'Please agree to the Terms of Service and Privacy Policy to start the chat.',
+					'fe-search-ai'
+				)}</p>`,
+				'system'
+			);
 		}
-
-		const consentWrapper = document.createElement('div');
-		consentWrapper.className = 'fe-ai-search-consent';
-		consentWrapper.innerHTML = `
-			<div class="fe-ai-search-consent-message">
-				${privacyConfig.consent_message || ''}
-			</div>
-			<label class="fe-ai-search-consent-check">
-				<input type="checkbox" class="fe-ai-search-consent-checkbox">
-				<span>${__('I agree to the Terms of Service and Privacy Policy.', 'fe-search-ai')}</span>
-			</label>
-			<button type="button" class="fe-ai-search-consent-accept">
-				${__('Start chat', 'fe-search-ai')}
-			</button>
-		`;
-
-		// Insert consent UI as an overlay inside the chat window.
-		chatWindowElement.appendChild(consentWrapper);
-
-		const checkbox = consentWrapper.querySelector('.fe-ai-search-consent-checkbox');
-		const acceptBtn = consentWrapper.querySelector('.fe-ai-search-consent-accept');
-		acceptBtn.addEventListener('click', () => {
-			if (!checkbox.checked) {
-				// Simple inline warning.
-				checkbox.focus();
-				return;
-			}
-			setUserConsented();
-			try {
-				wpPost('fe_search_ai_log_consent', {
-					nonce: fe_search_ai_ajax_obj.nonce,
-					session_id: sessionId,
-					source: 'chat_overlay',
-				});
-			} catch (e) {
-				// Ignore logging failures to avoid impacting the UI.
-			}
-			consentWrapper.remove();
-			enableForm();
-		});
 	}
 
-	// Event Listeners Setup
+	// Initialize Settings
+	const sendMode = initializeSendModeSettings(shiftEnterToggle);
+
+	// Event Listeners
 
 	// Setup UI event listeners
 	setupUIEventListeners(domElements, ensureConsentUI);
@@ -610,13 +564,13 @@ function initFEAIChat() {
 		addMessage(`<p>${question}</p>`, 'user');
 		sessionHistory.push({ role: 'user', content: question });
 
-		const recentHistory = sessionHistory.slice(-FE_AI_SEARCH_CONFIG.CHAT.HISTORY_LIMIT);
+		const recentHistory = sessionHistory.slice(-FE_SEARCH_AI_CONFIG.CHAT.HISTORY_LIMIT);
 		input.value = '';
 		input.style.height = 'auto'; // Reset height
 		disableForm();
 
 		const aiMessageWrapperForFeedback = addMessage(
-			'<p><span class="fe-ai-search-spinner"></span></p>',
+			'<p><span class="fe-search-ai-spinner"></span></p>',
 			'ai'
 		);
 		currentAiMessageElement = aiMessageWrapperForFeedback.querySelector('p');
@@ -642,7 +596,7 @@ function initFEAIChat() {
 			.then(response => {
 				if (!response.ok) {
 					// Handle HTTP errors explicitly so the UI is not stuck.
-					if (response.status === FE_AI_SEARCH_CONFIG.CHAT.HTTP_STATUS.RATE_LIMIT) {
+					if (response.status === FE_SEARCH_AI_CONFIG.CHAT.HTTP_STATUS.RATE_LIMIT) {
 						handleError(new Error('rate_limit'));
 					} else {
 						handleError(new Error('network_error'));
@@ -668,7 +622,7 @@ function initFEAIChat() {
 										content: fullResponse,
 									});
 									sessionStorage.setItem(
-										FE_AI_SEARCH_CONFIG.STORAGE.CHAT_HISTORY,
+										FE_SEARCH_AI_CONFIG.STORAGE.CHAT_HISTORY,
 										JSON.stringify(sessionHistory)
 									);
 
@@ -679,12 +633,12 @@ function initFEAIChat() {
 											if (currentLogId) {
 												const feedbackWrapper =
 													document.createElement('div');
-												feedbackWrapper.className = 'fe-ai-search-feedback';
+												feedbackWrapper.className = 'fe-search-ai-feedback';
 												feedbackWrapper.innerHTML = `
-											<button class="feedback-btn good" data-log-id="${currentLogId}" data-rating="${FE_AI_SEARCH_CONFIG.CHAT.FEEDBACK_RATINGS.GOOD}" title="Good">
+											<button class="feedback-btn good" data-log-id="${currentLogId}" data-rating="${FE_SEARCH_AI_CONFIG.CHAT.FEEDBACK_RATINGS.GOOD}" title="Good">
 												<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none"/><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
 											</button>
-											<button class="feedback-btn bad" data-log-id="${currentLogId}" data-rating="${FE_AI_SEARCH_CONFIG.CHAT.FEEDBACK_RATINGS.BAD}" title="Bad">
+											<button class="feedback-btn bad" data-log-id="${currentLogId}" data-rating="${FE_SEARCH_AI_CONFIG.CHAT.FEEDBACK_RATINGS.BAD}" title="Bad">
 												<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none"/><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
 											</button>
 										`;
@@ -707,7 +661,7 @@ function initFEAIChat() {
 							lines.forEach(line => {
 								if (line.startsWith('data: ')) {
 									const dataContent = line
-										.substring(FE_AI_SEARCH_CONFIG.STREAM.DATA_PREFIX_LENGTH)
+										.substring(FE_SEARCH_AI_CONFIG.STREAM.DATA_PREFIX_LENGTH)
 										.trim();
 									if (dataContent === '[DONE]') return;
 									try {
@@ -786,7 +740,7 @@ function initFEAIChat() {
 	 */
 	function addMessage(html, type) {
 		const messageWrapper = document.createElement('div');
-		messageWrapper.className = `fe-ai-search-message fe-ai-search-message-${type}`;
+		messageWrapper.className = `fe-search-ai-message fe-search-ai-message-${type}`;
 		messageWrapper.innerHTML = html;
 		messagesContainer.appendChild(messageWrapper);
 		messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -855,10 +809,10 @@ function initFEAIChat() {
 			const feedbackWrapper = document.createElement('div');
 			feedbackWrapper.className = 'fe-ai-search-feedback';
 			feedbackWrapper.innerHTML = `
-				<button class="feedback-btn good" data-log-id="${logId}" data-rating="${FE_AI_SEARCH_CONFIG.CHAT.FEEDBACK_RATINGS.GOOD}" title="Good">
+				<button class="feedback-btn good" data-log-id="${logId}" data-rating="${FE_SEARCH_AI_CONFIG.CHAT.FEEDBACK_RATINGS.GOOD}" title="Good">
 					<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none"/><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
 				</button>
-				<button class="feedback-btn bad" data-log-id="${logId}" data-rating="${FE_AI_SEARCH_CONFIG.CHAT.FEEDBACK_RATINGS.BAD}" title="Bad">
+				<button class="feedback-btn bad" data-log-id="${logId}" data-rating="${FE_SEARCH_AI_CONFIG.CHAT.FEEDBACK_RATINGS.BAD}" title="Bad">
 					<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none"/><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
 				</button>
 			`;
@@ -908,7 +862,7 @@ function initFEAIChat() {
 	function saveLogIdToSession(logId, question, answer) {
 		safeExecute(() => {
 			const sessionLogs =
-				JSON.parse(sessionStorage.getItem(FE_AI_SEARCH_CONFIG.STORAGE.SESSION_LOGS)) || [];
+				JSON.parse(sessionStorage.getItem(FE_SEARCH_AI_CONFIG.STORAGE.SESSION_LOGS)) || [];
 			sessionLogs.push({
 				logId,
 				question,
@@ -916,7 +870,7 @@ function initFEAIChat() {
 				timestamp: Date.now(),
 			});
 			sessionStorage.setItem(
-				FE_AI_SEARCH_CONFIG.STORAGE.SESSION_LOGS,
+				FE_SEARCH_AI_CONFIG.STORAGE.SESSION_LOGS,
 				JSON.stringify(sessionLogs)
 			);
 		}, 'saveLogIdToSession');
@@ -955,14 +909,14 @@ function initFEAIChat() {
 	 */
 	function configureTypingSpeed() {
 		let speed =
-			fe_search_ai_ajax_obj.animation_speed || FE_AI_SEARCH_CONFIG.ANIMATION.DEFAULT_SPEED;
+			fe_search_ai_ajax_obj.animation_speed || FE_SEARCH_AI_CONFIG.ANIMATION.DEFAULT_SPEED;
 		if (typeof speed !== 'number') {
-			speed = parseInt(speed, 10) || FE_AI_SEARCH_CONFIG.ANIMATION.DEFAULT_SPEED;
+			speed = parseInt(speed, 10) || FE_SEARCH_AI_CONFIG.ANIMATION.DEFAULT_SPEED;
 		}
 		// Clamp to [1, 10]
 		speed = Math.max(
-			FE_AI_SEARCH_CONFIG.ANIMATION.MIN_SPEED,
-			Math.min(FE_AI_SEARCH_CONFIG.ANIMATION.MAX_SPEED, speed)
+			FE_SEARCH_AI_CONFIG.ANIMATION.MIN_SPEED,
+			Math.min(FE_SEARCH_AI_CONFIG.ANIMATION.MAX_SPEED, speed)
 		);
 
 		// Default to the normal mode (rendering the queue in small chunks).
@@ -973,34 +927,34 @@ function initFEAIChat() {
 		//  1 => ~160ms, 2 => ~110ms, 3 => ~70ms
 		// 4–9: Linearly interpolate from the value at 3 to the fast value at 9 (~25ms)
 		if (speed <= 3) {
-			typingInterval = FE_AI_SEARCH_CONFIG.ANIMATION.INTERVALS[speed];
+			typingInterval = FE_SEARCH_AI_CONFIG.ANIMATION.INTERVALS[speed];
 		} else if (speed < 10) {
 			// Normalize speed 4..9 to 0..1 and interpolate 70ms -> 25ms.
 			// Use an easing curve so it accelerates more in the higher range.
 			const fastRatioLinear = (speed - 3) / 6; // 4..9 => 1/6..1
 			const fastRatio = Math.pow(fastRatioLinear, 1.5); // 4,5,6 are slower, 7–9 accelerate quickly
-			const startInterval = FE_AI_SEARCH_CONFIG.ANIMATION.INTERVALS[3]; // Equivalent to speed=3
-			const endInterval = FE_AI_SEARCH_CONFIG.ANIMATION.FAST_END_INTERVAL; // Equivalent to speed=9
+			const startInterval = FE_SEARCH_AI_CONFIG.ANIMATION.INTERVALS[3]; // Equivalent to speed=3
+			const endInterval = FE_SEARCH_AI_CONFIG.ANIMATION.FAST_END_INTERVAL; // Equivalent to speed=9
 			typingInterval = Math.round(startInterval - (startInterval - endInterval) * fastRatio);
 		} else {
 			// speed=10: Handled as "immediate mode", but keep a minimum value as a fallback.
-			typingInterval = FE_AI_SEARCH_CONFIG.ANIMATION.IMMEDIATE_INTERVAL;
+			typingInterval = FE_SEARCH_AI_CONFIG.ANIMATION.IMMEDIATE_INTERVAL;
 		}
 
 		// --- Characters-per-tick configuration ---
 		// 1–3: Always 1 character per tick
 		// 4–9: Linearly increase from 2 characters up to ~15 characters at speed 9
 		// 10: Immediate mode (render the entire queue at once)
-		if (speed === FE_AI_SEARCH_CONFIG.ANIMATION.MAX_SPEED) {
+		if (speed === FE_SEARCH_AI_CONFIG.ANIMATION.MAX_SPEED) {
 			typingImmediate = true;
-			typingCharsPerTick = FE_AI_SEARCH_CONFIG.ANIMATION.IMMEDIATE_CHARS;
+			typingCharsPerTick = FE_SEARCH_AI_CONFIG.ANIMATION.IMMEDIATE_CHARS;
 		} else if (speed <= 3) {
 			typingCharsPerTick = 1;
 		} else {
 			// Normalize speed 4..9 to 0..1 and linearly increase from 2 to 15 characters.
 			const charsRatio = (speed - 4) / 5; // 4..9 => 0..1
-			const minChars = FE_AI_SEARCH_CONFIG.ANIMATION.MIN_CHARS_FAST; // About 2 characters at speed=4
-			const maxChars = FE_AI_SEARCH_CONFIG.ANIMATION.MAX_CHARS_FAST;
+			const minChars = FE_SEARCH_AI_CONFIG.ANIMATION.MIN_CHARS_FAST; // About 2 characters at speed=4
+			const maxChars = FE_SEARCH_AI_CONFIG.ANIMATION.MAX_CHARS_FAST;
 			const rawChars = minChars + (maxChars - minChars) * charsRatio;
 			typingCharsPerTick = Math.max(1, Math.round(rawChars));
 		}
@@ -1054,7 +1008,7 @@ function initFEAIChat() {
 					clearInterval(interval);
 					resolve();
 				}
-			}, FE_AI_SEARCH_CONFIG.INTERVALS.QUEUE_CHECK);
+			}, FE_SEARCH_AI_CONFIG.INTERVALS.QUEUE_CHECK);
 		});
 	}
 

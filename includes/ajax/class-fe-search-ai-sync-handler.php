@@ -6,7 +6,7 @@
  * all processes related to indexing content, creating vector embeddings, and
  * retrieving relevant information from the database for the chat handler.
  *
- * @package    fe-ai-search
+ * @package    fe-search-ai
  * @subpackage Ajax
  * @since      1.0.0
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
@@ -30,7 +30,7 @@ use WP_Error;
  * used by other classes to retrieve contextually relevant data.
  *
  * @since      1.0.0
- * @package    fe-ai-search
+ * @package    fe-search-ai
  * @subpackage Ajax
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
@@ -1824,16 +1824,16 @@ class FE_Search_AI_Sync_Handler {
 		}
 
 		// What happens when a user clicks on a "hidden" link?
-		if ( isset( $_GET['fe-ai-search-dismiss-i18n-notice'] ) ) {
+		if ( isset( $_GET['fe-search-ai-dismiss-i18n-notice'] ) ) {
 			// Flag to hide this notification for one week
 			set_transient( 'fe_search_ai_i18n_notice_dismissed', true, WEEK_IN_SECONDS );
 			return;
 		}
 		?>
-		<div class="notice notice-info is-dismissible" data-dismiss-url="<?php echo esc_url( add_query_arg( 'fe-ai-search-dismiss-i18n-notice', '1' ) ); ?>">
+		<div class="notice notice-info is-dismissible" data-dismiss-url="<?php echo esc_url( add_query_arg( 'fe-search-ai-dismiss-i18n-notice', '1' ) ); ?>">
 			<p>
 				<b>FE Search AI:</b> <?php esc_html_e( 'Your site language is not fully optimized for keyword search. We welcome contributions for new languages!', 'fe-search-ai' ); ?>
-				<a href="https://github.com/firstelementjp/fe-ai-search" target="_blank" style="margin-left: 10px;"><?php esc_html_e( 'Contribute on GitHub', 'fe-search-ai' ); ?></a>
+				<a href="https://github.com/firstelementjp/fe-search-ai" target="_blank" style="margin-left: 10px;"><?php esc_html_e( 'Contribute on GitHub', 'fe-search-ai' ); ?></a>
 			</p>
 		</div>
 		<script>

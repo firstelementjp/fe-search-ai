@@ -259,7 +259,7 @@ class FE_Search_AI_Admin {
 	 * causes the "Settings saved" notice to appear before our custom header
 	 * layout. On the FE Search AI screen, we remove that global callback so
 	 * that notices are only output where FE_AI_Search_Settings::render_page()
-	 * explicitly calls settings_errors() inside the fe-ai-search-notices
+	 * explicitly calls settings_errors() inside the fe-search-ai-notices
 	 * wrapper.
 	 */
 	public function maybe_reposition_settings_errors() {

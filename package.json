@@ -1,5 +1,5 @@
 {
-	"name": "fe-ai-search",
+	"name": "fe-search-ai",
 	"version": "1.0.0",
 	"description": "AI Search functionality for WordPress",
 	"main": "index.js",
@@ -16,8 +16,8 @@
 		"build:admin": "npm run build:admin:css && npm run build:admin:js && npm run build:admin:pro:js",
 		"watch:admin:css": "esbuild assets/css/admin-styles.css --minify --outfile=assets/css/admin-styles.min.css --watch",
 		"watch:admin:js": "esbuild assets/js/admin-scripts.js --minify --outfile=assets/js/admin-scripts.min.js --watch",
-		"build:admin:pro:js": "esbuild ../fe-ai-search-pro/assets/js/admin-pro-scripts.js --minify --outfile=../fe-ai-search-pro/assets/js/admin-pro-scripts.min.js",
-		"watch:admin:pro:js": "esbuild ../fe-ai-search-pro/assets/js/admin-pro-scripts.js --minify --outfile=../fe-ai-search-pro/assets/js/admin-pro-scripts.min.js --watch"
+		"build:admin:pro:js": "esbuild ../fe-search-ai-pro/assets/js/admin-pro-scripts.js --minify --outfile=../fe-search-ai-pro/assets/js/admin-pro-scripts.min.js",
+		"watch:admin:pro:js": "esbuild ../fe-search-ai-pro/assets/js/admin-pro-scripts.js --minify --outfile=../fe-search-ai-pro/assets/js/admin-pro-scripts.min.js --watch"
 	},
 	"keywords": [
 		"wordpress",

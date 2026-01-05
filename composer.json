@@ -1,5 +1,5 @@
 {
-	"name": "firstelementjp/fe-ai-search",
+	"name": "firstelementjp/fe-search-ai",
 	"description": "AI-powered search for WordPress.",
 	"type": "wordpress-plugin",
 	"autoload": {

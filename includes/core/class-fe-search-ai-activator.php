@@ -5,7 +5,7 @@
  * This class defines all code necessary to run during the plugin's
  * activation and deactivation hooks.
  *
- * @package    fe-ai-search
+ * @package    fe-search-ai
  * @subpackage Core
  * @since      1.0.0
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * run function to execute the list of actions and filters.
  *
  * @since      1.0.0
- * @package    fe-ai-search
+ * @package    fe-search-ai
  * @subpackage Core
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later

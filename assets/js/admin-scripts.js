@@ -1,5 +1,5 @@
 /**
- * FE AI Search Admin Scripts
+ * FE Search AI Admin Scripts
  *
  * This file handles all the JavaScript functionality for the plugin's admin
  * settings page, including AJAX-based synchronization, API tests, and UI interactions
@@ -13,7 +13,9 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 	// Initialize WordPress internationalization functions.
-	const { __ } = window.wp.i18n;
+	// Fallback to identity translation to prevent the whole admin UI from breaking
+	// if wp.i18n is not available due to load order or caching issues.
+	const __ = window.wp?.i18n?.__ || (text => text);
 
 	// ==========================================================================
 	// DOM Element Caching
@@ -64,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	// Color Picker (Pickr) Initialization
 	if (typeof Pickr !== 'undefined') {
-		const colorPickers = document.querySelectorAll('.fe-ai-search-color-picker');
+		const colorPickers = document.querySelectorAll('.fe-search-ai-color-picker');
 		colorPickers.forEach(container => {
 			const targetId = container.dataset.targetInput;
 			const defaultColor = container.dataset.defaultColor || '#0073aa';
@@ -365,7 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	// ==========================================================================
 
 	// --- API Key Test Buttons ---
-	document.querySelectorAll('.fe-ai-search-test-api').forEach(button => {
+	document.querySelectorAll('.fe-search-ai-test-api').forEach(button => {
 		button.addEventListener('click', async () => {
 			const provider = button.dataset.provider;
 			const apiKeyId = button.dataset.apiKeyId || `fe_search_ai_${provider}_api_key`; // Build the default input ID
@@ -383,7 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 
 			const spinner = button.parentElement.querySelector('.spinner');
-			const status = button.parentElement.querySelector('.fe-ai-search-api-status');
+			const status = button.parentElement.querySelector('.fe-search-ai-api-status');
 
 			spinner.style.visibility = 'visible';
 			status.textContent = '';
@@ -530,7 +532,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	});
 
 	// "Change Model" Link Handler
-	document.querySelectorAll('.fe-ai-search-change-model-link').forEach(link => {
+	document.querySelectorAll('.fe-search-ai-change-model-link').forEach(link => {
 		link.addEventListener('click', e => {
 			e.preventDefault();
 			const targetTabId = link.getAttribute('href');
@@ -626,7 +628,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				// If it was just opened, initialize any CodeMirror instances inside.
 				if (!isOpen) {
-					content.querySelectorAll('.fe-ai-search-prompt-editor').forEach(textarea => {
+					content.querySelectorAll('.fe-search-ai-prompt-editor').forEach(textarea => {
 						initializeCodeMirror(textarea);
 					});
 					// Also explicitly refresh any that might already exist.
@@ -664,7 +666,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				targetContent.style.display = 'block';
 
 				// When a tab becomes visible, initialize any CodeMirror editors inside it.
-				targetContent.querySelectorAll('.fe-ai-search-prompt-editor').forEach(textarea => {
+				targetContent.querySelectorAll('.fe-search-ai-prompt-editor').forEach(textarea => {
 					initializeCodeMirror(textarea);
 				});
 			}
@@ -804,7 +806,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				const scope = checkbox.closest('td') || checkbox.closest('tr') || document;
 				const wrapper = wrapperClass
 					? scope.querySelector(`.${wrapperClass}`)
-					: scope.querySelector('.fe-ai-search-tax-config-wrapper');
+					: scope.querySelector('.fe-search-ai-tax-config-wrapper');
 				if (!wrapper) {
 					return;
 				}

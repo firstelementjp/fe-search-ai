@@ -6,7 +6,7 @@
  * hooking into WordPress actions like 'save_post' and 'delete_post' to
  * automatically keep the vector database up-to-date.
  *
- * @package    fe-ai-search
+ * @package    fe-search-ai
  * @subpackage Core
  * @since      1.0.0
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * from the main Sync_Handler class.
  *
  * @since      1.0.0
- * @package    fe-ai-search
+ * @package    fe-search-ai
  * @subpackage Core
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later

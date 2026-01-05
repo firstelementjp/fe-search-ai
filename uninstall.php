@@ -6,7 +6,7 @@
  * to remove all of the plugin's data from the database, such as custom tables
  * and options.
  *
- * @package    fe-ai-search
+ * @package    fe-search-ai
  * @since      1.0.0
  */
 
@@ -18,18 +18,18 @@ if ( get_option( 'fe_search_ai_delete_on_uninstall' ) ) {
 	global $wpdb;
 
 	// Delete custom table
-	$table_names = array(
+	$table_names = [
 		$wpdb->prefix . 'fe_search_ai_vectors',
 		$wpdb->prefix . 'fe_search_ai_logs',
 		$wpdb->prefix . 'fe_search_ai_keyword_index',
-	);
+	];
 
 	foreach ( $table_names as $table_name ) {
 		$wpdb->query( "DROP TABLE IF EXISTS `{$table_name}`" );
 	}
 
 	// Delete option
-	$option_names = array(
+	$option_names = [
 		'fe_search_ai_chat_provider',
 		'fe_search_ai_embedding_provider',
 		'fe_search_ai_openai_api_key',
@@ -40,7 +40,7 @@ if ( get_option( 'fe_search_ai_delete_on_uninstall' ) ) {
 		'fe_search_ai_include_post_ids',
 		'fe_search_ai_exclude_post_ids',
 		'fe_search_ai_sync_limit',
-	);
+	];
 
 	foreach ( $option_names as $option_name ) {
 		delete_option( $option_name );

@@ -2,7 +2,7 @@
 /**
  * License helper for FE AI Search.
  *
- * @package    fe-ai-search
+ * @package    fe-search-ai
  * @subpackage Core
  */
 

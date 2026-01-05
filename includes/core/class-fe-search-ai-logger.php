@@ -2,7 +2,7 @@
 /**
  * A dedicated helper class for system logging.
  *
- * @package    fe-ai-search
+ * @package    fe-search-ai
  * @subpackage Core
  * @since      1.0.0
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * custom system logs table when debug mode is enabled.
  *
  * @since      1.0.0
- * @package    fe-ai-search
+ * @package    fe-search-ai
  * @subpackage Core
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later

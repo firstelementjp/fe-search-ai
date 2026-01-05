@@ -7,7 +7,7 @@
  * with the WordPress Settings API. This is the central UI for managing
  * the Pro license from within the Free version.
  *
- * @package    fe-ai-search
+ * @package    fe-search-ai
  * @subpackage Admin
  * @since      1.0.0
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Manages the UI and registration for the main license settings tab.
  *
  * @since      1.0.0
- * @package    fe-ai-search
+ * @package    fe-search-ai
  * @subpackage Admin
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
@@ -107,7 +107,7 @@ class FE_Search_AI_License_Settings {
 				?>
 			</table>
 			<?php if ( ! class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) || ! $this->is_license_active ) : ?>
-				<div class="fe-ai-search-pro-promo">
+				<div class="fe-search-ai-pro-promo">
 					<hr>
 					<h3>
 						<?php esc_html_e( 'Unlock more with FE Search AI Pro', 'fe-search-ai' ); ?>
@@ -268,13 +268,13 @@ class FE_Search_AI_License_Settings {
 	 */
 	public function field_html() {
 		$license_data = get_option( 'fe_search_ai_license', [] );
-		$products = $license_data['products'] ?? [];
+		$products     = $license_data['products'] ?? [];
 
 		// Get and decrypt the Pro license key (product ID 65)
 		$license_key = '';
 		if ( isset( $products[65]['key'] ) ) {
 			$encrypted_key = $products[65]['key'];
-			$license_key = \FESearchAI\Core\FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
+			$license_key   = \FESearchAI\Core\FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
 		}
 
 		$license_status = \FESearchAI\Core\FE_Search_AI_License::is_pro_active() ? 'active' : 'inactive';
@@ -307,7 +307,7 @@ class FE_Search_AI_License_Settings {
 				// Get license data from the correct structure
 				$products = $license_data['products'] ?? [];
 				$pro_data = $products[65]['data'] ?? [];
-				
+
 				$expires_at          = $pro_data['expiresAt'] ?? '';
 				$times_activated     = $pro_data['timesActivated'] ?? null;
 				$times_activated_max = $pro_data['timesActivatedMax'] ?? null;

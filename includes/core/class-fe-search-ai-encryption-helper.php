@@ -2,7 +2,7 @@
 /**
  * Encryption functionality for FE AI Search.
  *
- * @package    fe-ai-search
+ * @package    fe-search-ai
  * @subpackage Core
  * @since      1.0.0
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * to WordPress's AUTH_KEY for encryption/decryption operations.
  *
  * @since      1.0.0
- * @package    fe-ai-search
+ * @package    fe-search-ai
  * @subpackage Core
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later

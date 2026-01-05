@@ -5,7 +5,7 @@
  * Centralizes default text for the chat UI so that the admin settings
  * placeholders and the frontend chat UI always stay in sync.
  *
- * @package    fe-ai-search
+ * @package    fe-search-ai
  * @subpackage Core
  */
 

@@ -1,9 +1,9 @@
 /**
- * FE AI Search - Admin Styles
+ * FE Search AI - Admin Styles
  *
  * This file contains all the custom styles for the plugin's admin settings page.
  *
- * @package    fe-ai-search
+ * @package    fe-search-ai
  * @since      1.0.0
  */
 
@@ -198,7 +198,7 @@ textarea {
 	color: #6d6ddb;
 }
 
-.toplevel_page_fe-search-ai .fe-ai-search-notices .notice {
+.toplevel_page_fe-search-ai .fe-search-ai-notices .notice {
 	margin: 15px 0;
 }
 
@@ -247,7 +247,7 @@ a.nav-tab:last-of-type {
 }
 
 /* Tab Navigation */
-.fe-ai-search-tabs-wrapper .tab-content {
+.fe-search-ai-tabs-wrapper .tab-content {
 	display: none;
 	margin-top: 1em;
 }
@@ -340,7 +340,7 @@ a.nav-tab:last-of-type {
 	margin: 0 !important;
 }
 
-.fe-ai-search-wrapper {
+.fe-search-ai-wrapper {
 	margin: 10px 0;
 }
 
@@ -543,13 +543,13 @@ a:has(.dashicons-warning) span {
 	License Tab Pro promotion section
 	========================================================================== */
 
-#tab_license .fe-ai-search-pro-promo hr {
+#tab_license .fe-search-ai-pro-promo hr {
 	width: 80%;
 	margin: auto;
 	border-top: 0;
 	border-bottom: 1px solid silver;
 }
-#tab_license .fe-ai-search-pro-promo h3 {
+#tab_license .fe-search-ai-pro-promo h3 {
 	display: block;
 	text-align: center;
 	margin: -0.65em auto 1em;
@@ -560,12 +560,12 @@ a:has(.dashicons-warning) span {
 	font-size: 1.3em;
 }
 
-#tab_license .fe-ai-search-pro-promo p {
+#tab_license .fe-search-ai-pro-promo p {
 	text-align: center;
 }
 
 /* Layout for the Pro feature list */
-#tab_license .fe-ai-search-pro-promo > ul {
+#tab_license .fe-search-ai-pro-promo > ul {
 	margin: 16px 0 0;
 	padding: 0;
 	list-style: none; /* Remove default bullets from parent UL */
@@ -575,7 +575,7 @@ a:has(.dashicons-warning) span {
 }
 
 /* Individual feature blocks (cards) */
-#tab_license .fe-ai-search-pro-promo > ul > li {
+#tab_license .fe-search-ai-pro-promo > ul > li {
 	margin: 0;
 	padding: 16px 18px;
 	border-radius: 6px;
@@ -585,7 +585,7 @@ a:has(.dashicons-warning) span {
 }
 
 /* Card heading */
-#tab_license .fe-ai-search-pro-promo > ul > li > h4 {
+#tab_license .fe-search-ai-pro-promo > ul > li > h4 {
 	margin: 0 0 8px;
 	font-size: 14px;
 	font-weight: 600;
@@ -593,43 +593,43 @@ a:has(.dashicons-warning) span {
 }
 
 /* Keep inner UL (feature list) as regular bullet list */
-#tab_license .fe-ai-search-pro-promo > ul > li > ul {
+#tab_license .fe-search-ai-pro-promo > ul > li > ul {
 	margin: 0;
 	padding-left: 1.2em;
 	list-style: disc;
 }
 
 /* Spacing for nested UL (sub bullet list) */
-#tab_license .fe-ai-search-pro-promo > ul > li ul ul {
+#tab_license .fe-search-ai-pro-promo > ul > li ul ul {
 	margin-top: 4px;
 }
 
 /* Line height and font size for text items */
-#tab_license .fe-ai-search-pro-promo > ul > li li {
+#tab_license .fe-search-ai-pro-promo > ul > li li {
 	font-size: 13px;
 	line-height: 1.5;
 }
 
 /* Second-level list: remove bullets and indent by about one character */
-#tab_license .fe-ai-search-pro-promo > ul > li ul ul {
+#tab_license .fe-search-ai-pro-promo > ul > li ul ul {
 	list-style: none;
 	padding-left: 1em; /* Approximate indent width of one character */
 	margin: 4px 0 0;
 }
 
 /* Add a hyphen at the start of each second-level li */
-#tab_license .fe-ai-search-pro-promo > ul > li ul ul > li {
+#tab_license .fe-search-ai-pro-promo > ul > li ul ul > li {
 	position: relative;
 }
 
 /* Hyphen marker */
-#tab_license .fe-ai-search-pro-promo > ul > li ul ul > li::before {
+#tab_license .fe-search-ai-pro-promo > ul > li ul ul > li::before {
 	content: '- ';
 	position: absolute;
 	left: -1em;
 }
 
-#tab_license .fe-ai-search-pro-promo .button {
+#tab_license .fe-search-ai-pro-promo .button {
 	margin: 2em auto;
 	background: linear-gradient(139deg, #602fba, #0082ff);
 	border: none;
@@ -642,7 +642,7 @@ a:has(.dashicons-warning) span {
 }
 
 /* External link icon */
-#tab_license .fe-ai-search-pro-promo .button::after {
+#tab_license .fe-search-ai-pro-promo .button::after {
 	content: '\f504'; /* dashicons-external */
 	font-family: 'dashicons';
 	display: inline-block;
@@ -652,30 +652,30 @@ a:has(.dashicons-warning) span {
 	top: 0.08em;
 }
 
-#tab_license .fe-ai-search-pro-promo .button:hover {
+#tab_license .fe-search-ai-pro-promo .button:hover {
 	opacity: 1;
 }
 
-#fe-ai-search-api-token-generator {
+#fe-search-ai-api-token-generator {
 	margin: 1em 0;
 }
 
-#fe-ai-search-tool-manifest,
-#fe-ai-search-api-guide {
+#fe-search-ai-tool-manifest,
+#fe-search-ai-api-guide {
 	margin: 1em 0;
 	cursor: pointer;
 }
 
-#fe-ai-search-tool-manifest summary,
-#fe-ai-search-api-guide summary {
+#fe-search-ai-tool-manifest summary,
+#fe-search-ai-api-guide summary {
 	margin: 2em 0 1em;
 }
 
-#fe-ai-search-api-guide h4 {
+#fe-search-ai-api-guide h4 {
 	margin: 2em 0 1em;
 }
 
-#fe-ai-search-api-guide li {
+#fe-search-ai-api-guide li {
 	margin: 0 0 1em;
 }
 
@@ -700,11 +700,11 @@ a:has(.dashicons-warning) span {
 	cursor: pointer;
 } */
 
-.fe-ai-search-color-picker .pcr-button::after {
+.fe-search-ai-color-picker .pcr-button::after {
 	background: var(--pcr-color) !important;
 }
 
-#fe-ai-search-color-picker hr {
+#fe-search-ai-color-picker hr {
 	margin: 1em 0;
 	width: 10%;
 }
@@ -753,7 +753,7 @@ a:has(.dashicons-warning) span {
 	Taxonomy Configuration Styles
 	========================================================================== */
 
-.fe-ai-search-tax-config-wrapper {
+.fe-search-ai-tax-config-wrapper {
 	background: #f9f9f9;
 	border: 1px solid #ddd;
 	border-radius: 4px;
@@ -783,7 +783,7 @@ a:has(.dashicons-warning) span {
 }
 
 /* Form table specific styles */
-.form-table .fe-ai-search-tax-config-wrapper {
+.form-table .fe-search-ai-tax-config-wrapper {
 	margin-top: 10px;
 }
 
@@ -825,7 +825,7 @@ a:has(.dashicons-warning) span {
 }
 
 /* Taxonomy configuration wrapper in table */
-.form-table.widefat.striped .fe-ai-search-tax-config-wrapper {
+.form-table.widefat.striped .fe-search-ai-tax-config-wrapper {
 	margin-top: 8px;
 	padding: 8px;
 	background-color: #f8f9f9;
@@ -833,7 +833,7 @@ a:has(.dashicons-warning) span {
 	border-radius: 3px;
 }
 
-.form-table.widefat.striped .fe-ai-search-custom-fields-wrapper {
+.form-table.widefat.striped .fe-search-ai-custom-fields-wrapper {
 	margin-top: 8px;
 }
 

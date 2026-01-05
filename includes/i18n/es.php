@@ -5,7 +5,7 @@
  * Provides stop words and basic prompt injection phrases used when the
  * site locale is set to Spanish.
  *
- * @package    fe-ai-search
+ * @package    fe-search-ai
  * @subpackage i18n
  * @since      1.0.0
  * @author     FirstElement, Inc. <info@firstelement.co.jp>

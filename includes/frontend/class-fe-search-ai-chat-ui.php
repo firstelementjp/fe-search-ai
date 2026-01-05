@@ -6,7 +6,7 @@
  * all frontend output, including the shortcode registration and the conditional
  * display of the floating chat window in the site's footer.
  *
- * @package    fe-ai-search
+ * @package    fe-search-ai
  * @subpackage Frontend
  * @since      1.0.0
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * or manually via a shortcode, based on user settings.
  *
  * @since      1.0.0
- * @package    fe-ai-search
+ * @package    fe-search-ai
  * @subpackage Frontend
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
@@ -264,7 +264,7 @@ class FE_Search_AI_Chat_UI {
 		// Build the default HTML
 		ob_start();
 		?>
-		<div id="fe_search_ai_chat_container" class="fe-ai-search-mode-<?php echo esc_attr( $args['mode'] ); ?>">
+		<div id="fe_search_ai_chat_container" class="fe-search-ai-mode-<?php echo esc_attr( $args['mode'] ); ?>">
 			<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
 			<div id="fe_search_ai_chat_bubble">
@@ -278,14 +278,14 @@ class FE_Search_AI_Chat_UI {
 
 			<div id="fe_search_ai_chat_window" class="hidden">
 				<div id="fe_search_ai_chat_header">
-					<a href="<?php echo esc_url( home_url( '/' ) ); ?>" id="fe_search_ai_chat_home_link" class="fe-ai-search-header-icon">
+					<a href="<?php echo esc_url( home_url( '/' ) ); ?>" id="fe_search_ai_chat_home_link" class="fe-search-ai-header-icon">
 						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
 							<path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
 						</svg>
 					</a>
 					<h3><?php echo esc_html( $args['window_title'] ); ?></h3>
-					<div class="fe-ai-search-header-buttons">
-						<button id="fe_search_ai_chat_fullscreen_toggle" class="fe-ai-search-header-icon">
+					<div class="fe-search-ai-header-buttons">
+						<button id="fe_search_ai_chat_fullscreen_toggle" class="fe-search-ai-header-icon">
 							<svg class="icon-maximize" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
 								<path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
 							</svg>
@@ -293,7 +293,7 @@ class FE_Search_AI_Chat_UI {
 								<path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
 							</svg>
 						</button>
-						<button id="fe_search_ai_chat_close" class="fe-ai-search-header-icon">
+						<button id="fe_search_ai_chat_close" class="fe-search-ai-header-icon">
 							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
 								<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
 							</svg>
@@ -301,7 +301,7 @@ class FE_Search_AI_Chat_UI {
 					</div>
 				</div>
 				<div id="fe_search_ai_chat_messages">
-					<div class="fe-ai-search-message fe-ai-search-message-ai">
+					<div class="fe-search-ai-message fe-search-ai-message-ai">
 						<p><?php echo esc_html( $args['greeting_message'] ); ?></p>
 					</div>
 				</div>
@@ -398,17 +398,17 @@ class FE_Search_AI_Chat_UI {
 		?>
 		<style id="fe_search_ai_dynamic_styles">
 			:root {
-				--fe-ai-search-key-color: <?php echo esc_attr( $key_color ); ?>;
-				--fe-ai-search-key-color-darker: <?php echo esc_attr( $this->adjust_brightness( $key_color, -20 ) ); ?>;
+				--fe-search-ai-key-color: <?php echo esc_attr( $key_color ); ?>;
+				--fe-search-ai-key-color-darker: <?php echo esc_attr( $this->adjust_brightness( $key_color, -20 ) ); ?>;
 			}
 			#fe_search_ai_chat_form button:hover {
-				background-color: var(--fe-ai-search-key-color-darker);
+				background-color: var(--fe-search-ai-key-color-darker);
 			}
-			.fe-ai-search-message-user p {
-				background: var(--fe-ai-search-key-color);
+			.fe-search-ai-message-user p {
+				background: var(--fe-search-ai-key-color);
 			}
-			.fe-ai-search-message-user p::after {
-				border-left-color: var(--fe-ai-search-key-color);
+			.fe-search-ai-message-user p::after {
+				border-left-color: var(--fe-search-ai-key-color);
 			}
 		</style>
 		<?php

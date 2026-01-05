@@ -1,7 +1,7 @@
 /**
- * FE AI Search - Frontend Styles
+ * FE Search AI - Frontend Styles
  *
- * @package fe-ai-search
+ * @package fe-search-ai
  * @since   1.0.0
  */
 
@@ -25,6 +25,7 @@
 	Floating Mode (.fe-ai-search-mode-float)
 	========================================================================== */
 
+.fe-search-ai-mode-float,
 .fe-ai-search-mode-float {
 	position: fixed;
 	bottom: 20px;
@@ -32,6 +33,7 @@
 	z-index: 10000;
 }
 
+.fe-search-ai-mode-float #fe_search_ai_chat_bubble,
 .fe-ai-search-mode-float #fe_search_ai_chat_bubble {
 	display: flex;
 	align-items: center;
@@ -108,6 +110,7 @@
 	background-size: 500% 500%;
 }
 
+.fe-search-ai-mode-float #fe_search_ai_chat_window,
 .fe-ai-search-mode-float #fe_search_ai_chat_window {
 	width: 370px;
 	height: 550px;
@@ -189,7 +192,7 @@
 	margin: 0 0.5em 0 0;
 }
 
-.fe-ai-search-feedback {
+.fe-search-ai-feedback {
 	margin-top: 10px;
 	text-align: left;
 }
@@ -224,7 +227,7 @@
 	Embed Mode (.fe-ai-search-mode-embed)
 	========================================================================== */
 
-.fe-ai-search-mode-embed {
+.fe-search-ai-mode-embed {
 	width: 100%;
 	height: 550px;
 	margin-bottom: 1.5em;
@@ -308,12 +311,12 @@
 	color: var(--feais-text);
 }
 
-.fe-ai-search-header-buttons {
+.fe-search-ai-header-buttons {
 	display: flex;
 	align-items: center;
 }
 
-.fe-ai-search-header-icon {
+.fe-search-ai-header-icon {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -353,7 +356,7 @@
 	flex-direction: column;
 }
 
-.fe-ai-search-message {
+.fe-search-ai-message {
 	max-width: 90%;
 	margin-bottom: 10px;
 	line-height: 1.6;
@@ -369,7 +372,7 @@
 	border-radius: 18px;
 }
 
-.fe-ai-search-message-ai {
+.fe-search-ai-message-ai {
 	align-self: flex-start;
 }
 
@@ -388,7 +391,7 @@
 	background: black;
 }
 
-.fe-ai-search-message-user {
+.fe-search-ai-message-user {
 	align-self: flex-end;
 	justify-content: flex-end;
 }
@@ -396,7 +399,7 @@
 .fe-ai-search-message-user p {
 	color: white;
 	border-top-right-radius: 4px;
-	background: var(--fe-ai-search-key-color);
+	background: var(--fe-search-ai-key-color);
 }
 
 /* Styling for Markdown elements */
@@ -418,7 +421,7 @@
 	background: var(--feais-bg);
 }
 
-.fe-ai-search-feedback-thanks {
+.fe-search-ai-feedback-thanks {
 	color: var(--feais-text);
 	padding: 10px 15px;
 }
@@ -462,7 +465,7 @@
 	Privacy Consent Overlay
 	========================================================================== */
 
-.fe-ai-search-consent {
+.fe-search-ai-consent {
 	position: absolute;
 	top: 0;
 	left: 0;
@@ -478,7 +481,7 @@
 	flex-direction: column;
 }
 
-.fe-ai-search-consent-message {
+.fe-search-ai-consent-message {
 	margin-bottom: 15px;
 	font-size: 14px;
 	color: #333;
@@ -488,7 +491,7 @@
 	margin: 0 0 0.75em 0;
 }
 
-.fe-ai-search-consent-check {
+.fe-search-ai-consent-check {
 	display: flex;
 	align-items: center;
 	gap: 8px;
@@ -498,18 +501,18 @@
 	border: 1px solid silver;
 }
 
-.fe-ai-search-consent-checkbox {
+.fe-search-ai-consent-checkbox {
 	margin: 0 1em !important;
 }
 
-.fe-ai-search-consent-accept {
+.fe-search-ai-consent-accept {
 	display: inline-block;
 	padding: 8px 16px;
 	border-radius: 18px;
 	border: none;
 	color: #fff;
 	cursor: pointer;
-	background: var(--fe-ai-search-key-color);
+	background: var(--fe-search-ai-key-color);
 }
 
 .fe-ai-search-consent-accept:hover {
@@ -581,7 +584,7 @@
 	Spinner Animation
 	========================================================================== */
 
-.fe-ai-search-spinner {
+.fe-search-ai-spinner {
 	display: inline-block;
 	width: 20px;
 	height: 20px;

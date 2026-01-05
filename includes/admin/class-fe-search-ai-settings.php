@@ -5,7 +5,7 @@
  * Responsible for registering all setting sections
  * and fields using the WordPress Settings API and rendering their HTML.
  *
- * @package    fe-ai-search
+ * @package    fe-search-ai
  * @subpackage Admin
  * @since      1.0.0
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
@@ -29,7 +29,7 @@ use FESearchAI\Core\FE_Search_AI_License;
  * and display preferences.
  *
  * @since      1.0.0
- * @package    fe-ai-search
+ * @package    fe-search-ai
  * @subpackage Admin
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
@@ -428,7 +428,7 @@ class FE_Search_AI_Settings {
 		$base_label   = __( 'WordPress database', 'fe-search-ai' );
 		$engine_label = $db_engine ? sprintf( '%s (%s)', $db_engine, $base_label ) : $base_label;
 		?>
-		<div class="fe-ai-search-boxed-option">
+		<div class="fe-search-ai-boxed-option">
 			<p>
 				<?php esc_html_e( 'Choose where chunk data (and, when applicable, vector data) are stored.', 'fe-search-ai' ); ?>
 			</p>
@@ -486,7 +486,7 @@ class FE_Search_AI_Settings {
 		$encrypted_key = $vector['qdrant']['api_key'] ?? '';
 		$api_key       = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
 		?>
-		<div class="fe-ai-search-boxed-option">
+		<div class="fe-search-ai-boxed-option">
 			<p class="description">
 				<?php esc_html_e( 'Configure the connection to your Qdrant Cloud or self-hosted Qdrant instance.', 'fe-search-ai' ); ?>
 			</p>
@@ -698,11 +698,11 @@ class FE_Search_AI_Settings {
 			value="<?php echo esc_attr( $api_key ); ?>"
 			class="regular-text"
 		>
-		<button type="button" class="button button-secondary fe-ai-search-test-api" data-provider="openai">
+		<button type="button" class="button button-secondary fe-search-ai-test-api" data-provider="openai">
 			<?php esc_html_e( 'Connection Test', 'fe-search-ai' ); ?>
 		</button>
 		<span class="spinner"></span>
-		<span class="fe-ai-search-api-status"></span>
+		<span class="fe-search-ai-api-status"></span>
 		<p class="description">
 			<?php esc_html_e( 'Enter your OpenAI API key.', 'fe-search-ai' ); ?>
 		</p>
@@ -719,7 +719,7 @@ class FE_Search_AI_Settings {
 							sprintf(
 								'<a href="%s" class="%s">%s</a>',
 								'#tab_license',
-								'fe-ai-search-change-model-link',
+								'fe-search-ai-change-model-link',
 								esc_html__( 'Pro', 'fe-search-ai' )
 							)
 						)
@@ -728,7 +728,7 @@ class FE_Search_AI_Settings {
 				<?php else : ?>
 					<div>
 						<?php echo $this->license_alert_icon; ?>
-						<a href="#tab_models" class="fe-ai-search-change-model-link">
+						<a href="#tab_models" class="fe-search-ai-change-model-link">
 							<?php esc_html_e( 'Change Model', 'fe-search-ai' ); ?> &raquo;
 						</a>
 					</div>
@@ -765,11 +765,11 @@ class FE_Search_AI_Settings {
 			value="<?php echo esc_attr( $api_key ); ?>"
 			class="regular-text"
 		>
-		<button type="button" class="button button-secondary fe-ai-search-test-api" data-provider="google">
+		<button type="button" class="button button-secondary fe-search-ai-test-api" data-provider="google">
 			<?php esc_html_e( 'Connection Test', 'fe-search-ai' ); ?>
 		</button>
 		<span class="spinner"></span>
-		<span class="fe-ai-search-api-status"></span>
+		<span class="fe-search-ai-api-status"></span>
 		<p class="description">
 			<?php esc_html_e( 'Enter your Google Cloud API key.', 'fe-search-ai' ); ?>
 		</p>
@@ -786,7 +786,7 @@ class FE_Search_AI_Settings {
 							sprintf(
 								'<a href="%s" class="%s">%s</a>',
 								'#tab_license',
-								'fe-ai-search-change-model-link',
+								'fe-search-ai-change-model-link',
 								esc_html__( 'Pro', 'fe-search-ai' )
 							)
 						)
@@ -795,7 +795,7 @@ class FE_Search_AI_Settings {
 				<?php else : ?>
 					<div>
 						<?php echo $this->license_alert_icon; ?>
-						<a href="#tab_models" class="fe-ai-search-change-model-link">
+						<a href="#tab_models" class="fe-search-ai-change-model-link">
 							<?php esc_html_e( 'Change Model', 'fe-search-ai' ); ?> &raquo;
 						</a>
 					</div>
@@ -832,11 +832,11 @@ class FE_Search_AI_Settings {
 			value="<?php echo esc_attr( $api_key ); ?>"
 			class="regular-text"
 		>
-		<button type="button" class="button button-secondary fe-ai-search-test-api" data-provider="anthropic">
+		<button type="button" class="button button-secondary fe-search-ai-test-api" data-provider="anthropic">
 			<?php esc_html_e( 'Connection Test', 'fe-search-ai' ); ?>
 		</button>
 		<span class="spinner"></span>
-		<span class="fe-ai-search-api-status"></span>
+		<span class="fe-search-ai-api-status"></span>
 		<p class="description">
 			<?php esc_html_e( 'Enter your Anthropic (Claude) API key.', 'fe-search-ai' ); ?>
 		</p>
@@ -853,7 +853,7 @@ class FE_Search_AI_Settings {
 							sprintf(
 								'<a href="%s" class="%s">%s</a>',
 								'#tab_license',
-								'fe-ai-search-change-model-link',
+								'fe-search-ai-change-model-link',
 								esc_html__( 'Pro', 'fe-search-ai' )
 							)
 						)
@@ -862,7 +862,7 @@ class FE_Search_AI_Settings {
 				<?php else : ?>
 					<div>
 						<?php echo $this->license_alert_icon; ?>
-						<a href="#tab_models" class="fe-ai-search-change-model-link">
+						<a href="#tab_models" class="fe-search-ai-change-model-link">
 							<?php esc_html_e( 'Change Model', 'fe-search-ai' ); ?> &raquo;
 						</a>
 					</div>
@@ -894,7 +894,7 @@ class FE_Search_AI_Settings {
 
 		$string = __( 'Select the post types to target for AI search and the related data to include in chunk data passed to AI. If no items are checked under "include in Chunk Data" for a post type, that post type will be skipped during synchronization.', 'fe-search-ai' );
 		echo '<p class="description">' . wp_kses_post( $string ) . '</p>';
-		echo '<div id="fe_search_ai_sync_options_accordion" class="fe-ai-search-accordion-wrapper">';
+		echo '<div id="fe_search_ai_sync_options_accordion" class="fe-search-ai-accordion-wrapper">';
 
 		foreach ( $post_types as $post_type ) {
 			if ( in_array( $post_type->name, $excluded_post_types, true ) ) {
@@ -911,7 +911,7 @@ class FE_Search_AI_Settings {
 			$snippet_taxonomies          = isset( $pt_options['snippet_taxonomies'] ) && is_array( $pt_options['snippet_taxonomies'] ) ? $pt_options['snippet_taxonomies'] : [];
 			$enable_custom_fields        = $pt_options['enable_custom_fields'] ?? false;
 			$snippet_custom_fields_value = $pt_options['snippet_custom_fields'] ?? '';
-			$snippet_field_input_id      = sanitize_html_class( 'fe-ai-search-snippet-cf-' . $post_type->name );
+			$snippet_field_input_id      = sanitize_html_class( 'fe-search-ai-snippet-cf-' . $post_type->name );
 			?>
 			<div class="post-type-accordion-item">
 				<h4 class="accordion-title">
@@ -928,7 +928,7 @@ class FE_Search_AI_Settings {
 				<div class="accordion-content">
 					<div class="accordion-inner">
 						<fieldset>
-							<table class="widefat striped fe-ai-search-sync-targets-table">
+							<table class="widefat striped fe-search-ai-sync-targets-table">
 								<thead>
 									<tr>
 										<th><?php esc_html_e( 'Metadata', 'fe-search-ai' ); ?></th>
@@ -978,10 +978,10 @@ class FE_Search_AI_Settings {
 											$snippet_tax_behavior     = $pt_options['snippet_taxonomies'][ $tax->name ]['behavior'] ?? 'include_terms';
 											$snippet_tax_term_ids     = $pt_options['snippet_taxonomies'][ $tax->name ]['term_ids'] ?? '';
 											$snippet_tax_enabled      = ! empty( $pt_options['snippet_taxonomies'][ $tax->name ]['enabled'] );
-											$tax_enabled_checkbox_id  = sanitize_html_class( 'fe-ai-search-snippet-tax-enabled-' . $post_type->name . '-' . $tax->name );
+											$tax_enabled_checkbox_id  = sanitize_html_class( 'fe-search-ai-snippet-tax-enabled-' . $post_type->name . '-' . $tax->name );
 											$tax_behavior_radio_name  = "fe_search_ai_settings[sync][targets][{$post_type->name}][snippet_taxonomies][{$tax->name}][behavior]";
 											$tax_term_ids_name        = "fe_search_ai_settings[sync][targets][{$post_type->name}][snippet_taxonomies][{$tax->name}][term_ids]";
-											$tax_config_wrapper_class = sanitize_html_class( 'fe-ai-search-tax-config-wrapper-' . $post_type->name . '-' . $tax->name );
+											$tax_config_wrapper_class = sanitize_html_class( 'fe-search-ai-tax-config-wrapper-' . $post_type->name . '-' . $tax->name );
 											?>
 											<tr>
 												<td><?php printf( esc_html__( '%1$s (%2$s)', 'fe-search-ai' ), esc_html( $tax->label ), esc_html( $tax->name ) ); ?></td>
@@ -991,7 +991,7 @@ class FE_Search_AI_Settings {
 															<input
 																type="checkbox"
 																id="<?php echo esc_attr( $tax_enabled_checkbox_id ); ?>"
-																class="fe-ai-search-snippet-tax-enabled"
+																class="fe-search-ai-snippet-tax-enabled"
 																data-target-wrapper-class="<?php echo esc_attr( $tax_config_wrapper_class ); ?>"
 																name="fe_search_ai_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_taxonomies][<?php echo esc_attr( $tax->name ); ?>][enabled]"
 																value="1"
@@ -1000,7 +1000,7 @@ class FE_Search_AI_Settings {
 															<?php // esc_html_e( 'Include this taxonomy in chunk data', 'fe-search-ai' ); ?>
 														</label>
 													</div>
-													<div class="<?php echo esc_attr( $tax_config_wrapper_class ); ?> fe-ai-search-tax-config-wrapper" style="margin-top: 0.5em; padding-left: 2em; <?php echo $snippet_tax_enabled ? '' : 'display: none;'; ?>">
+													<div class="<?php echo esc_attr( $tax_config_wrapper_class ); ?> fe-search-ai-tax-config-wrapper" style="margin-top: 0.5em; padding-left: 2em; <?php echo $snippet_tax_enabled ? '' : 'display: none;'; ?>">
 														<div style="margin-bottom: 0.5em;">
 															<label style="margin-right: 1em;">
 																<input type="radio" name="<?php echo esc_attr( $tax_behavior_radio_name ); ?>" value="include_terms" <?php checked( $snippet_tax_behavior, 'include_terms' ); ?>>
@@ -1033,7 +1033,7 @@ class FE_Search_AI_Settings {
 										type="checkbox"
 										name="fe_search_ai_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][enable_custom_fields]"
 										value="1"
-										class="fe-ai-search-cf-toggle"
+										class="fe-search-ai-cf-toggle"
 										data-target-input-id="<?php echo $snippet_field_input_id; ?>"
 										<?php checked( $enable_custom_fields ); ?>
 										<?php disabled( ! $is_pro ); ?>
@@ -1049,7 +1049,7 @@ class FE_Search_AI_Settings {
 												sprintf(
 													'<a href="%s" class="%s">%s</a>',
 													'#tab_license',
-													'fe-ai-search-change-model-link',
+													'fe-search-ai-change-model-link',
 													esc_html__( 'Pro', 'fe-search-ai' )
 												)
 											);
@@ -1159,7 +1159,7 @@ class FE_Search_AI_Settings {
 				}
 				?>
 
-				<div class="fe-ai-search-wrapper">
+				<div class="fe-search-ai-wrapper">
 					<button type="button" id="fe_search_ai_smart_sync" class="button button-primary">
 						<?php esc_html_e( 'Sync Changes (Recommended)', 'fe-search-ai' ); ?>
 					</button>
@@ -1329,7 +1329,7 @@ class FE_Search_AI_Settings {
 		$floating_options = wp_parse_args( $floating_options, $defaults );
 		?>
 		<fieldset id="fe_search_ai_settings_display_floating">
-			<div id="fe-ai-search-floating-display-accordion" class="fe-ai-search-accordion-wrapper">
+			<div id="fe-search-ai-floating-display-accordion" class="fe-search-ai-accordion-wrapper">
 				<div class="post-type-accordion-item">
 					<h4 class="accordion-title">
 						<label>
@@ -1345,7 +1345,7 @@ class FE_Search_AI_Settings {
 					<div class="accordion-content">
 						<div class="accordion-inner">
 
-							<div class="fe-ai-search-floating-login-status">
+							<div class="fe-search-ai-floating-login-status">
 								<div class="option-header"><?php esc_html_e( 'Login status', 'fe-search-ai' ); ?>:</div>
 								<p>
 									<label>
@@ -1367,7 +1367,7 @@ class FE_Search_AI_Settings {
 								</p>
 							</div>
 
-							<div class="fe-ai-search-floating-devices">
+							<div class="fe-search-ai-floating-devices">
 								<div class="option-header"><?php esc_html_e( 'Display device', 'fe-search-ai' ); ?>:</div>
 								<p>
 									<label>
@@ -1472,7 +1472,7 @@ class FE_Search_AI_Settings {
 						</div><!-- .accordion-inner -->
 					</div><!-- .accordion-content -->
 				</div><!-- .post-type-accordion-item -->
-			</div><!-- #fe-ai-search-floating-display-accordion -->
+			</div><!-- #fe-search-ai-floating-display-accordion -->
 		</fieldset>
 		<?php
 	}
@@ -1603,7 +1603,7 @@ class FE_Search_AI_Settings {
 			);
 			?>
 		</p>
-		<code>[fe-ai-search]</code>
+		<code>[fe-search-ai]</code>
 		<?php
 	}
 
@@ -1658,7 +1658,7 @@ class FE_Search_AI_Settings {
 						sprintf(
 							'<a href="%s" class="%s">%s</a>',
 							'#tab_license',
-							'fe-ai-search-change-model-link',
+							'fe-search-ai-change-model-link',
 							esc_html__( 'Pro', 'fe-search-ai' )
 						)
 					);
@@ -1756,7 +1756,7 @@ class FE_Search_AI_Settings {
 			>
 		</p>
 
-		<div id="fe-ai-search-color-picker">
+		<div id="fe-search-ai-color-picker">
 			<div class="color-picker-box">
 				<div class="color-picker-box-left">
 					<input
@@ -1766,7 +1766,7 @@ class FE_Search_AI_Settings {
 						value="<?php echo esc_attr( $key_color ); ?>"
 					>
 					<div
-						class="fe-ai-search-color-picker"
+						class="fe-search-ai-color-picker"
 						data-target-input="fe_search_ai_key_color"
 						data-default-color="<?php echo esc_attr( $key_color ); ?>"
 					></div>
@@ -1788,7 +1788,7 @@ class FE_Search_AI_Settings {
 						value="<?php echo esc_attr( $background_color ); ?>"
 					>
 					<div
-						class="fe-ai-search-color-picker"
+						class="fe-search-ai-color-picker"
 						data-target-input="fe_search_ai_background_color"
 						data-default-color="<?php echo esc_attr( $background_color ); ?>"
 					></div>
@@ -1810,7 +1810,7 @@ class FE_Search_AI_Settings {
 						value="<?php echo esc_attr( $text_color ); ?>"
 					>
 					<div
-						class="fe-ai-search-color-picker"
+						class="fe-search-ai-color-picker"
 						data-target-input="fe_search_ai_text_color"
 						data-default-color="<?php echo esc_attr( $text_color ); ?>"
 					></div>
@@ -2150,7 +2150,7 @@ class FE_Search_AI_Settings {
 		<textarea
 			name="fe_search_ai_settings[prompt][system_prompt]"
 			rows="100"
-			class="fe-ai-search-prompt-editor large-text"
+			class="fe-search-ai-prompt-editor large-text"
 		><?php echo esc_textarea( $prompt ); ?></textarea>
 		<p class="description">
 			<?php esc_html_e( 'Customize the instructions (system prompts) for the AI assistant. If left blank, the standard prompt will be used.', 'fe-search-ai' ); ?>
@@ -2555,7 +2555,7 @@ class FE_Search_AI_Settings {
 		?>
 		<div>
 			<label><?php esc_html_e( 'Typing Animation Speed', 'fe-search-ai' ); ?></label>
-			<div class="fe-ai-search-wrapper slider">
+			<div class="fe-search-ai-wrapper slider">
 				<span><?php esc_html_e( 'Smooth', 'fe-search-ai' ); ?></span>
 				<input
 					type="range"
