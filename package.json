@@ -4,6 +4,8 @@
 	"description": "AI Search functionality for WordPress",
 	"main": "index.js",
 	"scripts": {
+		"dev": "npm run watch:all",
+		"watch:all": "esbuild assets/js/frontend-scripts.js assets/js/admin-scripts.js --minify --outdir=assets/js --watch & esbuild assets/css/frontend-styles.css assets/css/admin-styles.css --minify --outdir=assets/css --watch --allow-overwrite",
 		"lint": "eslint . --ext .js",
 		"lint:fix": "eslint . --ext .js --fix",
 		"build:css": "esbuild assets/css/frontend-styles.css --minify --outfile=assets/css/frontend-styles.min.css",

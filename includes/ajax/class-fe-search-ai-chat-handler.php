@@ -446,6 +446,9 @@ class FE_Search_AI_Chat_Handler {
 		if ( 'openai_compatible' === $provider ) {
 			$body['stream'] = false;
 
+			// ローカルLLM用に実行時間制限を延長
+			set_time_limit( 300 ); // 5分
+
 			$response = wp_remote_post(
 				$api_url,
 				[
@@ -454,7 +457,7 @@ class FE_Search_AI_Chat_Handler {
 						'Authorization' => 'Bearer ' . $api_key,
 					],
 					'body'    => wp_json_encode( $body ),
-					'timeout' => 60,
+					'timeout' => 300,
 				]
 			);
 

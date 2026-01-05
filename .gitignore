@@ -20,3 +20,4 @@ _tmp/
 .vscode/
 fe-search-ai.code-workspace
 debug.log
+test-php-timeout.php
