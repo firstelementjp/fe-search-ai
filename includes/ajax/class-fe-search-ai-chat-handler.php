@@ -336,14 +336,47 @@ class FE_Search_AI_Chat_Handler {
 		$start_time = microtime( true );
 
 		if ( 'openai_compatible' === $provider ) {
-			$api_url       = $this->options['provider']['openai_compatible_endpoint'] ?? '';
+			$api_url = $this->options['provider']['openai_compatible_endpoint'] ?? '';
+			$api_key = '';
+
 			$encrypted_key = $this->options['provider']['openai_compatible_key'] ?? '';
-			$api_key       = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
+			if ( is_string( $encrypted_key ) && '' !== $encrypted_key ) {
+				$api_key = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
+			}
+
+			if ( empty( $api_url ) || empty( $api_key ) ) {
+				$pro_settings      = get_option( 'fe_search_ai_pro_settings', [] );
+				$provider_settings = is_array( $pro_settings ) ? ( $pro_settings['provider'] ?? [] ) : [];
+
+				if ( empty( $api_url ) && is_array( $provider_settings ) ) {
+					$api_url = $provider_settings['openai_compatible_endpoint'] ?? $api_url;
+				}
+
+				if ( empty( $api_key ) && is_array( $provider_settings ) ) {
+					$pro_encrypted_key = $provider_settings['openai_compatible_api_key'] ?? '';
+					if ( is_string( $pro_encrypted_key ) && '' !== $pro_encrypted_key ) {
+						$api_key = FE_Search_AI_Encryption_Helper::decrypt( $pro_encrypted_key );
+					}
+				}
+			}
 		} else {
 			$api_url = 'https://api.openai.com/v1/chat/completions';
 			// Admin UI stores the key at provider.openai_key.
 			$encrypted_key = $this->options['provider']['openai_key'] ?? '';
 			$api_key       = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
+		}
+
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
+				'INFO',
+				'Chat completion endpoint resolved.',
+				[
+					'provider' => $provider,
+					'endpoint' => $api_url,
+					'has_key'  => ! empty( $api_key ),
+					'is_pro'   => (bool) $this->is_license_active,
+				]
+			);
 		}
 
 		if ( empty( $api_key ) || empty( $api_url ) ) {
@@ -409,6 +442,75 @@ class FE_Search_AI_Chat_Handler {
 			'messages' => $messages,
 			'stream'   => true,
 		];
+
+		if ( 'openai_compatible' === $provider ) {
+			$body['stream'] = false;
+
+			$response = wp_remote_post(
+				$api_url,
+				[
+					'headers' => [
+						'Content-Type'  => 'application/json',
+						'Authorization' => 'Bearer ' . $api_key,
+					],
+					'body'    => wp_json_encode( $body ),
+					'timeout' => 60,
+				]
+			);
+
+			$duration      = round( ( microtime( true ) - $start_time ) * 1000 );
+			$http_status   = is_wp_error( $response ) ? 0 : (int) wp_remote_retrieve_response_code( $response );
+			$response_body = is_wp_error( $response ) ? null : json_decode( wp_remote_retrieve_body( $response ), true );
+
+			if ( is_wp_error( $response ) ) {
+				\FESearchAI\Core\FE_Search_AI_Logger::log(
+					'ERROR',
+					'Chat completion failed (OpenAI-Compatible, WP HTTP Error).',
+					[
+						'provider'      => $provider,
+						'model'         => $model,
+						'error_message' => $response->get_error_message(),
+						'duration_ms'   => $duration,
+					]
+				);
+				echo 'data: ' . json_encode( [ 'text' => __( 'Error: Connection failed.', 'fe-search-ai' ) ] ) . "\n\n";
+				echo "data: [DONE]\n\n";
+				flush();
+				return;
+			}
+
+			if ( 200 !== $http_status ) {
+				\FESearchAI\Core\FE_Search_AI_Logger::log(
+					'ERROR',
+					'Chat completion failed (OpenAI-Compatible, API Error).',
+					[
+						'provider'    => $provider,
+						'model'       => $model,
+						'http_status' => $http_status,
+						'duration_ms' => $duration,
+					]
+				);
+				echo 'data: ' . json_encode( [ 'text' => __( 'Error: API request failed.', 'fe-search-ai' ) ] ) . "\n\n";
+				echo "data: [DONE]\n\n";
+				flush();
+				return;
+			}
+
+			$content = '';
+			if ( is_array( $response_body ) ) {
+				if ( isset( $response_body['choices'][0]['message']['content'] ) ) {
+					$content = (string) $response_body['choices'][0]['message']['content'];
+				} elseif ( isset( $response_body['choices'][0]['text'] ) ) {
+					$content = (string) $response_body['choices'][0]['text'];
+				}
+			}
+
+			$content = apply_filters( 'fe_search_ai_filter_model_response', $content );
+			echo 'data: ' . json_encode( [ 'text' => $content ] ) . "\n\n";
+			echo "data: [DONE]\n\n";
+			flush();
+			return;
+		}
 
 		$ch = curl_init();
 		curl_setopt( $ch, CURLOPT_URL, $api_url );

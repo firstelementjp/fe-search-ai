@@ -19,20 +19,6 @@ define( 'FE_SEARCH_AI_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FE_SEARCH_AI_PLUGIN_FILE', __FILE__ );
 define( 'FE_SEARCH_AI_PRO_URL', 'https://fe-search.com/ai/pro' );
 
-// Backward-compatible constant aliases for incremental refactoring.
-if ( ! defined( 'FE_AI_SEARCH_VERSION' ) ) {
-	define( 'FE_AI_SEARCH_VERSION', FE_SEARCH_AI_VERSION );
-}
-if ( ! defined( 'FE_AI_SEARCH_PLUGIN_DIR' ) ) {
-	define( 'FE_AI_SEARCH_PLUGIN_DIR', FE_SEARCH_AI_PLUGIN_DIR );
-}
-if ( ! defined( 'FE_AI_SEARCH_PLUGIN_FILE' ) ) {
-	define( 'FE_AI_SEARCH_PLUGIN_FILE', FE_SEARCH_AI_PLUGIN_FILE );
-}
-if ( ! defined( 'FE_AI_SEARCH_PRO_URL' ) ) {
-	define( 'FE_AI_SEARCH_PRO_URL', FE_SEARCH_AI_PRO_URL );
-}
-
 /**
  *  Custom Autoloader
  */
@@ -78,25 +64,11 @@ spl_autoload_register(
 			require_once $wp_file_path;
 			return;
 		}
-
-		// Backward-compatible fallback for legacy file names during refactoring.
-		$legacy_file_name = str_replace( 'fe-search-ai', 'fe-ai-search', $wp_file_name );
-		if ( $legacy_file_name !== $wp_file_name ) {
-			$legacy_file_path = $base_dir . strtolower( implode( '/', $parts ) );
-			if ( ! empty( $parts ) ) {
-				$legacy_file_path .= '/';
-			}
-			$legacy_file_path .= $legacy_file_name;
-			if ( file_exists( $legacy_file_path ) ) {
-				require_once $legacy_file_path;
-				return;
-			}
-		}
 	}
 );
 
-if ( file_exists( FE_AI_SEARCH_PLUGIN_DIR . 'vendor/autoload.php' ) ) {
-	require_once FE_AI_SEARCH_PLUGIN_DIR . 'vendor/autoload.php';
+if ( file_exists( FE_SEARCH_AI_PLUGIN_DIR . 'vendor/autoload.php' ) ) {
+	require_once FE_SEARCH_AI_PLUGIN_DIR . 'vendor/autoload.php';
 }
 
 register_activation_hook( FE_SEARCH_AI_PLUGIN_FILE, [ 'FESearchAI\Core\FE_Search_AI_Activator', 'activate' ] );
@@ -131,11 +103,6 @@ add_action(
 	static function () {
 		load_plugin_textdomain(
 			'fe-search-ai',
-			false,
-			dirname( plugin_basename( __FILE__ ) ) . '/languages/'
-		);
-		load_plugin_textdomain(
-			'fe-ai-search',
 			false,
 			dirname( plugin_basename( __FILE__ ) ) . '/languages/'
 		);

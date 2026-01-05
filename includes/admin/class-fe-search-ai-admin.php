@@ -5,7 +5,7 @@
  * Defines the menu structure of the management screen
  * and serves the role of loading management classes such as settings pages.
  *
- * @package    fe-ai-search
+ * @package    fe-search-ai
  * @subpackage Admin
  * @since      1.0.0
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
@@ -27,7 +27,7 @@ use FESearchAI\Admin\FE_Search_AI_Settings;
  * enqueue the admin-specific stylesheet and JavaScript.
  *
  * @since      1.0.0
- * @package    fe-ai-search
+ * @package    fe-search-ai
  * @subpackage Admin
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
@@ -66,11 +66,11 @@ class FE_Search_AI_Admin {
 			<div id="plugin_header_upper">
 				<div id="plugin_header_title">FE Search <span>AI</span></div>
 				<a href="https://www.firstelement.co.jp/" id="plugin_logo" target="_blank" title="<?php esc_attr_e( 'Go to the developer\'s website', 'fe-search-ai' ); ?>">
-					<img src="<?php echo esc_url( plugin_dir_url( FE_AI_SEARCH_PLUGIN_FILE ) . '/assets/images/logo-feas-white-shadow-s@2x-min.png' ); ?>" width="106" height="27">
+					<img src="<?php echo esc_url( plugin_dir_url( FE_SEARCH_AI_PLUGIN_FILE ) . '/assets/images/logo-feas-white-shadow-s@2x-min.png' ); ?>" width="106" height="27">
 				</a>
 			</div>
 			<div id="plugin_version">
-				version <?php echo esc_html( FE_AI_SEARCH_VERSION ); ?>
+				version <?php echo esc_html( FE_SEARCH_AI_VERSION ); ?>
 			</div>
 			<div id="plugin_support">
 				<a href="<?php echo esc_url( $docs_url ); ?>"
@@ -83,7 +83,7 @@ class FE_Search_AI_Admin {
 					title="<?php esc_attr_e( 'Go to a forum', 'fe-search-ai' ); ?>">
 					<?php esc_html_e( 'Forums', 'fe-search-ai' ); ?>
 				</a>
-				<a href="https://github.com/firstelementjp/fe-ai-search"
+				<a href="https://github.com/firstelementjp/fe-search-ai"
 					target="_blank"
 					title="<?php esc_attr_e( 'Go to GitHub repository', 'fe-search-ai' ); ?>"
 					class="icon icon_gh">
@@ -162,20 +162,20 @@ class FE_Search_AI_Admin {
 
 		$use_unminified = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG;
 		$admin_css      = $use_unminified ? 'assets/css/admin-styles.css' : 'assets/css/admin-styles.min.css';
-		$admin_js       = $use_unminified ? 'assets/js/admin-scripts.js' : 'assets/js/admin-scripts.min.js';
+		$admin_js       = 'assets/js/admin-scripts.js';
 
 		// Color picker (Pickr) styles.
 		wp_enqueue_style(
 			'fe-search-ai-pickr',
 			'https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/classic.min.css',
 			[],
-			FE_AI_SEARCH_VERSION
+			FE_SEARCH_AI_VERSION
 		);
 		wp_enqueue_script(
 			'fe-search-ai-pickr',
-			plugin_dir_url( FE_AI_SEARCH_PLUGIN_FILE ) . 'assets/vendor/pickr.min.js',
+			plugin_dir_url( FE_SEARCH_AI_PLUGIN_FILE ) . 'assets/vendor/pickr.min.js',
 			[],
-			FE_AI_SEARCH_VERSION,
+			FE_SEARCH_AI_VERSION,
 			true
 		);
 		wp_enqueue_style(
@@ -184,9 +184,9 @@ class FE_Search_AI_Admin {
 		);
 		wp_enqueue_style(
 			'fe-search-ai-admin-style',
-			plugin_dir_url( FE_AI_SEARCH_PLUGIN_FILE ) . $admin_css,
+			plugin_dir_url( FE_SEARCH_AI_PLUGIN_FILE ) . $admin_css,
 			[],
-			FE_AI_SEARCH_VERSION
+			FE_SEARCH_AI_VERSION
 		);
 
 		wp_enqueue_script(
@@ -205,16 +205,16 @@ class FE_Search_AI_Admin {
 		);
 		wp_enqueue_script(
 			'fe-search-ai-admin-sync',
-			plugin_dir_url( FE_AI_SEARCH_PLUGIN_FILE ) . $admin_js,
+			plugin_dir_url( FE_SEARCH_AI_PLUGIN_FILE ) . $admin_js,
 			[ 'wp-i18n', 'codemirror-js', 'fe-search-ai-pickr' ],
-			FE_AI_SEARCH_VERSION,
+			FE_SEARCH_AI_VERSION,
 			true
 		);
 
 		wp_set_script_translations(
 			'fe-search-ai-admin-sync',
 			'fe-search-ai',
-			plugin_dir_path( FE_AI_SEARCH_PLUGIN_FILE ) . 'languages'
+			plugin_dir_path( FE_SEARCH_AI_PLUGIN_FILE ) . 'languages'
 		);
 
 		wp_localize_script(

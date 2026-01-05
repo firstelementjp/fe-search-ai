@@ -67,13 +67,10 @@ class FE_Search_AI_License_Handler {
 		}
 
 		$product_id = (int) FE_Search_AI_License::PRODUCT_ID_PRO;
-		if ( defined( 'FE_AI_SEARCH_PRO_PRODUCT_ID' ) ) {
-			$product_id = (int) FE_AI_SEARCH_PRO_PRODUCT_ID;
-		}
 
 		// Call the vendor's proxy API instead of the LMFWC REST API directly so that
 		// sensitive consumer keys remain on the server side only.
-		if ( ! defined( 'FE_AI_SEARCH_LICENSE_API_URL' ) || empty( FE_AI_SEARCH_LICENSE_API_URL ) ) {
+		if ( ! defined( 'FE_SEARCH_AI_LICENSE_API_URL' ) || empty( FE_SEARCH_AI_LICENSE_API_URL ) ) {
 			return [ 'success' => false, 'message' => __( 'FE Search AI Pro is not installed or activated, so the license management feature is not available.', 'fe-search-ai' ) ];
 		}
 
@@ -87,7 +84,7 @@ class FE_Search_AI_License_Handler {
 		];
 
 		$response = wp_remote_post(
-			FE_AI_SEARCH_LICENSE_API_URL,
+			FE_SEARCH_AI_LICENSE_API_URL,
 			[
 				'timeout' => 20,
 				'body'    => $request_body,

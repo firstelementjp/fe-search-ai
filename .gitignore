@@ -1,8 +1,3 @@
-_tmp/
-.DS_Store
-vendor/
-.vscode/
-
 # Exclude copy files
 *-copy*
 * copy*
@@ -18,3 +13,10 @@ node_modules
 .env
 .env.*
 !.envrc.example
+
+vendor/
+_tmp/
+.DS_Store
+.vscode/
+fe-search-ai.code-workspace
+debug.log

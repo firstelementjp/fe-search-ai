@@ -1160,10 +1160,10 @@ class FE_Search_AI_Settings {
 				?>
 
 				<div class="fe-ai-search-wrapper">
-					<button id="fe_search_ai_smart_sync" class="button button-primary">
+					<button type="button" id="fe_search_ai_smart_sync" class="button button-primary">
 						<?php esc_html_e( 'Sync Changes (Recommended)', 'fe-search-ai' ); ?>
 					</button>
-					<button id="fe_search_ai_start_sync" class="button button-secondary">
+					<button type="button" id="fe_search_ai_start_sync" class="button button-secondary">
 						<?php esc_html_e( 'Rebuild Index', 'fe-search-ai' ); ?>
 					</button>
 				</div>
@@ -2197,7 +2197,7 @@ class FE_Search_AI_Settings {
 		?>
 		<fieldset>
 			<label>
-				<input type="checkbox" name="fe_search_ai_settings[advanced][debug_mode]" value="1" <?php checked( $debug_mode ); ?>>
+				<input type="checkbox" name="fe_search_ai_settings[advanced][debug_mode]" value="1" <?php checked( $is_enabled ); ?>>
 				<?php esc_html_e( 'Enable Debug Mode', 'fe-search-ai' ); ?>
 				<?php echo $this->license_alert_icon; ?>
 				<?php esc_html_e( 'Enable the recording of detailed system logs for debugging purposes.', 'fe-search-ai' ); ?>

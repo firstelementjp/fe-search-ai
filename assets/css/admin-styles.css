@@ -440,9 +440,9 @@ a:has(.dashicons-warning) span {
 	vertical-align: middle;
 }
 
-#fe_search_ai_progress_bar_wrapper {
+/* #fe_search_ai_progress_bar_wrapper {
 	padding: 0 5px;
-}
+} */
 
 #fe_search_ai_sync_status {
 	display: flex;

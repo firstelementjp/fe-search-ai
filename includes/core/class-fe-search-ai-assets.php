@@ -6,7 +6,7 @@
  * enqueuing all styles and scripts for both the public-facing chat UI
  * and the admin settings pages.
  *
- * @package    fe-ai-search
+ * @package    fe-search-ai
  * @subpackage Core
  * @since      1.0.0
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * assets, styles, and scripts that the plugin uses.
  *
  * @since      1.0.0
- * @package    fe-ai-search
+ * @package    fe-search-ai
  * @subpackage Core
  * @author     FirstElement, Inc. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
@@ -149,9 +149,9 @@ class FE_Search_AI_Assets {
 		if ( $enable_css ) {
 			wp_enqueue_style(
 				'fe-search-ai-frontend-styles',
-				plugin_dir_url( FE_AI_SEARCH_PLUGIN_FILE ) . $frontend_css,
+				plugin_dir_url( FE_SEARCH_AI_PLUGIN_FILE ) . $frontend_css,
 				[],
-				FE_AI_SEARCH_VERSION
+				FE_SEARCH_AI_VERSION
 			);
 
 			$color_css = sprintf(
@@ -166,7 +166,7 @@ class FE_Search_AI_Assets {
 				'--feais-accent-bottom:%8$s;' .
 				'--feais-input-bg:%9$s;' .
 				'--feais-user-bubble-bg:%10$s;' .
-				'--fe-ai-search-key-color:var(--feais-accent);' .
+				'--fe-search-ai-key-color:var(--feais-accent);' .
 				'}',
 				$key_color,
 				$background_color,
@@ -221,16 +221,16 @@ class FE_Search_AI_Assets {
 
 		wp_enqueue_script(
 			'fe-search-ai-frontend-scripts',
-			plugin_dir_url( FE_AI_SEARCH_PLUGIN_FILE ) . $frontend_js,
+			plugin_dir_url( FE_SEARCH_AI_PLUGIN_FILE ) . $frontend_js,
 			[ 'wp-i18n' ],
-			FE_AI_SEARCH_VERSION,
+			FE_SEARCH_AI_VERSION,
 			true
 		);
 
 		wp_set_script_translations(
 			'fe-search-ai-frontend-scripts',
 			'fe-search-ai',
-			plugin_dir_path( FE_AI_SEARCH_PLUGIN_FILE ) . 'languages'
+			plugin_dir_path( FE_SEARCH_AI_PLUGIN_FILE ) . 'languages'
 		);
 
 		// Pass data to JavaScript.

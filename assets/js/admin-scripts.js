@@ -194,6 +194,29 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 	}
 
+	// Bind click events for manual synchronization buttons.
+	rebuildBtn?.addEventListener('click', e => {
+		e.preventDefault();
+		startSyncProcess(
+			'fe_search_ai_start_sync',
+			__(
+				'This will rebuild the index from scratch and may take some time. Do you want to continue?',
+				'fe-search-ai'
+			)
+		);
+	});
+
+	smartSyncBtn?.addEventListener('click', e => {
+		e.preventDefault();
+		startSyncProcess(
+			'fe_search_ai_start_smart_sync',
+			__(
+				'This will sync only new/updated/deleted content. Do you want to continue?',
+				'fe-search-ai'
+			)
+		);
+	});
+
 	/**
 	 * Processes a single batch of posts during synchronization.
 	 *
@@ -384,7 +407,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				const response = await wpPost('fe_search_ai_test_api_key', postData);
 				status.innerHTML = response.data;
 			} catch {
-				status.innerHTML = `<span style="color:red;">✖${__('A communication error has occurred.', 'fe-search-ai')}</span>`;
+				status.innerHTML = `<span style="color:red;">${__('A communication error has occurred.', 'fe-search-ai')}</span>`;
 			} finally {
 				spinner.style.visibility = 'hidden';
 			}
@@ -793,7 +816,8 @@ document.addEventListener('DOMContentLoaded', () => {
 		document.addEventListener('change', function (event) {
 			if (event.target.matches('input[name*="[enable_custom_fields]"]')) {
 				const checkbox = event.target;
-				const scope = checkbox.closest('.accordion-inner') || checkbox.closest('td') || document;
+				const scope =
+					checkbox.closest('.accordion-inner') || checkbox.closest('td') || document;
 				const wrapper = scope.querySelector('.custom-field-input-wrapper');
 				if (!wrapper) {
 					return;

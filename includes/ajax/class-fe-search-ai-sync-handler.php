@@ -115,12 +115,17 @@ class FE_Search_AI_Sync_Handler {
 		if ( ! empty( $targets ) ) {
 			foreach ( $targets as $pt_slug => $pt_options ) {
 				if ( ! empty( $pt_options['enabled'] ) ) {
+					$include_title   = (bool) ( $pt_options['snippet_include_title'] ?? $pt_options['include_title'] ?? false );
+					$include_content = (bool) ( $pt_options['snippet_include_content'] ?? $pt_options['include_content'] ?? false );
+					$include_date    = (bool) ( $pt_options['snippet_include_date'] ?? $pt_options['include_date'] ?? false );
+					$include_author  = (bool) ( $pt_options['snippet_include_author'] ?? $pt_options['include_author'] ?? false );
+
 					// Skip if no Include in Chunk Data options are selected
 					$has_any_snippet = (
-						! empty( $pt_options['include_title'] ) ||
-						! empty( $pt_options['include_content'] ) ||
-						! empty( $pt_options['include_date'] ) ||
-						! empty( $pt_options['include_author'] ) ||
+						$include_title ||
+						$include_content ||
+						$include_date ||
+						$include_author ||
 						! empty(
 							array_filter(
 								array_map(
@@ -976,14 +981,19 @@ class FE_Search_AI_Sync_Handler {
 			$pt_options = [];
 		}
 
+		$pt_options['include_title']   = (bool) ( $pt_options['snippet_include_title'] ?? $pt_options['include_title'] ?? false );
+		$pt_options['include_content'] = (bool) ( $pt_options['snippet_include_content'] ?? $pt_options['include_content'] ?? false );
+		$pt_options['include_date']    = (bool) ( $pt_options['snippet_include_date'] ?? $pt_options['include_date'] ?? false );
+		$pt_options['include_author']  = (bool) ( $pt_options['snippet_include_author'] ?? $pt_options['include_author'] ?? false );
+
 		// If there is no explicit config for this post type yet (e.g. after schema change),
 		// fall back to sensible defaults so that content is actually indexed.
 		if ( empty( $pt_options ) ) {
 			$pt_options = [
-				'include_title'   => true,
-				'include_content' => true,
-				'include_date'    => true,
-				'include_author'  => true,
+				'include_title'      => true,
+				'include_content'    => true,
+				'include_date'       => true,
+				'include_author'     => true,
 				'snippet_taxonomies' => [],
 			];
 		}
@@ -1026,38 +1036,44 @@ class FE_Search_AI_Sync_Handler {
 				if ( empty( $tax_config['enabled'] ) ) {
 					continue;
 				}
-				
+
 				$terms = get_the_terms( $post->ID, $tax_slug );
 				if ( is_wp_error( $terms ) || empty( $terms ) ) {
 					continue;
 				}
-				
+
 				$taxonomy = get_taxonomy( $tax_slug );
 				if ( ! $taxonomy ) {
 					continue;
 				}
-				
+
 				// Filter terms based on behavior and term_ids
 				$behavior = $tax_config['behavior'] ?? 'include_terms';
 				$term_ids = ! empty( $tax_config['term_ids'] ) ? array_map( 'intval', explode( ',', $tax_config['term_ids'] ) ) : [];
-				
+
 				if ( 'include_terms' === $behavior && ! empty( $term_ids ) ) {
-					$terms = array_filter( $terms, function( $term ) use ( $term_ids ) {
-						return in_array( $term->term_id, $term_ids, true );
-					});
+					$terms = array_filter(
+						$terms,
+						function ( $term ) use ( $term_ids ) {
+							return in_array( $term->term_id, $term_ids, true );
+						}
+					);
 				} elseif ( 'exclude_terms' === $behavior && ! empty( $term_ids ) ) {
-					$terms = array_filter( $terms, function( $term ) use ( $term_ids ) {
-						return ! in_array( $term->term_id, $term_ids, true );
-					});
+					$terms = array_filter(
+						$terms,
+						function ( $term ) use ( $term_ids ) {
+							return ! in_array( $term->term_id, $term_ids, true );
+						}
+					);
 				}
-				
+
 				if ( empty( $terms ) ) {
 					continue;
 				}
-				
-				$label      = $taxonomy->label;
-				$term_names = wp_list_pluck( $terms, 'name' );
-				$line       = sprintf( '%s=%s', $label, implode( ', ', $term_names ) );
+
+				$label            = $taxonomy->label;
+				$term_names       = wp_list_pluck( $terms, 'name' );
+				$line             = sprintf( '%s=%s', $label, implode( ', ', $term_names ) );
 				$taxonomy_lines[] = $line;
 			}
 			if ( ! empty( $taxonomy_lines ) ) {
@@ -1303,7 +1319,8 @@ class FE_Search_AI_Sync_Handler {
 		// Start the timer.
 		$start_time = microtime( true );
 
-		$api_key = $this->options['provider']['openai_key'] ?? '';
+		$encrypted_key = $this->options['provider']['openai_key'] ?? '';
+		$api_key       = \FESearchAI\Core\FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
 		if ( empty( $api_key ) ) {
 			// Log the error before returning.
 			\FESearchAI\Core\FE_Search_AI_Logger::log( 'ERROR', 'OpenAI Embedding API call skipped: API Key is not set.' );
@@ -1418,7 +1435,8 @@ class FE_Search_AI_Sync_Handler {
 		$start_time = microtime( true );
 
 		// Read Google API key from the same schema as the settings page.
-		$api_key = $this->options['provider']['google_key'] ?? '';
+		$encrypted_key = $this->options['provider']['google_key'] ?? '';
+		$api_key       = \FESearchAI\Core\FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
 		if ( empty( $api_key ) ) {
 			// Log the error before returning.
 			\FESearchAI\Core\FE_Search_AI_Logger::log( 'ERROR', 'Gemini Embedding API call skipped: API Key is not set.' );
@@ -1554,9 +1572,9 @@ class FE_Search_AI_Sync_Handler {
 		$stop_words = [];
 		// Load stop words
 		// Use the correct plugin directory constant for locating i18n files.
-		$lang_file = FE_AI_SEARCH_PLUGIN_DIR . "includes/i18n/{$locale}.php";
+		$lang_file = FE_SEARCH_AI_PLUGIN_DIR . "includes/i18n/{$locale}.php";
 		if ( ! file_exists( $lang_file ) ) {
-			$lang_file = FE_AI_SEARCH_PLUGIN_DIR . "includes/i18n/{$lang_code}.php";
+			$lang_file = FE_SEARCH_AI_PLUGIN_DIR . "includes/i18n/{$lang_code}.php";
 		}
 		if ( file_exists( $lang_file ) ) {
 			$lang_data  = include $lang_file;
@@ -1797,9 +1815,9 @@ class FE_Search_AI_Sync_Handler {
 		// for the current locale or its language code.
 		$locale    = get_locale();
 		$lang_code = strstr( $locale, '_', true ) ?: $locale;
-		$lang_file = FE_AI_SEARCH_PLUGIN_DIR . "includes/i18n/{$locale}.php";
+		$lang_file = FE_SEARCH_AI_PLUGIN_DIR . "includes/i18n/{$locale}.php";
 		if ( ! file_exists( $lang_file ) ) {
-			$lang_file = FE_AI_SEARCH_PLUGIN_DIR . "includes/i18n/{$lang_code}.php";
+			$lang_file = FE_SEARCH_AI_PLUGIN_DIR . "includes/i18n/{$lang_code}.php";
 		}
 		if ( file_exists( $lang_file ) ) {
 			return;

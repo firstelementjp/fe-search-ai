@@ -230,47 +230,16 @@ class FE_Search_AI_License_Settings {
 								</li>
 							</ul>
 						</li>
-
-						<li>
-							<h4><?php esc_html_e( '“FE Search Advanced” included (planned)', 'fe-search-ai' ); ?></h4>
-							<ul>
-								<li><?php esc_html_e( 'A full license for the high‑performance faceted search plugin used by over 1,300 companies is included at no additional cost.', 'fe-search-ai' ); ?></li>
-								<li><?php esc_html_e( 'Build advanced faceted search forms with an intuitive UI', 'fe-search-ai' ); ?></li>
-								<li><?php esc_html_e( 'Real-time faceted search with instant results without page reloads', 'fe-search-ai' ); ?></li>
-								<li><?php esc_html_e( 'Can be used on its own as a traditional, non-AI faceted search', 'fe-search-ai' ); ?></li>
-								<li>
-									<?php
-									printf(
-										/* translators: %s: "AI hybrid search" */
-										__( 'Achieve %s that combines traditional faceted search with AI-powered natural language search (planned)', 'fe-search-ai' ),
-										'<strong>' . esc_html__( 'AI hybrid search', 'fe-search-ai' ) . '</strong>'
-									);
-									?>
-								</li>
-							</ul>
-						</li>
 					</ul>
-					<p>
-						<a
-							href="<?php echo esc_url( FE_AI_SEARCH_PRO_URL ); ?>"
-							target="_blank"
-							class="button button-primary"
-						>
-							<?php esc_html_e( 'View FE Search AI Pro', 'fe-search-ai' ); ?>
-						</a>
-					</p>
 				</div>
 			<?php endif; ?>
 		</div>
 		<?php
 	}
 
-	/**
-	 * Registers the settings section and fields for the license tab.
-	 *
-	 * @since 1.0.0
-	 */
 	public function register_settings() {
+		$settings_group = 'fe-search-ai-settings-group';
+
 		add_settings_section(
 			'fe_search_ai_license_section',
 			__( 'License Activation', 'fe-search-ai' ),
@@ -279,7 +248,7 @@ class FE_Search_AI_License_Settings {
 		);
 
 		register_setting(
-			'fe-ai-settings',
+			$settings_group,
 			'fe_search_ai_license_key'
 		);
 
