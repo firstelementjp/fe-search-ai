@@ -96,4 +96,35 @@ class FE_Search_AI_Logger {
 		// Use TRUNCATE to efficiently delete all rows.
 		$wpdb->query( "TRUNCATE TABLE `{$table_name}`" );
 	}
+
+	/**
+	 * Rotates system logs by removing old entries based on retention policy.
+	 *
+	 * This method is called by the daily cron event to automatically clean up
+	 * old log entries and prevent the logs table from growing indefinitely.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public static function rotate_logs() {
+		global $wpdb;
+		$table_name = $wpdb->prefix . 'fe_search_ai_system_logs';
+
+		// Check if the table exists before attempting to rotate.
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) !== $table_name ) {
+			return;
+		}
+
+		// Default retention period: 30 days
+		$retention_days = apply_filters( 'fe_search_ai_log_retention_days', 30 );
+		$cutoff_date    = date( 'Y-m-d H:i:s', strtotime( "-{$retention_days} days" ) );
+
+		// Delete old log entries
+		$wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM `{$table_name}` WHERE created_at < %s",
+				$cutoff_date
+			)
+		);
+	}
 }
