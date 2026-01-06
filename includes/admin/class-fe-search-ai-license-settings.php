@@ -247,11 +247,6 @@ class FE_Search_AI_License_Settings {
 			'fe-search-ai'
 		);
 
-		register_setting(
-			$settings_group,
-			'fe_search_ai_license_key'
-		);
-
 		add_settings_field(
 			'fe_search_ai_license_key',
 			__( 'License Key', 'fe-search-ai' ),

@@ -307,6 +307,12 @@ class FE_Search_AI_Settings {
 			[ 'sanitize_callback' => [ $this, 'sanitize_main_settings' ] ]
 		);
 
+		register_setting(
+			$settings_group,
+			'fe_search_ai_site_info',
+			[ 'sanitize_callback' => [ $this, 'sanitize_site_info' ] ]
+		);
+
 		// ===================================================
 		// Define all sections and their corresponding fields.
 		// ===================================================
@@ -2140,18 +2146,18 @@ class FE_Search_AI_Settings {
 	 * @return void
 	 */
 	public function system_prompt_field_html() {
-		$prompt_options = $this->options['prompt'] ?? [];
-		$prompt         = $prompt_options['system_prompt'] ?? '';
+		$prompt        = get_option( 'fe_search_ai_custom_prompts', [] );
+		$system_prompt = $prompt['system_prompt'] ?? '';
 
-		if ( empty( $prompt ) ) {
-			$prompt = \FESearchAI\Ajax\FE_Search_AI_Chat_Handler::get_default_system_prompt();
+		if ( empty( $system_prompt ) ) {
+			$system_prompt = \FESearchAI\Ajax\FE_Search_AI_Chat_Handler::get_default_system_prompt();
 		}
 		?>
 		<textarea
-			name="fe_search_ai_settings[prompt][system_prompt]"
+			name="fe_search_ai_custom_prompts[system_prompt]"
 			rows="100"
 			class="fe-search-ai-prompt-editor large-text"
-		><?php echo esc_textarea( $prompt ); ?></textarea>
+		><?php echo esc_textarea( $system_prompt ); ?></textarea>
 		<p class="description">
 			<?php esc_html_e( 'Customize the instructions (system prompts) for the AI assistant. If left blank, the standard prompt will be used.', 'fe-search-ai' ); ?>
 		</p>
@@ -2219,10 +2225,10 @@ class FE_Search_AI_Settings {
 	 * @return void
 	 */
 	public function site_name_field_html() {
-		$prompt_options = $this->options['prompt'] ?? [];
-		$site_name      = $prompt_options['site_name'] ?? get_bloginfo( 'name' );
+		$site_info = get_option( 'fe_search_ai_site_info', [] );
+		$site_name = $site_info['site_name'] ?? get_bloginfo( 'name' );
 		?>
-		<input type="text" name="fe_search_ai_settings[prompt][site_name]" value="<?php echo esc_attr( $site_name ); ?>" class="regular-text">
+		<input type="text" name="fe_search_ai_site_info[site_name]" value="<?php echo esc_attr( $site_name ); ?>" class="regular-text">
 		<p class="description"><?php esc_html_e( 'The name of the site you want the AI to recognize. If left blank, the site title will be used.', 'fe-search-ai' ); ?></p>
 		<?php
 	}
@@ -2237,11 +2243,11 @@ class FE_Search_AI_Settings {
 	 * @return void
 	 */
 	public function site_purpose_field_html() {
-		$prompt_options = $this->options['prompt'] ?? [];
-		$site_purpose   = $prompt_options['site_purpose'] ?? get_bloginfo( 'description' );
+		$site_info    = get_option( 'fe_search_ai_site_info', [] );
+		$site_purpose = $site_info['site_purpose'] ?? get_bloginfo( 'description' );
 
 		?>
-		<textarea name="fe_search_ai_settings[prompt][site_purpose]" rows="3" class="large-text"><?php echo esc_textarea( $site_purpose ); ?></textarea>
+		<textarea name="fe_search_ai_site_info[site_purpose]" rows="3" class="large-text"><?php echo esc_textarea( $site_purpose ); ?></textarea>
 		<p class="description"><?php esc_html_e( 'Briefly explain the purpose of this site to the AI. If left blank, the site\'s tagline will be used.', 'fe-search-ai' ); ?></p>
 		<?php
 	}
@@ -2271,10 +2277,7 @@ class FE_Search_AI_Settings {
 		// OpenAI-Compatible key (stored in Free version settings)
 		$new_input['provider']['openai_compatible_key'] = FE_Search_AI_Encryption_Helper::encrypt( sanitize_text_field( $input['provider']['openai_compatible_key'] ?? '' ) );
 
-		// Prompt Tab
-		$new_input['prompt']['site_name']     = sanitize_text_field( $input['prompt']['site_name'] ?? '' );
-		$new_input['prompt']['site_purpose']  = sanitize_textarea_field( $input['prompt']['site_purpose'] ?? '' );
-		$new_input['prompt']['system_prompt'] = sanitize_textarea_field( $input['prompt']['system_prompt'] ?? '' );
+		// Prompt Tab - site_name and site_purpose are now saved separately in fe_search_ai_site_info option
 
 		// Sync Tab
 		// Normalize existing sync options to an array to avoid writing offsets on a string.
@@ -2395,7 +2398,24 @@ class FE_Search_AI_Settings {
 			}
 		}
 
+		// Remove prompt as it's now saved separately
+		unset( $new_input['prompt'] );
+
 		return $new_input;
+	}
+
+	/**
+	 * Sanitizes the site info settings before saving to the database.
+	 *
+	 * @since 1.0.0
+	 * @param array $input The raw array of site info data from the $_POST request.
+	 * @return array The sanitized array to be saved.
+	 */
+	public function sanitize_site_info( $input ) {
+		$sanitized                 = [];
+		$sanitized['site_name']    = sanitize_text_field( $input['site_name'] ?? '' );
+		$sanitized['site_purpose'] = sanitize_textarea_field( $input['site_purpose'] ?? '' );
+		return $sanitized;
 	}
 
 	/**

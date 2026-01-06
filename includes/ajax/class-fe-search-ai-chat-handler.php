@@ -1060,23 +1060,25 @@ class FE_Search_AI_Chat_Handler {
 		$system_prompt = self::get_default_system_prompt();
 
 		// If there is a basic prompt, overwrite with it.
-		$free_prompt = $this->options['prompt']['system_prompt'] ?? '';
+		$custom_prompts = get_option( 'fe_search_ai_custom_prompts', [] );
+		$free_prompt    = $custom_prompts['system_prompt'] ?? '';
 		if ( ! empty( $free_prompt ) ) {
 			$system_prompt = $free_prompt;
 		}
 
 		// If the Pro version is enabled and there are model-specific settings, they will overwrite accordingly.
 		if ( $this->is_license_active ) {
-			$custom_prompts = $this->options['prompt'];
+			$model_specific_prompts = $custom_prompts['custom_prompts'] ?? [];
 
-			if ( ! empty( $custom_prompts[ $provider ] ) ) {
-				$system_prompt = $custom_prompts[ $provider ];
+			if ( ! empty( $model_specific_prompts[ $provider ] ) ) {
+				$system_prompt = $model_specific_prompts[ $provider ];
 			}
 		}
 
 		// Get site info and replace placeholders in the prompt.
-		$site_name    = $this->options['prompt']['site_name'] ?? get_bloginfo( 'name' );
-		$site_purpose = $this->options['prompt']['site_purpose'] ?? get_bloginfo( 'description' );
+		$site_info    = get_option( 'fe_search_ai_site_info', [] );
+		$site_name    = $site_info['site_name'] ?? get_bloginfo( 'name' );
+		$site_purpose = $site_info['site_purpose'] ?? get_bloginfo( 'description' );
 		$site_url     = home_url( '/' );
 
 		$system_prompt = str_replace( '{site_name}', $site_name, $system_prompt );
