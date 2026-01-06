@@ -64,7 +64,11 @@ class FE_Search_AI_Admin {
 		?>
 		<div id="plugin_header">
 			<div id="plugin_header_upper">
-				<div id="plugin_header_title">FE Search <span>AI</span></div>
+				<div id="plugin_header_title">FE Search <span>AI</span>
+				<?php
+				if ( $is_pro ) :
+					?>
+					<span class="pro-badge">Pro</span><?php endif; ?></div>
 				<a href="https://www.firstelement.co.jp/" id="plugin_logo" target="_blank" title="<?php esc_attr_e( 'Go to the developer\'s website', 'fe-search-ai' ); ?>">
 					<img src="<?php echo esc_url( plugin_dir_url( FE_SEARCH_AI_PLUGIN_FILE ) . '/assets/images/logo-feas-white-shadow-s@2x-min.png' ); ?>" width="106" height="27">
 				</a>
