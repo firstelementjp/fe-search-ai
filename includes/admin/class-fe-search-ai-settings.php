@@ -2206,7 +2206,6 @@ class FE_Search_AI_Settings {
 				<input type="checkbox" name="fe_search_ai_settings[advanced][debug_mode]" value="1" <?php checked( $is_enabled ); ?>>
 				<?php esc_html_e( 'Enable Debug Mode', 'fe-search-ai' ); ?>
 				<?php echo $this->license_alert_icon; ?>
-				<?php esc_html_e( 'Enable the recording of detailed system logs for debugging purposes.', 'fe-search-ai' ); ?>
 			</label>
 			<p class="description">
 				<?php esc_html_e( 'When enabled, detailed operational logs will be saved to the `{prefix}fe_search_ai_system_logs` table (e.g. wp_fe_search_ai_system_logs if your table prefix is wp_). Only enable this when troubleshooting issues, as it can impact performance.', 'fe-search-ai' ); ?>

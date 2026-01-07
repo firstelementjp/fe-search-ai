@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: FE AI Search\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-10-07 13:37+0000\n"
-"PO-Revision-Date: 2026-01-06 08:07+0000\n"
+"PO-Revision-Date: 2026-01-07 02:45+0000\n"
 "Last-Translator: \n"
 "Language-Team: 日本語\n"
 "Language: ja\n"
@@ -361,7 +361,7 @@ msgstr "データ管理"
 
 #: includes/admin/class-fe-search-ai-settings.php:343
 msgid "Data Storage"
-msgstr ""
+msgstr "データ保存先"
 
 #: includes/admin/class-fe-search-ai-license-settings.php:302
 msgid "Deactivate"
@@ -461,7 +461,7 @@ msgstr "埋め込みモード"
 
 #: includes/admin/class-fe-search-ai-settings.php:2201
 msgid "Enable Debug Mode"
-msgstr ""
+msgstr "デバッグモードを有効化"
 
 #: includes/admin/class-fe-search-ai-settings.php:1341
 msgid "Enable floating chat"
@@ -1033,7 +1033,7 @@ msgstr "チャットバブルやユーザーの吹き出しの基本色を選択
 msgid ""
 "Select the embedding AI model used for site search. This model generates "
 "vector data to determine the relevance between user questions and content."
-msgstr ""
+msgstr "サイト検索に使用する埋め込みAIモデルを選択します。このモデルはベクトルデータを生成し、ユーザーの質問とコンテンツの関連性を判断します。"
 
 #: includes/admin/class-fe-search-ai-settings.php:895
 msgid ""
@@ -1123,11 +1123,11 @@ msgstr "詳細ページ"
 
 #: includes/admin/class-fe-search-ai-settings.php:375
 msgid "Site Name (AI)"
-msgstr ""
+msgstr "サイト名（AI）"
 
 #: includes/admin/class-fe-search-ai-settings.php:376
 msgid "Site Purpose (AI)"
-msgstr ""
+msgstr "サイトの目的（AI）"
 
 #: includes/admin/class-fe-search-ai-settings.php:2559
 msgid "Smooth"
@@ -1182,7 +1182,7 @@ msgstr "利用規約のページ"
 
 #: includes/admin/class-fe-search-ai-settings.php:355
 msgid "Text & Colors"
-msgstr ""
+msgstr "文字と色"
 
 #: includes/ajax/class-fe-search-ai-sync-handler.php:1443
 msgid "The Google Cloud API key is not configured."
