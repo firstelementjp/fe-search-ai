@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: FE AI Search\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-10-07 13:37+0000\n"
-"PO-Revision-Date: 2026-01-07 02:45+0000\n"
+"PO-Revision-Date: 2026-01-07 06:57+0000\n"
 "Last-Translator: \n"
 "Language-Team: 日本語\n"
 "Language: ja\n"
@@ -270,7 +270,7 @@ msgstr "コレクション名"
 
 #: includes/admin/class-fe-search-ai-settings.php:1016
 msgid "Comma-separated term IDs. Leave empty to include all terms."
-msgstr ""
+msgstr "カンマ区切りのターム ID。すべてのタームを対象にするには空のままにします。"
 
 #: includes/admin/class-fe-search-ai-settings.php:1997
 msgid ""
@@ -347,7 +347,7 @@ msgstr "ライセンスサーバーに接続できませんでした。"
 
 #: includes/admin/class-fe-search-ai-settings.php:1063
 msgid "Custom Fields Keys"
-msgstr ""
+msgstr "カスタムフィールドのキー"
 
 #: includes/admin/class-fe-search-ai-settings.php:2156
 msgid ""
@@ -487,7 +487,7 @@ msgstr "Enter（Shift + Enter で改行）"
 msgid ""
 "Enter only the keys of custom fields you want to include in chunk data "
 "(content snippets), separated by commas or new lines."
-msgstr ""
+msgstr "チャンクデータ (コンテンツスニペット) に含めるカスタムフィールドのキーを、カンマまたは改行で区切って入力してください。"
 
 #: includes/admin/class-fe-search-ai-settings.php:508
 msgid "Enter the base URL of your Qdrant HTTP API (including port)."
@@ -550,7 +550,7 @@ msgstr "特定の記事を除外"
 
 #: includes/admin/class-fe-search-ai-settings.php:1011
 msgid "Exclude specified term IDs"
-msgstr ""
+msgstr "特定のターム ID をチャンクから除外する"
 
 #: includes/ajax/class-fe-search-ai-chat-handler.php:1532
 msgid "Failed to save rating."
@@ -724,11 +724,11 @@ msgstr "カスタムフィールドを含める"
 
 #: includes/admin/class-fe-search-ai-settings.php:935
 msgid "Include in Chunk Data"
-msgstr ""
+msgstr "チャンクデータに含める"
 
 #: includes/admin/class-fe-search-ai-settings.php:1007
 msgid "Include only specified term IDs"
-msgstr ""
+msgstr "特定のターム ID のみチャンクに含める"
 
 #: includes/admin/class-fe-search-ai-settings.php:1126
 msgid "Indexed Posts"
@@ -918,19 +918,19 @@ msgstr "サイトあたり（合計）: 1日 1,000 リクエスト"
 
 #: includes/admin/class-fe-search-ai-settings.php:964
 msgid "Post Author"
-msgstr ""
+msgstr "投稿者"
 
 #: includes/admin/class-fe-search-ai-settings.php:948
 msgid "Post Content"
-msgstr ""
+msgstr "投稿本文"
 
 #: includes/admin/class-fe-search-ai-settings.php:956
 msgid "Post Date"
-msgstr ""
+msgstr "投稿日"
 
 #: includes/admin/class-fe-search-ai-settings.php:940
 msgid "Post Title"
-msgstr ""
+msgstr "投稿タイトル"
 
 #: includes/admin/class-fe-search-ai-settings.php:1128
 #: includes/admin/class-fe-search-ai-settings.php:1962

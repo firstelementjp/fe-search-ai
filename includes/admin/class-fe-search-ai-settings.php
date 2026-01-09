@@ -937,7 +937,7 @@ class FE_Search_AI_Settings {
 							<table class="widefat striped fe-search-ai-sync-targets-table">
 								<thead>
 									<tr>
-										<th><?php esc_html_e( 'Metadata', 'fe-search-ai' ); ?></th>
+										<th><?php esc_html_e( 'Post Data', 'fe-search-ai' ); ?></th>
 										<th><?php esc_html_e( 'Include in Chunk Data', 'fe-search-ai' ); ?></th>
 									</tr>
 								</thead>
@@ -1006,7 +1006,7 @@ class FE_Search_AI_Settings {
 															<?php // esc_html_e( 'Include this taxonomy in chunk data', 'fe-search-ai' ); ?>
 														</label>
 													</div>
-													<div class="<?php echo esc_attr( $tax_config_wrapper_class ); ?> fe-search-ai-tax-config-wrapper" style="margin-top: 0.5em; padding-left: 2em; <?php echo $snippet_tax_enabled ? '' : 'display: none;'; ?>">
+													<div class="<?php echo esc_attr( $tax_config_wrapper_class ); ?> fe-search-ai-tax-config-wrapper" style="<?php echo $snippet_tax_enabled ? '' : 'display: none;'; ?>">
 														<div style="margin-bottom: 0.5em;">
 															<label style="margin-right: 1em;">
 																<input type="radio" name="<?php echo esc_attr( $tax_behavior_radio_name ); ?>" value="include_terms" <?php checked( $snippet_tax_behavior, 'include_terms' ); ?>>
@@ -1028,60 +1028,60 @@ class FE_Search_AI_Settings {
 										}
 									}
 									?>
+
+									<!-- Custom Fields Row -->
+									<tr>
+										<td><?php esc_html_e( 'Custom Fields (Post Meta)', 'fe-search-ai' ); ?></td>
+										<td>
+											<div>
+												<label>
+													<input
+														type="checkbox"
+														name="fe_search_ai_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][enable_custom_fields]"
+														value="1"
+														class="fe-search-ai-cf-toggle"
+														data-target-input-id="<?php echo $snippet_field_input_id; ?>"
+														<?php checked( $enable_custom_fields ); ?>
+														<?php disabled( ! $is_pro ); ?>
+													>
+													<?php echo $this->license_alert_icon; ?>
+													<?php if ( ! class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) ) : ?>
+														<span class="description">(
+															<?php
+															printf(
+																/* translators: %s: Link to the Pro version. */
+																wp_kses_post( __( 'Available in the %s version.', 'fe-search-ai' ) ),
+																sprintf(
+																	'<a href="%s" class="%s">%s</a>',
+																	'#tab_license',
+																	'fe-search-ai-change-model-link',
+																	esc_html__( 'Pro', 'fe-search-ai' )
+																)
+															);
+															?>
+															)</span>
+													<?php endif; ?>
+												</label>
+											</div>
+											<div class="custom-field-input-wrapper" style="<?php echo $enable_custom_fields ? '' : 'display: none;'; ?>">
+												<textarea
+													id="<?php echo $snippet_field_input_id; ?>"
+													name="fe_search_ai_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_custom_fields]"
+													rows="3"
+													cols="60"
+													class="large-text code"
+													placeholder="field_name_1, field_name_2"
+													<?php disabled( ! $is_pro ); ?>
+												><?php echo esc_textarea( $snippet_custom_fields_value ); ?></textarea>
+												<p class="description">
+													<?php esc_html_e( 'Enter only the keys of custom fields you want to include in chunk data (content snippets), separated by commas or new lines.', 'fe-search-ai' ); ?>
+												</p>
+											</div>
+										</td>
+									</tr>
 								</tbody>
 							</table>
 
-							<hr>
-
-							<div>
-								<label>
-									<input
-										type="checkbox"
-										name="fe_search_ai_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][enable_custom_fields]"
-										value="1"
-										class="fe-search-ai-cf-toggle"
-										data-target-input-id="<?php echo $snippet_field_input_id; ?>"
-										<?php checked( $enable_custom_fields ); ?>
-										<?php disabled( ! $is_pro ); ?>
-									>
-									<?php echo $this->license_alert_icon; ?>
-									<?php esc_html_e( 'Include Custom Fields', 'fe-search-ai' ); ?>
-									<?php if ( ! class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) ) : ?>
-										<span class="description">(
-											<?php
-											printf(
-												/* translators: %s: Link to the Pro version. */
-												wp_kses_post( __( 'Available in the %s version.', 'fe-search-ai' ) ),
-												sprintf(
-													'<a href="%s" class="%s">%s</a>',
-													'#tab_license',
-													'fe-search-ai-change-model-link',
-													esc_html__( 'Pro', 'fe-search-ai' )
-												)
-											);
-											?>
-											)</span>
-									<?php endif; ?>
-								</label>
-
-								<div class="custom-field-input-wrapper">
-									<label for="<?php echo $snippet_field_input_id; ?>">
-										<strong><?php esc_html_e( 'Custom Fields Keys', 'fe-search-ai' ); ?></strong>
-									</label>
-									<textarea
-										id="<?php echo $snippet_field_input_id; ?>"
-										name="fe_search_ai_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_custom_fields]"
-										rows="3"
-										cols="60"
-										class="large-text code"
-										placeholder="field_name_1, field_name_2"
-										<?php disabled( ! $is_pro ); ?>
-									><?php echo esc_textarea( $snippet_custom_fields_value ); ?></textarea>
-									<p class="description">
-										<?php esc_html_e( 'Enter only the keys of custom fields you want to include in chunk data (content snippets), separated by commas or new lines.', 'fe-search-ai' ); ?>
-									</p>
-								</div>
-							</div>
 						</fieldset>
 					</div>
 				</div>
@@ -1335,7 +1335,7 @@ class FE_Search_AI_Settings {
 		$floating_options = wp_parse_args( $floating_options, $defaults );
 		?>
 		<fieldset id="fe_search_ai_settings_display_floating">
-			<div id="fe-search-ai-floating-display-accordion" class="fe-search-ai-accordion-wrapper">
+			<div id="fe_search_ai_floating_display_accordion" class="fe-search-ai-accordion-wrapper">
 				<div class="post-type-accordion-item">
 					<h4 class="accordion-title">
 						<label>
@@ -1762,7 +1762,7 @@ class FE_Search_AI_Settings {
 			>
 		</p>
 
-		<div id="fe-search-ai-color-picker">
+		<div id="fe_search_ai_color_picker">
 			<div class="color-picker-box">
 				<div class="color-picker-box-left">
 					<input
