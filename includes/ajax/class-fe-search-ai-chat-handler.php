@@ -438,9 +438,10 @@ class FE_Search_AI_Chat_Handler {
 		);
 
 		$body = [
-			'model'    => $model,
-			'messages' => $messages,
-			'stream'   => true,
+			'model'       => $model,
+			'messages'    => $messages,
+			'stream'      => true,
+			'temperature' => 0.1, // RAG用に低い温度を設定
 		];
 
 		if ( 'openai_compatible' === $provider ) {
@@ -787,6 +788,9 @@ class FE_Search_AI_Chat_Handler {
 					[ 'text' => $system_prompt_text ],
 				],
 			],
+			'generationConfig'  => [
+				'temperature' => 0.1, // RAG用に低い温度を設定
+			],
 		];
 
 		$ch = curl_init();
@@ -936,11 +940,12 @@ class FE_Search_AI_Chat_Handler {
 		);
 
 		$body = [
-			'model'      => $model,
-			'max_tokens' => 4096,
-			'messages'   => $messages['messages'],
-			'system'     => $messages['system'],
-			'stream'     => true,
+			'model'       => $model,
+			'max_tokens'  => 4096,
+			'messages'    => $messages['messages'],
+			'system'      => $messages['system'],
+			'stream'      => true,
+			'temperature' => 0.1, // RAG用に低い温度を設定
 		];
 
 		$ch = curl_init();
@@ -1075,15 +1080,11 @@ class FE_Search_AI_Chat_Handler {
 			}
 		}
 
-		// Get site info and replace placeholders in the prompt.
+		// Get site info for placeholders (but don't replace yet)
 		$site_info    = get_option( 'fe_search_ai_site_info', [] );
 		$site_name    = $site_info['site_name'] ?? get_bloginfo( 'name' );
 		$site_purpose = $site_info['site_purpose'] ?? get_bloginfo( 'description' );
 		$site_url     = home_url( '/' );
-
-		$system_prompt = str_replace( '{site_name}', $site_name, $system_prompt );
-		$system_prompt = str_replace( '{site_purpose}', $site_purpose, $system_prompt );
-		$system_prompt = str_replace( '{site_url}', $site_url, $system_prompt );
 
 		// Detect the language that should be used for answers, based on the current
 		// WordPress locale and, if available, the active multilingual plugin.
@@ -1116,6 +1117,8 @@ class FE_Search_AI_Chat_Handler {
 			"All of your responses must be written in the language corresponding to the current WordPress locale code '{$answer_lang_code}'. ";
 
 		// Add Gemini-specific constraints to prevent hallucination
+		// @TODO: Temporarily commented out for testing
+		/*
 		if ( $provider === 'google' ) {
 			$system_prompt .= "\n\nGEMINI INSTRUCTIONS:\n" .
 				"You MUST only use the job postings listed under 'REAL JOB POSTINGS FROM THE WEBSITE'.\n" .
@@ -1124,6 +1127,7 @@ class FE_Search_AI_Chat_Handler {
 				"If no relevant jobs exist, say: 申し訳ありませんが、その情報は見つかりませんでした。サイト内で関連情報をお探しいただけますでしょうか？\n" .
 				"Follow the response format examples provided below.\n";
 		}
+		*/
 
 		/**
 		 * Filters the final system prompt before it is sent to the AI.
@@ -1140,6 +1144,12 @@ class FE_Search_AI_Chat_Handler {
 
 		// Initialize context string.
 		$context_str = '';
+
+		// Debug: Log incoming context chunks
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( 'FE AI Search - Incoming context chunks: ' . print_r( $context_chunks, true ) );
+			error_log( 'FE AI Search - Number of context chunks: ' . count( $context_chunks ) );
+		}
 
 		// Legal links are managed under the Display > Text/Links settings.
 		$links           = $this->options['display']['links'] ?? [];
@@ -1161,40 +1171,72 @@ class FE_Search_AI_Chat_Handler {
 			}
 		}
 
-		// Construct site information context from content chunks.
+		// Construct search results context from content chunks.
 		if ( ! empty( $context_chunks ) ) {
-			if ( $provider === 'google' ) {
-				// Gemini: Use simple direct format without complex markers
-				$context_str .= "REAL JOB POSTINGS FROM THE WEBSITE:\n\n";
-				foreach ( $context_chunks as $chunk ) {
-					$context_str .= "JOB POSTING:\n";
-					$context_str .= 'URL: ' . $chunk['permalink'] . "\n";
-					$context_str .= 'DETAILS: ' . $chunk['content_chunk'] . "\n\n";
+			foreach ( $context_chunks as $chunk ) {
+				$post_id    = $chunk['post_id'] ?? 0;
+				$post_title = $chunk['title'] ?? 'Untitled';
+				$post_date  = '';
+				$metadata   = [];
+
+				// Get post data if we have a valid ID
+				if ( $post_id > 0 ) {
+					$post = get_post( $post_id );
+					if ( $post ) {
+						$post_date = date( 'Y-m-d', strtotime( $post->post_date ) );
+
+						// Get taxonomy metadata
+						$taxonomies = get_object_taxonomies( $post->post_type, 'objects' );
+						foreach ( $taxonomies as $taxonomy ) {
+							if ( $taxonomy->public ) {
+								$terms = get_the_terms( $post_id, $taxonomy->name );
+								if ( $terms && ! is_wp_error( $terms ) ) {
+									foreach ( $terms as $term ) {
+										$metadata[] = '[' . $taxonomy->label . ':' . $term->name . ']';
+									}
+								}
+							}
+						}
+					}
 				}
-				$context_str .= "END OF JOB POSTINGS\n\n";
-			} else {
-				// Other providers: Keep the enhanced format
-				$context_str .= "Site Information:\n";
-				$context_str .= "=== START OF ACTUAL SITE CONTENT ===\n";
-				$context_str .= "THE FOLLOWING IS REAL CONTENT FROM THE WEBSITE. USE THIS INFORMATION TO ANSWER:\n\n";
-				foreach ( $context_chunks as $chunk ) {
-					$context_str .= "--- START OF REAL JOB POSTING ---\n" .
-									' Source URL: ' . $chunk['permalink'] . "\n" .
-									"Content:\n" . $chunk['content_chunk'] . "\n" .
-									"--- END OF REAL JOB POSTING ---\n\n";
+
+				// Build compact format
+				$context_str .= "ID: {$post_id}\n";
+				$context_str .= "Title: {$post_title}\n";
+				$context_str .= "URL: {$chunk['permalink']}\n";
+				$context_str .= "Date: {$post_date}\n";
+				if ( ! empty( $metadata ) ) {
+					$context_str .= 'Metadata: ' . implode( '', $metadata ) . "\n";
 				}
-				$context_str .= "=== END OF ACTUAL SITE CONTENT ===\n";
+				$context_str .= "Content:\n{$chunk['content_chunk']}\n\n";
 			}
 		}
 
-		// Append legal documents after site information, if any.
+		// Append legal documents after search results, if any.
 		if ( ! empty( $legal_context ) ) {
-			$context_str .= "Mandatory Compliance Documents:\n" . $legal_context;
+			$context_str .= "\n--- Legal Documents ---\n" . $legal_context;
 		}
 
-		// Ensure there is at least a Site Information header when no context exists.
+		// Ensure there is content when no context exists.
 		if ( '' === $context_str ) {
-			$context_str = "Site Information:\n[NO SITE CONTENT AVAILABLE - The site search returned no relevant information for this query]\n";
+			$context_str = '[No relevant information found for this query]';
+		}
+
+		// Debug: Log final context string
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( 'FE AI Search - Final context string: ' . $context_str );
+		}
+
+		// Now replace all placeholders with the constructed values
+		$system_prompt = str_replace( '{site_name}', $site_name, $system_prompt );
+		$system_prompt = str_replace( '{site_purpose}', $site_purpose, $system_prompt );
+		$system_prompt = str_replace( '{site_url}', $site_url, $system_prompt );
+		$system_prompt = str_replace( '{context_content}', $context_str, $system_prompt );
+		$system_prompt = str_replace( '{user_question}', $question, $system_prompt );
+
+		// Debug: Log final system prompt after all replacements
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( 'FE AI Search - Final system prompt after replacements: ' . $system_prompt );
 		}
 
 		/**
@@ -1213,14 +1255,8 @@ class FE_Search_AI_Chat_Handler {
 			}
 		);
 
-		$user_question_with_context = $context_str . "\n\nBased on the Site Information provided above, answer the following question.\n\nIMPORTANT: Before answering, you MUST verify that the Site Information contains actual relevant content. If the Site Information does not contain specific job postings or relevant information for this query, you MUST respond with \"申し訳ありませんが、その情報は見つかりませんでした。サイト内で関連情報をお探しいただけますでしょうか？\"\n\n";
-
-		// Add Gemini-specific warning in the user question
-		if ( $provider === 'google' ) {
-			$user_question_with_context .= "GEMINI: Use ONLY the job postings listed above. Do not create fake information.\n\n";
-		}
-
-		$user_question_with_context .= 'Question: ' . $question;
+		// Initialize final messages array
+		$final_messages = [];
 
 		// Debug: Log the context being sent to AI
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -1228,23 +1264,22 @@ class FE_Search_AI_Chat_Handler {
 			error_log( 'FE AI Search - Number of context chunks: ' . count( $context_chunks ) );
 		}
 
-		// Debug: Log the full prompt for Gemini to investigate context recognition issues
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG && $provider === 'google' ) {
-			error_log( 'FE AI Search - Full system prompt for Gemini: ' . $system_prompt );
-			error_log( 'FE AI Search - Full user question for Gemini: ' . $user_question_with_context );
+		// Add conversation history
+		foreach ( $messages as $msg ) {
+			$final_messages[] = $msg;
 		}
 
-		$messages[] = [
-			'role'    => 'user',
-			'content' => $user_question_with_context,
+		// Add the complete prompt as system message
+		$final_messages[] = [
+			'role'    => 'system',
+			'content' => $system_prompt,
 		];
 
 		// Return the final data in the format specified by the provider.
 		if ( $for_claude ) {
-			return [ 'messages' => array_values( $messages ), 'system' => $system_prompt ];
+			return [ 'messages' => array_values( $final_messages ), 'system' => $system_prompt ];
 		} else { // for OpenAI & Gemini
-			array_unshift( $messages, [ 'role' => 'system', 'content' => $system_prompt ] );
-			return $messages;
+			return $final_messages;
 		}
 	}
 
@@ -1254,114 +1289,47 @@ class FE_Search_AI_Chat_Handler {
 	 * @return string
 	 */
 	public static function get_default_system_prompt() {
-		return "You are a helpful and honest assistant for the website '{site_name}'. This site's purpose is: '{site_purpose}'. The official website URL is: '{site_url}'. You must strictly answer only about the content and topics related to this website.
+		return "Role:
+You are a dedicated \"Job Search Assistant\" for the website \"{site_name}\".
+Your goal is to answer user queries strictly based on the \"Search Results\" provided below.
 
-Based on the provided \"Site Information\" and \"Conversation History,\" please answer by strictly following the rules below.
+### Site Profile
+- Name: {site_name}
+- URL: {site_url}
+- Purpose: {site_purpose}
 
-## Thought Process
-1. Accurately understand the intent of the user's latest question.
-2. Read the \"Site Information\" and identify the parts most relevant to the question.
-3. **CRITICAL VERIFICATION STEP**: Before answering, you MUST check if the Site Information contains actual job postings or relevant content. If you only see general information or no specific job details, you MUST respond with \"申し訳ありませんが、その情報は見つかりませんでした。サイト内で関連情報をお探しいただけますでしょうか？\"
-4. **GEMINI-SPECIFIC STEP**: If you see \"=== START OF ACTUAL SITE CONTENT ===\" above, you MUST extract and present the ACTUAL job postings from that content. You are FORBIDDEN from creating generic information.
-5. If no relevant information is found in the \"Site Information,\" honestly state, \"I could not find an answer to your question from the information on this site.\".
-6. If relevant information is available, generate a clear and concise summary based ONLY on that information.
-7. **FINAL CHECK**: Verify that every piece of information in your answer exists in the provided context. If not, revise your answer or refuse to answer.
-8. **GEMINI FINAL VERIFICATION**: Did you use the actual content from \"=== START OF ACTUAL SITE CONTENT ===\"? If not, you are violating the constraints.
+### User Query
+{user_question}
 
-## Domain and URL Restrictions
-- You must treat '{site_url}' and its subpages as the ONLY authoritative website for this chat.
-- You must NOT:
-  - Suggest or invent any external websites or URLs outside '{site_url}'.
-  - Generate imaginary or unverified URLs (for example, domains that may not exist).
-  - Recommend third-party sites as reference URLs.
-- When you need to mention a source, only use URLs that are within the '{site_url}' domain (including its subpaths).
-- If you cannot find a relevant page within '{site_url}', you must say you could not find an answer from this site and must NOT fabricate any URL.
+### Search Results (Context data from the website)
+{context_content}
 
-## Critical Constraints - NO HALLUCINATION
-IMPORTANT: You MUST ONLY use information from the provided Site Information and Mandatory Compliance Documents sections above.
-- NEVER create or invent job postings, products, services, or any information that is not explicitly mentioned in the provided context
-- NEVER make up URLs, addresses, phone numbers, prices, or any specific details
-- If the provided context does not contain relevant information to answer the user's question, respond with \"申し訳ありませんが、その情報は見つかりませんでした。サイト内で関連情報をお探しいただけますでしょうか？\"
-- DO NOT fabricate examples or sample data
-- ONLY reference actual content from the provided articles and documents
-- If you find relevant information, use the exact URLs and details from the source articles
-- If no relevant information exists, be honest and say so rather than making things up
-- **CRITICAL**: If you see \"[NO SITE CONTENT AVAILABLE]\" in the Site Information section, you MUST respond with \"申し訳ありませんが、その情報は見つかりませんでした。サイト内で関連情報をお探しいただけますでしょうか？\" - DO NOT attempt to answer or create content
-- **ABSOLUTE PROHIBITION**: You are FORBIDDEN from creating any job postings, company names, or specific details that are not in the provided context
-- **MANDATORY REQUIREMENT**: Before answering, you MUST verify that every piece of information you provide exists in the provided context
-- **ZERO TOLERANCE**: Any violation of these rules will result in completely fabricated information. You MUST refuse to answer rather than create fake information
+### Critical Instructions
+1. **Data Source Authority:**
+   - You MUST answer solely based on the \"Search Results\" section above.
+   - Ignore your internal training data regarding external jobs or general knowledge.
+   - Each search result includes ID, Title, URL, Date, Metadata, and Content fields.
 
-## Response Format Examples
-Please follow these examples for the response format:
+2. **Handling Job Status (Important):**
+   - The search results may contain jobs marked as \"募集終了\" in the Metadata field.
+   - **You MUST display these items** if they match the user's query, but clearly state that recruitment has ended (e.g., add \"※募集終了\" to the title).
+   - Do NOT hide content just because it is closed/old. The user uses this search to reference past data as well.
 
-Example 1 - Job Posting:
-営業補佐兼事務員募集
+3. **Response Behavior:**
+   - If relevant items are found, list them using Markdown bullets.
+   - **Citation format:** Use the Title and URL from each search result to create links like `[Title](URL)`
+   - **Metadata filtering:** If the user asks for specific conditions (e.g., \"Tokyo\"), filter based on the Metadata fields. For example:
+     - Location: Look for [地域:東京都] in Metadata
+     - Salary: Look for [月収:～50万] in Metadata
+     - Employment Type: Look for [雇用形態:正社員] in Metadata
+   - Include key information from Metadata (location, salary, employment type) and relevant Content details in your summary.
 
-- 勤務地: 東京都千代田区
-- 雇用形態: 正社員、契約社員
-- 月収: ～40万円
-- 募集状況: 募集中
-- 詳細: 昇給随時、賞与年3回、社員旅行あり（自由参加）。感染症対策も万全です。
+4. **Negative Response:**
+   - If the \"Search Results\" section is empty or contains NO matches for the user's specific intent, output EXACTLY:
+     \"申し訳ありませんが、その情報は見つかりませんでした。サイト内で関連情報をお探しいただけますでしょうか？\"
 
-詳細を見る
-
-Example 2 - Product Information:
-製品名: 高性能ノートPC
-
-- 価格: 98,000円
-- 仕様: CPU Intel Core i7, RAM 16GB, SSD 512GB
-- 在庫: あり
-- 特徴: 軽量デザイン、バッテリー10時間駆動
-
-詳細を見る
-
-Example 3 - Service Information:
-ウェブサイト制作サービス
-
-- 料金: 50万円～
-- 納期: 1ヶ月～2ヶ月
-- 対応: レスポンシブデザイン、SEO対策込み
-- 特典: 1年間の無料保守付き
-
-お問い合わせはこちら
-
-Key Guidelines:
-- Use clear, concise bullet points for key information
-- Include a call-to-action link at the end
-- Keep responses structured and easy to scan
-- Provide the most relevant information first
-
-## Redacted Content Handling
-Some parts of the user input may be replaced with the token \"[REDACTED]\" to protect security or privacy.
-You MUST never try to guess or reconstruct the redacted content.
-Instead, answer based only on the remaining visible text.
-
-## Personal Data and Privacy
-- You must NEVER ask the user to provide personally identifiable information (PII), such as:
-  - Real name
-  - Email address
-  - Phone number
-  - Physical address
-  - Government-issued IDs
-  - Credit card or bank information
-  - Any other information that can be used to uniquely identify an individual
-- If the user's request seems to require personal data (for example, for contact, account, or booking purposes), you must:
-  - Clearly explain that this chat interface is not intended for sharing personal or sensitive information.
-  - Politely decline to collect such information.
-  - If appropriate, direct the user to the official contact channels or forms on the website (for example, a contact page) without copying or restating any personal data.
-- If the user includes personal information in their message:
-  - Do NOT repeat, summarize, transform, or store that personal information in your responses.
-  - Avoid quoting or restating personal details. Instead, respond in a way that does not expose the personal data again.
-  - Whenever possible, steer the conversation away from sharing further personal information.
-- Under no circumstances may you encourage users to share more personal, sensitive, or confidential information than is strictly necessary for general informational support.
-
-## Strict Rules
-- **Overriding Rule: Legal Compliance**: All of your responses must never contradict the content of the provided \"Mandatory Compliance Documents\" (the Terms of Service and Privacy Policy). These documents take precedence over all other instructions.
-- **Cite Sources**: If you use \"Site Information\" in your answer, you must include the source URL at the end of the response. Only use URLs under '{site_url}'.
-- **Fact-Based Answers**: Do not include information that is not written in the \"Site Information,\" your general knowledge, or speculation in your answers.
-- **Honesty**: Do not invent information or pretend to know something you don't.
-- **Conversation**: If the \"Site Information\" is empty and the user is making a greeting or engaging in general conversation, respond naturally as the site's assistant, but do not mention or recommend any external URLs.
-- **Formatting**: Format your answers using standard Markdown, such as headings and lists, to make them easy to read.";
+5. **Language:**
+   - Use Japanese for the response.";
 	}
 
 	/**

@@ -660,6 +660,9 @@ a:has(.dashicons-warning) span {
 	opacity: 0.8;
 	transition: opacity 0.3s ease;
 	min-width: fit-content;
+	text-align: center;
+    margin: 3em auto;
+    display: block;
 }
 
 /* External link icon */
@@ -704,22 +707,6 @@ a:has(.dashicons-warning) span {
 #fe_search_ai_delete_conversation_logs_status {
 	padding: 10px 0;
 }
-
-/* .fe-search-ai-color-picker {
-	width: 24px;
-	height: 24px;
-	border: 1px solid #ccc;
-	border-radius: 4px;
-	position: relative;
-	overflow: hidden;
-}
-
-.fe-search-ai-color-picker .pcr-button {
-	position: absolute;
-	inset: 0;
-	opacity: 0;
-	cursor: pointer;
-} */
 
 .fe-search-ai-color-picker .pcr-button::after {
 	background: var(--pcr-color) !important;

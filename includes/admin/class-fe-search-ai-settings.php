@@ -313,6 +313,12 @@ class FE_Search_AI_Settings {
 			[ 'sanitize_callback' => [ $this, 'sanitize_site_info' ] ]
 		);
 
+		register_setting(
+			$settings_group,
+			'fe_search_ai_custom_prompts',
+			[ 'sanitize_callback' => [ $this, 'sanitize_custom_prompts' ] ]
+		);
+
 		// ===================================================
 		// Define all sections and their corresponding fields.
 		// ===================================================
@@ -1996,7 +2002,7 @@ class FE_Search_AI_Settings {
 			<label>
 				<input
 					type="checkbox"
-					name="fe_search_ai_settings[data][options][delete_on_uninstall]"
+					name="fe_search_ai_settings[advanced][delete_on_uninstall]"
 					value="1"
 					<?php checked( $delete_on_uninstall, true ); ?>
 				/>
@@ -2414,6 +2420,19 @@ class FE_Search_AI_Settings {
 		$sanitized                 = [];
 		$sanitized['site_name']    = sanitize_text_field( $input['site_name'] ?? '' );
 		$sanitized['site_purpose'] = sanitize_textarea_field( $input['site_purpose'] ?? '' );
+		return $sanitized;
+	}
+
+	/**
+	 * Sanitizes the custom prompts array.
+	 *
+	 * @since 1.0.0
+	 * @param array $input The raw array of custom prompts data from the $_POST request.
+	 * @return array The sanitized array to be saved.
+	 */
+	public function sanitize_custom_prompts( $input ) {
+		$sanitized                  = [];
+		$sanitized['system_prompt'] = sanitize_textarea_field( $input['system_prompt'] ?? '' );
 		return $sanitized;
 	}
 

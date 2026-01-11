@@ -13,9 +13,8 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 	// Initialize WordPress internationalization functions.
-	// Fallback to identity translation to prevent the whole admin UI from breaking
-	// if wp.i18n is not available due to load order or caching issues.
-	const __ = window.wp?.i18n?.__ || (text => text);
+	// Use wp.i18n with proper domain for translations.
+	const { __ } = window.wp.i18n || { __: text => text };
 
 	// ==========================================================================
 	// DOM Element Caching
@@ -454,7 +453,10 @@ document.addEventListener('DOMContentLoaded', () => {
 	});
 
 	// Delete Conversation Logs Button
-	deleteConversationLogsButton?.addEventListener('click', async () => {
+	deleteConversationLogsButton?.addEventListener('click', async event => {
+		event.preventDefault();
+		event.stopPropagation();
+
 		if (
 			// eslint-disable-next-line no-alert
 			!confirm(

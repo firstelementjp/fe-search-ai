@@ -823,14 +823,37 @@ class FE_Search_AI_Sync_Handler {
 			$payload         = $point['payload'];
 			$content_snippet = isset( $payload['content_snippet'] ) ? (string) $payload['content_snippet'] : '';
 			$permalink       = isset( $payload['permalink'] ) ? (string) $payload['permalink'] : '';
+			$post_id         = isset( $payload['post_id'] ) ? (int) $payload['post_id'] : 0;
+			$title           = isset( $payload['title'] ) ? (string) $payload['title'] : '';
 
 			if ( '' === $content_snippet || '' === $permalink ) {
 				continue;
 			}
 
+			// If we don't have post_id or title from payload, try to extract them
+			if ( $post_id === 0 ) {
+				$url_parts = wp_parse_url( $permalink );
+				if ( isset( $url_parts['path'] ) ) {
+					$path_parts = explode( '/', trim( $url_parts['path'], '/' ) );
+					$last_part  = end( $path_parts );
+					if ( is_numeric( $last_part ) ) {
+						$post_id = (int) $last_part;
+					}
+				}
+			}
+
+			if ( empty( $title ) && $post_id > 0 ) {
+				$post = get_post( $post_id );
+				if ( $post ) {
+					$title = $post->post_title;
+				}
+			}
+
 			$results[] = [
 				'content_chunk' => $content_snippet,
 				'permalink'     => $permalink,
+				'post_id'       => $post_id,
+				'title'         => $title ?: 'Untitled',
 			];
 		}
 
@@ -955,12 +978,15 @@ class FE_Search_AI_Sync_Handler {
 		$sql          = "SELECT `content_chunk`, `post_id` FROM `{$vectors_table}` WHERE `id` IN ( {$placeholders} )";
 		$chunks_data  = $wpdb->get_results( $wpdb->prepare( $sql, $vector_ids ), ARRAY_A );
 
-		// Add permalink to the results.
+		// Add permalink and additional data to the results.
 		$results = [];
 		foreach ( $chunks_data as $row ) {
+			$post      = get_post( $row['post_id'] );
 			$results[] = [
 				'content_chunk' => $row['content_chunk'],
 				'permalink'     => get_permalink( $row['post_id'] ),
+				'post_id'       => $row['post_id'],
+				'title'         => $post ? $post->post_title : 'Untitled',
 			];
 		}
 
@@ -1001,12 +1027,15 @@ class FE_Search_AI_Sync_Handler {
 		$meta_parts = [];
 		$body_text  = '';
 
-		// Build an array of sentences from metadata.
+		// Build metadata in compact format
+		$meta_parts[] = sprintf( 'ID: %d', $post->ID );
 		if ( ! empty( $pt_options['include_title'] ) ) {
-			$meta_parts[] = sprintf( 'The title of this article is "%s".', $post->post_title );
+			$meta_parts[] = sprintf( 'Title: %s', $post->post_title );
 		}
+		$meta_parts[] = sprintf( 'URL: %s', get_permalink( $post ) );
+
 		if ( ! empty( $pt_options['include_date'] ) ) {
-			$meta_parts[] = sprintf( 'This article was published on %s.', date_i18n( get_option( 'date_format' ), strtotime( $post->post_date ) ) );
+			$meta_parts[] = sprintf( 'Date: %s', date( 'Y-m-d', strtotime( $post->post_date ) ) );
 		}
 		if ( ! empty( $pt_options['include_author'] ) ) {
 			$user = get_user_by( 'ID', $post->post_author );
@@ -1025,13 +1054,13 @@ class FE_Search_AI_Sync_Handler {
 					$nickname !== $user_email &&
 					$nickname !== $user_login
 				) {
-					$meta_parts[] = sprintf( 'The author of this article is %s.', $nickname );
+					$meta_parts[] = sprintf( 'Author: %s', $nickname );
 				}
 			}
 		}
 
 		if ( ! empty( $pt_options['snippet_taxonomies'] ) ) {
-			$taxonomy_lines = [];
+			$metadata_items = [];
 			foreach ( $pt_options['snippet_taxonomies'] as $tax_slug => $tax_config ) {
 				if ( empty( $tax_config['enabled'] ) ) {
 					continue;
@@ -1071,29 +1100,15 @@ class FE_Search_AI_Sync_Handler {
 					continue;
 				}
 
-				$label            = $taxonomy->label;
-				$term_names       = wp_list_pluck( $terms, 'name' );
-				$line             = sprintf( '%s=%s', $label, implode( ', ', $term_names ) );
-				$taxonomy_lines[] = $line;
+				$label      = $taxonomy->label;
+				$term_names = wp_list_pluck( $terms, 'name' );
+				foreach ( $term_names as $term_name ) {
+					$metadata_items[] = sprintf( '[%s:%s]', $label, $term_name );
+				}
 			}
-			if ( ! empty( $taxonomy_lines ) ) {
-				$taxonomy_lines = apply_filters( 'fe_search_ai_taxonomy_lines', $taxonomy_lines, $post, $pt_options );
-				$prefix_line    = 'The following taxonomy metadata is associated with this article:';
-				$has_prefix     = false;
-				foreach ( $taxonomy_lines as $line ) {
-					if ( trim( (string) $line ) === $prefix_line ) {
-						$has_prefix = true;
-						break;
-					}
-				}
-				if ( ! $has_prefix ) {
-					$meta_parts[] = $prefix_line;
-				}
-				foreach ( $taxonomy_lines as $line ) {
-					if ( '' !== trim( (string) $line ) ) {
-						$meta_parts[] = (string) $line;
-					}
-				}
+			if ( ! empty( $metadata_items ) ) {
+				$metadata_items = apply_filters( 'fe_search_ai_taxonomy_items', $metadata_items, $post, $pt_options );
+				$meta_parts[]   = 'Metadata: ' . implode( '', $metadata_items );
 			}
 		}
 
@@ -1107,7 +1122,7 @@ class FE_Search_AI_Sync_Handler {
 					array_map( 'trim', $keys_raw )
 				)
 			);
-			$cf_pairs = [];
+			$cf_items = [];
 			foreach ( $keys as $meta_key ) {
 				if ( '' === $meta_key ) {
 					continue;
@@ -1120,27 +1135,25 @@ class FE_Search_AI_Sync_Handler {
 				if ( '' === $normalized ) {
 					continue;
 				}
-				$cf_pairs[] = sprintf( '%s=%s', $meta_key, $normalized );
+				$cf_items[] = sprintf( '[%s:%s]', $meta_key, $normalized );
 			}
-			if ( ! empty( $cf_pairs ) ) {
-				$custom_fields_line = implode( ', ', $cf_pairs );
-				$custom_fields_line = apply_filters( 'fe_search_ai_custom_fields_line', $custom_fields_line, $post, $cf_pairs, $pt_options );
-				if ( '' !== trim( (string) $custom_fields_line ) ) {
-					$prefix_line = 'The following custom field metadata is associated with this article:';
-					if ( 0 !== strpos( trim( (string) $custom_fields_line ), $prefix_line ) ) {
-						$meta_parts[] = $prefix_line;
-					}
-					$meta_parts[] = (string) $custom_fields_line;
+			if ( ! empty( $cf_items ) ) {
+				$cf_items = apply_filters( 'fe_search_ai_custom_field_items', $cf_items, $post, $pt_options );
+				if ( ! empty( $meta_parts ) && strpos( end( $meta_parts ), 'Metadata:' ) === 0 ) {
+					// Append to existing metadata
+					$meta_parts[ count( $meta_parts ) - 1 ] .= implode( '', $cf_items );
+				} else {
+					// Create new metadata line
+					$meta_parts[] = 'Metadata: ' . implode( '', $cf_items );
 				}
 			}
 		}
 
 		// Add the main content.
 		if ( ! empty( $pt_options['include_content'] ) ) {
-			$content      = strip_shortcodes( $post->post_content );
-			$content      = wp_strip_all_tags( $content );
-			$meta_parts[] = 'Here is the main content of the article:';
-			$body_text    = $content;
+			$content   = strip_shortcodes( $post->post_content );
+			$content   = wp_strip_all_tags( $content );
+			$body_text = $content;
 		}
 
 		if ( empty( $meta_parts ) && '' === trim( (string) $body_text ) ) {
@@ -1184,9 +1197,9 @@ class FE_Search_AI_Sync_Handler {
 			if ( mb_strlen( $body_text ) <= $available_for_body ) {
 				// Everything fits into a single chunk.
 				if ( '' !== $meta_text ) {
-					$chunks[] = trim( $meta_text . "\n" . $body_text );
+					$chunks[] = trim( $meta_text . "\n\nContent:\n" . $body_text );
 				} else {
-					$chunks[] = trim( $body_text );
+					$chunks[] = "Content:\n" . trim( $body_text );
 				}
 			} else {
 				// Split the body into sentence-based chunks, each limited by available_for_body.
@@ -1196,9 +1209,9 @@ class FE_Search_AI_Sync_Handler {
 					if ( mb_strlen( $current_body . $sentence ) > $available_for_body ) {
 						// Flush the current body chunk.
 						if ( '' !== $meta_text ) {
-							$chunks[] = trim( $meta_text . "\n" . $current_body );
+							$chunks[] = trim( $meta_text . "\n\nContent:\n" . $current_body );
 						} else {
-							$chunks[] = trim( $current_body );
+							$chunks[] = "Content:\n" . trim( $current_body );
 						}
 						$current_body = $sentence;
 					} else {
@@ -1207,9 +1220,9 @@ class FE_Search_AI_Sync_Handler {
 				}
 				if ( '' !== $current_body ) {
 					if ( '' !== $meta_text ) {
-						$chunks[] = trim( $meta_text . "\n" . $current_body );
+						$chunks[] = trim( $meta_text . "\n\nContent:\n" . $current_body );
 					} else {
-						$chunks[] = trim( $current_body );
+						$chunks[] = "Content:\n" . trim( $current_body );
 					}
 				}
 			}
@@ -1218,10 +1231,12 @@ class FE_Search_AI_Sync_Handler {
 		$permalink        = get_permalink( $post );
 		$chunks_with_meta = [];
 		foreach ( $chunks as $chunk_content ) {
-			// Add the chunk content and its permalink to the list.
+			// Add the chunk content and its metadata to the list.
 			$chunks_with_meta[] = [
 				'content_chunk' => $chunk_content,
 				'permalink'     => $permalink,
+				'post_id'       => $post->ID,
+				'title'         => $post->post_title,
 			];
 		}
 
