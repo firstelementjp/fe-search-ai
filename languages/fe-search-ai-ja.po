@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: FE AI Search\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-10-07 13:37+0000\n"
-"PO-Revision-Date: 2026-01-14 17:24+0000\n"
+"PO-Revision-Date: 2026-01-14 18:18+0000\n"
 "Last-Translator: \n"
 "Language-Team: 日本語\n"
 "Language: ja\n"
@@ -325,7 +325,7 @@ msgstr "接続に失敗しました"
 
 #: includes/ajax/class-fe-search-ai-chat-handler.php:1704
 msgid "Connection successful"
-msgstr "接続に成功しました"
+msgstr "接続成功"
 
 #: includes/admin/class-fe-search-ai-settings.php:714
 #: includes/admin/class-fe-search-ai-settings.php:781

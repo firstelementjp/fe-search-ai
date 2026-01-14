@@ -336,9 +336,7 @@ class FE_Search_AI_Settings {
 
 		// API Keys Section
 		add_settings_section( 'fe_search_ai_api_section', __( 'API Keys', 'fe-search-ai' ), null, $page_slug );
-		add_settings_field( 'fe_search_ai_openai_api_key', 'OpenAI (GPT)', [ $this, 'openai_api_key_field_html' ], $page_slug, 'fe_search_ai_api_section' );
-		add_settings_field( 'fe_search_ai_google_api_key', 'Google (Gemini)', [ $this, 'google_api_key_field_html' ], $page_slug, 'fe_search_ai_api_section' );
-		add_settings_field( 'fe_search_ai_anthropic_api_key', 'Anthropic (Claude)', [ $this, 'anthropic_api_key_field_html' ], $page_slug, 'fe_search_ai_api_section' );
+		add_settings_field( 'fe_search_ai_api_keys', __( 'API Keys', 'fe-search-ai' ), [ $this, 'api_keys_field_html' ], $page_slug, 'fe_search_ai_api_section' );
 
 		// ------------------
 		// Sync Tab
@@ -663,227 +661,126 @@ class FE_Search_AI_Settings {
 	}
 
 	/**
-	 * Renders the container and calls individual methods for each API key field.
-	 * This acts as the main callback for the 'API Keys' field.
+	 * Renders the API keys table for all providers.
+	 *
+	 * This method displays all API providers in a table format with
+	 * columns for API key creation, API key input, connection test, and model.
 	 *
 	 * @since 1.0.0
 	 */
 	public function api_keys_field_html() {
-		// This method now simply calls the specific rendering methods for each provider.
+		// Define provider data
+		$providers = [
+			'openai'    => [
+				'name'          => 'OpenAI',
+				'api_url'       => 'https://platform.openai.com/api-keys',
+				'description'   => __( 'Enter your OpenAI API key.', 'fe-search-ai' ),
+				'default_model' => 'gpt-4o-mini',
+			],
+			'google'    => [
+				'name'          => 'Google (Gemini)',
+				'api_url'       => 'https://console.cloud.google.com/apis/credentials',
+				'description'   => __( 'Enter your Google Cloud API key.', 'fe-search-ai' ),
+				'default_model' => 'gemini-2.5-flash-lite',
+			],
+			'anthropic' => [
+				'name'          => 'Anthropic (Claude)',
+				'api_url'       => 'https://console.anthropic.com/',
+				'description'   => __( 'Enter your Anthropic API key.', 'fe-search-ai' ),
+				'default_model' => 'claude-3-5-haiku-20241022',
+			],
+		];
 		?>
-		<div class="api-keys-wrapper">
-			<?php $this->openai_api_key_field_html(); ?>
-			<?php $this->google_api_key_field_html(); ?>
-			<?php $this->anthropic_api_key_field_html(); ?>
-			<?php
-			// Allow Pro version to add its API key fields here
-			do_action( 'fe_search_ai_after_api_key_fields', $this );
-			?>
-		</div>
-		<?php
-	}
-
-	/**
-	 * Renders the HTML for the OpenAI API key configuration.
-	 *
-	 * This method outputs the API key input field, connection test button,
-	 * and model display information. It includes conditional logic for
-	 * Pro version integration and model change links.
-	 *
-	 * @since 1.0.0
-	 * @return void
-	 */
-	public function openai_api_key_field_html() {
-		$encrypted_key = $this->options['provider']['openai_key'] ?? '';
-		$api_key       = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
-
-		$model_to_display = 'gpt-4o-mini';
-		if ( $this->is_license_active ) {
-			$pro_options      = get_option( 'fe_search_ai_pro_settings', $model_to_display );
-			$model_to_display = $pro_options['model']['openai'] ?? $model_to_display;
-		}
-		?>
-		<input
-			type="password"
-			id="fe_search_ai_openai_api_key"
-			name="fe_search_ai_settings[provider][openai_key]"
-			value="<?php echo esc_attr( $api_key ); ?>"
-			class="regular-text"
-		>
-		<button type="button" class="button button-secondary fe-search-ai-test-api" data-provider="openai">
-			<?php esc_html_e( 'Connection Test', 'fe-search-ai' ); ?>
-		</button>
-		<span class="spinner"></span>
-		<span class="fe-search-ai-api-status"></span>
 		<p class="description">
-			<?php esc_html_e( 'Enter your OpenAI API key.', 'fe-search-ai' ); ?>
+			<?php esc_html_e( 'Enter your API keys for the AI providers you want to use.', 'fe-search-ai' ); ?>
 		</p>
+		
+		<table class="wp-list-table widefat striped fe-search-ai-api-keys-table">
+			<thead>
+				<tr>
+					<th style="width: 20%;"><?php esc_html_e( 'Provider', 'fe-search-ai' ); ?></th>
+					<th style="width: 25%;"><?php esc_html_e( 'API Key', 'fe-search-ai' ); ?></th>
+					<th style="width: 20%;"><?php esc_html_e( 'Connection Test', 'fe-search-ai' ); ?></th>
+					<th style="width: 35%;"><?php esc_html_e( 'Model', 'fe-search-ai' ); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach ( $providers as $provider_key => $provider_data ) : ?>
+					<?php
+					$encrypted_key = $this->options['provider'][ $provider_key . '_key' ] ?? '';
+					$api_key       = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
 
-		<div>
-			<p>
-				<strong><?php esc_html_e( 'Model', 'fe-search-ai' ); ?>:</strong> <?php echo esc_html( $model_to_display ); ?>
-				<?php if ( ! class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) ) : ?>
-					<div class="description">
-						<?php
-						printf(
-							/* translators: %s: Link to the Pro version. */
-							wp_kses_post( __( 'Model selection is available in the %s version.', 'fe-search-ai' ) ),
-							sprintf(
-								'<a href="%s" class="%s">%s</a>',
-								'#tab_license',
-								'fe-search-ai-change-model-link',
-								esc_html__( 'Pro', 'fe-search-ai' )
-							)
-						)
-						?>
-					</div>
-				<?php else : ?>
-					<div>
-						<?php echo $this->license_alert_icon; ?>
-						<a href="#tab_models" class="fe-search-ai-change-model-link">
-							<?php esc_html_e( 'Change Model', 'fe-search-ai' ); ?> &raquo;
-						</a>
-					</div>
-				<?php endif; ?>
+					$model_to_display = $provider_data['default_model'];
+					if ( $this->is_license_active ) {
+						$pro_options      = get_option( 'fe_search_ai_pro_settings', [] );
+						$model_to_display = $pro_options['model'][ $provider_key ] ?? $model_to_display;
+					}
+					?>
+					<tr>
+						<td>
+							<strong><?php echo esc_html( $provider_data['name'] ); ?></strong><br>
+							<small>
+								<a href="<?php echo esc_url( $provider_data['api_url'] ); ?>" target="_blank" rel="noopener noreferrer">
+									<?php esc_html_e( 'Create API Key', 'fe-search-ai' ); ?> &raquo;
+								</a>
+							</small>
+						</td>
+						<td>
+							<input
+								type="password"
+								id="fe_search_ai_<?php echo esc_attr( $provider_key ); ?>_api_key"
+								name="fe_search_ai_settings[provider][<?php echo esc_attr( $provider_key ); ?>_key]"
+								value="<?php echo esc_attr( $api_key ); ?>"
+								class="regular-text"
+								style="width: 100%;"
+							>
+						</td>
+						<td>
+							<button type="button" class="button button-secondary fe-search-ai-test-api" data-provider="<?php echo esc_attr( $provider_key ); ?>">
+								<?php esc_html_e( 'Test', 'fe-search-ai' ); ?>
+							</button>
+							<span class="spinner"></span>
+							<span class="fe-search-ai-api-status"></span>
+						</td>
+						<td>
+							<span class="fe-search-ai-model-display"><?php echo esc_html( $model_to_display ); ?></span>
+							<?php if ( class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) ) : ?>
+								<br><small>
+									<?php echo $this->license_alert_icon; ?>
+									<a href="#tab_models" class="fe-search-ai-change-model-link">
+										<?php esc_html_e( 'Change Model', 'fe-search-ai' ); ?> &raquo;
+									</a>
+								</small>
+							<?php endif; ?>
+						</td>
+					</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+		
+		<?php if ( ! class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) ) : ?>
+			<p class="description" style="text-align: left; margin-top: 10px;">
+				<?php
+				printf(
+					/* translators: %s: Link to the Pro version. */
+					wp_kses_post( __( 'Model selection available in %s version.', 'fe-search-ai' ) ),
+					sprintf(
+						'<a href="%s" class="%s">%s</a>',
+						'#tab_license',
+						'fe-search-ai-change-model-link',
+						esc_html__( 'Pro', 'fe-search-ai' )
+					)
+				);
+				?>
 			</p>
-		</div>
+		<?php endif; ?>
+		
 		<?php
-	}
-
-	/**
-	 * Renders the HTML for the Google (Gemini) API key configuration.
-	 *
-	 * This method outputs the API key input field, connection test button,
-	 * and model display information. It includes conditional logic for
-	 * Pro version integration and model change links.
-	 *
-	 * @since 1.0.0
-	 * @return void
-	 */
-	public function google_api_key_field_html() {
-		$encrypted_key = $this->options['provider']['google_key'] ?? '';
-		$api_key       = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
-
-		$model_to_display = 'gemini-2.5-flash-lite';
-		if ( $this->is_license_active ) {
-			$pro_options      = get_option( 'fe_search_ai_pro_settings', $model_to_display );
-			$model_to_display = $pro_options['model']['google'] ?? $model_to_display;
-		}
+		// Allow Pro version to add additional provider rows
+		do_action( 'fe_search_ai_after_api_key_fields', $this );
 		?>
-		<input
-			type="password"
-			id="fe_search_ai_google_api_key"
-			name="fe_search_ai_settings[provider][google_key]"
-			value="<?php echo esc_attr( $api_key ); ?>"
-			class="regular-text"
-		>
-		<button type="button" class="button button-secondary fe-search-ai-test-api" data-provider="google">
-			<?php esc_html_e( 'Connection Test', 'fe-search-ai' ); ?>
-		</button>
-		<span class="spinner"></span>
-		<span class="fe-search-ai-api-status"></span>
-		<p class="description">
-			<?php esc_html_e( 'Enter your Google Cloud API key.', 'fe-search-ai' ); ?>
-		</p>
-
-		<div>
-			<p>
-				<strong><?php esc_html_e( 'Model', 'fe-search-ai' ); ?>:</strong> <?php echo esc_html( $model_to_display ); ?>
-				<?php if ( ! class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) ) : ?>
-					<div class="description">
-						<?php
-						printf(
-							/* translators: %s: Link to the Pro version. */
-							wp_kses_post( __( 'Model selection is available in the %s version.', 'fe-search-ai' ) ),
-							sprintf(
-								'<a href="%s" class="%s">%s</a>',
-								'#tab_license',
-								'fe-search-ai-change-model-link',
-								esc_html__( 'Pro', 'fe-search-ai' )
-							)
-						)
-						?>
-					</div>
-				<?php else : ?>
-					<div>
-						<?php echo $this->license_alert_icon; ?>
-						<a href="#tab_models" class="fe-search-ai-change-model-link">
-							<?php esc_html_e( 'Change Model', 'fe-search-ai' ); ?> &raquo;
-						</a>
-					</div>
-				<?php endif; ?>
-			</p>
-		</div>
 		<?php
 	}
-
-	/**
-	 * Renders the HTML for the Anthropic (Claude) API key configuration.
-	 *
-	 * This method outputs the API key input field, connection test button,
-	 * and model display information. It includes conditional logic for
-	 * Pro version integration and model change links.
-	 *
-	 * @since 1.0.0
-	 * @return void
-	 */
-	public function anthropic_api_key_field_html() {
-		$encrypted_key = $this->options['provider']['anthropic_key'] ?? '';
-		$api_key       = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
-
-		$model_to_display = 'claude-haiku-4-5-20251001';
-		if ( $this->is_license_active ) {
-			$pro_options      = get_option( 'fe_search_ai_pro_settings', $model_to_display );
-			$model_to_display = $pro_options['model']['anthropic'] ?? $model_to_display;
-		}
-		?>
-		<input
-			type="password"
-			id="fe_search_ai_anthropic_api_key"
-			name="fe_search_ai_settings[provider][anthropic_key]"
-			value="<?php echo esc_attr( $api_key ); ?>"
-			class="regular-text"
-		>
-		<button type="button" class="button button-secondary fe-search-ai-test-api" data-provider="anthropic">
-			<?php esc_html_e( 'Connection Test', 'fe-search-ai' ); ?>
-		</button>
-		<span class="spinner"></span>
-		<span class="fe-search-ai-api-status"></span>
-		<p class="description">
-			<?php esc_html_e( 'Enter your Anthropic (Claude) API key.', 'fe-search-ai' ); ?>
-		</p>
-
-		<div>
-			<p>
-				<strong><?php esc_html_e( 'Model', 'fe-search-ai' ); ?>:</strong> <?php echo esc_html( $model_to_display ); ?>
-				<?php if ( ! class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) ) : ?>
-					<div class="description">
-						<?php
-						printf(
-							/* translators: %s: Link to the Pro version. */
-							wp_kses_post( __( 'Model selection is available in the %s version.', 'fe-search-ai' ) ),
-							sprintf(
-								'<a href="%s" class="%s">%s</a>',
-								'#tab_license',
-								'fe-search-ai-change-model-link',
-								esc_html__( 'Pro', 'fe-search-ai' )
-							)
-						)
-						?>
-					</div>
-				<?php else : ?>
-					<div>
-						<?php echo $this->license_alert_icon; ?>
-						<a href="#tab_models" class="fe-search-ai-change-model-link">
-							<?php esc_html_e( 'Change Model', 'fe-search-ai' ); ?> &raquo;
-						</a>
-					</div>
-				<?php endif; ?>
-			</p>
-		</div>
-		<?php
-	}
-
 
 	/**
 	 * Renders the HTML for the sync options configuration section.

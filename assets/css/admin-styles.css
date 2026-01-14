@@ -332,6 +332,84 @@ a.nav-tab:last-of-type {
 	border-top: 1px solid #ddd;
 }
 
+/* API Keys Table Styles */
+.fe-search-ai-api-keys-table {
+	margin-top: 15px;
+	margin-bottom: 15px;
+}
+
+.fe-search-ai-api-keys-table th {
+	font-weight: 600;
+	color: #23282d;
+}
+
+.fe-search-ai-api-keys-table td {
+	vertical-align: middle;
+	padding: 12px 8px;
+}
+
+.fe-search-ai-api-keys-table input[type="password"] {
+	font-family: monospace;
+	font-size: 13px;
+}
+
+.fe-search-ai-api-keys-table small {
+	font-size: 11px;
+	line-height: 1.4;
+}
+
+.fe-search-ai-api-keys-table .description {
+	color: #666;
+	font-style: italic;
+}
+
+.fe-search-ai-api-keys-table .spinner {
+	float: none;
+	vertical-align: middle;
+	margin-left: 5px;
+}
+
+.fe-search-ai-api-keys-table .fe-search-ai-api-status {
+	margin-left: 5px;
+	font-size: 12px;
+}
+
+.fe-search-ai-api-keys-table a {
+	text-decoration: none;
+}
+
+.fe-search-ai-api-keys-table a:hover {
+	text-decoration: underline;
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 1200px) {
+	.fe-search-ai-api-keys-table th,
+	.fe-search-ai-api-keys-table td {
+		padding: 8px 6px;
+	}
+	
+	.fe-search-ai-api-keys-table input[type="password"] {
+		font-size: 12px;
+	}
+}
+
+@media screen and (max-width: 782px) {
+	.fe-search-ai-api-keys-table {
+		font-size: 13px;
+	}
+	
+	.fe-search-ai-api-keys-table th,
+	.fe-search-ai-api-keys-table td {
+		padding: 6px 4px;
+	}
+	
+	.fe-search-ai-api-keys-table input[type="password"] {
+		width: 100% !important;
+		font-size: 11px;
+	}
+}
+
 #fe_search_ai_sync_options_accordion .accordion-inner {
 	padding: 15px 5px;
 }
