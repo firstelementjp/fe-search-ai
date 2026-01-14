@@ -161,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		rebuildBtn.disabled = true;
 		smartSyncBtn.disabled = true;
 		statusSpinner.style.display = 'inline-block';
-		statusText.textContent = __('Preparing for synchronization…', 'fe-search-ai');
+		statusText.textContent = fe_search_ai_sync_obj.i18n.preparing_sync;
 		progressContainer.style.display = 'block';
 		progressBar.style.width = '0%';
 		progressBar.textContent = '0%';
@@ -182,13 +182,13 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (total_pages > 0) {
 				processBatch(1, total_pages, total_posts, batch_size);
 			} else {
-				statusText.textContent = __('There are no posts to sync.', 'fe-search-ai');
+				statusText.textContent = fe_search_ai_sync_obj.i18n.no_posts_to_sync;
 				statusSpinner.style.display = 'none';
 				rebuildBtn.disabled = false;
 				smartSyncBtn.disabled = false;
 			}
 		} catch (error) {
-			statusText.innerHTML = `<span style="color:red;">${__('Error:', 'fe-search-ai')} ${error.message}</span>`;
+			statusText.innerHTML = `<span style="color:red;">${fe_search_ai_sync_obj.i18n.error} ${error.message}</span>`;
 			statusSpinner.style.display = 'none';
 			rebuildBtn.disabled = false;
 			smartSyncBtn.disabled = false;
@@ -200,10 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		e.preventDefault();
 		startSyncProcess(
 			'fe_search_ai_start_sync',
-			__(
-				'This will rebuild the index from scratch and may take some time. Do you want to continue?',
-				'fe-search-ai'
-			)
+			fe_search_ai_sync_obj.i18n.confirm_rebuild
 		);
 	});
 
@@ -211,10 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		e.preventDefault();
 		startSyncProcess(
 			'fe_search_ai_start_smart_sync',
-			__(
-				'This will sync only new/updated/deleted content. Do you want to continue?',
-				'fe-search-ai'
-			)
+			fe_search_ai_sync_obj.i18n.confirm_smart_sync
 		);
 	});
 
@@ -233,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		progressBar.style.width = `${progress}%`;
 		progressBar.textContent = `${progress}%`;
-		statusText.textContent = `${__('Processing posts…', 'fe-search-ai')} (${processed} / ${totalPosts})`;
+		statusText.textContent = `${fe_search_ai_sync_obj.i18n.processing_posts} (${processed} / ${totalPosts})`;
 		statusSpinner.style.display = 'inline-block';
 
 		let responseText = '';
@@ -257,10 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				if (response.data && response.data.message === 'No more posts to process.') {
 					progressBar.style.width = '100%';
 					progressBar.textContent = '100%';
-					statusText.innerHTML = `<strong style="color:green;">${__(
-						'Synchronization complete!',
-						'fe-search-ai'
-					)} (${totalPosts} ${__('items', 'fe-search-ai')})</strong>`;
+					statusText.innerHTML = `<strong style="color:green;">${fe_search_ai_sync_obj.i18n.sync_complete} (${totalPosts} ${fe_search_ai_sync_obj.i18n.items})</strong>`;
 
 					rebuildBtn.disabled = false;
 					smartSyncBtn.disabled = false;
@@ -281,10 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				if (currentPage >= totalPages) {
 					progressBar.style.width = '100%';
 					progressBar.textContent = '100%';
-					statusText.innerHTML = `<strong style="color:green;">${__(
-						'Synchronization complete!',
-						'fe-search-ai'
-					)} (${totalPosts} ${__('items', 'fe-search-ai')})</strong>`;
+					statusText.innerHTML = `<strong style="color:green;">${fe_search_ai_sync_obj.i18n.sync_complete} (${totalPosts} ${fe_search_ai_sync_obj.i18n.items})</strong>`;
 
 					rebuildBtn.disabled = false;
 					smartSyncBtn.disabled = false;
@@ -312,10 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				// eslint-disable-next-line no-console
 				console.error('Failed to parse JSON. See the raw response above for details.');
 			}
-			statusText.innerHTML = `<span style="color:red;">${__(
-				'Error: A problem occurred while processing batch',
-				'fe-search-ai'
-			)} ${currentPage}.</span>`;
+			statusText.innerHTML = `<span style="color:red;">${fe_search_ai_sync_obj.i18n.batch_error} ${currentPage}.</span>`;
 
 			statusSpinner.style.display = 'none';
 			rebuildBtn.disabled = false;

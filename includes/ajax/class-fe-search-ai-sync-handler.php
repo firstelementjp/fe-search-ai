@@ -451,9 +451,9 @@ class FE_Search_AI_Sync_Handler {
 			$locale    = get_locale();
 			$lang_code = strstr( $locale, '_', true ) ?: $locale;
 
-			// Read Pro vector store configuration to determine if Qdrant is enabled.
-			$pro_settings  = get_option( 'fe_search_ai_pro_settings', [] );
-			$vector_config = isset( $pro_settings['vector'] ) && is_array( $pro_settings['vector'] ) ? $pro_settings['vector'] : [];
+			// Read vector store configuration to determine if Qdrant is enabled.
+			$settings      = get_option( 'fe_search_ai_settings', [] );
+			$vector_config = isset( $settings['vector'] ) && is_array( $settings['vector'] ) ? $settings['vector'] : [];
 			$qdrant_config = isset( $vector_config['qdrant'] ) && is_array( $vector_config['qdrant'] ) ? $vector_config['qdrant'] : [];
 			$vector_store  = $vector_config['store'] ?? 'mariadb';
 
@@ -464,6 +464,9 @@ class FE_Search_AI_Sync_Handler {
 					'vector_store'  => $vector_store,
 					'vector_config' => $vector_config,
 					'qdrant_config' => $qdrant_config,
+					'collection'    => $qdrant_config['collection'] ?? 'NOT_SET',
+					'endpoint'      => $qdrant_config['endpoint'] ?? 'NOT_SET',
+					'api_key_set'   => ! empty( $qdrant_config['api_key'] ),
 				]
 			);
 
@@ -636,7 +639,9 @@ class FE_Search_AI_Sync_Handler {
 
 		$endpoint   = isset( $qdrant_config['endpoint'] ) ? rtrim( $qdrant_config['endpoint'], '/' ) : '';
 		$collection = $qdrant_config['collection'] ?? '';
-		$api_key    = $qdrant_config['api_key'] ?? '';
+		$api_key    = isset( $qdrant_config['api_key'] ) && ! empty( $qdrant_config['api_key'] )
+			? \FESearchAI\Core\FE_Search_AI_Encryption_Helper::decrypt( $qdrant_config['api_key'] )
+			: '';
 
 		if ( empty( $endpoint ) || empty( $collection ) || empty( $api_key ) ) {
 			return;
@@ -748,7 +753,9 @@ class FE_Search_AI_Sync_Handler {
 	private function find_similar_chunks_via_qdrant( $question, $qdrant_config ) {
 		$endpoint   = isset( $qdrant_config['endpoint'] ) ? rtrim( $qdrant_config['endpoint'], '/' ) : '';
 		$collection = $qdrant_config['collection'] ?? '';
-		$api_key    = $qdrant_config['api_key'] ?? '';
+		$api_key    = isset( $qdrant_config['api_key'] ) && ! empty( $qdrant_config['api_key'] )
+			? \FESearchAI\Core\FE_Search_AI_Encryption_Helper::decrypt( $qdrant_config['api_key'] )
+			: '';
 
 		if ( empty( $endpoint ) || empty( $collection ) || empty( $api_key ) ) {
 			return [];

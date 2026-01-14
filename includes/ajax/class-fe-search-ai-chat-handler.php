@@ -138,7 +138,7 @@ class FE_Search_AI_Chat_Handler {
 
 			if ( $ip_request_count > $ip_limit_count ) {
 				status_header( 429 );
-				echo 'data: ' . json_encode( [ 'text' => __( 'You have exceeded the request limit. Please try again later.', 'fe-search-ai' ) ] ) . "\n\n";
+				echo 'data: ' . json_encode( [ 'text' => __( 'You have exceeded the request limit. Please try again later.', 'fe-search-ai' ) ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 				exit;
 			}
 			set_transient( $ip_transient_key, ( (int) $ip_request_count + 1 ), HOUR_IN_SECONDS );
@@ -150,7 +150,7 @@ class FE_Search_AI_Chat_Handler {
 
 			if ( $global_request_count > $global_limit_count ) {
 				status_header( 429 );
-				echo 'data: ' . json_encode( [ 'text' => __( 'The site-wide request limit for today has been reached.', 'fe-search-ai' ) ] ) . "\n\n";
+				echo 'data: ' . json_encode( [ 'text' => __( 'The site-wide request limit for today has been reached.', 'fe-search-ai' ) ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 				exit;
 			}
 
@@ -174,6 +174,7 @@ class FE_Search_AI_Chat_Handler {
 		@ini_set( 'output_buffering', 'off' );
 		@ini_set( 'zlib.output_compression', 0 );
 		@ini_set( 'implicit_flush', 1 );
+		@ini_set( 'default_charset', 'UTF-8' );
 		ob_implicit_flush( 1 );
 
 		// Clear all existing output buffers.
@@ -181,10 +182,12 @@ class FE_Search_AI_Chat_Handler {
 			ob_end_flush();
 		}
 
-		header( 'Content-Type: text/event-stream' );
+		// Set UTF-8 encoding headers for streaming
+		header( 'Content-Type: text/event-stream; charset=UTF-8' );
 		header( 'Cache-Control: no-cache' );
 		header( 'Connection: keep-alive' );
 		header( 'X-Accel-Buffering: no' ); // Nginx
+		header( 'charset: UTF-8' );
 
 		$similar_chunks = [];
 
@@ -386,7 +389,7 @@ class FE_Search_AI_Chat_Handler {
 				[ 'provider' => $provider ]
 			);
 
-			echo 'data: ' . json_encode( [ 'text' => __( 'Error: OpenAI API key not set.', 'fe-search-ai' ) ] ) . "\n\n";
+			echo 'data: ' . json_encode( [ 'text' => __( 'Error: OpenAI API key not set.', 'fe-search-ai' ) ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 			echo "data: [DONE]\n\n";
 			flush();
 			return;
@@ -437,6 +440,18 @@ class FE_Search_AI_Chat_Handler {
 			false
 		);
 
+		// DEBUG: Log the final system prompt that will be sent to the AI
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			// Clear any cached prompts for debugging
+			wp_cache_delete( 'fe_search_ai_system_prompt', 'options' );
+
+			$system_prompt_data = array_shift( $messages );
+			$system_prompt_text = $system_prompt_data['content'];
+			error_log( 'FE AI Search - System prompt for ' . $provider . ': ' . $system_prompt_text );
+			// Put the system prompt back
+			array_unshift( $messages, $system_prompt_data );
+		}
+
 		$body = [
 			'model'       => $model,
 			'messages'    => $messages,
@@ -477,7 +492,7 @@ class FE_Search_AI_Chat_Handler {
 						'duration_ms'   => $duration,
 					]
 				);
-				echo 'data: ' . json_encode( [ 'text' => __( 'Error: Connection failed.', 'fe-search-ai' ) ] ) . "\n\n";
+				echo 'data: ' . json_encode( [ 'text' => __( 'Error: Connection failed.', 'fe-search-ai' ) ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 				echo "data: [DONE]\n\n";
 				flush();
 				return;
@@ -494,7 +509,7 @@ class FE_Search_AI_Chat_Handler {
 						'duration_ms' => $duration,
 					]
 				);
-				echo 'data: ' . json_encode( [ 'text' => __( 'Error: API request failed.', 'fe-search-ai' ) ] ) . "\n\n";
+				echo 'data: ' . json_encode( [ 'text' => __( 'Error: API request failed.', 'fe-search-ai' ) ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 				echo "data: [DONE]\n\n";
 				flush();
 				return;
@@ -510,7 +525,13 @@ class FE_Search_AI_Chat_Handler {
 			}
 
 			$content = apply_filters( 'fe_search_ai_filter_model_response', $content );
-			echo 'data: ' . json_encode( [ 'text' => $content ] ) . "\n\n";
+
+			// Ensure UTF-8 encoding before output
+			if ( ! mb_check_encoding( $content, 'UTF-8' ) ) {
+				$content = mb_convert_encoding( $content, 'UTF-8', 'UTF-8' );
+			}
+
+			echo 'data: ' . json_encode( [ 'text' => $content ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 			echo "data: [DONE]\n\n";
 			flush();
 			return;
@@ -554,7 +575,7 @@ class FE_Search_AI_Chat_Handler {
 							 */
 							$content = apply_filters( 'fe_search_ai_filter_model_response', $chunk['choices'][0]['delta']['content'] );
 
-							echo 'data: ' . json_encode( [ 'text' => $content ] ) . "\n\n";
+							echo 'data: ' . json_encode( [ 'text' => $content ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 							if ( ob_get_level() > 0 ) {
 								ob_flush();
 							}
@@ -684,7 +705,7 @@ class FE_Search_AI_Chat_Handler {
 				[ 'provider' => $provider ]
 			);
 
-			echo 'data: ' . json_encode( [ 'text' => __( 'Error: Google API key is not set.', 'fe-search-ai' ) ] ) . "\n\n";
+			echo 'data: ' . json_encode( [ 'text' => __( 'Error: Google API key is not set.', 'fe-search-ai' ) ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 			echo "data: [DONE]\n\n";
 			flush();
 			return;
@@ -726,6 +747,15 @@ class FE_Search_AI_Chat_Handler {
 			$history,
 			false
 		);
+
+		// DEBUG: Log the final system prompt that will be sent to the AI
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			$system_prompt_data = array_shift( $messages );
+			$system_prompt_text = $system_prompt_data['content'];
+			error_log( 'FE AI Search - System prompt for ' . $provider . ': ' . $system_prompt_text );
+			// Put the system prompt back
+			array_unshift( $messages, $system_prompt_data );
+		}
 
 		// DEBUG: Log a view of the prompt payload before sending to Gemini.
 		// - System prompt: full text
@@ -828,7 +858,7 @@ class FE_Search_AI_Chat_Handler {
 							 */
 							$content = apply_filters( 'fe_search_ai_filter_model_response', $content );
 
-							echo 'data: ' . json_encode( [ 'text' => $content ] ) . "\n\n";
+							echo 'data: ' . json_encode( [ 'text' => $content ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 							if ( ob_get_level() > 0 ) {
 								ob_flush();
 							}
@@ -939,6 +969,11 @@ class FE_Search_AI_Chat_Handler {
 			true  // This separates the system prompt for Claude.
 		);
 
+		// DEBUG: Log the final system prompt that will be sent to the AI
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( 'FE AI Search - System prompt for ' . $provider . ': ' . $messages['system'] );
+		}
+
 		$body = [
 			'model'       => $model,
 			'max_tokens'  => 4096,
@@ -993,7 +1028,7 @@ class FE_Search_AI_Chat_Handler {
 							 */
 							$content = apply_filters( 'fe_search_ai_filter_model_response', $content );
 
-							echo 'data: ' . json_encode( [ 'text' => $content ] ) . "\n\n";
+							echo 'data: ' . json_encode( [ 'text' => $content ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 
 							if ( ob_get_level() > 0 ) {
 								ob_flush();
@@ -1145,12 +1180,6 @@ class FE_Search_AI_Chat_Handler {
 		// Initialize context string.
 		$context_str = '';
 
-		// Debug: Log incoming context chunks
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( 'FE AI Search - Incoming context chunks: ' . print_r( $context_chunks, true ) );
-			error_log( 'FE AI Search - Number of context chunks: ' . count( $context_chunks ) );
-		}
-
 		// Legal links are managed under the Display > Text/Links settings.
 		$links           = $this->options['display']['links'] ?? [];
 		$terms_page_id   = $links['terms_page_id'] ?? 0;
@@ -1201,6 +1230,7 @@ class FE_Search_AI_Chat_Handler {
 				}
 
 				// Build compact format
+				$context_str .= "--- ITEM ---\n";
 				$context_str .= "ID: {$post_id}\n";
 				$context_str .= "Title: {$post_title}\n";
 				$context_str .= "URL: {$chunk['permalink']}\n";
@@ -1208,7 +1238,33 @@ class FE_Search_AI_Chat_Handler {
 				if ( ! empty( $metadata ) ) {
 					$context_str .= 'Metadata: ' . implode( '', $metadata ) . "\n";
 				}
-				$context_str .= "Content:\n{$chunk['content_chunk']}\n\n";
+
+				// Extract only the content part, removing metadata that's already included above
+				$content_only = $chunk['content_chunk'];
+
+				// Remove metadata lines from content if they exist
+				$content_lines      = explode( "\n", $content_only );
+				$clean_content      = [];
+				$in_content_section = false;
+
+				foreach ( $content_lines as $line ) {
+					// Skip metadata lines that are already handled above
+					if ( preg_match( '/^(ID:|Title:|URL:|Date:|Metadata:)/', $line ) ) {
+						$in_content_section = false;
+						continue;
+					}
+
+					// Start collecting content after "Content:" line
+					if ( $line === 'Content:' || $in_content_section ) {
+						$in_content_section = true;
+						if ( $line !== 'Content:' ) {
+							$clean_content[] = $line;
+						}
+					}
+				}
+
+				$context_str .= "Content:\n" . implode( "\n", $clean_content ) . "\n";
+				$context_str .= "--- END ITEM ---\n\n";
 			}
 		}
 
@@ -1222,11 +1278,6 @@ class FE_Search_AI_Chat_Handler {
 			$context_str = '[No relevant information found for this query]';
 		}
 
-		// Debug: Log final context string
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( 'FE AI Search - Final context string: ' . $context_str );
-		}
-
 		// Now replace all placeholders with the constructed values
 		$system_prompt = str_replace( '{site_name}', $site_name, $system_prompt );
 		$system_prompt = str_replace( '{site_purpose}', $site_purpose, $system_prompt );
@@ -1234,9 +1285,26 @@ class FE_Search_AI_Chat_Handler {
 		$system_prompt = str_replace( '{context_content}', $context_str, $system_prompt );
 		$system_prompt = str_replace( '{user_question}', $question, $system_prompt );
 
+		/**
+		 * Filters the final system prompt after all placeholders have been replaced.
+		 *
+		 * This hook allows you to access and modify the complete system prompt
+		 * with all placeholders (site_name, context_content, etc.) already expanded.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $system_prompt The complete system prompt with all placeholders replaced.
+		 * @param string $provider      The AI provider being used (openai, google, anthropic).
+		 */
+		$system_prompt = apply_filters( 'fe_search_ai_final_system_prompt', $system_prompt, $provider );
+
 		// Debug: Log final system prompt after all replacements
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 			error_log( 'FE AI Search - Final system prompt after replacements: ' . $system_prompt );
+
+			// Debug: Save complete prompt to file for inspection
+			$debug_file = __DIR__ . '/../../debug_prompt.txt';
+			file_put_contents( $debug_file, "=== System Prompt for {$provider} ===\n\n" . $system_prompt );
 		}
 
 		/**

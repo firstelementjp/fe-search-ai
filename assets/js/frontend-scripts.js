@@ -604,7 +604,8 @@ function initFEAIChat() {
 					return;
 				}
 				const reader = response.body.getReader();
-				const decoder = new TextDecoder();
+				const decoder = new TextDecoder('utf-8', { fatal: false });
+				let buffer = '';
 
 				function processStream() {
 					reader
@@ -657,7 +658,11 @@ function initFEAIChat() {
 							}
 
 							const chunk = decoder.decode(value, { stream: true });
-							const lines = chunk.split('\n\n');
+							buffer += chunk;
+							// Process complete lines only, keep incomplete data in buffer
+							const lines = buffer.split('\n\n');
+							buffer = lines.pop() || ''; // Keep last incomplete line
+
 							lines.forEach(line => {
 								if (line.startsWith('data: ')) {
 									const dataContent = line
@@ -674,7 +679,8 @@ function initFEAIChat() {
 												characterQueue = [];
 												isFirstChunk = false;
 											}
-											characterQueue.push(...jsonData.text.split(''));
+											// Add text as string to preserve UTF-8 characters
+											characterQueue.push(jsonData.text);
 										}
 									} catch (parseError) {
 										// Silently ignore malformed JSON chunks in the stream.
@@ -982,8 +988,9 @@ function initFEAIChat() {
 
 		// In immediate mode, render the entire queue at once.
 		const takeCount = typingImmediate ? characterQueue.length : typingCharsPerTick;
-		const charsToRender = characterQueue.splice(0, takeCount).join('');
-		fullResponse += charsToRender;
+		const stringsToRender = characterQueue.splice(0, takeCount);
+		const textToRender = stringsToRender.join('');
+		fullResponse += textToRender;
 
 		currentAiMessageElement.innerHTML = marked.parse(fullResponse);
 		messagesContainer.scrollTop = messagesContainer.scrollHeight;

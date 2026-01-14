@@ -150,12 +150,12 @@ class FE_Search_AI_License_Settings {
 						<li>
 							<h4><?php esc_html_e( 'Sync', 'fe-search-ai' ); ?></h4>
 							<ul>
+								<li><?php esc_html_e( 'Add custom fields to the search index', 'fe-search-ai' ); ?></li>
 								<li><?php esc_html_e( 'Edit stop words', 'fe-search-ai' ); ?>
 									<ul>
 										<li><?php esc_html_e( 'Exclude noisy terms to improve search accuracy', 'fe-search-ai' ); ?></li>
 									</ul>
 								</li>
-								<li><?php esc_html_e( 'Add custom fields to the search index', 'fe-search-ai' ); ?></li>
 							</ul>
 						</li>
 
@@ -252,7 +252,7 @@ class FE_Search_AI_License_Settings {
 
 		add_settings_field(
 			'fe_search_ai_license_key',
-			__( 'License Key', 'fe-search-ai' ),
+			__( 'Pro License Key', 'fe-search-ai' ),
 			[ $this, 'field_html' ],
 			'fe-search-ai',
 			'fe_search_ai_license_section'

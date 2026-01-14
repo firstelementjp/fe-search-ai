@@ -656,7 +656,7 @@ class FE_Search_AI_Settings {
 		</select>
 		<p class="description">
 			<?php
-			esc_html_e( 'Select the embedding AI model used for site search. This model generates vector data to determine the relevance between user questions and content.', 'fe-search-ai' );
+			esc_html_e( 'Select the embedding AI model used for content search. This model generates vector data from content and user questions, which is used to determine the relevance between user questions and content.', 'fe-search-ai' );
 			?>
 		</p>
 		<?php

@@ -142,7 +142,7 @@ class FE_Search_AI_Assets {
 		$notify_threshold   = (int) $rate_limit_config['notify_threshold'];
 
 		// Enqueue frontend styles and scripts for the chat UI.
-		$use_unminified = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG;
+		$use_unminified = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG && ! defined( 'FE_SEARCH_AI_FORCE_MINIFY' );
 		$frontend_css   = $use_unminified ? 'assets/css/frontend-styles.css' : 'assets/css/frontend-styles.min.css';
 		$frontend_js    = $use_unminified ? 'assets/js/frontend-scripts.js' : 'assets/js/frontend-scripts.min.js';
 
