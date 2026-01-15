@@ -120,33 +120,11 @@ class FE_Search_AI_Settings {
 					?>
 
 					<div id="tab_provider" class="tab-content">
-						<details id="fe_search_ai_api_usage_limits">
-							<summary>
-								<?php esc_html_e( 'API usage limits and costs', 'fe-search-ai' ); ?>
-							</summary>
-							<div>
-								<p>
-									<?php esc_html_e( 'Generate an API key in the dashboard of each AI provider you plan to use and enter it in the fields below. These APIs are billed based on usage. Before enabling the chat, please review each provider\'s pricing. To help prevent unexpected token usage due to misconfiguration or abuse, this plugin applies built-in rate limits.', 'fe-search-ai' ); ?>
-								</p>
-								<p class="fe-ai-subheading"><?php esc_html_e( 'Default API usage limits', 'fe-search-ai' ); ?></p>
-								<ul>
-									<li><?php esc_html_e( 'Per IP address: 50 requests per hour', 'fe-search-ai' ); ?></li>
-									<li><?php esc_html_e( 'Per site (total): 1,000 requests per day', 'fe-search-ai' ); ?></li>
-								</ul>
-								<p>
-									<?php
-										/* translators: 1: opening code tag, 2: closing code tag, 3: opening link tag, 4: closing link tag */
-										printf(
-											esc_html__( 'You can change these limits from your theme or another plugin using the %1$sfe_search_ai_rate_limit_settings%2$s filter hook. For full sample code, please refer to the %3$sdocumentation%4$s.', 'fe-search-ai' ),
-											'<code>',
-											'</code>',
-											'<a href="https://fe-search.com/docs/ai" target="_blank" rel="noopener noreferrer">',
-											'</a>'
-										);
-									?>
-								</p>
-							</div>
-						</details>
+						<?php do_settings_sections( 'fe_search_ai_api_section' ); ?>
+						<table class="form-table">
+							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_api_section' ); ?>
+						</table>
+
 						<?php do_settings_sections( 'fe_search_ai_chat_provider_section' ); ?>
 						<table class="form-table">
 							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_chat_provider_section' ); ?>
@@ -155,11 +133,6 @@ class FE_Search_AI_Settings {
 						<?php do_settings_sections( 'fe_search_ai_embedding_section' ); ?>
 						<table class="form-table">
 							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_embedding_section' ); ?>
-						</table>
-
-						<?php do_settings_sections( 'fe_search_ai_api_section' ); ?>
-						<table class="form-table">
-							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_api_section' ); ?>
 						</table>
 
 						<?php do_action( 'fe_search_ai_after_api_settings_fields' ); ?>
@@ -326,6 +299,10 @@ class FE_Search_AI_Settings {
 		// ------------------
 		// Provider Tab
 		// ------------------
+		// API Keys Section
+		add_settings_section( 'fe_search_ai_api_section', __( 'API Keys', 'fe-search-ai' ), null, $page_slug );
+		add_settings_field( 'fe_search_ai_api_keys', __( 'API Keys', 'fe-search-ai' ), [ $this, 'api_keys_field_html' ], $page_slug, 'fe_search_ai_api_section' );
+
 		// Chat Model Section
 		add_settings_section( 'fe_search_ai_chat_provider_section', __( 'Chat Model', 'fe-search-ai' ), null, $page_slug );
 		add_settings_field( 'fe_search_ai_chat_provider', __( 'Chat AI', 'fe-search-ai' ), [ $this, 'chat_provider_field_html' ], $page_slug, 'fe_search_ai_chat_provider_section' );
@@ -333,10 +310,6 @@ class FE_Search_AI_Settings {
 		// Embedding Model Section
 		add_settings_section( 'fe_search_ai_embedding_section', __( 'Vectorization Model', 'fe-search-ai' ), null, $page_slug );
 		add_settings_field( 'fe_search_ai_embedding_provider', __( 'Vectorization AI', 'fe-search-ai' ), [ $this, 'embedding_provider_field_html' ], $page_slug, 'fe_search_ai_embedding_section' );
-
-		// API Keys Section
-		add_settings_section( 'fe_search_ai_api_section', __( 'API Keys', 'fe-search-ai' ), null, $page_slug );
-		add_settings_field( 'fe_search_ai_api_keys', __( 'API Keys', 'fe-search-ai' ), [ $this, 'api_keys_field_html' ], $page_slug, 'fe_search_ai_api_section' );
 
 		// ------------------
 		// Sync Tab
@@ -672,7 +645,7 @@ class FE_Search_AI_Settings {
 		// Define provider data
 		$providers = [
 			'openai'    => [
-				'name'          => 'OpenAI',
+				'name'          => 'OpenAI (GPT)',
 				'api_url'       => 'https://platform.openai.com/api-keys',
 				'description'   => __( 'Enter your OpenAI API key.', 'fe-search-ai' ),
 				'default_model' => 'gpt-4o-mini',
@@ -694,6 +667,34 @@ class FE_Search_AI_Settings {
 		<p class="description">
 			<?php esc_html_e( 'Enter your API keys for the AI providers you want to use.', 'fe-search-ai' ); ?>
 		</p>
+		
+		<details id="fe_search_ai_api_usage_limits">
+			<summary>
+				<?php esc_html_e( 'API usage limits and costs', 'fe-search-ai' ); ?>
+			</summary>
+			<div>
+				<p>
+					<?php esc_html_e( 'Generate an API key in the dashboard of each AI provider you plan to use and enter it in the fields below. These APIs are billed based on usage. Before enabling the chat, please review each provider\'s pricing. To help prevent unexpected token usage due to misconfiguration or abuse, this plugin applies built-in rate limits.', 'fe-search-ai' ); ?>
+				</p>
+				<p class="fe-ai-subheading"><?php esc_html_e( 'Default API usage limits', 'fe-search-ai' ); ?></p>
+				<ul>
+					<li><?php esc_html_e( 'Per IP address: 50 requests per hour', 'fe-search-ai' ); ?></li>
+					<li><?php esc_html_e( 'Per site (total): 1,000 requests per day', 'fe-search-ai' ); ?></li>
+				</ul>
+				<p>
+					<?php
+						/* translators: 1: opening code tag, 2: closing code tag, 3: opening link tag, 4: closing link tag */
+						printf(
+							esc_html__( 'You can change these limits from your theme or another plugin using the %1$sfe_search_ai_rate_limit_settings%2$s filter hook. For full sample code, please refer to the %3$sdocumentation%4$s.', 'fe-search-ai' ),
+							'<code>',
+							'</code>',
+							'<a href="https://fe-search.com/docs/ai" target="_blank" rel="noopener noreferrer">',
+							'</a>'
+						);
+					?>
+				</p>
+			</div>
+		</details>
 		
 		<table class="wp-list-table widefat striped fe-search-ai-api-keys-table">
 			<thead>
@@ -778,6 +779,11 @@ class FE_Search_AI_Settings {
 		<?php
 		// Allow Pro version to add additional provider rows
 		do_action( 'fe_search_ai_after_api_key_fields', $this );
+
+		// Display Pro version cost tracking and limits accordion after API keys
+		if ( class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) ) {
+			do_action( 'fe_search_ai_display_api_limits_accordion' );
+		}
 		?>
 		<?php
 	}

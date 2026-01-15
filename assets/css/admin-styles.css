@@ -341,6 +341,7 @@ a.nav-tab:last-of-type {
 .fe-search-ai-api-keys-table th {
 	font-weight: 600;
 	color: #23282d;
+	padding: 8px;
 }
 
 .fe-search-ai-api-keys-table td {
@@ -351,6 +352,7 @@ a.nav-tab:last-of-type {
 .fe-search-ai-api-keys-table input[type="password"] {
 	font-family: monospace;
 	font-size: 13px;
+	margin: 0;
 }
 
 .fe-search-ai-api-keys-table small {
@@ -372,6 +374,14 @@ a.nav-tab:last-of-type {
 .fe-search-ai-api-keys-table .fe-search-ai-api-status {
 	margin-left: 5px;
 	font-size: 12px;
+	vertical-align: middle;
+}
+
+.fe-search-ai-api-keys-table .fe-search-ai-test-api {
+	vertical-align: middle;
+	margin-top: 0;
+	margin-bottom: 0;
+	line-height: 1;
 }
 
 .fe-search-ai-api-keys-table a {
