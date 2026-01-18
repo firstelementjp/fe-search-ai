@@ -77,6 +77,70 @@ class FE_Search_AI_Sync_Handler {
 	}
 
 	/**
+	 * Builds embedding input texts from chunks.
+	 *
+	 * When the sync option "use_summary_for_embedding" is enabled, this method
+	 * generates a normalized summary per chunk using the selected chat provider
+	 * and uses that summary as the embedding input. Summaries are stored for
+	 * later inspection and troubleshooting.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param \WP_Post $post             The post being processed.
+	 * @param string   $lang_code         Language code (e.g. "en", "ja").
+	 * @param array    $chunks_with_meta  Chunk array as returned by create_chunks_from_post().
+	 * @return array{embedding_texts: array, summaries: array, summary_hashes: array}
+	 */
+	public function prepare_embedding_texts_from_chunks( $post, $lang_code, $chunks_with_meta ) {
+		$options     = get_option( 'fe_search_ai_settings', [] );
+		$sync_root   = isset( $options['sync'] ) && is_array( $options['sync'] ) ? $options['sync'] : [];
+		$use_summary = ! empty( $sync_root['use_summary_for_embedding'] );
+
+		$embedding_texts = [];
+		$summaries       = [];
+		$summary_hashes  = [];
+
+		foreach ( $chunks_with_meta as $index => $chunk_item ) {
+			$chunk_text = isset( $chunk_item['content_chunk'] ) ? (string) $chunk_item['content_chunk'] : '';
+			if ( '' === trim( $chunk_text ) ) {
+				$embedding_texts[ $index ] = '';
+				$summaries[ $index ]       = '';
+				$summary_hashes[ $index ]  = '';
+				continue;
+			}
+
+			if ( ! $use_summary ) {
+				$embedding_texts[ $index ] = $chunk_text;
+				$summaries[ $index ]       = '';
+				$summary_hashes[ $index ]  = '';
+				continue;
+			}
+
+			$summary_hash = md5( $chunk_text );
+			$summary      = $this->generate_summary_for_chunk( $chunk_item, $post, $lang_code );
+			$summary      = is_string( $summary ) ? trim( $summary ) : '';
+
+			if ( '' === $summary ) {
+				// Fail safe: fall back to the original chunk for embedding.
+				$embedding_texts[ $index ] = $chunk_text;
+				$summaries[ $index ]       = '';
+				$summary_hashes[ $index ]  = '';
+				continue;
+			}
+
+			$embedding_texts[ $index ] = $summary;
+			$summaries[ $index ]       = $summary;
+			$summary_hashes[ $index ]  = $summary_hash;
+		}
+
+		return [
+			'embedding_texts' => $embedding_texts,
+			'summaries'       => $summaries,
+			'summary_hashes'  => $summary_hashes,
+		];
+	}
+
+	/**
 	 * Starts a full rebuild of the index.
 	 *
 	 * Truncates vector and keyword tables and returns target post IDs
@@ -122,21 +186,21 @@ class FE_Search_AI_Sync_Handler {
 
 					// Skip if no Include in Chunk Data options are selected
 					$has_any_snippet = (
-						$include_title ||
-						$include_content ||
-						$include_date ||
-						$include_author ||
-						! empty(
-							array_filter(
-								array_map(
-									function ( $tax_config ) {
-										return ! empty( $tax_config['enabled'] );
-									},
-									$pt_options['snippet_taxonomies'] ?? []
-								)
+					$include_title ||
+					$include_content ||
+					$include_date ||
+					$include_author ||
+					! empty(
+						array_filter(
+							array_map(
+								function ( $tax_config ) {
+									return ! empty( $tax_config['enabled'] );
+								},
+								$pt_options['snippet_taxonomies'] ?? []
 							)
-						) ||
-						( ! empty( $pt_options['enable_custom_fields'] ) && ! empty( $pt_options['custom_fields'] ) )
+						)
+					) ||
+					( ! empty( $pt_options['enable_custom_fields'] ) && ! empty( $pt_options['custom_fields'] ) )
 					);
 					if ( $has_any_snippet ) {
 						$post_types_to_sync[] = $pt_slug;
@@ -230,21 +294,21 @@ class FE_Search_AI_Sync_Handler {
 				if ( ! empty( $pt_options['enabled'] ) ) {
 					// Skip if no Include in Chunk Data options are selected
 					$has_any_snippet = (
-						! empty( $pt_options['include_title'] ) ||
-						! empty( $pt_options['include_content'] ) ||
-						! empty( $pt_options['include_date'] ) ||
-						! empty( $pt_options['include_author'] ) ||
-						! empty(
-							array_filter(
-								array_map(
-									function ( $tax_config ) {
-										return ! empty( $tax_config['enabled'] );
-									},
-									$pt_options['snippet_taxonomies'] ?? []
-								)
+					! empty( $pt_options['include_title'] ) ||
+					! empty( $pt_options['include_content'] ) ||
+					! empty( $pt_options['include_date'] ) ||
+					! empty( $pt_options['include_author'] ) ||
+					! empty(
+						array_filter(
+							array_map(
+								function ( $tax_config ) {
+									return ! empty( $tax_config['enabled'] );
+								},
+								$pt_options['snippet_taxonomies'] ?? []
 							)
-						) ||
-						( ! empty( $pt_options['enable_custom_fields'] ) && ! empty( $pt_options['custom_fields'] ) )
+						)
+					) ||
+					( ! empty( $pt_options['enable_custom_fields'] ) && ! empty( $pt_options['custom_fields'] ) )
 					);
 					if ( $has_any_snippet ) {
 						$post_types_to_sync[] = $pt_slug;
@@ -484,8 +548,15 @@ class FE_Search_AI_Sync_Handler {
 					continue;
 				}
 
-				$chunks_for_embedding = wp_list_pluck( $chunks_with_meta, 'content_chunk' );
-				$embedding_response   = $this->get_embeddings_via_selected_provider( $chunks_for_embedding );
+				$prepared        = $this->prepare_embedding_texts_from_chunks( $post, $lang_code, $chunks_with_meta );
+				$embedding_texts = $prepared['embedding_texts'] ?? [];
+				$summaries       = $prepared['summaries'] ?? [];
+				$summary_hashes  = $prepared['summary_hashes'] ?? [];
+				foreach ( $chunks_with_meta as $i => $chunk_item ) {
+					$chunks_with_meta[ $i ]['summary_text'] = isset( $summaries[ $i ] ) ? (string) $summaries[ $i ] : '';
+				}
+				$embedding_texts    = array_values( $embedding_texts );
+				$embedding_response = $this->get_embeddings_via_selected_provider( $embedding_texts );
 
 				if ( ! is_wp_error( $embedding_response ) && ! empty( $embedding_response['data'] ) ) {
 					$embedding_model = $embedding_response['embedding_model'] ?? '';
@@ -500,14 +571,19 @@ class FE_Search_AI_Sync_Handler {
 							continue;
 						}
 
-						$chunk_item = $chunks_with_meta[ $index ];
+						$chunk_item   = $chunks_with_meta[ $index ];
+						$summary_text = isset( $summaries[ $index ] ) ? (string) $summaries[ $index ] : '';
+						$summary_hash = isset( $summary_hashes[ $index ] ) ? (string) $summary_hashes[ $index ] : '';
 
 						$wpdb->insert(
 							$vectors_table,
 							[
 								'post_id'         => $post->ID,
 								'lang'            => $lang_code,
+								'chunk_index'     => $index,
 								'content_chunk'   => $chunk_item['content_chunk'],
+								'summary_text'    => $summary_text,
+								'summary_hash'    => $summary_hash,
 								'vector_data'     => wp_json_encode( $vector_item['embedding'] ),
 								'embedding_model' => $embedding_model,
 								'embedding_dim'   => $embedding_dim,
@@ -648,26 +724,23 @@ class FE_Search_AI_Sync_Handler {
 		}
 
 		$points = [];
-
 		foreach ( $vectors_data as $index => $vector_item ) {
 			if ( empty( $vector_item['embedding'] ) || empty( $chunks_with_meta[ $index ] ) ) {
 				continue;
 			}
 
-			$chunk = $chunks_with_meta[ $index ];
-			/**
-			 * Filters the maximum length of the content snippet stored in Qdrant payload.
-			 *
-			 * This controls how many characters from each content chunk are saved
-			 * as `content_snippet` when mirroring vectors to Qdrant.
-			 *
-			 * @param int      $snippet_length Default snippet length in characters.
-			 * @param \WP_Post $post           The post being processed.
-			 * @param array    $chunk          The chunk data including 'content_chunk' and 'permalink'.
-			 */
+			$chunk          = $chunks_with_meta[ $index ];
+			$summary_text   = isset( $chunk['summary_text'] ) ? (string) $chunk['summary_text'] : '';
 			$snippet_length = (int) apply_filters( 'fe_search_ai_qdrant_snippet_length', 1000, $post, $chunk );
 			if ( $snippet_length <= 0 ) {
 				$snippet_length = 1000;
+			}
+
+			$content_for_snippet = '';
+			if ( '' !== $summary_text ) {
+				$content_for_snippet = $summary_text;
+			} elseif ( isset( $chunk['content_chunk'] ) ) {
+				$content_for_snippet = (string) $chunk['content_chunk'];
 			}
 
 			$points[] = [
@@ -678,7 +751,8 @@ class FE_Search_AI_Sync_Handler {
 					'post_id'         => $post->ID,
 					'permalink'       => $chunk['permalink'] ?? get_permalink( $post ),
 					'title'           => get_the_title( $post ),
-					'content_snippet' => mb_substr( $chunk['content_chunk'], 0, $snippet_length ),
+					'content_snippet' => mb_substr( $content_for_snippet, 0, $snippet_length ),
+					'summary'         => $summary_text,
 					'language'        => $lang_code,
 					'source'          => 'post',
 				],
@@ -689,11 +763,8 @@ class FE_Search_AI_Sync_Handler {
 			return;
 		}
 
-		$body = [
-			'points' => $points,
-		];
-		$url  = $endpoint . '/collections/' . rawurlencode( $collection ) . '/points';
-
+		$body     = [ 'points' => $points ];
+		$url      = $endpoint . '/collections/' . rawurlencode( $collection ) . '/points';
 		$response = wp_remote_request(
 			$url,
 			[
@@ -720,7 +791,7 @@ class FE_Search_AI_Sync_Handler {
 			return;
 		}
 
-		$status_code = wp_remote_retrieve_response_code( $response );
+		$status_code = (int) wp_remote_retrieve_response_code( $response );
 		if ( $status_code < 200 || $status_code >= 300 ) {
 			$body_text    = wp_remote_retrieve_body( $response );
 			$body_summary = mb_substr( $body_text, 0, 1000 );
@@ -737,6 +808,266 @@ class FE_Search_AI_Sync_Handler {
 				]
 			);
 		}
+	}
+
+	/**
+	 * Generates a normalized summary for a single chunk.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param array    $chunk_item Chunk item.
+	 * @param \WP_Post $post      The post.
+	 * @param string   $lang_code Language code.
+	 * @return string|WP_Error
+	 */
+	private function generate_summary_for_chunk( $chunk_item, $post, $lang_code ) {
+		$raw_chunk = isset( $chunk_item['content_chunk'] ) ? (string) $chunk_item['content_chunk'] : '';
+		if ( '' === trim( $raw_chunk ) ) {
+			return '';
+		}
+		$override = apply_filters( 'fe_search_ai_chunk_summary', null, $chunk_item, $post, $lang_code );
+		if ( null !== $override ) {
+			return is_string( $override ) ? $override : '';
+		}
+		$context = $this->build_summary_prompt_context( $chunk_item, $post, $lang_code );
+		$context = apply_filters( 'fe_search_ai_chunk_summary_prompt_context', $context, $chunk_item, $post, $lang_code );
+		$prompt  = $this->build_default_summary_prompt( $context, $lang_code );
+		$prompt  = apply_filters( 'fe_search_ai_chunk_summary_generation_prompt', $prompt, $context, $chunk_item, $post, $lang_code );
+		$result  = $this->request_chat_completion_for_summary( $prompt );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+		$summary = trim( (string) $result );
+		$summary = apply_filters( 'fe_search_ai_chunk_summary_output_postprocess', $summary, $chunk_item, $post, $lang_code );
+		return trim( (string) $summary );
+	}
+
+	/**
+	 * @since 1.1.0
+	 * @param array    $chunk_item Chunk item.
+	 * @param \WP_Post $post      The post.
+	 * @param string   $lang_code Language code.
+	 * @return array{attr:string, content:string}
+	 */
+	private function build_summary_prompt_context( $chunk_item, $post, $lang_code ) {
+		$raw_chunk = isset( $chunk_item['content_chunk'] ) ? (string) $chunk_item['content_chunk'] : '';
+		$lines     = preg_split( '/\r\n|\r|\n/u', $raw_chunk );
+		$attr      = [];
+		$content   = [];
+		$in_body   = false;
+		foreach ( $lines as $line ) {
+			$line = trim( (string) $line );
+			if ( '' === $line ) {
+				continue;
+			}
+			if ( 'Content:' === $line ) {
+				$in_body = true;
+				continue;
+			}
+			if ( ! $in_body && preg_match( '/^(ID|Title|URL|Date|Metadata):\s*(.*)$/u', $line, $m ) ) {
+				$key    = strtolower( (string) $m[1] );
+				$value  = (string) $m[2];
+				$attr[] = sprintf( 'ATTR: %s=%s', $key, $value );
+				continue;
+			}
+			if ( $in_body ) {
+				$content[] = $line;
+			}
+		}
+		if ( empty( $attr ) ) {
+			$attr[] = 'ATTR: post_id=' . ( isset( $chunk_item['post_id'] ) ? (string) $chunk_item['post_id'] : (string) $post->ID );
+			$attr[] = 'ATTR: title=' . ( isset( $chunk_item['title'] ) ? (string) $chunk_item['title'] : (string) $post->post_title );
+			$attr[] = 'ATTR: permalink=' . ( isset( $chunk_item['permalink'] ) ? (string) $chunk_item['permalink'] : (string) get_permalink( $post ) );
+		}
+		return [
+			'attr'    => implode( "\n", $attr ),
+			'content' => implode( "\n", $content ),
+		];
+	}
+
+	/**
+	 * @since 1.1.0
+	 * @param array  $context  Prompt context.
+	 * @param string $lang_code Language code.
+	 * @return string
+	 */
+	private function build_default_summary_prompt( $context, $lang_code ) {
+		$attr          = isset( $context['attr'] ) ? (string) $context['attr'] : '';
+		$content       = isset( $context['content'] ) ? (string) $context['content'] : '';
+		$language_line = '';
+		if ( '' !== $lang_code ) {
+			$language_line = "- Output language: Use the same language as the input. If unclear, use {$lang_code}.";
+		}
+		return "You are a text normalizer for semantic search embeddings.\n"
+			. "Your task is to create a compact, factual, structured summary for embedding.\n\n"
+			. "Rules:\n"
+			. "- Do NOT guess or infer missing facts.\n"
+			. "- If a value is not present in ATTR or CONTENT, write '不明'.\n"
+			. "- Avoid marketing language and opinions.\n"
+			. "- Keep sentences short. Prefer bullet-like lines.\n"
+			. "- Always output the required fields in the exact order.\n"
+			. ( $language_line ? "{$language_line}\n" : '' )
+			. "\nINPUT ATTRIBUTES:\n{$attr}\n\n"
+			. "INPUT CONTENT:\n{$content}\n\n"
+			. "OUTPUT FORMAT (exact labels):\n"
+			. "Title: ...\n"
+			. "Main topic: ...\n"
+			. "Key facts:\n- ...\n- ...\n"
+			. "Entities: ...\n"
+			. "Audience/Target: ...\n"
+			. "Constraints/Requirements: ...\n"
+			. "Categories/Tags: ...\n"
+			. "Keywords: kw1, kw2, ...\n"
+			. "Summary: ...\n";
+	}
+
+	/**
+	 * @since 1.1.0
+	 * @param string $prompt Prompt.
+	 * @return string|WP_Error
+	 */
+	private function request_chat_completion_for_summary( $prompt ) {
+		$provider = isset( $this->options['provider']['chat'] ) ? (string) $this->options['provider']['chat'] : 'openai';
+		$override = apply_filters( 'fe_search_ai_summary_chat_result', null, $prompt, $provider );
+		if ( null !== $override ) {
+			return is_string( $override ) ? $override : '';
+		}
+		switch ( $provider ) {
+			case 'google':
+				return $this->request_summary_via_gemini( $prompt );
+			case 'anthropic':
+				return $this->request_summary_via_claude( $prompt );
+			case 'openai':
+			default:
+				return $this->request_summary_via_openai( $prompt );
+		}
+	}
+
+	/**
+	 * @since 1.1.0
+	 * @param string $prompt Prompt.
+	 * @return string|WP_Error
+	 */
+	private function request_summary_via_openai( $prompt ) {
+		$encrypted_key = $this->options['provider']['openai_key'] ?? '';
+		$api_key       = \FESearchAI\Core\FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
+		if ( empty( $api_key ) ) {
+			return new WP_Error( 'api_key_missing', __( 'The OpenAI API key is not configured.', 'fe-search-ai' ) );
+		}
+		$model    = 'gpt-4o-mini';
+		$body     = [
+			'model'       => $model,
+			'messages'    => [
+				[ 'role' => 'system', 'content' => 'You are a helpful assistant.' ],
+				[ 'role' => 'user', 'content' => $prompt ],
+			],
+			'temperature' => 0.1,
+		];
+		$response = wp_remote_post(
+			'https://api.openai.com/v1/chat/completions',
+			[
+				'headers' => [
+					'Content-Type'  => 'application/json',
+					'Authorization' => 'Bearer ' . $api_key,
+				],
+				'body'    => wp_json_encode( $body ),
+				'timeout' => 60,
+			]
+		);
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		$data = json_decode( wp_remote_retrieve_body( $response ), true );
+		if ( 200 !== $code || ! is_array( $data ) ) {
+			return new WP_Error( 'api_error', __( 'API Error', 'fe-search-ai' ) );
+		}
+		$text = $data['choices'][0]['message']['content'] ?? '';
+		return is_string( $text ) ? $text : '';
+	}
+
+	/**
+	 * @since 1.1.0
+	 * @param string $prompt Prompt.
+	 * @return string|WP_Error
+	 */
+	private function request_summary_via_gemini( $prompt ) {
+		$encrypted_key = $this->options['provider']['google_key'] ?? '';
+		$api_key       = \FESearchAI\Core\FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
+		if ( empty( $api_key ) ) {
+			return new WP_Error( 'api_key_missing', __( 'The Google Cloud API key is not configured.', 'fe-search-ai' ) );
+		}
+		$model    = 'gemini-2.5-flash-lite';
+		$url      = sprintf(
+			'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s',
+			rawurlencode( $model ),
+			rawurlencode( $api_key )
+		);
+		$body     = [
+			'contents'         => [
+				[ 'role' => 'user', 'parts' => [ [ 'text' => $prompt ] ] ],
+			],
+			'generationConfig' => [ 'temperature' => 0.1 ],
+		];
+		$response = wp_remote_post(
+			$url,
+			[ 'headers' => [ 'Content-Type' => 'application/json' ], 'body' => wp_json_encode( $body ), 'timeout' => 60 ]
+		);
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		$data = json_decode( wp_remote_retrieve_body( $response ), true );
+		if ( 200 !== $code || ! is_array( $data ) ) {
+			return new WP_Error( 'api_error', __( 'API Error', 'fe-search-ai' ) );
+		}
+		$text = $data['candidates'][0]['content']['parts'][0]['text'] ?? '';
+		return is_string( $text ) ? $text : '';
+	}
+
+	/**
+	 * @since 1.1.0
+	 * @param string $prompt Prompt.
+	 * @return string|WP_Error
+	 */
+	private function request_summary_via_claude( $prompt ) {
+		$encrypted_key = $this->options['provider']['anthropic_key'] ?? '';
+		$api_key       = \FESearchAI\Core\FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
+		if ( empty( $api_key ) ) {
+			return new WP_Error( 'api_key_missing', __( 'The Anthropic API key is not configured.', 'fe-search-ai' ) );
+		}
+		$model    = 'claude-3-5-haiku-20241022';
+		$body     = [
+			'model'       => $model,
+			'max_tokens'  => 1024,
+			'temperature' => 0.1,
+			'messages'    => [ [ 'role' => 'user', 'content' => $prompt ] ],
+		];
+		$response = wp_remote_post(
+			'https://api.anthropic.com/v1/messages',
+			[
+				'headers' => [
+					'Content-Type'      => 'application/json',
+					'x-api-key'         => $api_key,
+					'anthropic-version' => '2023-06-01',
+				],
+				'body'    => wp_json_encode( $body ),
+				'timeout' => 60,
+			]
+		);
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		$data = json_decode( wp_remote_retrieve_body( $response ), true );
+		if ( 200 !== $code || ! is_array( $data ) ) {
+			return new WP_Error( 'api_error', __( 'API Error', 'fe-search-ai' ) );
+		}
+		$blocks = $data['content'] ?? [];
+		if ( is_array( $blocks ) && ! empty( $blocks[0]['text'] ) ) {
+			return (string) $blocks[0]['text'];
+		}
+		return '';
 	}
 
 	/**
@@ -758,12 +1089,12 @@ class FE_Search_AI_Sync_Handler {
 			: '';
 
 		if ( empty( $endpoint ) || empty( $collection ) || empty( $api_key ) ) {
-			return [];
+			return new WP_Error( 'qdrant_error', 'Qdrant configuration is missing.' );
 		}
 
 		$embedding_response = $this->get_embeddings_via_selected_provider( [ $question ] );
 		if ( is_wp_error( $embedding_response ) || empty( $embedding_response['data'][0]['embedding'] ) ) {
-			return [];
+			return new WP_Error( 'qdrant_error', 'Embedding generation failed.' );
 		}
 
 		$vector = $embedding_response['data'][0]['embedding'];
@@ -799,7 +1130,7 @@ class FE_Search_AI_Sync_Handler {
 					'error_message' => $response->get_error_message(),
 				]
 			);
-			return [];
+			return new WP_Error( 'qdrant_error', $response->get_error_message() );
 		}
 
 		$status_code = wp_remote_retrieve_response_code( $response );
@@ -813,13 +1144,13 @@ class FE_Search_AI_Sync_Handler {
 					'response_body' => $body_text,
 				]
 			);
-			return [];
+			return new WP_Error( 'qdrant_error', 'Qdrant returned non-2xx status.' );
 		}
 
 		$body_text = wp_remote_retrieve_body( $response );
 		$data      = json_decode( $body_text, true );
-		if ( ! is_array( $data ) || empty( $data['result'] ) || ! is_array( $data['result'] ) ) {
-			return [];
+		if ( ! is_array( $data ) || ! isset( $data['result'] ) || ! is_array( $data['result'] ) ) {
+			return new WP_Error( 'qdrant_error', 'Qdrant response is invalid.' );
 		}
 
 		$results = [];
@@ -894,9 +1225,9 @@ class FE_Search_AI_Sync_Handler {
 	 * @return array An array of the most relevant text chunks and their permalinks.
 	 */
 	public function find_similar_chunks( $question ) {
-		// When Qdrant is enabled in Pro settings, prefer vector search via Qdrant.
-		$pro_settings  = get_option( 'fe_search_ai_pro_settings', [] );
-		$vector_config = isset( $pro_settings['vector'] ) && is_array( $pro_settings['vector'] ) ? $pro_settings['vector'] : [];
+		// When Qdrant is enabled, prefer vector search via Qdrant.
+		$settings      = get_option( 'fe_search_ai_settings', [] );
+		$vector_config = isset( $settings['vector'] ) && is_array( $settings['vector'] ) ? $settings['vector'] : [];
 		$qdrant_config = isset( $vector_config['qdrant'] ) && is_array( $vector_config['qdrant'] ) ? $vector_config['qdrant'] : [];
 		$vector_store  = $vector_config['store'] ?? 'mariadb';
 
@@ -909,11 +1240,12 @@ class FE_Search_AI_Sync_Handler {
 
 		if ( $qdrant_enabled ) {
 			$results = $this->find_similar_chunks_via_qdrant( $question, $qdrant_config );
-			if ( ! empty( $results ) ) {
+			if ( ! is_wp_error( $results ) ) {
 				return $results;
 			}
 		}
 
+		// Keyword-based search (fallback when Qdrant is disabled or returns no results)
 		global $wpdb;
 		$vectors_table = $wpdb->prefix . 'fe_search_ai_vectors';
 		$index_table   = $wpdb->prefix . 'fe_search_ai_keyword_index';
@@ -1584,7 +1916,7 @@ class FE_Search_AI_Sync_Handler {
 		$text_normalized = mb_strtolower( (string) $text, 'UTF-8' );
 
 		// Use 'asHc' to also convert full-width spaces
-		$text_normalized = mb_convert_kana( $text_normalized, 'asHc', 'UTF-8' );
+		$text_normalized = mb_convert_kana( $text_normalized, 'as', 'UTF-8' );
 
 		// Remove all symbols (including asterisk, which was causing issues)
 		$text_normalized = preg_replace( '/[^\p{L}\p{N}\s]/u', ' ', $text_normalized );
@@ -1723,7 +2055,11 @@ class FE_Search_AI_Sync_Handler {
 		if ( ! is_array( $ja_conf ) ) {
 			$ja_conf = [];
 		}
-		$yahoo_id = $ja_conf['yahoo_id'] ?? '';
+		$encrypted_yahoo_id = $ja_conf['yahoo_id'] ?? '';
+		if ( empty( $encrypted_yahoo_id ) ) {
+			return '';
+		}
+		$yahoo_id = \FESearchAI\Core\FE_Search_AI_Encryption_Helper::decrypt( $encrypted_yahoo_id );
 		return (string) $yahoo_id;
 	}
 
@@ -1797,6 +2133,29 @@ class FE_Search_AI_Sync_Handler {
 			return [];
 		}
 
+		if ( $debug_mode ) {
+			$tokens_sample = [];
+			$max_sample    = 20;
+			foreach ( $data['result']['tokens'] as $i => $token_row ) {
+				if ( $i >= $max_sample ) {
+					break;
+				}
+				$tokens_sample[] = [
+					'i'        => $i,
+					'surface'  => (string) ( $token_row[0] ?? '' ),
+					'baseform' => (string) ( $token_row[2] ?? '' ),
+				];
+			}
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
+				'INFO',
+				'Yahoo MA API tokens sample.',
+				[
+					'http_status' => $code,
+					'sample'      => $tokens_sample,
+				]
+			);
+		}
+
 		$words = [];
 		foreach ( $data['result']['tokens'] as $token_row ) {
 			// According to API docs: [surface, reading, baseform, pos, ...]
@@ -1814,8 +2173,9 @@ class FE_Search_AI_Sync_Handler {
 				'INFO',
 				'Yahoo MA API call succeeded.',
 				[
-					'http_status' => $code,
-					'token_count' => count( $words ),
+					'http_status'  => $code,
+					'token_count'  => count( $words ),
+					'words_sample' => array_slice( $words, 0, 30 ),
 				]
 			);
 		}

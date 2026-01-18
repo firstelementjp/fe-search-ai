@@ -261,6 +261,27 @@ class FE_Search_AI_Settings {
 	}
 
 	/**
+	 * Renders the checkbox to control whether embeddings are generated from summaries.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public function use_summary_for_embedding_field_html() {
+		$sync_options = $this->options['sync'] ?? [];
+		$is_enabled   = $sync_options['use_summary_for_embedding'] ?? true;
+		?>
+		<input type="hidden" name="fe_search_ai_settings[sync][use_summary_for_embedding]" value="0">
+		<label>
+			<input type="checkbox" name="fe_search_ai_settings[sync][use_summary_for_embedding]" value="1" <?php checked( $is_enabled ); ?>>
+			<?php esc_html_e( 'Generate embedding vectors from post summaries (recommended)', 'fe-search-ai' ); ?>
+		</label>
+		<p class="description">
+			<?php esc_html_e( 'When enabled, the plugin will generate a short summary for each post and create embedding vectors from that summary. This usually improves matching for broad user queries.', 'fe-search-ai' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
 	 * Initialize the Settings API: Register the master setting and define sections/fields.
 	 *
 	 * This method registers the main settings group and defines all sections
@@ -324,6 +345,7 @@ class FE_Search_AI_Settings {
 		add_settings_field( 'fe_search_ai_include_post_ids', __( 'Only Sync Specific Posts', 'fe-search-ai' ), [ $this, 'include_post_ids_field_html' ], $page_slug, 'fe_search_ai_sync_options_section' );
 		add_settings_field( 'fe_search_ai_exclude_post_ids', __( 'Exclude Specific Posts', 'fe-search-ai' ), [ $this, 'exclude_post_ids_field_html' ], $page_slug, 'fe_search_ai_sync_options_section' );
 		add_settings_field( 'fe_search_ai_vector_store', __( 'Data Storage', 'fe-search-ai' ), [ $this, 'vector_store_field_html' ], $page_slug, 'fe_search_ai_sync_options_section' );
+		add_settings_field( 'fe_search_ai_use_summary_for_embedding', __( 'Embeddings from Summaries', 'fe-search-ai' ), [ $this, 'use_summary_for_embedding_field_html' ], $page_slug, 'fe_search_ai_sync_options_section' );
 		add_settings_field( 'fe_search_ai_sync_limit', __( 'Sync Limit', 'fe-search-ai' ), [ $this, 'sync_limit_field_html' ], $page_slug, 'fe_search_ai_sync_options_section' );
 		add_settings_field( 'fe_search_ai_batch_size', __( 'Batch Size', 'fe-search-ai' ), [ $this, 'batch_size_field_html' ], $page_slug, 'fe_search_ai_sync_options_section' );
 
@@ -779,11 +801,6 @@ class FE_Search_AI_Settings {
 		<?php
 		// Allow Pro version to add additional provider rows
 		do_action( 'fe_search_ai_after_api_key_fields', $this );
-
-		// Display Pro version cost tracking and limits accordion after API keys
-		if ( class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) ) {
-			do_action( 'fe_search_ai_display_api_limits_accordion' );
-		}
 		?>
 		<?php
 	}
@@ -2209,6 +2226,11 @@ class FE_Search_AI_Settings {
 		}
 		$new_input['sync']['limit']      = intval( $sync_input['limit'] ?? -1 );
 		$new_input['sync']['batch_size'] = absint( $sync_input['batch_size'] ?? 10 );
+		if ( array_key_exists( 'use_summary_for_embedding', $sync_input ) ) {
+			$new_input['sync']['use_summary_for_embedding'] = ! empty( $sync_input['use_summary_for_embedding'] );
+		} else {
+			$new_input['sync']['use_summary_for_embedding'] = true;
+		}
 		// Per-post-type targets (post types, taxonomies, custom fields).
 		$new_input['sync']['targets'] = $this->sanitize_sync_targets( $sync_input['targets'] ?? [] );
 		// Normalize include / exclude to arrays before accessing ['ids'] to avoid TypeError

@@ -137,18 +137,24 @@ class FE_Search_AI_Sync_Hooks {
 			return;
 		}
 
-		// Extract just the 'content_chunk' strings for the embedding API.
-		$chunks_for_embedding = wp_list_pluck( $chunks_with_meta, 'content_chunk' );
-
-		// Get vector embeddings for the chunks using the helper method.
-		$embedding_response = $this->sync_handler->get_embeddings_via_selected_provider( $chunks_for_embedding );
+		$prepared        = $this->sync_handler->prepare_embedding_texts_from_chunks( $post, $lang_code, $chunks_with_meta );
+		$embedding_texts = $prepared['embedding_texts'] ?? [];
+		$summaries       = $prepared['summaries'] ?? [];
+		$summary_hashes  = $prepared['summary_hashes'] ?? [];
+		foreach ( $chunks_with_meta as $i => $chunk_item ) {
+			$chunks_with_meta[ $i ]['summary_text'] = isset( $summaries[ $i ] ) ? (string) $summaries[ $i ] : '';
+		}
+		$embedding_texts    = array_values( $embedding_texts );
+		$embedding_response = $this->sync_handler->get_embeddings_via_selected_provider( $embedding_texts );
 
 		if ( ! is_wp_error( $embedding_response ) && ! empty( $embedding_response['data'] ) ) {
 			global $wpdb;
 			$vectors_table = $wpdb->prefix . 'fe_search_ai_vectors';
 			$index_table   = $wpdb->prefix . 'fe_search_ai_keyword_index';
 
-			$vectors_data = $embedding_response['data'];
+			$vectors_data    = $embedding_response['data'];
+			$embedding_model = $embedding_response['embedding_model'] ?? '';
+			$embedding_dim   = (int) ( $embedding_response['embedding_dim'] ?? 0 );
 
 			foreach ( $vectors_data as $index => $vector_item ) {
 				if ( empty( $vector_item['embedding'] ) ) {
@@ -159,17 +165,23 @@ class FE_Search_AI_Sync_Hooks {
 				if ( empty( $chunk_content ) ) {
 					continue;
 				}
+				$summary_text = isset( $summaries[ $index ] ) ? (string) $summaries[ $index ] : '';
+				$summary_hash = isset( $summary_hashes[ $index ] ) ? (string) $summary_hashes[ $index ] : '';
 
 				// Insert the vector data into the vectors table.
 				$wpdb->insert(
 					$vectors_table,
 					[
-						'post_id'       => $post->ID,
-						'lang'          => $lang_code,
-						'chunk_index'   => $index,
-						'content_chunk' => $chunk_content,
-						'vector_data'   => wp_json_encode( $vector_item['embedding'] ),
-						'created_at'    => current_time( 'mysql' ),
+						'post_id'         => $post->ID,
+						'lang'            => $lang_code,
+						'chunk_index'     => $index,
+						'content_chunk'   => $chunk_content,
+						'summary_text'    => $summary_text,
+						'summary_hash'    => $summary_hash,
+						'vector_data'     => wp_json_encode( $vector_item['embedding'] ),
+						'embedding_model' => $embedding_model,
+						'embedding_dim'   => $embedding_dim,
+						'created_at'      => current_time( 'mysql' ),
 					]
 				);
 

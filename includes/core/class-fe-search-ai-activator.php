@@ -44,7 +44,7 @@ class FE_Search_AI_Activator {
 	 *
 	 * @since 1.0.0
 	 */
-	const DB_VERSION = '1.0';
+	const DB_VERSION = '1.1';
 
 	/**
 	 * Fired when the plugin is activated.
@@ -118,6 +118,8 @@ class FE_Search_AI_Activator {
 			`lang` varchar(10) NOT NULL DEFAULT '',
 			`chunk_index` smallint(5) NOT NULL,
 			`content_chunk` mediumtext NOT NULL,
+			`summary_text` mediumtext,
+			`summary_hash` varchar(32) NOT NULL DEFAULT '',
 			`vector_data` longtext NOT NULL,
 			`embedding_model` varchar(100) NOT NULL DEFAULT '',
 			`embedding_dim` smallint(5) UNSIGNED NOT NULL DEFAULT 0,
