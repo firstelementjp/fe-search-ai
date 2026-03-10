@@ -135,6 +135,11 @@ class FE_Search_AI_Settings {
 							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_embedding_section' ); ?>
 						</table>
 
+						<?php do_settings_sections( 'fe_search_ai_rerank_section' ); ?>
+						<table class="form-table">
+							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_rerank_section' ); ?>
+						</table>
+
 						<?php do_action( 'fe_search_ai_after_api_settings_fields' ); ?>
 					</div>
 
@@ -332,6 +337,10 @@ class FE_Search_AI_Settings {
 		add_settings_section( 'fe_search_ai_embedding_section', __( 'Vectorization Model', 'fe-search-ai' ), null, $page_slug );
 		add_settings_field( 'fe_search_ai_embedding_provider', __( 'Vectorization AI', 'fe-search-ai' ), [ $this, 'embedding_provider_field_html' ], $page_slug, 'fe_search_ai_embedding_section' );
 
+		// Reranker Section
+		add_settings_section( 'fe_search_ai_rerank_section', __( 'Reranker', 'fe-search-ai' ), null, $page_slug );
+		add_settings_field( 'fe_search_ai_rerank_settings', __( 'Reranker Settings', 'fe-search-ai' ), [ $this, 'rerank_settings_field_html' ], $page_slug, 'fe_search_ai_rerank_section' );
+
 		// ------------------
 		// Sync Tab
 		// ------------------
@@ -405,6 +414,65 @@ class FE_Search_AI_Settings {
 		// Qdrant connection settings (endpoint, API key, collection) shown in Advanced tab.
 		add_settings_section( 'fe_search_ai_qdrant_section', null, null, $page_slug );
 		add_settings_field( 'fe_search_ai_qdrant_settings', __( 'Qdrant Settings', 'fe-search-ai' ), [ $this, 'qdrant_settings_field_html' ], $page_slug, 'fe_search_ai_qdrant_section' );
+	}
+
+	/**
+	 * Renders the HTML for the reranker settings section.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public function rerank_settings_field_html() {
+		$rerank        = $this->options['rerank'] ?? [];
+		$enabled       = ! empty( $rerank['enabled'] );
+		$top_n         = isset( $rerank['top_n'] ) ? (int) $rerank['top_n'] : 5;
+		$initial_k     = isset( $rerank['initial_k'] ) ? (int) $rerank['initial_k'] : 50;
+		$timeout_sec   = isset( $rerank['timeout_sec'] ) ? (int) $rerank['timeout_sec'] : 15;
+		$encrypted_key = $rerank['cohere_api_key'] ?? '';
+		$api_key       = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
+		?>
+		<div class="fe-search-ai-boxed-option">
+			<p class="description">
+				<?php esc_html_e( 'Reranking improves answer quality and reduces the amount of context sent to the LLM by selecting the most relevant chunks.', 'fe-search-ai' ); ?>
+			</p>
+			<p>
+				<input type="hidden" name="fe_search_ai_settings[rerank][enabled]" value="0">
+				<label>
+					<input type="checkbox" name="fe_search_ai_settings[rerank][enabled]" value="1" <?php checked( $enabled ); ?>>
+					<?php esc_html_e( 'Enable reranker (recommended)', 'fe-search-ai' ); ?>
+				</label>
+			</p>
+			<table class="form-table">
+				<tr>
+					<th scope="row"><label for="fe_search_ai_rerank_top_n"><?php esc_html_e( 'Top N chunks for LLM', 'fe-search-ai' ); ?></label></th>
+					<td>
+						<input type="number" min="1" max="20" step="1" id="fe_search_ai_rerank_top_n" name="fe_search_ai_settings[rerank][top_n]" value="<?php echo esc_attr( $top_n ); ?>" class="small-text">
+						<p class="description"><?php esc_html_e( 'Only the top N reranked chunks will be sent to the LLM.', 'fe-search-ai' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="fe_search_ai_rerank_initial_k"><?php esc_html_e( 'Initial candidates (vector search)', 'fe-search-ai' ); ?></label></th>
+					<td>
+						<input type="number" min="5" max="200" step="1" id="fe_search_ai_rerank_initial_k" name="fe_search_ai_settings[rerank][initial_k]" value="<?php echo esc_attr( $initial_k ); ?>" class="small-text">
+						<p class="description"><?php esc_html_e( 'How many candidates to retrieve from the vector search before reranking.', 'fe-search-ai' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="fe_search_ai_rerank_timeout"><?php esc_html_e( 'Rerank timeout (sec)', 'fe-search-ai' ); ?></label></th>
+					<td>
+						<input type="number" min="1" max="60" step="1" id="fe_search_ai_rerank_timeout" name="fe_search_ai_settings[rerank][timeout_sec]" value="<?php echo esc_attr( $timeout_sec ); ?>" class="small-text">
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="fe_search_ai_rerank_cohere_key"><?php esc_html_e( 'Cohere API Key', 'fe-search-ai' ); ?></label></th>
+					<td>
+						<input type="password" id="fe_search_ai_rerank_cohere_key" name="fe_search_ai_settings[rerank][cohere_api_key]" value="<?php echo esc_attr( $api_key ); ?>" class="regular-text">
+						<p class="description"><?php esc_html_e( 'If you leave this field empty, the previously saved API key will be kept.', 'fe-search-ai' ); ?></p>
+					</td>
+				</tr>
+			</table>
+		</div>
+		<?php
 	}
 
 	/**
@@ -778,6 +846,9 @@ class FE_Search_AI_Settings {
 						</td>
 					</tr>
 				<?php endforeach; ?>
+				<?php
+				do_action( 'fe_search_ai_api_keys_table_rows', $this );
+				?>
 			</tbody>
 		</table>
 		
@@ -2202,6 +2273,27 @@ class FE_Search_AI_Settings {
 		// OpenAI-Compatible key (stored in Free version settings)
 		$new_input['provider']['openai_compatible_key'] = FE_Search_AI_Encryption_Helper::encrypt( sanitize_text_field( $input['provider']['openai_compatible_key'] ?? '' ) );
 
+		// Reranker (Free)
+		$existing_rerank = $new_input['rerank'] ?? [];
+		if ( ! is_array( $existing_rerank ) ) {
+			$existing_rerank = [];
+		}
+		$rerank_input = $input['rerank'] ?? [];
+		if ( ! is_array( $rerank_input ) ) {
+			$rerank_input = [];
+		}
+		$new_input['rerank']['enabled']     = ! empty( $rerank_input['enabled'] );
+		$new_input['rerank']['top_n']       = absint( $rerank_input['top_n'] ?? ( $existing_rerank['top_n'] ?? 5 ) );
+		$new_input['rerank']['initial_k']   = absint( $rerank_input['initial_k'] ?? ( $existing_rerank['initial_k'] ?? 50 ) );
+		$new_input['rerank']['timeout_sec'] = absint( $rerank_input['timeout_sec'] ?? ( $existing_rerank['timeout_sec'] ?? 15 ) );
+		$existing_cohere_key                = $existing_rerank['cohere_api_key'] ?? '';
+		$new_cohere_key                     = $rerank_input['cohere_api_key'] ?? '';
+		if ( '' === trim( (string) $new_cohere_key ) && '' !== $existing_cohere_key ) {
+			$new_input['rerank']['cohere_api_key'] = $existing_cohere_key;
+		} else {
+			$new_input['rerank']['cohere_api_key'] = FE_Search_AI_Encryption_Helper::encrypt( sanitize_text_field( $new_cohere_key ) );
+		}
+
 		// Prompt Tab - site_name and site_purpose are now saved separately in fe_search_ai_site_info option
 
 		// Sync Tab
@@ -2356,8 +2448,36 @@ class FE_Search_AI_Settings {
 	 * @return array The sanitized array to be saved.
 	 */
 	public function sanitize_custom_prompts( $input ) {
-		$sanitized                  = [];
-		$sanitized['system_prompt'] = sanitize_textarea_field( $input['system_prompt'] ?? '' );
+		$existing = get_option( 'fe_search_ai_custom_prompts', [] );
+		if ( ! is_array( $existing ) ) {
+			$existing = [];
+		}
+
+		$sanitized = $existing;
+
+		// Base (shared) system prompt.
+		$sanitized['system_prompt'] = sanitize_textarea_field( $input['system_prompt'] ?? ( $existing['system_prompt'] ?? '' ) );
+
+		// Model-specific prompts (used by Pro). Keep them if present.
+		if ( isset( $input['custom_prompts'] ) && is_array( $input['custom_prompts'] ) ) {
+			$allowed_keys                = [
+				'openai',
+				'anthropic',
+				'google',
+				'deepseek',
+				'openai_compatible',
+			];
+			$sanitized['custom_prompts'] = $sanitized['custom_prompts'] ?? [];
+			if ( ! is_array( $sanitized['custom_prompts'] ) ) {
+				$sanitized['custom_prompts'] = [];
+			}
+			foreach ( $allowed_keys as $key ) {
+				if ( array_key_exists( $key, $input['custom_prompts'] ) ) {
+					$sanitized['custom_prompts'][ $key ] = sanitize_textarea_field( $input['custom_prompts'][ $key ] );
+				}
+			}
+		}
+
 		return $sanitized;
 	}
 
