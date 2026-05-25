@@ -44,7 +44,7 @@ class FE_Search_AI_Activator {
 	 *
 	 * @since 1.0.0
 	 */
-	const DB_VERSION = '1.1';
+	const DB_VERSION = '1.2';
 
 	/**
 	 * Fired when the plugin is activated.
@@ -150,7 +150,8 @@ class FE_Search_AI_Activator {
 			`extra_data` longtext,
 			`created_at` datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
 			PRIMARY KEY  (`id`),
-			KEY `level` (`level`)
+			KEY `level` (`level`),
+			KEY `sequence` (`sequence_id`, `sequence_order`)
 		) $charset_collate;";
 		dbDelta( $sql );
 

@@ -81,6 +81,8 @@ add_action(
 		$assets_handler = new FESearchAI\Core\FE_Search_AI_Assets();
 		$sync_handler   = new FESearchAI\Ajax\FE_Search_AI_Sync_Handler();
 
+		\FESearchAI\Core\FE_Search_AI_Cohere_Reranker::register();
+
 		add_filter(
 			'fe_search_ai_get_sync_handler_instance',
 			function () use ( $sync_handler ) {
@@ -114,6 +116,7 @@ add_action(
 	'fe_search_ai_daily_log_rotation_event',
 	static function () {
 		\FESearchAI\Core\FE_Search_AI_Logger::rotate_logs();
+		\FESearchAI\Core\FE_Search_AI_Logger::rotate_conversation_logs();
 	}
 );
 

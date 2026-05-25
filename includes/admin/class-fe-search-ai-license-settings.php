@@ -231,7 +231,7 @@ class FE_Search_AI_License_Settings {
 							</ul>
 						</li>
 					</ul>
-					<a href="https://firstelement.co.jp/products/fe-search-ai-pro/" target="_blank" class="button button-primary button-hero">
+					<a href="https://www.firstelement.co.jp/products/fe-search-ai-pro/" target="_blank" class="button button-primary button-hero">
 						<?php esc_html_e( 'View FE Search AI Pro Details', 'fe-search-ai' ); ?>
 					</a>
 				</div>
