@@ -423,13 +423,11 @@ class FE_Search_AI_Settings {
 	 * @return void
 	 */
 	public function rerank_settings_field_html() {
-		$rerank        = $this->options['rerank'] ?? [];
-		$enabled       = ! empty( $rerank['enabled'] );
-		$top_n         = isset( $rerank['top_n'] ) ? (int) $rerank['top_n'] : 5;
-		$initial_k     = isset( $rerank['initial_k'] ) ? (int) $rerank['initial_k'] : 50;
-		$timeout_sec   = isset( $rerank['timeout_sec'] ) ? (int) $rerank['timeout_sec'] : 15;
-		$encrypted_key = $rerank['cohere_api_key'] ?? '';
-		$api_key       = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
+		$rerank      = $this->options['rerank'] ?? [];
+		$enabled     = ! empty( $rerank['enabled'] );
+		$top_n       = isset( $rerank['top_n'] ) ? (int) $rerank['top_n'] : 5;
+		$initial_k   = isset( $rerank['initial_k'] ) ? (int) $rerank['initial_k'] : 50;
+		$timeout_sec = isset( $rerank['timeout_sec'] ) ? (int) $rerank['timeout_sec'] : 15;
 		?>
 		<div class="fe-search-ai-boxed-option">
 			<p class="description">
@@ -461,13 +459,6 @@ class FE_Search_AI_Settings {
 					<th scope="row"><label for="fe_search_ai_rerank_timeout"><?php esc_html_e( 'Rerank timeout (sec)', 'fe-search-ai' ); ?></label></th>
 					<td>
 						<input type="number" min="1" max="60" step="1" id="fe_search_ai_rerank_timeout" name="fe_search_ai_settings[rerank][timeout_sec]" value="<?php echo esc_attr( $timeout_sec ); ?>" class="small-text">
-					</td>
-				</tr>
-				<tr>
-					<th scope="row"><label for="fe_search_ai_rerank_cohere_key"><?php esc_html_e( 'Cohere API Key', 'fe-search-ai' ); ?></label></th>
-					<td>
-						<input type="password" id="fe_search_ai_rerank_cohere_key" name="fe_search_ai_settings[rerank][cohere_api_key]" value="<?php echo esc_attr( $api_key ); ?>" class="regular-text">
-						<p class="description"><?php esc_html_e( 'If you leave this field empty, the previously saved API key will be kept.', 'fe-search-ai' ); ?></p>
 					</td>
 				</tr>
 			</table>
@@ -752,6 +743,12 @@ class FE_Search_AI_Settings {
 				'description'   => __( 'Enter your Anthropic API key.', 'fe-search-ai' ),
 				'default_model' => 'claude-3-5-haiku-20241022',
 			],
+			'cohere'    => [
+				'name'          => 'Cohere (Rerank)',
+				'api_url'       => 'https://dashboard.cohere.com/api-keys',
+				'description'   => __( 'Enter your Cohere API key.', 'fe-search-ai' ),
+				'default_model' => 'rerank-v3.0',
+			],
 		];
 		?>
 		<p class="description">
@@ -799,12 +796,22 @@ class FE_Search_AI_Settings {
 				<?php foreach ( $providers as $provider_key => $provider_data ) : ?>
 					<?php
 					$encrypted_key = $this->options['provider'][ $provider_key . '_key' ] ?? '';
-					$api_key       = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
+					if ( 'cohere' === $provider_key && '' === $encrypted_key ) {
+						$encrypted_key = $this->options['rerank']['cohere_api_key'] ?? '';
+					}
+					$api_key = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
 
 					$model_to_display = $provider_data['default_model'];
 					if ( $this->is_license_active ) {
-						$pro_options      = get_option( 'fe_search_ai_pro_settings', [] );
-						$model_to_display = $pro_options['model'][ $provider_key ] ?? $model_to_display;
+						$pro_options    = get_option( 'fe_search_ai_pro_settings', [] );
+						$model_settings = $pro_options['model'][ $provider_key . '_model' ] ?? [];
+						$model_type     = $model_settings['type'] ?? '';
+						$custom_model   = $model_settings['custom'] ?? '';
+						if ( 'custom' === $model_type && '' !== trim( (string) $custom_model ) ) {
+							$model_to_display = $custom_model;
+						} elseif ( '' !== trim( (string) $model_type ) ) {
+							$model_to_display = $model_type;
+						}
 					}
 					?>
 					<tr>
@@ -2267,6 +2274,7 @@ class FE_Search_AI_Settings {
 		$new_input['provider']['openai_key']    = FE_Search_AI_Encryption_Helper::encrypt( sanitize_text_field( $input['provider']['openai_key'] ?? '' ) );
 		$new_input['provider']['google_key']    = FE_Search_AI_Encryption_Helper::encrypt( sanitize_text_field( $input['provider']['google_key'] ?? '' ) );
 		$new_input['provider']['anthropic_key'] = FE_Search_AI_Encryption_Helper::encrypt( sanitize_text_field( $input['provider']['anthropic_key'] ?? '' ) );
+		$new_input['provider']['cohere_key']    = FE_Search_AI_Encryption_Helper::encrypt( sanitize_text_field( $input['provider']['cohere_key'] ?? '' ) );
 		$new_input['provider']['embedding']     = sanitize_key( $input['provider']['embedding'] ?? 'openai' );
 		$new_input['provider']['chat']          = sanitize_key( $input['provider']['chat'] ?? 'openai' );
 
@@ -2286,13 +2294,7 @@ class FE_Search_AI_Settings {
 		$new_input['rerank']['top_n']       = absint( $rerank_input['top_n'] ?? ( $existing_rerank['top_n'] ?? 5 ) );
 		$new_input['rerank']['initial_k']   = absint( $rerank_input['initial_k'] ?? ( $existing_rerank['initial_k'] ?? 50 ) );
 		$new_input['rerank']['timeout_sec'] = absint( $rerank_input['timeout_sec'] ?? ( $existing_rerank['timeout_sec'] ?? 15 ) );
-		$existing_cohere_key                = $existing_rerank['cohere_api_key'] ?? '';
-		$new_cohere_key                     = $rerank_input['cohere_api_key'] ?? '';
-		if ( '' === trim( (string) $new_cohere_key ) && '' !== $existing_cohere_key ) {
-			$new_input['rerank']['cohere_api_key'] = $existing_cohere_key;
-		} else {
-			$new_input['rerank']['cohere_api_key'] = FE_Search_AI_Encryption_Helper::encrypt( sanitize_text_field( $new_cohere_key ) );
-		}
+		$new_input['rerank']['model']       = 'rerank-v3.0';
 
 		// Prompt Tab - site_name and site_purpose are now saved separately in fe_search_ai_site_info option
 

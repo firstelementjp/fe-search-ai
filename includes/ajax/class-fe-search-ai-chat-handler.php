@@ -1913,6 +1913,24 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 					}
 					break;
 
+				case 'cohere':
+					if ( empty( $api_key ) ) {
+						$error_message = __( 'API key is missing.', 'fe-search-ai' );
+						break;
+					}
+					$response = wp_remote_get(
+						'https://api.cohere.com/v1/models',
+						[
+							'headers' => [ 'Authorization' => 'Bearer ' . $api_key ],
+						]
+					);
+					if ( ! is_wp_error( $response ) && 200 === wp_remote_retrieve_response_code( $response ) ) {
+						$is_valid = true;
+					} else {
+						$error_message = is_wp_error( $response ) ? $response->get_error_message() : __( 'Authentication failed.', 'fe-search-ai' );
+					}
+					break;
+
 				default:
 					$error_message = __( 'Unknown provider.', 'fe-search-ai' );
 			}
