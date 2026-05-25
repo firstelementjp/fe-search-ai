@@ -104,8 +104,8 @@
 
 #fe_search_ai_chat_bubble {
 	animation: shimmer 6s ease-in-out infinite alternate,
-	           pulse 4s ease-in-out infinite,
-			   opacity 3s linear infinite alternate;
+				pulse 4s ease-in-out infinite,
+				opacity 3s linear infinite alternate;
 	background: linear-gradient(135deg, #00f, #0ff, #f0f, #00f);
 	background-size: 500% 500%;
 }
@@ -417,7 +417,7 @@
 #fe_search_ai_send_mode_toggle {
 	width: fit-content;
 	color: var(--feais-text);
-    font-size: 0.9rem;
+	font-size: 0.9rem;
 	background: var(--feais-bg);
 }
 

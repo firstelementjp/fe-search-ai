@@ -220,11 +220,25 @@ class FE_Search_AI_Assets {
 		}
 
 		wp_enqueue_script(
-			'fe-search-ai-frontend-scripts',
-			plugin_dir_url( FE_SEARCH_AI_PLUGIN_FILE ) . $frontend_js,
-			[ 'wp-i18n' ],
+			'fe-search-ai-marked',
+			'https://cdn.jsdelivr.net/npm/marked/marked.min.js',
+			[],
 			FE_SEARCH_AI_VERSION,
 			true
+		);
+
+		wp_enqueue_script(
+			'fe-search-ai-frontend-scripts',
+			plugin_dir_url( FE_SEARCH_AI_PLUGIN_FILE ) . $frontend_js,
+			[ 'wp-i18n', 'fe-search-ai-marked' ],
+			FE_SEARCH_AI_VERSION,
+			true
+		);
+
+		wp_add_inline_script(
+			'fe-search-ai-frontend-scripts',
+			"document.addEventListener('DOMContentLoaded', function () { var container = document.getElementById('fe_search_ai_chat_container'); if (typeof initFEAIChat === 'function' && container && !container.dataset.initialized) { initFEAIChat(); } });",
+			'after'
 		);
 
 		wp_set_script_translations(
