@@ -1,19 +1,599 @@
-const __=window.wp?.i18n?.__||(t=>t),FE_SEARCH_AI_CONFIG={ANIMATION:{MIN_SPEED:1,MAX_SPEED:10,DEFAULT_SPEED:3,INTERVALS:{1:160,2:110,3:70},FAST_END_INTERVAL:25,IMMEDIATE_INTERVAL:20,IMMEDIATE_CHARS:1e4,MIN_CHARS_FAST:2,MAX_CHARS_FAST:15},CHAT:{HISTORY_LIMIT:10,FEEDBACK_RATINGS:{GOOD:"1",BAD:"-1"},HTTP_STATUS:{RATE_LIMIT:429}},STORAGE:{SESSION_ID:"fe_search_ai_session_id",CHAT_HISTORY:"fe_search_ai_chat_history",SEND_MODE:"fe_search_ai_send_mode",USER_CONSENT:"fe_search_ai_user_consented",SESSION_LOGS:"fe_search_ai_session_logs"},INTERVALS:{QUEUE_CHECK:50},SEND_MODES:["enter","shift_enter","cmd_enter"],STREAM:{DATA_PREFIX_LENGTH:6},ERRORS:{TYPES:{NETWORK:"network_error",RATE_LIMIT:"rate_limit",STORAGE:"storage_error",PARSE:"parse_error",LOGGING:"logging_error",UNKNOWN:"unknown_error"},MESSAGES:{network_error:__("Network error occurred. Please check your connection.","fe-search-ai"),rate_limit:__("Rate limit exceeded. Please try again later.","fe-search-ai"),storage_error:__("Storage error occurred. Some features may not work properly.","fe-search-ai"),parse_error:__("Data parsing error occurred. Please try again.","fe-search-ai"),unknown_error:__("An error occurred. Please try again.","fe-search-ai")}}};async function wpPost(t,o={}){const c=new URLSearchParams({action:t,...o});return(await fetch(fe_search_ai_ajax_obj.ajax_url,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:c})).json()}function handleError(t,o="unknown",c=!0){let s=FE_SEARCH_AI_CONFIG.ERRORS.TYPES.UNKNOWN,r=FE_SEARCH_AI_CONFIG.ERRORS.MESSAGES.unknown_error;return typeof fe_search_ai_ajax_obj<"u"&&fe_search_ai_ajax_obj.debug&&console.error(`[FE Search AI] Error in ${o}:`,t),typeof t=="string"?(s=t,r=FE_SEARCH_AI_CONFIG.ERRORS.MESSAGES[t]||r):t instanceof Error&&(t.message.includes("fetch")||t.message.includes("network")?(s=FE_SEARCH_AI_CONFIG.ERRORS.TYPES.NETWORK,r=FE_SEARCH_AI_CONFIG.ERRORS.MESSAGES.network_error):t.message.includes("rate_limit")||t.message.includes("429")?(s=FE_SEARCH_AI_CONFIG.ERRORS.TYPES.RATE_LIMIT,r=FE_SEARCH_AI_CONFIG.ERRORS.MESSAGES.rate_limit):t.message.includes("storage")||t.message.includes("localStorage")?(s=FE_SEARCH_AI_CONFIG.ERRORS.TYPES.STORAGE,r=FE_SEARCH_AI_CONFIG.ERRORS.MESSAGES.storage_error):(t.message.includes("parse")||t.message.includes("JSON"))&&(s=FE_SEARCH_AI_CONFIG.ERRORS.TYPES.PARSE,r=FE_SEARCH_AI_CONFIG.ERRORS.MESSAGES.parse_error)),c&&typeof window.addMessage=="function"&&window.addMessage(`<p><strong>${__("Error","fe-search-ai")}:</strong> ${r}</p>`,"system"),{errorType:s,errorMessage:r}}function safeExecute(t,o="unknown",c=null){try{return t()}catch(s){return handleError(s,o,!1),c}}async function safeExecuteAsync(t,o="unknown",c=null){try{return await t()}catch(s){return handleError(s,o,!1),c}}function getChatDOMElements(){const t=document.getElementById("fe_search_ai_chat_bubble"),o=document.getElementById("fe_search_ai_chat_window"),c=document.getElementById("fe_search_ai_chat_form"),s=document.getElementById("fe_search_ai_chat_input"),r=document.getElementById("fe_search_ai_chat_messages"),_=document.getElementById("fe_search_ai_chat_container");if(!t||!c||!s||!r||!_)return null;const h=document.getElementById("fe_search_ai_chat_close"),f=document.getElementById("fe_search_ai_chat_fullscreen_toggle"),E=document.getElementById("fe_search_ai_options_toggle"),d=document.getElementById("fe_search_ai_options_menu"),u=document.getElementById("fe_search_ai_send_mode_toggle");return{bubble:t,chatWindowElement:o,form:c,input:s,messagesContainer:r,container:_,closeBtn:h,fullscreenBtn:f,optionsToggle:E,optionsMenu:d,shiftEnterToggle:u}}function initializeSessionManagement(){let t=safeExecute(()=>sessionStorage.getItem(FE_SEARCH_AI_CONFIG.STORAGE.SESSION_ID),"initializeSessionManagement.get_session");t||(t=Date.now().toString(36)+Math.random().toString(36).substr(2),safeExecute(()=>sessionStorage.setItem(FE_SEARCH_AI_CONFIG.STORAGE.SESSION_ID,t),"initializeSessionManagement.set_session"));const o=safeExecute(()=>JSON.parse(sessionStorage.getItem(FE_SEARCH_AI_CONFIG.STORAGE.CHAT_HISTORY))||[],"initializeSessionManagement.parse_history",[]);return{sessionId:t,sessionHistory:o}}function setupUIEventListeners(t,o){const{bubble:c,chatWindowElement:s,messagesContainer:r,container:_,closeBtn:h,fullscreenBtn:f,optionsToggle:E,optionsMenu:d}=t;c.addEventListener("click",()=>{s.classList.remove("hidden"),c.classList.add("hidden"),r.scrollTop=r.scrollHeight,o()}),h&&h.addEventListener("click",()=>{s.classList.add("hidden"),c.classList.remove("hidden")}),f&&f.addEventListener("click",()=>{_.classList.toggle("is-fullscreen")}),E&&d&&E.addEventListener("click",()=>{d.classList.toggle("hidden")})}function setupKeyboardEventListener(t,o,c){t.addEventListener("keydown",s=>{if(s.isComposing||s.key!=="Enter")return;s.preventDefault();const r=c();if(r==="cmd_enter"){s.metaKey||s.ctrlKey?o.dispatchEvent(new Event("submit",{cancelable:!0})):t.value+=`
-`;return}const _=s.shiftKey,h=s.metaKey||s.ctrlKey;r==="shift_enter"&&_&&!h||r==="enter"&&!_&&!h?o.dispatchEvent(new Event("submit",{cancelable:!0})):r==="shift_enter"&&!_&&(t.value+=`
-`)})}function setupSendModeEventListener(t,o){t.addEventListener("change",()=>{let c=t.value;FE_SEARCH_AI_CONFIG.SEND_MODES.includes(c)||(c="enter"),o(c),localStorage.setItem(FE_SEARCH_AI_CONFIG.STORAGE.SEND_MODE,c)})}function initializeSendModeSettings(t){let o=localStorage.getItem(FE_SEARCH_AI_CONFIG.STORAGE.SEND_MODE)||fe_search_ai_ajax_obj.send_mode||"enter";return FE_SEARCH_AI_CONFIG.SEND_MODES.includes(o)||(o="enter"),t&&(t.value=o),o}function initFEAIChat(){const t=getChatDOMElements();if(!t)return;const{bubble:o,chatWindowElement:c,form:s,input:r,messagesContainer:_,container:h,shiftEnterToggle:f}=t;if(h.dataset.initialized)return;h.dataset.initialized="true",h.classList.contains("is-fullscreen")&&(c.classList.remove("hidden"),o.classList.add("hidden"));const{sessionId:E,sessionHistory:d}=initializeSessionManagement();let u=[],N,g=null,m="",M=3,y=50,O=!1;const w=fe_search_ai_ajax_obj.privacy||{},j=FE_SEARCH_AI_CONFIG.STORAGE.USER_CONSENT;function H(){if(!w.enable_consent)return!0;const e=safeExecute(()=>localStorage.getItem(j),"hasUserConsented.get","");return e==="1"||e==="true"}function C(){!w.enable_consent||H()||typeof window.addMessage=="function"&&window.addMessage(`<p><strong>${__("Notice","fe-search-ai")}:</strong> ${__("Please agree to the Terms of Service and Privacy Policy to start the chat.","fe-search-ai")}</p>`,"system")}const B=initializeSendModeSettings(f);setupUIEventListeners(t,C);let x=B;setupSendModeEventListener(f,e=>{x=e}),setupKeyboardEventListener(r,s,()=>x),s.addEventListener("submit",function(e){if(e.preventDefault(),w.enable_consent&&!H()){C();return}const a=fe_search_ai_ajax_obj.ip_limit_count;if(a>0&&d.length>a*2){S("<p>"+__("You have reached the message limit for this session. Please refresh the page to start a new conversation.","fe-search-ai")+"</p>","system");return}const n=r.value.trim();if(!n)return;S(`<p>${n}</p>`,"user"),d.push({role:"user",content:n});const i=d.slice(-FE_SEARCH_AI_CONFIG.CHAT.HISTORY_LIMIT);r.value="",r.style.height="auto",X();const l=S('<p><span class="fe-search-ai-spinner"></span></p>',"ai");g=l.querySelector("p"),m="";let A=!1,I=!0,b=null;q(),fetch(fe_search_ai_ajax_obj.rest_url,{method:"POST",headers:{"X-WP-Nonce":fe_search_ai_ajax_obj.rest_nonce,"X-FE-AI-Session":E},body:new URLSearchParams({question:n,history:JSON.stringify(i)})}).then(R=>{if(!R.ok){R.status===FE_SEARCH_AI_CONFIG.CHAT.HTTP_STATUS.RATE_LIMIT?handleError(new Error("rate_limit")):handleError(new Error("network_error"));return}const Q=R.body.getReader(),Z=new TextDecoder("utf-8",{fatal:!1});let L="";function G(){Q.read().then(({done:D,value:ee})=>{if(D){W().then(()=>{clearInterval(N),l.innerHTML=marked.parse(m),d.push({role:"assistant",content:m}),sessionStorage.setItem(FE_SEARCH_AI_CONFIG.STORAGE.CHAT_HISTORY,JSON.stringify(d)),F(n,m,A).then(v=>{if(b=v,b){const T=document.createElement("div");T.className="fe-search-ai-feedback",T.innerHTML=`
+const __ = window.wp?.i18n?.__ || (t => t),
+	FE_SEARCH_AI_CONFIG = {
+		ANIMATION: {
+			MIN_SPEED: 1,
+			MAX_SPEED: 10,
+			DEFAULT_SPEED: 3,
+			INTERVALS: { 1: 160, 2: 110, 3: 70 },
+			FAST_END_INTERVAL: 25,
+			IMMEDIATE_INTERVAL: 20,
+			IMMEDIATE_CHARS: 1e4,
+			MIN_CHARS_FAST: 2,
+			MAX_CHARS_FAST: 15,
+		},
+		CHAT: {
+			HISTORY_LIMIT: 10,
+			FEEDBACK_RATINGS: { GOOD: '1', BAD: '-1' },
+			HTTP_STATUS: { RATE_LIMIT: 429 },
+		},
+		STORAGE: {
+			SESSION_ID: 'fe_search_ai_session_id',
+			CHAT_HISTORY: 'fe_search_ai_chat_history',
+			SEND_MODE: 'fe_search_ai_send_mode',
+			USER_CONSENT: 'fe_search_ai_user_consented',
+			SESSION_LOGS: 'fe_search_ai_session_logs',
+		},
+		INTERVALS: { QUEUE_CHECK: 50 },
+		SEND_MODES: ['enter', 'shift_enter', 'cmd_enter'],
+		STREAM: { DATA_PREFIX_LENGTH: 6 },
+		ERRORS: {
+			TYPES: {
+				NETWORK: 'network_error',
+				RATE_LIMIT: 'rate_limit',
+				STORAGE: 'storage_error',
+				PARSE: 'parse_error',
+				LOGGING: 'logging_error',
+				UNKNOWN: 'unknown_error',
+			},
+			MESSAGES: {
+				network_error: __(
+					'Network error occurred. Please check your connection.',
+					'fe-search-ai'
+				),
+				rate_limit: __('Rate limit exceeded. Please try again later.', 'fe-search-ai'),
+				storage_error: __(
+					'Storage error occurred. Some features may not work properly.',
+					'fe-search-ai'
+				),
+				parse_error: __('Data parsing error occurred. Please try again.', 'fe-search-ai'),
+				unknown_error: __('An error occurred. Please try again.', 'fe-search-ai'),
+			},
+		},
+	};
+async function wpPost(t, o = {}) {
+	const c = new URLSearchParams({ action: t, ...o });
+	return (
+		await fetch(fe_search_ai_ajax_obj.ajax_url, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+			body: c,
+		})
+	).json();
+}
+function handleError(t, o = 'unknown', c = !0) {
+	let s = FE_SEARCH_AI_CONFIG.ERRORS.TYPES.UNKNOWN,
+		r = FE_SEARCH_AI_CONFIG.ERRORS.MESSAGES.unknown_error;
+	return (
+		typeof fe_search_ai_ajax_obj < 'u' &&
+			fe_search_ai_ajax_obj.debug &&
+			console.error(`[FE Search AI] Error in ${o}:`, t),
+		typeof t == 'string'
+			? ((s = t), (r = FE_SEARCH_AI_CONFIG.ERRORS.MESSAGES[t] || r))
+			: t instanceof Error &&
+				(t.message.includes('fetch') || t.message.includes('network')
+					? ((s = FE_SEARCH_AI_CONFIG.ERRORS.TYPES.NETWORK),
+						(r = FE_SEARCH_AI_CONFIG.ERRORS.MESSAGES.network_error))
+					: t.message.includes('rate_limit') || t.message.includes('429')
+						? ((s = FE_SEARCH_AI_CONFIG.ERRORS.TYPES.RATE_LIMIT),
+							(r = FE_SEARCH_AI_CONFIG.ERRORS.MESSAGES.rate_limit))
+						: t.message.includes('storage') || t.message.includes('localStorage')
+							? ((s = FE_SEARCH_AI_CONFIG.ERRORS.TYPES.STORAGE),
+								(r = FE_SEARCH_AI_CONFIG.ERRORS.MESSAGES.storage_error))
+							: (t.message.includes('parse') || t.message.includes('JSON')) &&
+								((s = FE_SEARCH_AI_CONFIG.ERRORS.TYPES.PARSE),
+								(r = FE_SEARCH_AI_CONFIG.ERRORS.MESSAGES.parse_error))),
+		c &&
+			typeof window.addMessage == 'function' &&
+			window.addMessage(
+				`<p><strong>${__('Error', 'fe-search-ai')}:</strong> ${r}</p>`,
+				'system'
+			),
+		{ errorType: s, errorMessage: r }
+	);
+}
+function safeExecute(t, o = 'unknown', c = null) {
+	try {
+		return t();
+	} catch (s) {
+		return (handleError(s, o, !1), c);
+	}
+}
+async function safeExecuteAsync(t, o = 'unknown', c = null) {
+	try {
+		return await t();
+	} catch (s) {
+		return (handleError(s, o, !1), c);
+	}
+}
+function getChatDOMElements() {
+	const t = document.getElementById('fe_search_ai_chat_bubble'),
+		o = document.getElementById('fe_search_ai_chat_window'),
+		c = document.getElementById('fe_search_ai_chat_form'),
+		s = document.getElementById('fe_search_ai_chat_input'),
+		r = document.getElementById('fe_search_ai_chat_messages'),
+		_ = document.getElementById('fe_search_ai_chat_container');
+	if (!t || !c || !s || !r || !_) return null;
+	const h = document.getElementById('fe_search_ai_chat_close'),
+		f = document.getElementById('fe_search_ai_chat_fullscreen_toggle'),
+		E = document.getElementById('fe_search_ai_options_toggle'),
+		d = document.getElementById('fe_search_ai_options_menu'),
+		u = document.getElementById('fe_search_ai_send_mode_toggle');
+	return {
+		bubble: t,
+		chatWindowElement: o,
+		form: c,
+		input: s,
+		messagesContainer: r,
+		container: _,
+		closeBtn: h,
+		fullscreenBtn: f,
+		optionsToggle: E,
+		optionsMenu: d,
+		shiftEnterToggle: u,
+	};
+}
+function initializeSessionManagement() {
+	let t = safeExecute(
+		() => sessionStorage.getItem(FE_SEARCH_AI_CONFIG.STORAGE.SESSION_ID),
+		'initializeSessionManagement.get_session'
+	);
+	t ||
+		((t = Date.now().toString(36) + Math.random().toString(36).substr(2)),
+		safeExecute(
+			() => sessionStorage.setItem(FE_SEARCH_AI_CONFIG.STORAGE.SESSION_ID, t),
+			'initializeSessionManagement.set_session'
+		));
+	const o = safeExecute(
+		() => JSON.parse(sessionStorage.getItem(FE_SEARCH_AI_CONFIG.STORAGE.CHAT_HISTORY)) || [],
+		'initializeSessionManagement.parse_history',
+		[]
+	);
+	return { sessionId: t, sessionHistory: o };
+}
+function setupUIEventListeners(t, o) {
+	const {
+		bubble: c,
+		chatWindowElement: s,
+		messagesContainer: r,
+		container: _,
+		closeBtn: h,
+		fullscreenBtn: f,
+		optionsToggle: E,
+		optionsMenu: d,
+	} = t;
+	(c.addEventListener('click', () => {
+		(s.classList.remove('hidden'),
+			c.classList.add('hidden'),
+			(r.scrollTop = r.scrollHeight),
+			o());
+	}),
+		h &&
+			h.addEventListener('click', () => {
+				(s.classList.add('hidden'), c.classList.remove('hidden'));
+			}),
+		f &&
+			f.addEventListener('click', () => {
+				_.classList.toggle('is-fullscreen');
+			}),
+		E &&
+			d &&
+			E.addEventListener('click', () => {
+				d.classList.toggle('hidden');
+			}));
+}
+function setupKeyboardEventListener(t, o, c) {
+	t.addEventListener('keydown', s => {
+		if (s.isComposing || s.key !== 'Enter') return;
+		s.preventDefault();
+		const r = c();
+		if (r === 'cmd_enter') {
+			s.metaKey || s.ctrlKey
+				? o.dispatchEvent(new Event('submit', { cancelable: !0 }))
+				: (t.value += `
+`);
+			return;
+		}
+		const _ = s.shiftKey,
+			h = s.metaKey || s.ctrlKey;
+		(r === 'shift_enter' && _ && !h) || (r === 'enter' && !_ && !h)
+			? o.dispatchEvent(new Event('submit', { cancelable: !0 }))
+			: r === 'shift_enter' &&
+				!_ &&
+				(t.value += `
+`);
+	});
+}
+function setupSendModeEventListener(t, o) {
+	t.addEventListener('change', () => {
+		let c = t.value;
+		(FE_SEARCH_AI_CONFIG.SEND_MODES.includes(c) || (c = 'enter'),
+			o(c),
+			localStorage.setItem(FE_SEARCH_AI_CONFIG.STORAGE.SEND_MODE, c));
+	});
+}
+function initializeSendModeSettings(t) {
+	let o =
+		localStorage.getItem(FE_SEARCH_AI_CONFIG.STORAGE.SEND_MODE) ||
+		fe_search_ai_ajax_obj.send_mode ||
+		'enter';
+	return (FE_SEARCH_AI_CONFIG.SEND_MODES.includes(o) || (o = 'enter'), t && (t.value = o), o);
+}
+function initFEAIChat() {
+	const t = getChatDOMElements();
+	if (!t) return;
+	const {
+		bubble: o,
+		chatWindowElement: c,
+		form: s,
+		input: r,
+		messagesContainer: _,
+		container: h,
+		shiftEnterToggle: f,
+	} = t;
+	if (h.dataset.initialized) return;
+	((h.dataset.initialized = 'true'),
+		h.classList.contains('is-fullscreen') &&
+			(c.classList.remove('hidden'), o.classList.add('hidden')));
+	const { sessionId: E, sessionHistory: d } = initializeSessionManagement();
+	let u = [],
+		N,
+		g = null,
+		m = '',
+		M = 3,
+		y = 50,
+		O = !1,
+		references = null;
+	const w = fe_search_ai_ajax_obj.privacy || {},
+		j = FE_SEARCH_AI_CONFIG.STORAGE.USER_CONSENT;
+	function H() {
+		if (!w.enable_consent) return !0;
+		const e = safeExecute(() => localStorage.getItem(j), 'hasUserConsented.get', '');
+		return e === '1' || e === 'true';
+	}
+	function C() {
+		!w.enable_consent ||
+			H() ||
+			(typeof window.addMessage == 'function' &&
+				window.addMessage(
+					`<p><strong>${__('Notice', 'fe-search-ai')}:</strong> ${__('Please agree to the Terms of Service and Privacy Policy to start the chat.', 'fe-search-ai')}</p>`,
+					'system'
+				));
+	}
+	const B = initializeSendModeSettings(f);
+	setupUIEventListeners(t, C);
+	let x = B;
+	(setupSendModeEventListener(f, e => {
+		x = e;
+	}),
+		setupKeyboardEventListener(r, s, () => x),
+		s.addEventListener('submit', function (e) {
+			if ((e.preventDefault(), w.enable_consent && !H())) {
+				C();
+				return;
+			}
+			const a = fe_search_ai_ajax_obj.ip_limit_count;
+			if (a > 0 && d.length > a * 2) {
+				S(
+					'<p>' +
+						__(
+							'You have reached the message limit for this session. Please refresh the page to start a new conversation.',
+							'fe-search-ai'
+						) +
+						'</p>',
+					'system'
+				);
+				return;
+			}
+			const n = r.value.trim();
+			if (!n) return;
+			(S(`<p>${n}</p>`, 'user'), d.push({ role: 'user', content: n }));
+			const i = d.slice(-FE_SEARCH_AI_CONFIG.CHAT.HISTORY_LIMIT);
+			((r.value = ''), (r.style.height = 'auto'), X());
+			const l = S('<p><span class="fe-search-ai-spinner"></span></p>', 'ai');
+			((g = l.querySelector('p')), (m = ''));
+			let A = !1,
+				I = !0,
+				b = null;
+			(q(),
+				fetch(fe_search_ai_ajax_obj.rest_url, {
+					method: 'POST',
+					headers: {
+						'X-WP-Nonce': fe_search_ai_ajax_obj.rest_nonce,
+						'X-FE-AI-Session': E,
+					},
+					body: new URLSearchParams({ question: n, history: JSON.stringify(i) }),
+				})
+					.then(R => {
+						if (!R.ok) {
+							R.status === FE_SEARCH_AI_CONFIG.CHAT.HTTP_STATUS.RATE_LIMIT
+								? handleError(new Error('rate_limit'))
+								: handleError(new Error('network_error'));
+							return;
+						}
+						const Q = R.body.getReader(),
+							Z = new TextDecoder('utf-8', { fatal: !1 });
+						let L = '';
+						function G() {
+							Q.read()
+								.then(({ done: D, value: ee }) => {
+									if (D) {
+										W().then(() => {
+											(clearInterval(N),
+												(l.innerHTML = marked.parse(m)),
+												references &&
+													Array.isArray(references) &&
+													references.length > 0 &&
+													((l.innerHTML += `
+												<div class="fe-search-ai-references">
+													<strong>${__('References', 'fe-search-ai')}:</strong>
+													<ul>
+														${references
+															.map(
+																url => `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a></li>`
+															)
+															.join('')}
+													</ul>
+												</div>
+											`),
+													(references = null)),
+												d.push({ role: 'assistant', content: m }),
+												sessionStorage.setItem(
+													FE_SEARCH_AI_CONFIG.STORAGE.CHAT_HISTORY,
+													JSON.stringify(d)
+												),
+												F(n, m, A)
+													.then(v => {
+														if (((b = v), b)) {
+															const T = document.createElement('div');
+															((T.className =
+																'fe-search-ai-feedback'),
+																(T.innerHTML = `
 											<button class="feedback-btn good" data-log-id="${b}" data-rating="${FE_SEARCH_AI_CONFIG.CHAT.FEEDBACK_RATINGS.GOOD}" title="Good">
 												<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none"/><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
 											</button>
 											<button class="feedback-btn bad" data-log-id="${b}" data-rating="${FE_SEARCH_AI_CONFIG.CHAT.FEEDBACK_RATINGS.BAD}" title="Bad">
 												<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none"/><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
 											</button>
-										`,l.appendChild(T)}}).catch(()=>{}),k()});return}const te=Z.decode(ee,{stream:!0});L+=te;const P=L.split(`
+										`),
+																l.appendChild(T));
+														}
+													})
+													.catch(() => {}),
+												k());
+										});
+										return;
+									}
+									const te = Z.decode(ee, { stream: !0 });
+									L += te;
+									const P = L.split(`
 
-`);L=P.pop()||"",P.forEach(v=>{if(v.startsWith("data: ")){const T=v.substring(FE_SEARCH_AI_CONFIG.STREAM.DATA_PREFIX_LENGTH).trim();if(T==="[DONE]")return;try{const p=JSON.parse(T);p.meta&&(A=p.meta.context_found),p.debug&&console.error("FE Search AI debug info:",p.debug),p.error&&console.error("FE Search AI stream error:",p.error),p.text&&(I&&(u=[],I=!1),u.push(p.text))}catch{}}}),G()}).catch(D=>{J(D)})}G()}).catch(R=>{handleError(R,"fetch_request")})}),_.addEventListener("click",function(e){const a=e.target.closest(".feedback-btn");if(a){const n=a.dataset.logId,i=a.dataset.rating,l=a.parentElement;if(!n||!i)return;wpPost("fe_search_ai_rate_answer",{nonce:fe_search_ai_ajax_obj.nonce,log_id:n,rating:i}),l.querySelectorAll(".feedback-btn").forEach(I=>{I.disabled=!0,I!==a&&(I.style.opacity="0.5")});const A=document.createElement("span");A.className="fe-search-ai-feedback-thanks",A.textContent=__("Thank you for your feedback!","fe-search-ai"),l.replaceWith(A)}});function S(e,a){const n=document.createElement("div");return n.className=`fe-search-ai-message fe-search-ai-message-${a}`,n.innerHTML=e,_.appendChild(n),_.scrollTop=_.scrollHeight,n}async function z(){if(!Array.isArray(d)||d.length===0)return;const e=await K(),a=new Map;e.forEach(n=>{a.set(n.answer,{logId:n.id,rating:n.rating})}),d.forEach(n=>{if(!(!n||typeof n.content!="string"))if(n.role==="user")S(`<p>${n.content}</p>`,"user");else if(n.role==="assistant"){const i=S(marked.parse(n.content),"ai"),l=a.get(n.content);l&&l.logId&&V(i,l.logId,l.rating)}else n.role==="system"&&S(`<p>${n.content}</p>`,"system")})}function V(e,a,n){if(n==="1"||n==="-1"){const i=document.createElement("span");i.className="fe-search-ai-feedback-thanks",i.textContent=__("Thank you for your feedback!","fe-search-ai"),e.appendChild(i)}else{const i=document.createElement("div");i.className="fe-search-ai-feedback",i.innerHTML=`
+`);
+									((L = P.pop() || ''),
+										P.forEach(v => {
+											if (v.startsWith('data: ')) {
+												const T = v
+													.substring(
+														FE_SEARCH_AI_CONFIG.STREAM
+															.DATA_PREFIX_LENGTH
+													)
+													.trim();
+												if (T === '[DONE]') return;
+												try {
+													const p = JSON.parse(T);
+													(p.meta && (A = p.meta.context_found),
+														p.debug &&
+															console.error(
+																'FE Search AI debug info:',
+																p.debug
+															),
+														p.error &&
+															console.error(
+																'FE Search AI stream error:',
+																p.error
+															),
+														p.text &&
+															(I && ((u = []), (I = !1)),
+															u.push(p.text)),
+														p.references && (references = p.references));
+												} catch {}
+											}
+										}),
+										G());
+								})
+								.catch(D => {
+									J(D);
+								});
+						}
+						G();
+					})
+					.catch(R => {
+						handleError(R, 'fetch_request');
+					}));
+		}),
+		_.addEventListener('click', function (e) {
+			const a = e.target.closest('.feedback-btn');
+			if (a) {
+				const n = a.dataset.logId,
+					i = a.dataset.rating,
+					l = a.parentElement;
+				if (!n || !i) return;
+				(wpPost('fe_search_ai_rate_answer', {
+					nonce: fe_search_ai_ajax_obj.nonce,
+					log_id: n,
+					rating: i,
+				}),
+					l.querySelectorAll('.feedback-btn').forEach(I => {
+						((I.disabled = !0), I !== a && (I.style.opacity = '0.5'));
+					}));
+				const A = document.createElement('span');
+				((A.className = 'fe-search-ai-feedback-thanks'),
+					(A.textContent = __('Thank you for your feedback!', 'fe-search-ai')),
+					l.replaceWith(A));
+			}
+		}));
+	function S(e, a) {
+		const n = document.createElement('div');
+		return (
+			(n.className = `fe-search-ai-message fe-search-ai-message-${a}`),
+			(n.innerHTML = e),
+			_.appendChild(n),
+			(_.scrollTop = _.scrollHeight),
+			n
+		);
+	}
+	async function z() {
+		if (!Array.isArray(d) || d.length === 0) return;
+		const e = await K(),
+			a = new Map();
+		(e.forEach(n => {
+			a.set(n.answer, { logId: n.id, rating: n.rating });
+		}),
+			d.forEach(n => {
+				if (!(!n || typeof n.content != 'string'))
+					if (n.role === 'user') S(`<p>${n.content}</p>`, 'user');
+					else if (n.role === 'assistant') {
+						const i = S(marked.parse(n.content), 'ai'),
+							l = a.get(n.content);
+						l && l.logId && V(i, l.logId, l.rating);
+					} else n.role === 'system' && S(`<p>${n.content}</p>`, 'system');
+			}));
+	}
+	function V(e, a, n) {
+		if (n === '1' || n === '-1') {
+			const i = document.createElement('span');
+			((i.className = 'fe-search-ai-feedback-thanks'),
+				(i.textContent = __('Thank you for your feedback!', 'fe-search-ai')),
+				e.appendChild(i));
+		} else {
+			const i = document.createElement('div');
+			((i.className = 'fe-search-ai-feedback'),
+				(i.innerHTML = `
 				<button class="feedback-btn good" data-log-id="${a}" data-rating="${FE_SEARCH_AI_CONFIG.CHAT.FEEDBACK_RATINGS.GOOD}" title="Good">
 					<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none"/><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
 				</button>
 				<button class="feedback-btn bad" data-log-id="${a}" data-rating="${FE_SEARCH_AI_CONFIG.CHAT.FEEDBACK_RATINGS.BAD}" title="Bad">
 					<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none"/><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
 				</button>
-			`,e.appendChild(i)}}async function F(e,a,n){const i=typeof e=="string"?e.length:0;return safeExecuteAsync(async()=>{const l=await wpPost("fe_search_ai_log_query",{nonce:fe_search_ai_ajax_obj.nonce,session_id:E,question:"",question_length:i,answer:a,context_found:n?"1":"0"});return l.success&&l.data&&l.data.log_id?($(l.data.log_id,e,a),l.data.log_id):null},"logConversation",null)}function $(e,a,n){safeExecute(()=>{const i=JSON.parse(sessionStorage.getItem(FE_SEARCH_AI_CONFIG.STORAGE.SESSION_LOGS))||[];i.push({logId:e,question:a,answer:n,timestamp:Date.now()}),sessionStorage.setItem(FE_SEARCH_AI_CONFIG.STORAGE.SESSION_LOGS,JSON.stringify(i))},"saveLogIdToSession")}async function K(){return safeExecuteAsync(async()=>{const e=await wpPost("fe_search_ai_get_session_logs",{nonce:fe_search_ai_ajax_obj.nonce,session_id:E});return e.success&&e.data&&e.data.logs?e.data.logs:[]},"getSessionLogs",[])}function U(){let e=fe_search_ai_ajax_obj.animation_speed||FE_SEARCH_AI_CONFIG.ANIMATION.DEFAULT_SPEED;if(typeof e!="number"&&(e=parseInt(e,10)||FE_SEARCH_AI_CONFIG.ANIMATION.DEFAULT_SPEED),e=Math.max(FE_SEARCH_AI_CONFIG.ANIMATION.MIN_SPEED,Math.min(FE_SEARCH_AI_CONFIG.ANIMATION.MAX_SPEED,e)),O=!1,e<=3)y=FE_SEARCH_AI_CONFIG.ANIMATION.INTERVALS[e];else if(e<10){const a=(e-3)/6,n=Math.pow(a,1.5),i=FE_SEARCH_AI_CONFIG.ANIMATION.INTERVALS[3],l=FE_SEARCH_AI_CONFIG.ANIMATION.FAST_END_INTERVAL;y=Math.round(i-(i-l)*n)}else y=FE_SEARCH_AI_CONFIG.ANIMATION.IMMEDIATE_INTERVAL;if(e===FE_SEARCH_AI_CONFIG.ANIMATION.MAX_SPEED)O=!0,M=FE_SEARCH_AI_CONFIG.ANIMATION.IMMEDIATE_CHARS;else if(e<=3)M=1;else{const a=(e-4)/5,n=FE_SEARCH_AI_CONFIG.ANIMATION.MIN_CHARS_FAST,i=FE_SEARCH_AI_CONFIG.ANIMATION.MAX_CHARS_FAST,l=n+(i-n)*a;M=Math.max(1,Math.round(l))}}U(),z();function Y(){if(g&&g.querySelector(".fe-search-ai-spinner")&&u.length>0&&(g.innerHTML=""),u.length===0)return;const e=O?u.length:M,a=u.splice(0,e).join("");m+=a,g.innerHTML=marked.parse(m),_.scrollTop=_.scrollHeight}function q(){clearInterval(N),N=setInterval(Y,y)}function W(){return new Promise(e=>{const a=setInterval(()=>{u.length===0&&(clearInterval(a),e())},FE_SEARCH_AI_CONFIG.INTERVALS.QUEUE_CHECK)})}function X(){r.disabled=!0,s.querySelector("button").disabled=!0}function k(){r.disabled=!1,s.querySelector("button").disabled=!1,r.focus()}function J(e){if(clearInterval(N),g){let a=__("An error occurred. Please try again.","fe-search-ai");e&&e.message==="rate_limit"&&(typeof fe_search_ai_ajax_obj<"u"&&fe_search_ai_ajax_obj.rate_limit_message?a=fe_search_ai_ajax_obj.rate_limit_message:a=__("Rate limit exceeded. Please try again later.","fe-search-ai")),S(`<p>${a}</p>`,"system",g)}k()}}document.readyState==="loading"?document.addEventListener("DOMContentLoaded",initFEAIChat):initFEAIChat();
+			`),
+				e.appendChild(i));
+		}
+	}
+	async function F(e, a, n) {
+		const i = typeof e == 'string' ? e.length : 0;
+		return safeExecuteAsync(
+			async () => {
+				const l = await wpPost('fe_search_ai_log_query', {
+					nonce: fe_search_ai_ajax_obj.nonce,
+					session_id: E,
+					question: '',
+					question_length: i,
+					answer: a,
+					context_found: n ? '1' : '0',
+				});
+				return l.success && l.data && l.data.log_id
+					? ($(l.data.log_id, e, a), l.data.log_id)
+					: null;
+			},
+			'logConversation',
+			null
+		);
+	}
+	function $(e, a, n) {
+		safeExecute(() => {
+			const i =
+				JSON.parse(sessionStorage.getItem(FE_SEARCH_AI_CONFIG.STORAGE.SESSION_LOGS)) || [];
+			(i.push({ logId: e, question: a, answer: n, timestamp: Date.now() }),
+				sessionStorage.setItem(
+					FE_SEARCH_AI_CONFIG.STORAGE.SESSION_LOGS,
+					JSON.stringify(i)
+				));
+		}, 'saveLogIdToSession');
+	}
+	async function K() {
+		return safeExecuteAsync(
+			async () => {
+				const e = await wpPost('fe_search_ai_get_session_logs', {
+					nonce: fe_search_ai_ajax_obj.nonce,
+					session_id: E,
+				});
+				return e.success && e.data && e.data.logs ? e.data.logs : [];
+			},
+			'getSessionLogs',
+			[]
+		);
+	}
+	function U() {
+		let e =
+			fe_search_ai_ajax_obj.animation_speed || FE_SEARCH_AI_CONFIG.ANIMATION.DEFAULT_SPEED;
+		if (
+			(typeof e != 'number' &&
+				(e = parseInt(e, 10) || FE_SEARCH_AI_CONFIG.ANIMATION.DEFAULT_SPEED),
+			(e = Math.max(
+				FE_SEARCH_AI_CONFIG.ANIMATION.MIN_SPEED,
+				Math.min(FE_SEARCH_AI_CONFIG.ANIMATION.MAX_SPEED, e)
+			)),
+			(O = !1),
+			e <= 3)
+		)
+			y = FE_SEARCH_AI_CONFIG.ANIMATION.INTERVALS[e];
+		else if (e < 10) {
+			const a = (e - 3) / 6,
+				n = Math.pow(a, 1.5),
+				i = FE_SEARCH_AI_CONFIG.ANIMATION.INTERVALS[3],
+				l = FE_SEARCH_AI_CONFIG.ANIMATION.FAST_END_INTERVAL;
+			y = Math.round(i - (i - l) * n);
+		} else y = FE_SEARCH_AI_CONFIG.ANIMATION.IMMEDIATE_INTERVAL;
+		if (e === FE_SEARCH_AI_CONFIG.ANIMATION.MAX_SPEED)
+			((O = !0), (M = FE_SEARCH_AI_CONFIG.ANIMATION.IMMEDIATE_CHARS));
+		else if (e <= 3) M = 1;
+		else {
+			const a = (e - 4) / 5,
+				n = FE_SEARCH_AI_CONFIG.ANIMATION.MIN_CHARS_FAST,
+				i = FE_SEARCH_AI_CONFIG.ANIMATION.MAX_CHARS_FAST,
+				l = n + (i - n) * a;
+			M = Math.max(1, Math.round(l));
+		}
+	}
+	(U(), z());
+	function Y() {
+		if (
+			(g && g.querySelector('.fe-search-ai-spinner') && u.length > 0 && (g.innerHTML = ''),
+			u.length === 0)
+		)
+			return;
+		const e = O ? u.length : M,
+			a = u.splice(0, e).join('');
+		((m += a), (g.innerHTML = marked.parse(m)), (_.scrollTop = _.scrollHeight));
+	}
+	function q() {
+		(clearInterval(N), (N = setInterval(Y, y)));
+	}
+	function W() {
+		return new Promise(e => {
+			const a = setInterval(() => {
+				u.length === 0 && (clearInterval(a), e());
+			}, FE_SEARCH_AI_CONFIG.INTERVALS.QUEUE_CHECK);
+		});
+	}
+	function X() {
+		((r.disabled = !0), (s.querySelector('button').disabled = !0));
+	}
+	function k() {
+		((r.disabled = !1), (s.querySelector('button').disabled = !1), r.focus());
+	}
+	function J(e) {
+		if ((clearInterval(N), g)) {
+			let a = __('An error occurred. Please try again.', 'fe-search-ai');
+			(e &&
+				e.message === 'rate_limit' &&
+				(typeof fe_search_ai_ajax_obj < 'u' && fe_search_ai_ajax_obj.rate_limit_message
+					? (a = fe_search_ai_ajax_obj.rate_limit_message)
+					: (a = __('Rate limit exceeded. Please try again later.', 'fe-search-ai'))),
+				S(`<p>${a}</p>`, 'system', g));
+		}
+		k();
+	}
+}
+document.readyState === 'loading'
+	? document.addEventListener('DOMContentLoaded', initFEAIChat)
+	: initFEAIChat();

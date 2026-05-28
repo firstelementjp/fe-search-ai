@@ -389,6 +389,7 @@ class FE_Search_AI_Settings {
 		add_settings_field( 'fe_search_ai_site_name', __( 'Site Name (AI)', 'fe-search-ai' ), [ $this, 'site_name_field_html' ], $page_slug, 'fe_search_ai_prompt_section' );
 		add_settings_field( 'fe_search_ai_site_purpose', __( 'Site Purpose (AI)', 'fe-search-ai' ), [ $this, 'site_purpose_field_html' ], $page_slug, 'fe_search_ai_prompt_section' );
 		add_settings_field( 'fe_search_ai_system_prompt', __( 'Base System Prompt', 'fe-search-ai' ), [ $this, 'system_prompt_field_html' ], $page_slug, 'fe_search_ai_prompt_section' );
+		add_settings_field( 'fe_search_ai_structured_output', __( 'Structured Output', 'fe-search-ai' ), [ $this, 'structured_output_field_html' ], $page_slug, 'fe_search_ai_prompt_section' );
 
 		// ------------------
 		// Data Tab
@@ -2169,6 +2170,32 @@ class FE_Search_AI_Settings {
 	}
 
 	/**
+	 * Renders the structured output option field.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public function structured_output_field_html() {
+		$prompt     = get_option( 'fe_search_ai_custom_prompts', [] );
+		$is_enabled = ! empty( $prompt['structured_output'] );
+		?>
+		<input type="hidden" name="fe_search_ai_custom_prompts[structured_output]" value="0">
+		<label>
+			<input
+				type="checkbox"
+				name="fe_search_ai_custom_prompts[structured_output]"
+				value="1"
+				<?php checked( $is_enabled ); ?>
+			>
+			<?php esc_html_e( 'Enable structured output when supported by the selected AI provider.', 'fe-search-ai' ); ?>
+		</label>
+		<p class="description">
+			<?php esc_html_e( 'When enabled, the plugin may request a stricter response format from supported providers. Unsupported providers or models should fall back to the standard text response.', 'fe-search-ai' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
 	 * Renders the numeric input for the sync batch size.
 	 *
 	 * Controls how many posts are processed per batch during synchronization
@@ -2459,6 +2486,11 @@ class FE_Search_AI_Settings {
 
 		// Base (shared) system prompt.
 		$sanitized['system_prompt'] = sanitize_textarea_field( $input['system_prompt'] ?? ( $existing['system_prompt'] ?? '' ) );
+
+		// Structured output option.
+		if ( array_key_exists( 'structured_output', $input ) ) {
+			$sanitized['structured_output'] = ! empty( $input['structured_output'] );
+		}
 
 		// Model-specific prompts (used by Pro). Keep them if present.
 		if ( isset( $input['custom_prompts'] ) && is_array( $input['custom_prompts'] ) ) {

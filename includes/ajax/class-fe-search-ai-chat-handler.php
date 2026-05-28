@@ -314,17 +314,29 @@ class FE_Search_AI_Chat_Handler {
 			) . "\n\n";
 			flush();
 
+			// Check if structured output is enabled.
+			$custom_prompts    = get_option( 'fe_search_ai_custom_prompts', [] );
+			$structured_output = ! empty( $custom_prompts['structured_output'] );
+
 			// Log AI processing start
 			\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
 				'INFO',
 				'Starting AI chat completion',
 				[
-					'provider'    => $provider,
-					'has_context' => $context_found,
+					'provider'          => $provider,
+					'has_context'       => $context_found,
+					'structured_output' => $structured_output,
 				],
 				$sequence_id
 			);
-			$this->stream_chat_completion( $question, $similar_chunks, $provider, $history, $sequence_id );
+
+			if ( $structured_output && 'openai' === $provider ) {
+				// Use non-streaming structured output for OpenAI.
+				$this->structured_chat_completion_for_openai( $question, $similar_chunks, $history, $provider, $sequence_id );
+			} else {
+				// Use standard streaming.
+				$this->stream_chat_completion( $question, $similar_chunks, $provider, $history, $sequence_id );
+			}
 
 			// Log processing completion
 			\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
@@ -821,6 +833,265 @@ class FE_Search_AI_Chat_Handler {
 		$body .= "\nSite URL: " . home_url( '/' ) . "\n";
 
 		wp_mail( $admin_email, $subject, $body );
+	}
+
+	/**
+	 * Performs non-streaming chat completion with structured output for OpenAI.
+	 *
+	 * When structured output is enabled, this method requests a JSON response
+	 * from the OpenAI API, parses it, and extracts the answer_markdown field.
+	 * The extracted text is then sent to the client via SSE for smooth display.
+	 * On failure, it falls back to standard streaming.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $question        The end user's original question.
+	 * @param array  $context_chunks  Retrieved context chunks to be added to the prompt.
+	 * @param array  $history         Prior chat messages used to maintain conversation state.
+	 * @param string $provider        The provider slug ('openai' or 'openai_compatible').
+	 * @param string $sequence_id     Unique identifier for the processing sequence.
+	 *
+	 * @return void Outputs SSE responses with the extracted answer and terminates.
+	 */
+	private function structured_chat_completion_for_openai( $question, $context_chunks, $history, $provider, $sequence_id = '' ) {
+		// Start the timer for System Log.
+		$start_time = microtime( true );
+
+		if ( 'openai_compatible' === $provider ) {
+			$api_url = $this->options['provider']['openai_compatible_endpoint'] ?? '';
+			$api_key = '';
+
+			$encrypted_key = $this->options['provider']['openai_compatible_key'] ?? '';
+			if ( is_string( $encrypted_key ) && '' !== $encrypted_key ) {
+				$api_key = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
+			}
+
+			if ( empty( $api_url ) || empty( $api_key ) ) {
+				$pro_settings      = get_option( 'fe_search_ai_pro_settings', [] );
+				$provider_settings = is_array( $pro_settings ) ? ( $pro_settings['provider'] ?? [] ) : [];
+
+				if ( empty( $api_url ) && is_array( $provider_settings ) ) {
+					$api_url = $provider_settings['openai_compatible_endpoint'] ?? $api_url;
+				}
+
+				if ( empty( $api_key ) && is_array( $provider_settings ) ) {
+					$pro_encrypted_key = $provider_settings['openai_compatible_api_key'] ?? '';
+					if ( is_string( $pro_encrypted_key ) && '' !== $pro_encrypted_key ) {
+						$api_key = FE_Search_AI_Encryption_Helper::decrypt( $pro_encrypted_key );
+					}
+				}
+			}
+		} else {
+			$api_url = 'https://api.openai.com/v1/chat/completions';
+			// Admin UI stores the key at provider.openai_key.
+			$encrypted_key = $this->options['provider']['openai_key'] ?? '';
+
+			$api_key = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
+		}
+
+		if ( empty( $api_key ) || empty( $api_url ) ) {
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
+				'ERROR',
+				'Structured output failed: API Key or Endpoint URL is not set.',
+				[ 'provider' => $provider ]
+			);
+
+			// Fallback to standard streaming.
+			$this->stream_chat_completion( $question, $context_chunks, $provider, $history, $sequence_id );
+			return;
+		}
+
+		$model = 'gpt-4o-mini'; // Default.
+		if ( $this->is_license_active ) {
+			if ( 'openai_compatible' === $provider ) {
+				$model = $this->options['model']['openai_compatible'] ?? $model;
+			} else {
+				$model = $this->options['model']['openai'] ?? [ 'type' => $model ];
+				$model = ( isset( $model['type'] ) && 'custom' === $model['type'] ) ? $model['custom'] : $model['type'];
+			}
+		}
+
+		// Log the start of the API call.
+		\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
+			'INFO',
+			'Structured output chat completion started.',
+			[
+				'provider' => $provider,
+				'model'    => $model,
+			],
+			$sequence_id
+		);
+
+		$messages = $this->build_prompt_messages(
+			$question,
+			$context_chunks,
+			$history,
+			false,
+			$provider,
+			$sequence_id
+		);
+
+		// Add instruction for structured output references.
+		if ( ! empty( $messages ) && isset( $messages[0]['role'] ) && 'system' === $messages[0]['role'] ) {
+			$messages[0]['content'] .= "\n\n## Structured Output Instructions\n" .
+				"When providing your answer, you MUST include a 'references' field in your JSON response containing the URLs of the sources you actually referenced from the Search Results. " .
+				"Only include URLs that you used to answer the user's question. " .
+				'Do not include URLs that were not relevant to your answer.';
+		}
+
+		// Define JSON schema for structured output.
+		$json_schema = [
+			'type'                 => 'object',
+			'properties'           => [
+				'answer_markdown' => [
+					'type'        => 'string',
+					'description' => 'The answer in Markdown format.',
+				],
+				'references'      => [
+					'type'        => 'array',
+					'description' => 'List of URLs referenced in the answer.',
+					'items'       => [
+						'type'        => 'string',
+						'description' => 'A URL from the search results.',
+					],
+				],
+			],
+			'required'             => [ 'answer_markdown', 'references' ],
+			'additionalProperties' => false,
+		];
+
+		$body = [
+			'model'           => $model,
+			'messages'        => $messages,
+			'stream'          => false,
+			'temperature'     => 0.1,
+			'response_format' => [
+				'type'        => 'json_schema',
+				'json_schema' => [
+					'name'   => 'structured_answer',
+					'strict' => true,
+					'schema' => $json_schema,
+				],
+			],
+		];
+
+		// Extend timeout for non-streaming requests.
+		set_time_limit( 300 );
+
+		$response = wp_remote_post(
+			$api_url,
+			[
+				'headers' => [
+					'Content-Type'  => 'application/json',
+					'Authorization' => 'Bearer ' . $api_key,
+				],
+				'body'    => wp_json_encode( $body ),
+				'timeout' => 300,
+			]
+		);
+
+		$duration      = round( ( microtime( true ) - $start_time ) * 1000 );
+		$http_status   = is_wp_error( $response ) ? 0 : (int) wp_remote_retrieve_response_code( $response );
+		$response_body = is_wp_error( $response ) ? null : json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( is_wp_error( $response ) ) {
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
+				'ERROR',
+				'Structured output failed (WP HTTP Error). Falling back to streaming.',
+				[
+					'provider'      => $provider,
+					'model'         => $model,
+					'error_message' => $response->get_error_message(),
+					'duration_ms'   => $duration,
+				]
+			);
+
+			// Fallback to standard streaming.
+			$this->stream_chat_completion( $question, $context_chunks, $provider, $history, $sequence_id );
+			return;
+		}
+
+		if ( 200 !== $http_status ) {
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
+				'ERROR',
+				'Structured output failed (HTTP Error). Falling back to streaming.',
+				[
+					'provider'    => $provider,
+					'model'       => $model,
+					'http_status' => $http_status,
+					'duration_ms' => $duration,
+				]
+			);
+
+			// Fallback to standard streaming.
+			$this->stream_chat_completion( $question, $context_chunks, $provider, $history, $sequence_id );
+			return;
+		}
+
+		if ( empty( $response_body ) || ! isset( $response_body['choices'][0]['message']['content'] ) ) {
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
+				'ERROR',
+				'Structured output failed (Invalid response). Falling back to streaming.',
+				[
+					'provider'    => $provider,
+					'model'       => $model,
+					'duration_ms' => $duration,
+				]
+			);
+
+			// Fallback to standard streaming.
+			$this->stream_chat_completion( $question, $context_chunks, $provider, $history, $sequence_id );
+			return;
+		}
+
+		$content = $response_body['choices'][0]['message']['content'];
+		$parsed  = json_decode( $content, true );
+
+		if ( ! is_array( $parsed ) || ! isset( $parsed['answer_markdown'] ) ) {
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
+				'ERROR',
+				'Structured output failed (JSON parse error). Falling back to streaming.',
+				[
+					'provider'    => $provider,
+					'model'       => $model,
+					'duration_ms' => $duration,
+				]
+			);
+
+			// Fallback to standard streaming.
+			$this->stream_chat_completion( $question, $context_chunks, $provider, $history, $sequence_id );
+			return;
+		}
+
+		$answer_text = $parsed['answer_markdown'];
+		$references  = $parsed['references'] ?? [];
+
+		// Ensure UTF-8 encoding.
+		if ( ! mb_check_encoding( $answer_text, 'UTF-8' ) ) {
+			$answer_text = mb_convert_encoding( $answer_text, 'UTF-8', 'UTF-8' );
+		}
+
+		// Send the answer via SSE for smooth display.
+		echo 'data: ' . json_encode( [ 'text' => $answer_text ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+
+		// Send references if available.
+		if ( ! empty( $references ) && is_array( $references ) ) {
+			echo 'data: ' . json_encode( [ 'references' => $references ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+		}
+
+		echo "data: [DONE]\n\n";
+		flush();
+
+		\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
+			'INFO',
+			'Structured output chat completed successfully.',
+			[
+				'provider'    => $provider,
+				'model'       => $model,
+				'duration_ms' => $duration,
+			],
+			$sequence_id
+		);
 	}
 
 	/**
