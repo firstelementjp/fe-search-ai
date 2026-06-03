@@ -7,17 +7,43 @@
 # Exclude hidden files and backup language files
 _*
 *-backup-*.po~
-node_modules
 
-# Exclude environment files
+# Dependencies
+node_modules
+vendor/
+
+# Environment files
 .env
 .env.*
 !.envrc.example
 
-vendor/
-_tmp/
-.DS_Store
-.vscode/
-fe-search-ai.code-workspace
+# Development and build files
+package-lock.json
+composer.lock
+.eslintrc.json
+.prettierrc*
+.prettierignore
+phpcs.xml.dist
+
+# Test and debug files
 debug.log
-test-php-timeout.php
+debug_prompt.txt
+test-*.php
+test-*.sh
+simple_test.php
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+fe-search-ai.code-workspace
+
+# Temporary files
+_tmp/
+tmp/
+temp/
