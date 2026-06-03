@@ -30,7 +30,7 @@ debug.log
 debug_prompt.txt
 test-*.php
 test-*.sh
-simple_test.php
+license_db_format.txt
 
 # OS files
 .DS_Store
