@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: FE Search AI\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-15 02:25+0000\n"
+"POT-Creation-Date: 2026-05-30 02:33+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: \n"
@@ -13,48 +13,48 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Loco https://localise.biz/\n"
-"X-Loco-Version: 2.8.1; wp-6.9; php-8.3.8\n"
+"X-Loco-Version: 2.8.3; wp-7.0; php-8.3.8\n"
 "X-Domain: fe-search-ai"
 
-#: includes/admin/class-fe-search-ai-settings.php:1098
+#: includes/admin/class-fe-search-ai-settings.php:1243
 msgid ""
 "\"Sync Changes\" processes only new, updated, or deleted content. \"Rebuild "
 "Index\" syncs everything from scratch."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:855
-#: includes/admin/class-fe-search-ai-settings.php:863
-#: includes/admin/class-fe-search-ai-settings.php:871
-#: includes/admin/class-fe-search-ai-settings.php:879
-#: includes/admin/class-fe-search-ai-settings.php:902
+#: includes/admin/class-fe-search-ai-settings.php:997
+#: includes/admin/class-fe-search-ai-settings.php:1005
+#: includes/admin/class-fe-search-ai-settings.php:1013
+#: includes/admin/class-fe-search-ai-settings.php:1021
+#: includes/admin/class-fe-search-ai-settings.php:1044
 #, php-format
 msgid "%1$s (%2$s)"
 msgstr ""
 
 #. 1: constant name, 2: truncated value
-#: includes/admin/class-fe-search-ai-settings.php:1488
+#: includes/admin/class-fe-search-ai-settings.php:1633
 #, php-format
 msgid ""
 "%1$s is defined in wp-config.php and will be used with priority over this "
 "field. (Current constant starts with: %2$s)"
 msgstr ""
 
-#: includes/core/class-fe-search-ai-assets.php:239
+#: includes/core/class-fe-search-ai-assets.php:253
 msgid ""
 "(You have reached the request limit. Please wait a while before trying again."
 ")"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1340
+#: includes/admin/class-fe-search-ai-settings.php:1485
 msgid "404 page"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1468
+#: includes/admin/class-fe-search-ai-settings.php:1613
 msgid "<strong>Note:</strong> Not used when using vector database."
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:1744
-#: includes/ajax/class-fe-search-ai-chat-handler.php:1793
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2252
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2301
 msgid "[REDACTED]"
 msgstr ""
 
@@ -76,11 +76,11 @@ msgstr ""
 msgid "Add custom fields to the search index"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2515
+#: includes/admin/class-fe-search-ai-settings.php:2781
 msgid "Adjust the typing animation speed of the AI's response."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:374
+#: includes/admin/class-fe-search-ai-settings.php:407
 msgid "Advanced Settings"
 msgstr ""
 
@@ -89,7 +89,7 @@ msgstr ""
 msgid "Advanced settings"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:331
+#: includes/admin/class-fe-search-ai-settings.php:363
 msgid "Advanced Sync Settings"
 msgstr ""
 
@@ -97,15 +97,15 @@ msgstr ""
 msgid "AI-powered search for WordPress."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1212
+#: includes/admin/class-fe-search-ai-settings.php:1357
 msgid "All conversation logs have been deleted."
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-sync-handler.php:620
+#: includes/ajax/class-fe-search-ai-sync-handler.php:699
 msgid "All sync data has been deleted."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1185
+#: includes/admin/class-fe-search-ai-settings.php:1330
 msgid "All system logs have been deleted."
 msgstr ""
 
@@ -113,31 +113,35 @@ msgstr ""
 msgid "An invalid response was received from the license server."
 msgstr ""
 
-#: includes/frontend/class-fe-search-ai-chat-ui.php:327
+#: includes/frontend/class-fe-search-ai-chat-ui.php:339
 msgid "and"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:551
+#: includes/admin/class-fe-search-ai-settings.php:679
 msgid "Anthropic (Claude)"
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-sync-handler.php:1416
-#: includes/ajax/class-fe-search-ai-sync-handler.php:1529
+#: includes/ajax/class-fe-search-ai-sync-handler.php:986
+#: includes/ajax/class-fe-search-ai-sync-handler.php:1025
+#: includes/ajax/class-fe-search-ai-sync-handler.php:1067
+#: includes/ajax/class-fe-search-ai-sync-handler.php:1918
+#: includes/ajax/class-fe-search-ai-sync-handler.php:2032
 msgid "API Error"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:703
+#: includes/admin/class-fe-search-ai-settings.php:837
 msgid "API Key"
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:1628
-#: includes/ajax/class-fe-search-ai-chat-handler.php:1646
-#: includes/ajax/class-fe-search-ai-chat-handler.php:1665
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2118
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2136
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2155
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2189
 msgid "API key is missing."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:303
-#: includes/admin/class-fe-search-ai-settings.php:304
+#: includes/admin/class-fe-search-ai-settings.php:329
+#: includes/admin/class-fe-search-ai-settings.php:330
 msgid "API Keys"
 msgstr ""
 
@@ -149,25 +153,32 @@ msgstr ""
 msgid "API usage limits (rate limiting)"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:673
+#: includes/admin/class-fe-search-ai-settings.php:807
 msgid "API usage limits and costs"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1324
+#: includes/admin/class-fe-search-ai-settings.php:1469
 msgid "Archive"
+msgstr ""
+
+#: includes/admin/class-fe-search-ai-admin.php:240
+msgid ""
+"Are you sure you want to delete all synced data? This action cannot be "
+"undone."
 msgstr ""
 
 #: includes/core/class-fe-search-ai-defaults.php:29
 msgid "Ask a question about this site…"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:375
+#: includes/admin/class-fe-search-ai-settings.php:408
 msgid "Assets Loading"
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:1640
-#: includes/ajax/class-fe-search-ai-chat-handler.php:1655
-#: includes/ajax/class-fe-search-ai-chat-handler.php:1689
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2130
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2145
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2179
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2201
 msgid "Authentication failed."
 msgstr ""
 
@@ -178,75 +189,76 @@ msgid ""
 msgstr ""
 
 #. %s: Link to the Pro version.
-#: includes/admin/class-fe-search-ai-settings.php:962
-#: includes/admin/class-fe-search-ai-settings.php:1572
+#: includes/admin/class-fe-search-ai-settings.php:1104
+#: includes/admin/class-fe-search-ai-settings.php:1717
 #, php-format
 msgid "Available in the %s version."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1713
+#: includes/admin/class-fe-search-ai-settings.php:1858
 msgid "Background color for the chat window and message area."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:360
+#: includes/admin/class-fe-search-ai-settings.php:392
 msgid "Base System Prompt"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1734
+#: includes/admin/class-fe-search-ai-settings.php:1879
 msgid "Base text color"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:328
+#: includes/admin/class-fe-search-ai-settings.php:360
 msgid "Batch Size"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2159
+#: includes/admin/class-fe-search-ai-settings.php:2330
 msgid ""
 "Briefly explain the purpose of this site to the AI. If left blank, the "
 "site's tagline will be used."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1451
-#: includes/ajax/class-fe-search-ai-sync-handler.php:1920
+#: includes/admin/class-fe-search-ai-settings.php:1596
+#: includes/ajax/class-fe-search-ai-sync-handler.php:2450
 msgid "Built-in (TinySegmenter)"
 msgstr ""
 
-#: includes/frontend/class-fe-search-ai-chat-ui.php:326
+#. %s: Links to terms of service and privacy policy.
+#: includes/frontend/class-fe-search-ai-chat-ui.php:338
 #, php-format
 msgid "By using this chat, you agree to our %s."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:752
+#: includes/admin/class-fe-search-ai-settings.php:896
 msgid "Change Model"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:308
+#: includes/admin/class-fe-search-ai-settings.php:334
 msgid "Chat AI"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:307
+#: includes/admin/class-fe-search-ai-settings.php:333
 msgid "Chat Model"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:337
+#: includes/admin/class-fe-search-ai-settings.php:369
 msgid "Chat UI Appearance"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1712
+#: includes/admin/class-fe-search-ai-settings.php:1857
 msgid "Chat window background color"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1631
+#: includes/admin/class-fe-search-ai-settings.php:1776
 msgid "Chat window title"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1916
+#: includes/admin/class-fe-search-ai-settings.php:2061
 msgid ""
 "Check this box if you want to stop using this plugin completely, rather than "
 "just temporarily disabling it."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:416
+#: includes/admin/class-fe-search-ai-settings.php:507
 msgid "Choose where chunk data (and, when applicable, vector data) are stored."
 msgstr ""
 
@@ -254,11 +266,11 @@ msgstr ""
 msgid "Choose which model to use for each AI provider"
 msgstr ""
 
-#: includes/frontend/class-fe-search-ai-chat-ui.php:351
+#: includes/frontend/class-fe-search-ai-chat-ui.php:363
 msgid "Cmd/Ctrl+Enter"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2529
+#: includes/admin/class-fe-search-ai-settings.php:2795
 msgid "Cmd/Ctrl+Enter (Enter for newline)"
 msgstr ""
 
@@ -266,21 +278,21 @@ msgstr ""
 msgid "Collect consent to Terms of Use and Privacy Policy directly in the chat"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:514
+#: includes/admin/class-fe-search-ai-settings.php:642
 msgid "Collection Name"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:931
+#: includes/admin/class-fe-search-ai-settings.php:1073
 msgid "Comma-separated term IDs. Leave empty to include all terms."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1912
+#: includes/admin/class-fe-search-ai-settings.php:2057
 msgid ""
 "Completely remove all database tables and settings when removing "
 "(uninstalling) a plugin."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1307
+#: includes/admin/class-fe-search-ai-settings.php:1452
 msgid "Conditions for Displaying the Chat"
 msgstr ""
 
@@ -306,7 +318,7 @@ msgstr ""
 msgid "Configure notification email addresses"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:474
+#: includes/admin/class-fe-search-ai-settings.php:602
 msgid ""
 "Configure the connection to your Qdrant Cloud or self-hosted Qdrant instance."
 msgstr ""
@@ -321,23 +333,23 @@ msgid ""
 "based embedding models"
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:1706
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2214
 msgid "Connection failed"
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:1704
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2212
 msgid "Connection successful"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:704
+#: includes/admin/class-fe-search-ai-settings.php:838
 msgid "Connection Test"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:322
+#: includes/admin/class-fe-search-ai-settings.php:352
 msgid "Content to Sync"
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-sync-handler.php:1858
+#: includes/ajax/class-fe-search-ai-sync-handler.php:2388
 msgid "Contribute on GitHub"
 msgstr ""
 
@@ -345,25 +357,25 @@ msgstr ""
 msgid "Could not connect to the license server"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:725
+#: includes/admin/class-fe-search-ai-settings.php:869
 msgid "Create API Key"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:943
+#: includes/admin/class-fe-search-ai-settings.php:1085
 msgid "Custom Fields (Post Meta)"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2071
+#: includes/admin/class-fe-search-ai-settings.php:2216
 msgid ""
 "Customize the instructions (system prompts) for the AI assistant. If left "
 "blank, the standard prompt will be used."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:365
+#: includes/admin/class-fe-search-ai-settings.php:398
 msgid "Data Management"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:326
+#: includes/admin/class-fe-search-ai-settings.php:356
 msgid "Data Storage"
 msgstr ""
 
@@ -371,43 +383,43 @@ msgstr ""
 msgid "Deactivate"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:376
+#: includes/admin/class-fe-search-ai-settings.php:409
 msgid "Debug Mode"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:679
+#: includes/admin/class-fe-search-ai-settings.php:813
 msgid "Default API usage limits"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1735
+#: includes/admin/class-fe-search-ai-settings.php:1880
 msgid "Default text color used for chat content and labels."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1163
+#: includes/admin/class-fe-search-ai-settings.php:1308
 msgid "Delete all conversation logs"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1119
+#: includes/admin/class-fe-search-ai-settings.php:1264
 msgid "Delete all synced data"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1141
+#: includes/admin/class-fe-search-ai-settings.php:1286
 msgid "Delete all system logs"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:368
+#: includes/admin/class-fe-search-ai-settings.php:401
 msgid "Delete Conversation Logs"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:369
+#: includes/admin/class-fe-search-ai-settings.php:402
 msgid "Delete Data on Uninstall"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:366
+#: includes/admin/class-fe-search-ai-settings.php:399
 msgid "Delete Synced Data"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:367
+#: includes/admin/class-fe-search-ai-settings.php:400
 msgid "Delete System Logs"
 msgstr ""
 
@@ -420,23 +432,23 @@ msgstr ""
 msgid "Display"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1749
+#: includes/admin/class-fe-search-ai-settings.php:1894
 msgid "Display chat background and key color with gradients"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1286
+#: includes/admin/class-fe-search-ai-settings.php:1431
 msgid "Display device"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1357
+#: includes/admin/class-fe-search-ai-settings.php:1502
 msgid "Display only with these post IDs"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:344
+#: includes/admin/class-fe-search-ai-settings.php:376
 msgid "Display Rules"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1374
+#: includes/admin/class-fe-search-ai-settings.php:1519
 msgid "Do not display with these post IDs."
 msgstr ""
 
@@ -444,9 +456,9 @@ msgstr ""
 msgid "Documentation"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:929
-#: includes/admin/class-fe-search-ai-settings.php:1365
-#: includes/admin/class-fe-search-ai-settings.php:1382
+#: includes/admin/class-fe-search-ai-settings.php:1071
+#: includes/admin/class-fe-search-ai-settings.php:1510
+#: includes/admin/class-fe-search-ai-settings.php:1527
 msgid "e.g."
 msgstr ""
 
@@ -458,37 +470,53 @@ msgstr ""
 msgid "Edit stop words"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:347
+#: includes/admin/class-fe-search-ai-settings.php:379
 msgid "Embed Mode"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2116
+#: includes/admin/class-fe-search-ai-settings.php:358
+msgid "Embeddings from Summaries"
+msgstr ""
+
+#: includes/admin/class-fe-search-ai-settings.php:2287
 msgid "Enable Debug Mode"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1256
+#: includes/admin/class-fe-search-ai-settings.php:1401
 msgid "Enable floating chat"
+msgstr ""
+
+#: includes/admin/class-fe-search-ai-settings.php:573
+msgid "Enable hybrid search"
+msgstr ""
+
+#: includes/admin/class-fe-search-ai-settings.php:442
+msgid "Enable reranker (recommended)"
+msgstr ""
+
+#: includes/admin/class-fe-search-ai-settings.php:2239
+msgid "Enable structured output when supported by the selected AI provider."
 msgstr ""
 
 #: includes/admin/class-fe-search-ai-license-settings.php:221
 msgid "Enable use from external clients such as headless CMS or mobile apps"
 msgstr ""
 
-#: includes/frontend/class-fe-search-ai-chat-ui.php:345
+#: includes/frontend/class-fe-search-ai-chat-ui.php:357
 msgid "Enter"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2523
+#: includes/admin/class-fe-search-ai-settings.php:2789
 msgid "Enter (Shift+Enter for newline)"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:986
+#: includes/admin/class-fe-search-ai-settings.php:1128
 msgid ""
 "Enter only the keys of custom fields you want to include in chunk data "
 "(content snippets), separated by commas or new lines."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:491
+#: includes/admin/class-fe-search-ai-settings.php:619
 msgid "Enter the base URL of your Qdrant HTTP API (including port)."
 msgstr ""
 
@@ -498,26 +526,30 @@ msgid ""
 "\"Activate\" button."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2099
+#: includes/admin/class-fe-search-ai-settings.php:2270
 msgid ""
 "Enter the number of posts to process in one batch during synchronization. A "
 "smaller number is less likely to cause timeouts on shared servers. (Default: "
 "10, Recommended: 10-100)"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:662
+#: includes/admin/class-fe-search-ai-settings.php:790
 msgid "Enter your Anthropic API key."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:668
+#: includes/admin/class-fe-search-ai-settings.php:802
 msgid "Enter your API keys for the AI providers you want to use."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:656
+#: includes/admin/class-fe-search-ai-settings.php:796
+msgid "Enter your Cohere API key."
+msgstr ""
+
+#: includes/admin/class-fe-search-ai-settings.php:784
 msgid "Enter your Google Cloud API key."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:650
+#: includes/admin/class-fe-search-ai-settings.php:778
 msgid "Enter your OpenAI API key."
 msgstr ""
 
@@ -529,23 +561,27 @@ msgstr ""
 msgid "Error: A problem occurred while processing batch"
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:942
+#: includes/ajax/class-fe-search-ai-chat-handler.php:1382
 msgid "Error: Anthropic API key not set."
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:512
+#: includes/ajax/class-fe-search-ai-chat-handler.php:613
 msgid "Error: API request failed."
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:495
+#: includes/ajax/class-fe-search-ai-chat-handler.php:596
 msgid "Error: Connection failed."
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:708
+#: includes/ajax/class-fe-search-ai-chat-handler.php:732
+msgid "Error: Failed to receive a response from the AI provider."
+msgstr ""
+
+#: includes/ajax/class-fe-search-ai-chat-handler.php:1137
 msgid "Error: Google API key is not set."
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:392
+#: includes/ajax/class-fe-search-ai-chat-handler.php:484
 msgid "Error: OpenAI API key not set."
 msgstr ""
 
@@ -553,15 +589,15 @@ msgstr ""
 msgid "Exclude noisy terms to improve search accuracy"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:325
+#: includes/admin/class-fe-search-ai-settings.php:355
 msgid "Exclude Specific Posts"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:926
+#: includes/admin/class-fe-search-ai-settings.php:1068
 msgid "Exclude specified term IDs"
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:1570
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2060
 msgid "Failed to save rating."
 msgstr ""
 
@@ -569,7 +605,7 @@ msgstr ""
 msgid "Failover feature (planned)"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2508
+#: includes/admin/class-fe-search-ai-settings.php:2774
 msgid "Fast"
 msgstr ""
 
@@ -584,7 +620,7 @@ msgid ""
 "feature is not available."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1642
+#: includes/admin/class-fe-search-ai-settings.php:1787
 msgid "First greeting"
 msgstr ""
 
@@ -592,7 +628,7 @@ msgstr ""
 msgid "FirstElement, Inc."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:343
+#: includes/admin/class-fe-search-ai-settings.php:375
 msgid "Floating Mode Settings"
 msgstr ""
 
@@ -606,21 +642,26 @@ msgstr ""
 msgid "Forums"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:351
+#: includes/admin/class-fe-search-ai-settings.php:383
 msgid "Fullscreen Mode Settings"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:352
+#: includes/admin/class-fe-search-ai-settings.php:384
 msgid "Fullscreen Page"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:677
+#: includes/admin/class-fe-search-ai-settings.php:811
 msgid ""
 "Generate an API key in the dashboard of each AI provider you plan to use and "
 "enter it in the fields below. These APIs are billed based on usage. Before "
 "enabling the chat, please review each provider's pricing. To help prevent "
 "unexpected token usage due to misconfiguration or abuse, this plugin applies "
 "built-in rate limits."
+msgstr ""
+
+#: includes/admin/class-fe-search-ai-settings.php:281
+msgid ""
+"Generate embedding vectors from structured chunk summaries (recommended)"
 msgstr ""
 
 #: includes/admin/class-fe-search-ai-admin.php:87
@@ -655,7 +696,7 @@ msgstr ""
 msgid "Go to X"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:550
+#: includes/admin/class-fe-search-ai-settings.php:678
 msgid "Google (Gemini)"
 msgstr ""
 
@@ -663,8 +704,13 @@ msgstr ""
 msgid "Hello! I am FE Search AI. How can I help you today?"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1316
+#: includes/admin/class-fe-search-ai-settings.php:1461
 msgid "Home"
+msgstr ""
+
+#: includes/admin/class-fe-search-ai-settings.php:457
+msgid ""
+"How many candidates to retrieve from the vector search before reranking."
 msgstr ""
 
 #. URI of the plugin
@@ -675,40 +721,50 @@ msgstr ""
 msgid "https://www.firstelement.co.jp/"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2577
+#: includes/admin/class-fe-search-ai-settings.php:357
+msgid "Hybrid Search"
+msgstr ""
+
+#: includes/admin/class-fe-search-ai-settings.php:577
+msgid ""
+"Hybrid search uses both the WordPress keyword index and Qdrant vector search."
+" When enabled, both data storage options are required."
+msgstr ""
+
+#: includes/admin/class-fe-search-ai-settings.php:2843
 msgid ""
 "If not selected, the page set in WordPress's standard privacy settings will "
 "be used."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1494
+#: includes/admin/class-fe-search-ai-settings.php:1639
 msgid ""
 "If you also define FE_SEARCH_AI_YAHOO_APP_ID in wp-config.php, that constant "
 "will override this field."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1368
+#: includes/admin/class-fe-search-ai-settings.php:1513
 msgid "If you enter the ID here, other display rules will be ignored."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1917
+#: includes/admin/class-fe-search-ai-settings.php:2062
 msgid ""
 "If you leave this box unchecked, your previous settings and sync data will "
 "be restored when you reinstall the plugin."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:508
+#: includes/admin/class-fe-search-ai-settings.php:636
 msgid ""
 "If you leave this field empty, the previously saved API key will be kept."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1851
+#: includes/admin/class-fe-search-ai-settings.php:1996
 msgid ""
 "If you want to exclude posts from synchronization, enter the post IDs "
 "separated by commas (e.g., 15, 30)."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1825
+#: includes/admin/class-fe-search-ai-settings.php:1970
 msgid ""
 "If you want to sync only certain posts, enter the post IDs separated by "
 "commas (e.g. 10, 25, 103).<br><strong>Note:</strong> When you enter post IDs "
@@ -716,23 +772,27 @@ msgid ""
 "“Sync Targets” settings (which metadata to include, etc.) are still applied."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:850
+#: includes/admin/class-fe-search-ai-settings.php:992
 msgid "Include in Chunk Data"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:922
+#: includes/admin/class-fe-search-ai-settings.php:1064
 msgid "Include only specified term IDs"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1041
+#: includes/admin/class-fe-search-ai-settings.php:1183
 msgid "Indexed Posts"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1652
+#: includes/admin/class-fe-search-ai-settings.php:454
+msgid "Initial candidates (vector search)"
+msgstr ""
+
+#: includes/admin/class-fe-search-ai-settings.php:1797
 msgid "Input field placeholders"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1515
+#: includes/admin/class-fe-search-ai-settings.php:1660
 msgid ""
 "Instead of automatically displaying the floating chat window based on the "
 "conditions above, you can also embed the chat anywhere on your site using "
@@ -740,11 +800,11 @@ msgid ""
 "the page where you want to display the chat."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:339
+#: includes/admin/class-fe-search-ai-settings.php:371
 msgid "Interaction"
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:1554
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2044
 msgid "Invalid rating."
 msgstr ""
 
@@ -752,23 +812,23 @@ msgstr ""
 msgid "items"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:380
+#: includes/admin/class-fe-search-ai-settings.php:413
 msgid "Japanese Tokenizer"
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-sync-handler.php:1909
+#: includes/ajax/class-fe-search-ai-sync-handler.php:2439
 msgid "Japanese Tokenizer Status"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1690
+#: includes/admin/class-fe-search-ai-settings.php:1835
 msgid "Key Color"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1035
+#: includes/admin/class-fe-search-ai-settings.php:1177
 msgid "Last Sync"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:340
+#: includes/admin/class-fe-search-ai-settings.php:372
 msgid "Legal Links"
 msgstr ""
 
@@ -794,21 +854,21 @@ msgstr ""
 msgid "Limit the total number of requests per site per day"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1880
+#: includes/admin/class-fe-search-ai-settings.php:2025
 msgid ""
 "Limits the number of posts to be synchronized to the specified number, "
 "starting from the most recent."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1783
+#: includes/admin/class-fe-search-ai-settings.php:1928
 msgid "Load default plugin CSS"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1796
+#: includes/admin/class-fe-search-ai-settings.php:1941
 msgid "Load default plugin JavaScript"
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:1549
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2039
 msgid "Log ID is required."
 msgstr ""
 
@@ -816,11 +876,11 @@ msgstr ""
 msgid "Log not only API communication but also AI responses and user feedback"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:377
+#: includes/admin/class-fe-search-ai-settings.php:410
 msgid "Log Retention (days)"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1264
+#: includes/admin/class-fe-search-ai-settings.php:1409
 msgid "Login status"
 msgstr ""
 
@@ -832,12 +892,12 @@ msgstr ""
 msgid "MCP server feature"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:705
+#: includes/admin/class-fe-search-ai-settings.php:839
 msgid "Model"
 msgstr ""
 
 #. %s: Link to the Pro version.
-#: includes/admin/class-fe-search-ai-settings.php:767
+#: includes/admin/class-fe-search-ai-settings.php:914
 #, php-format
 msgid "Model selection available in %s version."
 msgstr ""
@@ -847,14 +907,14 @@ msgstr ""
 msgid "Models"
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-sync-handler.php:315
+#: includes/ajax/class-fe-search-ai-sync-handler.php:379
 msgid ""
 "No previous sync baseline found. Please run \"Rebuild Index\" once before "
 "using \"Sync Changes\"."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2556
-#: includes/admin/class-fe-search-ai-settings.php:2570
+#: includes/admin/class-fe-search-ai-settings.php:2822
+#: includes/admin/class-fe-search-ai-settings.php:2836
 msgid "Not selected"
 msgstr ""
 
@@ -862,56 +922,60 @@ msgstr ""
 msgid "Notification settings"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1420
+#: includes/admin/class-fe-search-ai-settings.php:1565
 msgid ""
 "Number of days to keep system logs and conversation logs. Older entries will "
 "be deleted automatically by the daily log rotation. Leave blank or set to -1 "
 "to disable automatic deletion."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:324
+#: includes/admin/class-fe-search-ai-settings.php:354
 msgid "Only Sync Specific Posts"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:549
+#: includes/admin/class-fe-search-ai-settings.php:450
+msgid "Only the top N reranked chunks will be sent to the LLM."
+msgstr ""
+
+#: includes/admin/class-fe-search-ai-settings.php:677
 msgid "OpenAI（GPT）"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1353
+#: includes/admin/class-fe-search-ai-settings.php:1498
 msgid "Overwrite rules by individual ID"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:681
+#: includes/admin/class-fe-search-ai-settings.php:815
 msgid "Per IP address: 50 requests per hour"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:682
+#: includes/admin/class-fe-search-ai-settings.php:816
 msgid "Per site (total): 1,000 requests per day"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:879
+#: includes/admin/class-fe-search-ai-settings.php:1021
 msgid "Post Author"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:863
+#: includes/admin/class-fe-search-ai-settings.php:1005
 msgid "Post Content"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:849
+#: includes/admin/class-fe-search-ai-settings.php:991
 msgid "Post Data"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:871
+#: includes/admin/class-fe-search-ai-settings.php:1013
 msgid "Post Date"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:855
+#: includes/admin/class-fe-search-ai-settings.php:997
 msgid "Post Title"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1043
-#: includes/admin/class-fe-search-ai-settings.php:1877
-#: includes/admin/class-fe-search-ai-settings.php:2097
+#: includes/admin/class-fe-search-ai-settings.php:1185
+#: includes/admin/class-fe-search-ai-settings.php:2022
+#: includes/admin/class-fe-search-ai-settings.php:2268
 msgid "posts"
 msgstr ""
 
@@ -919,17 +983,17 @@ msgstr ""
 msgid "Preparing for synchronization…"
 msgstr ""
 
-#: includes/frontend/class-fe-search-ai-chat-ui.php:321
+#: includes/frontend/class-fe-search-ai-chat-ui.php:332
 msgid "Privacy Policy"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2564
+#: includes/admin/class-fe-search-ai-settings.php:2830
 msgid "Privacy Policy Page"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:772
-#: includes/admin/class-fe-search-ai-settings.php:967
-#: includes/admin/class-fe-search-ai-settings.php:1577
+#: includes/admin/class-fe-search-ai-settings.php:919
+#: includes/admin/class-fe-search-ai-settings.php:1109
+#: includes/admin/class-fe-search-ai-settings.php:1722
 msgid "Pro"
 msgstr ""
 
@@ -941,7 +1005,7 @@ msgstr ""
 msgid "Processing posts…"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:357
+#: includes/admin/class-fe-search-ai-settings.php:389
 msgid "Prompt Settings"
 msgstr ""
 
@@ -958,11 +1022,11 @@ msgstr ""
 msgid "Provide a set of tools for AI agents to use"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:702
+#: includes/admin/class-fe-search-ai-settings.php:836
 msgid "Provider"
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:1599
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2089
 msgid "Provider missing."
 msgstr ""
 
@@ -971,35 +1035,53 @@ msgstr ""
 msgid "Providers"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:439
+#: includes/admin/class-fe-search-ai-settings.php:536
 msgid "Qdrant (external vector database)"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:497
+#: includes/admin/class-fe-search-ai-settings.php:625
 msgid "Qdrant API Key"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:445
+#: includes/admin/class-fe-search-ai-settings.php:542
 msgid "Qdrant connection settings are configured in the Advanced settings tab."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:479
+#: includes/admin/class-fe-search-ai-settings.php:607
 msgid "Qdrant Endpoint"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:385
+#: includes/admin/class-fe-search-ai-settings.php:418
 msgid "Qdrant Settings"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1082
+#: includes/admin/class-fe-search-ai-settings.php:1227
 msgid "Rebuild Index"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:251
+#: includes/admin/class-fe-search-ai-settings.php:461
+msgid "Rerank timeout (sec)"
+msgstr ""
+
+#: includes/admin/class-fe-search-ai-settings.php:341
+msgid "Reranker"
+msgstr ""
+
+#: includes/admin/class-fe-search-ai-settings.php:342
+msgid "Reranker Settings"
+msgstr ""
+
+#: includes/admin/class-fe-search-ai-settings.php:436
+msgid ""
+"Reranking improves answer quality and reduces the amount of context sent to "
+"the LLM by selecting the most relevant chunks."
+msgstr ""
+
+#: includes/admin/class-fe-search-ai-settings.php:256
 msgid "Save Settings"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1332
+#: includes/admin/class-fe-search-ai-settings.php:1477
 msgid "Search result page"
 msgstr ""
 
@@ -1008,26 +1090,26 @@ msgstr ""
 msgid "Security"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1542
+#: includes/admin/class-fe-search-ai-settings.php:1687
 msgid "Select Chat-Only Page"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:577
+#: includes/admin/class-fe-search-ai-settings.php:705
 msgid "Select the AI that generates answers for the user."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1691
+#: includes/admin/class-fe-search-ai-settings.php:1836
 msgid "Select the basic colors for chat bubbles and user speech balloons."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:630
+#: includes/admin/class-fe-search-ai-settings.php:758
 msgid ""
 "Select the embedding AI model used for content search. This model generates "
 "vector data from content and user questions, which is used to determine the "
 "relevance between user questions and content."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:810
+#: includes/admin/class-fe-search-ai-settings.php:952
 msgid ""
 "Select the post types to target for AI search and the related data to "
 "include in chunk data passed to AI. If no items are checked under \"include "
@@ -1035,11 +1117,11 @@ msgid ""
 "synchronization."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1961
+#: includes/admin/class-fe-search-ai-settings.php:2106
 msgid "Select the post types you want to include in AI search."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1467
+#: includes/admin/class-fe-search-ai-settings.php:1612
 msgid ""
 "Select the tokenizer used for Japanese keyword extraction in indexing and "
 "search."
@@ -1049,39 +1131,39 @@ msgstr ""
 msgid "Send"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2520
+#: includes/admin/class-fe-search-ai-settings.php:2786
 msgid "Send Key Settings (Default)"
 msgstr ""
 
-#: includes/frontend/class-fe-search-ai-chat-ui.php:341
+#: includes/frontend/class-fe-search-ai-chat-ui.php:353
 msgid "Send Key Settings:"
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:1515
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2005
 msgid "Session ID is required."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1881
+#: includes/admin/class-fe-search-ai-settings.php:2026
 msgid ""
 "Set this if you are trying to synchronize on a trial basis or want to reduce "
 "API costs.<br><strong>-1</strong> will synchronize all eligible posts."
 msgstr ""
 
-#: includes/frontend/class-fe-search-ai-chat-ui.php:334
-#: includes/admin/class-fe-search-ai-admin.php:261
+#: includes/frontend/class-fe-search-ai-chat-ui.php:346
 #: includes/admin/class-fe-search-ai-admin.php:262
+#: includes/admin/class-fe-search-ai-admin.php:263
 msgid "Settings"
 msgstr ""
 
-#: includes/frontend/class-fe-search-ai-chat-ui.php:348
+#: includes/frontend/class-fe-search-ai-chat-ui.php:360
 msgid "Shift+Enter"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2526
+#: includes/admin/class-fe-search-ai-settings.php:2792
 msgid "Shift+Enter (Enter for newline)"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:348
+#: includes/admin/class-fe-search-ai-settings.php:380
 msgid "Shortcode"
 msgstr ""
 
@@ -1089,39 +1171,43 @@ msgstr ""
 msgid "Show"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1300
+#: includes/admin/class-fe-search-ai-settings.php:1445
 msgid "Show on Mobile"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1293
+#: includes/admin/class-fe-search-ai-settings.php:1438
 msgid "Show on PC"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1272
+#: includes/admin/class-fe-search-ai-settings.php:1417
 msgid "Show to logged-in users"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1280
+#: includes/admin/class-fe-search-ai-settings.php:1425
 msgid "Show to non-logged-in users"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1348
+#: includes/admin/class-fe-search-ai-settings.php:1493
 msgid "Single pages"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:358
+#: includes/admin/class-fe-search-ai-settings.php:390
 msgid "Site Name (AI)"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:359
+#: includes/admin/class-fe-search-ai-settings.php:391
 msgid "Site Purpose (AI)"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2500
+#: includes/admin/class-fe-search-ai-settings.php:2766
 msgid "Smooth"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1663
+#: includes/admin/class-fe-search-ai-settings.php:393
+msgid "Structured Output"
+msgstr ""
+
+#: includes/admin/class-fe-search-ai-settings.php:1808
 msgid "Submit button text"
 msgstr ""
 
@@ -1134,29 +1220,29 @@ msgstr ""
 msgid "Sync"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1079
+#: includes/admin/class-fe-search-ai-settings.php:1224
 msgid "Sync Changes (Recommended)"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:319
+#: includes/admin/class-fe-search-ai-settings.php:349
 msgid "Sync Controls"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:327
+#: includes/admin/class-fe-search-ai-settings.php:359
 msgid "Sync Limit"
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-sync-handler.php:277
+#: includes/ajax/class-fe-search-ai-sync-handler.php:341
 msgid ""
 "Sync settings have changed. Please use \"Rebuild All\" to apply the new "
 "settings."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:323
+#: includes/admin/class-fe-search-ai-settings.php:353
 msgid "Sync Targets"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:318
+#: includes/admin/class-fe-search-ai-settings.php:348
 msgid "Synchronization"
 msgstr ""
 
@@ -1164,23 +1250,28 @@ msgstr ""
 msgid "Synchronization complete!"
 msgstr ""
 
-#: includes/frontend/class-fe-search-ai-chat-ui.php:318
+#: includes/frontend/class-fe-search-ai-chat-ui.php:329
 msgid "Terms of Service"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2550
+#: includes/admin/class-fe-search-ai-settings.php:2816
 msgid "Terms of Service Page"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:741
+#: includes/admin/class-fe-search-ai-settings.php:885
 msgid "Test"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:338
+#: includes/admin/class-fe-search-ai-settings.php:370
 msgid "Text & Colors"
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-sync-handler.php:1465
+#: includes/ajax/class-fe-search-ai-sync-handler.php:1040
+msgid "The Anthropic API key is not configured."
+msgstr ""
+
+#: includes/ajax/class-fe-search-ai-sync-handler.php:1001
+#: includes/ajax/class-fe-search-ai-sync-handler.php:1968
 msgid "The Google Cloud API key is not configured."
 msgstr ""
 
@@ -1192,13 +1283,14 @@ msgstr ""
 msgid "The license key has not been entered."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2140
+#: includes/admin/class-fe-search-ai-settings.php:2311
 msgid ""
 "The name of the site you want the AI to recognize. If left blank, the site "
 "title will be used."
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-sync-handler.php:1349
+#: includes/ajax/class-fe-search-ai-sync-handler.php:958
+#: includes/ajax/class-fe-search-ai-sync-handler.php:1851
 msgid "The OpenAI API key is not configured."
 msgstr ""
 
@@ -1210,7 +1302,7 @@ msgstr ""
 msgid "The operation was successful."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:526
+#: includes/admin/class-fe-search-ai-settings.php:654
 msgid ""
 "The Qdrant collection name used for this site. It should match the "
 "collection used during synchronization."
@@ -1224,20 +1316,20 @@ msgstr ""
 msgid "There are no posts to sync."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1160
+#: includes/admin/class-fe-search-ai-settings.php:1305
 msgid ""
 "This will delete all conversation logs stored in the `{prefix}"
 "fe_search_ai_logs` table. Use this if conversations have grown unexpectedly "
 "large or contain information you no longer wish to keep."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1116
+#: includes/admin/class-fe-search-ai-settings.php:1261
 msgid ""
 "This will delete all synced vector data and keyword indexes. AI search will "
 "no longer work until you sync again."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1138
+#: includes/admin/class-fe-search-ai-settings.php:1283
 msgid ""
 "This will delete all system logs stored in the `{prefix}"
 "fe_search_ai_system_logs` table. Use this if logs have grown unexpectedly "
@@ -1255,38 +1347,42 @@ msgid ""
 "This will sync only new/updated/deleted content. Do you want to continue?"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:447
+#: includes/admin/class-fe-search-ai-settings.php:544
 msgid ""
 "To use Qdrant, configure the endpoint, API key, and collection in the "
 "Advanced settings tab."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2498
+#: includes/admin/class-fe-search-ai-settings.php:447
+msgid "Top N chunks for LLM"
+msgstr ""
+
+#: includes/admin/class-fe-search-ai-settings.php:2764
 msgid "Typing Animation Speed"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1786
+#: includes/admin/class-fe-search-ai-settings.php:1931
 msgid ""
 "Uncheck this if you want to style the chat UI entirely with your own theme's "
 "CSS."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1799
+#: includes/admin/class-fe-search-ai-settings.php:1944
 msgid ""
 "Uncheck this only if you are completely replacing the chat UI HTML and "
 "handling the API communication with your own JavaScript."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1903
+#: includes/admin/class-fe-search-ai-settings.php:2048
 msgid "Uninstallation settings"
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-sync-handler.php:1403
-#: includes/ajax/class-fe-search-ai-sync-handler.php:1516
+#: includes/ajax/class-fe-search-ai-sync-handler.php:1905
+#: includes/ajax/class-fe-search-ai-sync-handler.php:2019
 msgid "Unknown API Error"
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:1698
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2206
 msgid "Unknown provider."
 msgstr ""
 
@@ -1298,7 +1394,7 @@ msgstr ""
 msgid "Unlock more with FE Search AI Pro"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1483
+#: includes/admin/class-fe-search-ai-settings.php:1628
 msgid ""
 "Used when the Yahoo! Japanese MA API is selected. This value is stored in "
 "the plugin settings."
@@ -1308,11 +1404,11 @@ msgstr ""
 msgid "User consent opt-in feature"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:312
+#: includes/admin/class-fe-search-ai-settings.php:338
 msgid "Vectorization AI"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:311
+#: includes/admin/class-fe-search-ai-settings.php:337
 msgid "Vectorization Model"
 msgstr ""
 
@@ -1320,14 +1416,14 @@ msgstr ""
 msgid "View FE Search AI Pro Details"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:429
+#: includes/admin/class-fe-search-ai-settings.php:523
 msgid ""
 "When 'WordPress database' is selected, it performs keyword index search "
 "based on chunk data without generating vector data, allowing you to run "
 "simple AI search without using a dedicated vector database."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2120
+#: includes/admin/class-fe-search-ai-settings.php:2291
 msgid ""
 "When enabled, detailed operational logs will be saved to the `{prefix}"
 "fe_search_ai_system_logs` table (e.g. wp_fe_search_ai_system_logs if your "
@@ -1335,11 +1431,26 @@ msgid ""
 "can impact performance."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1751
+#: includes/admin/class-fe-search-ai-settings.php:284
+msgid ""
+"When enabled, the plugin generates structured summaries from each chunk by "
+"extracting topics, facts, entities, and keywords, and uses those summaries "
+"as input for embedding vectors. This usually improves matching for broad "
+"user queries."
+msgstr ""
+
+#: includes/admin/class-fe-search-ai-settings.php:2242
+msgid ""
+"When enabled, the plugin requests structured data (JSON format) from "
+"providers that support Structured Output. Unsupported providers or models "
+"will be requested to respond in standard text format."
+msgstr ""
+
+#: includes/admin/class-fe-search-ai-settings.php:1896
 msgid "When unchecked, the chat UI will use flat colors without gradients."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1586
+#: includes/admin/class-fe-search-ai-settings.php:1731
 msgid ""
 "When you access the selected static page here, the full-screen chat UI will "
 "be displayed directly."
@@ -1349,28 +1460,28 @@ msgstr ""
 msgid "With a Pro license, you can:"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:411
+#: includes/admin/class-fe-search-ai-settings.php:502
 msgid "WordPress database"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1473
+#: includes/admin/class-fe-search-ai-settings.php:1618
 msgid "Yahoo! App ID (optional)"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1452
+#: includes/admin/class-fe-search-ai-settings.php:1597
 msgid "Yahoo! Japanese MA API"
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-sync-handler.php:1914
+#: includes/ajax/class-fe-search-ai-sync-handler.php:2444
 msgid "Yahoo! Japanese MA API (App ID configured)"
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-sync-handler.php:1917
+#: includes/ajax/class-fe-search-ai-sync-handler.php:2447
 msgid "Yahoo! Japanese MA API (App ID missing)"
 msgstr ""
 
 #. 1: opening code tag, 2: closing code tag, 3: opening link tag, 4: closing link tag
-#: includes/admin/class-fe-search-ai-settings.php:688
+#: includes/admin/class-fe-search-ai-settings.php:822
 #, php-format
 msgid ""
 "You can change these limits from your theme or another plugin using the "
@@ -1378,11 +1489,11 @@ msgid ""
 "please refer to the %3$sdocumentation%4$s."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1200
+#: includes/admin/class-fe-search-ai-settings.php:1345
 msgid "You do not have permission to perform this action."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1180
+#: includes/admin/class-fe-search-ai-settings.php:1325
 msgid "You do not have sufficient permissions to perform this action."
 msgstr ""
 
@@ -1390,12 +1501,12 @@ msgstr ""
 msgid "You have exceeded the request limit. Please try again later."
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-sync-handler.php:1857
+#: includes/ajax/class-fe-search-ai-sync-handler.php:2387
 msgid ""
 "Your site language is not fully optimized for keyword search. We welcome "
 "contributions for new languages!"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:1551
+#: includes/admin/class-fe-search-ai-settings.php:1696
 msgid "— Don't use a dedicated page —"
 msgstr ""

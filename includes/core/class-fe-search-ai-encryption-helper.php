@@ -112,17 +112,29 @@ class FE_Search_AI_Encryption_Helper {
 			return $ciphertext; // Do not decrypt if key is missing.
 		}
 
-		$c = base64_decode( $ciphertext, true );
-		if ( false === $c ) {
-			return $ciphertext; // Return original if not valid base64.
+		$value = $ciphertext;
+		for ( $i = 0; $i < 3; $i++ ) {
+			$c = base64_decode( $value, true );
+			if ( false === $c ) {
+				return $value; // Return current value if not valid base64.
+			}
+
+			$ivlen = openssl_cipher_iv_length( self::CIPHER );
+			if ( strlen( $c ) <= $ivlen ) {
+				return $value; // Return current value if the payload is too short.
+			}
+
+			$iv             = substr( $c, 0, $ivlen );
+			$ciphertext_raw = substr( $c, $ivlen );
+
+			$decrypted = openssl_decrypt( $ciphertext_raw, self::CIPHER, $key, OPENSSL_RAW_DATA, $iv );
+			if ( false === $decrypted || $decrypted === $value ) {
+				return $value;
+			}
+
+			$value = $decrypted;
 		}
 
-		$ivlen          = openssl_cipher_iv_length( self::CIPHER );
-		$iv             = substr( $c, 0, $ivlen );
-		$ciphertext_raw = substr( $c, $ivlen );
-
-		$decrypted = openssl_decrypt( $ciphertext_raw, self::CIPHER, $key, OPENSSL_RAW_DATA, $iv );
-
-		return false === $decrypted ? $ciphertext : $decrypted;
+		return $value;
 	}
 }
