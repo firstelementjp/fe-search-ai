@@ -18,13 +18,13 @@
 		"phpcompatibility/php-compatibility": "^9.3",
 		"phpcompatibility/phpcompatibility-wp": "^2.1",
 		"wp-coding-standards/wpcs": "^3.2",
-		"phpcsstandards/phpcsextra": "^1.4",
-		"direnv/direnv": "^2.0"
+		"phpcsstandards/phpcsextra": "^1.4"
 	},
 	"config": {
 		"allow-plugins": {
 			"dealerdirect/phpcodesniffer-composer-installer": true
-		}
+		},
+		"platform-check": false
 	},
 	"scripts": {
 		"phpcs": "phpcs --standard=phpcs.xml.dist",
