@@ -20,29 +20,52 @@ trap "rm -rf $TMPDIR" EXIT
 echo "=== Install dependencies (no-dev) ==="
 composer install --no-dev --prefer-dist
 
-# Create release tree from git archive
-echo "=== Create release tree from git archive ==="
-git archive --format=tar HEAD | tar -x -C "$TMPDIR"
-
-# Inject vendor directory
-echo "=== Inject vendor directory ==="
-cp -r vendor "$TMPDIR/"
-
-# Build frontend assets
+# Build frontend assets in current directory
 echo "=== Build frontend assets ==="
-cd "$TMPDIR"
 npm install --silent
 npm run build --silent
-cd - > /dev/null
 
-# Remove node_modules from release
-rm -rf "$TMPDIR/node_modules"
+# Create release tree from git archive (respects .gitattributes export-ignore)
+echo "=== Create release tree from git archive ==="
+git archive --format=tar --prefix=fe-search-ai/ --worktree-attributes HEAD | tar -x -C "$TMPDIR"
+
+# Inject vendor directory (required for WordPress plugin)
+echo "=== Inject vendor directory ==="
+cp -r vendor "$TMPDIR/fe-search-ai/"
+
+# Copy built/minified assets from working directory into the release tree
+echo "=== Copy minified assets ==="
+mkdir -p "$TMPDIR/fe-search-ai/assets/js"
+mkdir -p "$TMPDIR/fe-search-ai/assets/css"
+cp -f assets/js/*.min.js "$TMPDIR/fe-search-ai/assets/js/" || true
+cp -f assets/css/*.min.css "$TMPDIR/fe-search-ai/assets/css/" || true
+
+# Security checks in release tree
+echo "=== Security checks in release tree ==="
+
+echo "Files starting with underscore (should be 0):"
+UNDERSCORE_COUNT=$(find "$TMPDIR/fe-search-ai" -name "_*" | wc -l | tr -d ' ')
+echo "       $UNDERSCORE_COUNT"
+if [ "$UNDERSCORE_COUNT" -gt 0 ]; then
+    echo "ERROR: Found files starting with underscore:"
+    find "$TMPDIR/fe-search-ai" -name "_*"
+    exit 1
+fi
+
+echo "Files starting with dot (should be 0):"
+DOT_COUNT=$(find "$TMPDIR/fe-search-ai" -name ".*" | wc -l | tr -d ' ')
+echo "       $DOT_COUNT"
+if [ "$DOT_COUNT" -gt 0 ]; then
+    echo "ERROR: Found files starting with dot:"
+    find "$TMPDIR/fe-search-ai" -name ".*"
+    exit 1
+fi
 
 # Sanity checks in release tree
 echo "=== Sanity checks in release tree ==="
 
 echo "Vendor directory exists:"
-if [ -d "$TMPDIR/vendor" ]; then
+if [ -d "$TMPDIR/fe-search-ai/vendor" ]; then
     echo "Yes"
 else
     echo "No - FAILED"
@@ -50,7 +73,7 @@ else
 fi
 
 echo "php-stemmer library exists:"
-if [ -d "$TMPDIR/vendor/wamania/php-stemmer/src/Stemmer" ]; then
+if [ -d "$TMPDIR/fe-search-ai/vendor/wamania/php-stemmer/src/Stemmer" ]; then
     echo "Yes"
 else
     echo "No - FAILED"
@@ -58,7 +81,7 @@ else
 fi
 
 echo "TinySegmenter library exists:"
-if [ -f "$TMPDIR/vendor/u7aro/tinysegmenter-php/src/TinySegmenter.php" ]; then
+if [ -f "$TMPDIR/fe-search-ai/vendor/u7aro/tinysegmenter-php/src/TinySegmenter.php" ]; then
     echo "Yes"
 else
     echo "No - FAILED"
@@ -66,15 +89,11 @@ else
 fi
 
 echo "PHPCS libraries (should be 0):"
-PHPCS_COUNT=$(find "$TMPDIR/vendor" -name "*phpcs*" -type f 2>/dev/null | wc -l | tr -d ' ')
+PHPCS_COUNT=$(find "$TMPDIR/fe-search-ai/vendor" -name "*phpcs*" -type f 2>/dev/null | wc -l | tr -d ' ')
 echo "       $PHPCS_COUNT"
 
 # Create ZIP
 echo "=== Create ZIP ==="
-# Create directory structure with correct folder name
-mkdir -p "$TMPDIR/fe-search-ai"
-mv "$TMPDIR"/* "$TMPDIR/fe-search-ai/" 2>/dev/null || true
-
 cd "$TMPDIR"
 ZIPNAME="fe-search-ai-${TAG#v}.zip"
 zip -r "../$ZIPNAME" fe-search-ai -q
