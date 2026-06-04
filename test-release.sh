@@ -50,7 +50,7 @@ else
 fi
 
 echo "php-stemmer library exists:"
-if [ -f "$TMPDIR/vendor/wamania/php-stemmer/src/Stemmer.php" ]; then
+if [ -d "$TMPDIR/vendor/wamania/php-stemmer/src/Stemmer" ]; then
     echo "Yes"
 else
     echo "No - FAILED"
