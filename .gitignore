@@ -39,6 +39,8 @@ Thumbs.db
 
 # IDE files
 .vscode/
+.windsurf/
+.devin/
 .idea/
 *.swp
 *.swo
