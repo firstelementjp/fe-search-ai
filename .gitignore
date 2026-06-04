@@ -48,3 +48,36 @@ fe-search-ai.code-workspace
 _tmp/
 tmp/
 temp/
+*.tmp
+*.temp
+.cache/
+
+# Build directories
+/dist/
+/build/
+/test-release/
+
+# Minified files (build artifacts)
+*.min.js
+*.min.css
+assets/js/*.min.js
+assets/css/*.min.css
+
+# Release artifacts
+*.zip
+*.tar.gz
+release-*/
+
+# Cache files
+.phpunit.result.cache
+.phpcs.cache
+.php-cs-fixer.cache
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# PHP specific
+composer.phar
+.phpcs.xml
