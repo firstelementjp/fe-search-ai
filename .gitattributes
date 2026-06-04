@@ -1,0 +1,47 @@
+# Distribution files for git archive (release ZIP)
+# This file controls what is excluded from git archive.
+
+# Exclude development and build files
+composer.json export-ignore
+composer.lock export-ignore
+vendor/ export-ignore
+node_modules/ export-ignore
+package.json export-ignore
+package-lock.json export-ignore
+
+# Exclude development configuration
+phpcs.xml.dist export-ignore
+.eslintrc.json export-ignore
+.prettierrc export-ignore
+.prettierignore export-ignore
+.envrc export-ignore
+.envrc.example export-ignore
+
+# Exclude Git and CI files
+.gitignore export-ignore
+.github/ export-ignore
+
+# Exclude documentation (keep LICENSE for release, use readme.txt for WordPress.org)
+README.md export-ignore
+
+# Exclude temporary and cache files
+*.log export-ignore
+debug.log export-ignore
+.DS_Store export-ignore
+
+# Exclude IDE files
+.vscode/ export-ignore
+fe-search-ai.code-workspace export-ignore
+
+# Exclude test and debug files
+_test-*.php export-ignore
+_debug_prompt.txt export-ignore
+_license_db_format.txt export-ignore
+_chunk-sample.txt export-ignore
+
+# Exclude build artifacts
+*.zip export-ignore
+*.tar.gz export-ignore
+
+# Exclude local development helpers
+test-release.sh export-ignore
