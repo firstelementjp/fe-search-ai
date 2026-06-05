@@ -750,7 +750,7 @@
 		"semver": "^6.3.1",
 		"send": "^0.19.0",
 		"sentence-case": "^3.0.4",
-		"serialize-javascript": "^6.0.2",
+		"serialize-javascript": "^7.0.5",
 		"serve-index": "^1.9.1",
 		"serve-static": "^1.16.2",
 		"set-function-length": "^1.2.2",
