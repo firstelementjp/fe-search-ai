@@ -373,7 +373,7 @@
 		"ignore": "^5.3.2",
 		"ignore-walk": "^4.0.1",
 		"image-ssim": "^0.2.0",
-		"immutable": "^5.1.4",
+		"immutable": "^5.1.6",
 		"import-fresh": "^3.3.1",
 		"import-lazy": "^4.0.0",
 		"import-local": "^3.2.0",
