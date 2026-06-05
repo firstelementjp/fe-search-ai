@@ -8,8 +8,8 @@
  *
  * @package    fe-search-ai
  * @subpackage Core
- * @since      1.0.0
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @since      0.9.0
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 
@@ -26,10 +26,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  * the appropriate indexing or de-indexing actions by using helper methods
  * from the main Sync_Handler class.
  *
- * @since      1.0.0
+ * @since      0.9.0
  * @package    fe-search-ai
  * @subpackage Core
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 class FE_Search_AI_Sync_Hooks {
@@ -42,7 +42,7 @@ class FE_Search_AI_Sync_Hooks {
 	 * all methods in this class to access settings without repeated
 	 * database calls, improving performance.
 	 *
-	 * @since  1.0.0
+	 * @since 0.9.0
 	 * @access private
 	 * @var    array $options The complete settings array.
 	 */
@@ -51,7 +51,7 @@ class FE_Search_AI_Sync_Hooks {
 	/**
 	 * A reference to the main sync handler class.
 	 *
-	 * @since  1.0.0
+	 * @since 0.9.0
 	 * @access private
 	 * @var    \FESearchAI\Ajax\FE_Search_AI_Sync_Handler $sync_handler The main sync handler instance.
 	 */
@@ -62,7 +62,7 @@ class FE_Search_AI_Sync_Hooks {
 	 *
 	 * Stores the sync handler dependency and registers the necessary WordPress hooks.
 	 *
-	 * @since  1.0.0
+	 * @since 0.9.0
 	 * @param  \FESearchAI\Ajax\FE_Search_AI_Sync_Handler $sync_handler The main sync handler instance.
 	 */
 	public function __construct( $sync_handler ) {
@@ -81,7 +81,7 @@ class FE_Search_AI_Sync_Hooks {
 	 * of vector embeddings and keyword indexes for a specific post. It includes
 	 * logic to detect the post's language using common multilingual plugins.
 	 *
-	 * @since  1.0.0
+	 * @since 0.9.0
 	 * @param  int      $post_id The ID of the post being saved.
 	 * @param  \WP_Post $post    The post object.
 	 */
@@ -122,7 +122,7 @@ class FE_Search_AI_Sync_Hooks {
 		 * Filters the detected language code for a post being indexed.
 		 * Allows developers using other multilingual plugins to provide the correct language code.
 		 *
-		 * @since  1.0.0
+		 * @since 0.9.0
 		 * @param  string  $lang_code The detected language code (e.g., 'en', 'ja').
 		 * @param  int     $post_id   The ID of the post being indexed.
 		 * @param  WP_Post $post      The post object.
@@ -227,7 +227,7 @@ class FE_Search_AI_Sync_Hooks {
 	 * This method is hooked to 'wp_trash_post' and 'delete_post' to ensure that
 	 * when a post is removed, its data is also removed from the AI index.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @param int $post_id The ID of the post being deleted.
 	 */
 	public function delete_post_from_index( $post_id ) {

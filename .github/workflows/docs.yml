@@ -1,0 +1,58 @@
+name: Generate Documentation
+
+on:
+    push:
+        branches: [main, develop]
+    release:
+        types: [published]
+
+permissions:
+    contents: read
+
+concurrency:
+    group: pages-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        if: github.repository == 'firstelementjp/fe-search-ai'
+        permissions:
+            contents: read
+            pages: write
+            id-token: write
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+              with:
+                  persist-credentials: false
+
+            - name: Setup Pages
+              uses: actions/configure-pages@v5
+
+            - name: Use existing docs folder
+              run: |
+                  echo "Using existing docs folder with Docsify content"
+                  ls -la docs/
+
+            - name: Upload artifact
+              uses: actions/upload-pages-artifact@v4
+              with:
+                  path: ./docs
+
+    deploy:
+        environment:
+            name: github-pages
+            url: ${{ steps.deployment.outputs.page_url }}
+        runs-on: ubuntu-latest
+        needs: build
+        if: github.ref == 'refs/heads/main' || github.event_name == 'release'
+        permissions:
+            pages: write
+            id-token: write
+
+        steps:
+            - name: Deploy to GitHub Pages
+              id: deployment
+              uses: actions/deploy-pages@v5

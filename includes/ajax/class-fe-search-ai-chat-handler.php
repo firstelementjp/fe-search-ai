@@ -8,8 +8,8 @@
  *
  * @package    fe-search-ai
  * @subpackage Ajax
- * @since      1.0.0
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @since 0.9.0
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 
@@ -29,10 +29,10 @@ use FESearchAI\Core\FE_Search_AI_License;
  * real-time streaming chat, non-streaming API queries, conversation logging,
  * and API key validation tests.
  *
- * @since      1.0.0
+ * @since 0.9.0
  * @package    fe-search-ai
  * @subpackage Ajax
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 class FE_Search_AI_Chat_Handler {
@@ -48,7 +48,7 @@ class FE_Search_AI_Chat_Handler {
 	 * status for Pro features, storing the sync handler reference, and registering
 	 * REST API endpoints and AJAX action handlers for chat operations.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @param FE_Search_AI_Sync_Handler $sync_handler The sync handler instance for data retrieval.
 	 * @return void
 	 */
@@ -68,9 +68,9 @@ class FE_Search_AI_Chat_Handler {
 		add_action( 'wp_ajax_fe_search_ai_rate_answer', [ $this, 'ajax_rate_answer' ] );
 		add_action( 'wp_ajax_fe_search_ai_test_api_key', [ $this, 'ajax_test_api_key' ] );
 		add_action( 'wp_ajax_fe_search_ai_manage_license', [ $this, 'ajax_manage_license' ] );
-		add_filter( 'fe_search_ai_filter_user_question', [ $this, 'filter_personal_data' ], 10 );
-		add_filter( 'fe_search_ai_filter_user_question', [ $this, 'filter_basic_injection_phrases' ], 20 );
-		add_filter( 'fe_search_ai_filter_model_response', [ $this, 'filter_basic_injection_phrases' ], 20 );
+		add_filter( 'fe_search_ai_preprocess_user_question', [ $this, 'filter_personal_data' ], 10 );
+		add_filter( 'fe_search_ai_preprocess_user_question', [ $this, 'filter_basic_injection_phrases' ], 20 );
+		add_filter( 'fe_search_ai_preprocess_model_response', [ $this, 'filter_basic_injection_phrases' ], 20 );
 	}
 
 	/**
@@ -80,7 +80,7 @@ class FE_Search_AI_Chat_Handler {
 	 * and the /chat endpoint for standard API requests. Both endpoints handle
 	 * AI model communication with proper permission callbacks.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function register_endpoints() {
@@ -191,6 +191,12 @@ class FE_Search_AI_Chat_Handler {
 
 		$similar_chunks = [];
 
+		// Generate sequence ID for tracking this processing flow
+		$sequence_id = \FESearchAI\Core\FE_Search_AI_Logger::generate_sequence_id( 'chat' );
+
+		// Make sequence ID available to other classes
+		$GLOBALS['fe_search_ai_current_sequence_id'] = $sequence_id;
+
 		try {
 			$nonce = $request->get_header( 'X-WP-Nonce' );
 			if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
@@ -210,17 +216,35 @@ class FE_Search_AI_Chat_Handler {
 			 * to the user's input before it is used for context retrieval or sent to the AI.
 			 * This is the final opportunity to filter or modify the question.
 			 *
-			 * @since 1.0.0
+			 * @since 0.9.0
 			 *
 			 * @param string $question The sanitized user's question.
 			 */
-			$question = apply_filters( 'fe_search_ai_filter_user_question', $question );
+			$question = apply_filters( 'fe_search_ai_preprocess_user_question', $question );
 			if ( empty( $question ) ) {
 				return;
 			}
 
+			// Log processing start
+			\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
+				'INFO',
+				'Chat processing started',
+				[
+					'question_length' => strlen( $question ),
+					'provider'        => $provider,
+				],
+				$sequence_id
+			);
+
 			// Context retrieval (keyword/vector search)
 			try {
+				\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
+					'INFO',
+					'Starting context retrieval',
+					[],
+					$sequence_id
+				);
+
 				$similar_chunks = $this->sync_handler->find_similar_chunks( $question );
 
 				/**
@@ -231,28 +255,54 @@ class FE_Search_AI_Chat_Handler {
 				 * advanced manipulation of the context, such as re-ranking, filtering,
 				 * or adding external data.
 				 *
-				 * @since 1.0.0
+				 * @since 0.9.0
 				 *
 				 * @param array  $similar_chunks An array of the retrieved chunk items.
 				 * @param string $question       The original user's question.
 				 */
-				$similar_chunks = apply_filters( 'fe_search_ai_retrieved_chunks', $similar_chunks, $question );
+				// Make sequence ID available to filter callbacks
+				$GLOBALS['fe_search_ai_current_sequence_id'] = $sequence_id;
+				$similar_chunks                              = apply_filters( 'fe_search_ai_retrieved_chunks', $similar_chunks, $question );
+
+				\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
+					'INFO',
+					'Context retrieval completed',
+					[
+						'chunks_found' => count( $similar_chunks ),
+					],
+					$sequence_id
+				);
 
 			} catch ( \Throwable $t ) {
 				// Fail safely: log the error and continue without context.
-				\FESearchAI\Core\FE_Search_AI_Logger::log(
+				\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
 					'ERROR',
 					'Context retrieval failed in stream_handler.',
 					[
 						'error_message' => $t->getMessage(),
 						'file'          => $t->getFile(),
 						'line'          => $t->getLine(),
-					]
+					],
+					$sequence_id
 				);
 				$similar_chunks = [];
 			}
 
 			$context_found = ! empty( $similar_chunks );
+			$advanced      = isset( $this->options['advanced'] ) && is_array( $this->options['advanced'] ) ? $this->options['advanced'] : [];
+			$debug_mode    = ! empty( $advanced['debug_mode'] );
+			if ( $debug_mode ) {
+				\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
+					'DEBUG',
+					'Context retrieval completed in stream_handler.',
+					[
+						'context_found' => (bool) $context_found,
+						'candidates'    => is_array( $similar_chunks ) ? count( $similar_chunks ) : 0,
+						'provider'      => $provider,
+					],
+					$sequence_id
+				);
+			}
 
 			echo 'data: ' . json_encode(
 				[
@@ -264,9 +314,49 @@ class FE_Search_AI_Chat_Handler {
 			) . "\n\n";
 			flush();
 
-			$this->stream_chat_completion( $question, $similar_chunks, $provider, $history );
+			// Check if structured output is enabled.
+			$custom_prompts    = get_option( 'fe_search_ai_custom_prompts', [] );
+			$structured_output = ! empty( $custom_prompts['structured_output'] );
+
+			// Log AI processing start
+			\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
+				'INFO',
+				'Starting AI chat completion',
+				[
+					'provider'          => $provider,
+					'has_context'       => $context_found,
+					'structured_output' => $structured_output,
+				],
+				$sequence_id
+			);
+
+			if ( $structured_output && 'openai' === $provider ) {
+				// Use non-streaming structured output for OpenAI.
+				$this->structured_chat_completion_for_openai( $question, $similar_chunks, $history, $provider, $sequence_id );
+			} else {
+				// Use standard streaming.
+				$this->stream_chat_completion( $question, $similar_chunks, $provider, $history, $sequence_id );
+			}
+
+			// Log processing completion
+			\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
+				'INFO',
+				'Chat processing completed successfully',
+				[],
+				$sequence_id
+			);
 
 		} catch ( \Exception $e ) {
+			// Log error
+			\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
+				'ERROR',
+				'Chat processing failed',
+				[
+					'error_message' => $e->getMessage(),
+				],
+				$sequence_id
+			);
+
 			echo 'data: ' . json_encode( [ 'error' => 'An error occurred during processing.' ] ) . "\n\n";
 			flush();
 		} finally {
@@ -281,14 +371,14 @@ class FE_Search_AI_Chat_Handler {
 	 * (OpenAI, Google, Anthropic, etc.) based on the provider parameter. It allows
 	 * Pro add-ons to override default handlers via action hooks.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @param string $question       User's question text.
 	 * @param array  $context_chunks Relevant context chunks for the AI.
 	 * @param array  $history        Chat history for conversation context.
 	 * @param string $provider       The AI provider to use.
 	 * @return void Outputs streamed response directly.
 	 */
-	public function stream_chat_completion( $question, $context_chunks, $provider, $history = [] ) {
+	public function stream_chat_completion( $question, $context_chunks, $provider, $history = [], $sequence_id = '' ) {
 
 		/**
 		 * Fires before the default stream completion handlers.
@@ -303,14 +393,14 @@ class FE_Search_AI_Chat_Handler {
 
 		switch ( $provider ) {
 			case 'google':
-				$this->stream_completion_for_gemini( $question, $context_chunks, $history, $provider );
+				$this->stream_completion_for_gemini( $question, $context_chunks, $history, $provider, $sequence_id );
 				break;
 			case 'anthropic':
-				$this->stream_completion_for_claude( $question, $context_chunks, $history, $provider );
+				$this->stream_completion_for_claude( $question, $context_chunks, $history, $provider, $sequence_id );
 				break;
 			case 'openai':
 			default:
-				$this->stream_completion_for_openai( $question, $context_chunks, $history, $provider );
+				$this->stream_completion_for_openai( $question, $context_chunks, $history, $provider, $sequence_id );
 				break;
 		}
 	}
@@ -331,10 +421,11 @@ class FE_Search_AI_Chat_Handler {
 	 * @param array  $context_chunks  Retrieved context chunks to be added to the prompt.
 	 * @param array  $history         Prior chat messages used to maintain conversation state.
 	 * @param string $provider        The provider slug ('openai' or 'openai_compatible').
+	 * @param string $sequence_id     Unique identifier for the processing sequence.
 	 *
 	 * @return void Outputs streamed SSE responses directly and terminates.
 	 */
-	private function stream_completion_for_openai( $question, $context_chunks, $history, $provider ) {
+	private function stream_completion_for_openai( $question, $context_chunks, $history, $provider, $sequence_id = '' ) {
 		// Start the timer for System Log.
 		$start_time = microtime( true );
 
@@ -366,11 +457,11 @@ class FE_Search_AI_Chat_Handler {
 			$api_url = 'https://api.openai.com/v1/chat/completions';
 			// Admin UI stores the key at provider.openai_key.
 			$encrypted_key = $this->options['provider']['openai_key'] ?? '';
-			$api_key       = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
-		}
 
+			$api_key = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
+		}
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			\FESearchAI\Core\FE_Search_AI_Logger::log(
+			\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
 				'INFO',
 				'Chat completion endpoint resolved.',
 				[
@@ -378,7 +469,8 @@ class FE_Search_AI_Chat_Handler {
 					'endpoint' => $api_url,
 					'has_key'  => ! empty( $api_key ),
 					'is_pro'   => (bool) $this->is_license_active,
-				]
+				],
+				$sequence_id
 			);
 		}
 
@@ -411,8 +503,6 @@ class FE_Search_AI_Chat_Handler {
 			}
 		}
 
-		// DEBUG: (removed misplaced Gemini debug block from OpenAI handler)
-
 		$model = 'gpt-4o-mini'; // Default
 		if ( $this->is_license_active ) {
 			if ( 'openai_compatible' === $provider ) {
@@ -424,31 +514,42 @@ class FE_Search_AI_Chat_Handler {
 		}
 
 		// Log the start of the API call.
-		\FESearchAI\Core\FE_Search_AI_Logger::log(
+		\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
 			'INFO',
 			'Chat completion stream started.',
 			[
 				'provider' => $provider,
 				'model'    => $model,
-			]
+			],
+			$sequence_id
 		);
 
 		$messages = $this->build_prompt_messages(
 			$question,
 			$context_chunks,
 			$history,
-			false
+			false,
+			$provider,
+			$sequence_id
 		);
 
-		// DEBUG: Log the final system prompt that will be sent to the AI
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			// Clear any cached prompts for debugging
+			// Clear any cached prompts for debugging.
 			wp_cache_delete( 'fe_search_ai_system_prompt', 'options' );
 
 			$system_prompt_data = array_shift( $messages );
 			$system_prompt_text = $system_prompt_data['content'];
-			error_log( 'FE AI Search - System prompt for ' . $provider . ': ' . $system_prompt_text );
-			// Put the system prompt back
+			\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
+				'DEBUG',
+				'System prompt prepared for chat completion.',
+				[
+					'provider'             => $provider,
+					'system_prompt_length' => strlen( (string) $system_prompt_text ),
+					'system_prompt_hash'   => md5( (string) $system_prompt_text ),
+					'message_cnt'          => is_array( $messages ) ? count( $messages ) : 0,
+				],
+				$sequence_id
+			);
 			array_unshift( $messages, $system_prompt_data );
 		}
 
@@ -524,7 +625,7 @@ class FE_Search_AI_Chat_Handler {
 				}
 			}
 
-			$content = apply_filters( 'fe_search_ai_filter_model_response', $content );
+			$content = apply_filters( 'fe_search_ai_preprocess_model_response', $content );
 
 			// Ensure UTF-8 encoding before output
 			if ( ! mb_check_encoding( $content, 'UTF-8' ) ) {
@@ -539,48 +640,61 @@ class FE_Search_AI_Chat_Handler {
 
 		$ch = curl_init();
 		curl_setopt( $ch, CURLOPT_URL, $api_url );
-		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
+		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, false );
 		curl_setopt( $ch, CURLOPT_POST, true );
 		curl_setopt( $ch, CURLOPT_POSTFIELDS, json_encode( $body ) );
-		curl_setopt( $ch, CURLOPT_HTTPHEADER, [ 'Content-Type: application/json', 'Authorization: Bearer ' . $api_key ] );
+		curl_setopt( $ch, CURLOPT_CONNECTTIMEOUT, 20 );
+		curl_setopt( $ch, CURLOPT_TIMEOUT, 120 );
+		curl_setopt( $ch, CURLOPT_HTTPHEADER, [ 'Content-Type: application/json', 'Accept: text/event-stream', 'Authorization: Bearer ' . $api_key ] );
+		$received_text = false;
 
 		// The WRITEFUNCTION callback processes the stream chunks as they arrive.
 		curl_setopt(
 			$ch,
 			CURLOPT_WRITEFUNCTION,
-			function ( $curl, $data ) {
+			function ( $curl, $data ) use ( &$received_text ) {
+				static $stream_buffer = '';
+				$stream_buffer       .= $data;
 
-				$lines = explode( "\n", $data );
+				$lines         = explode( "\n", $stream_buffer );
+				$stream_buffer = array_pop( $lines );
 
 				foreach ( $lines as $line ) {
-					if ( strpos( $line, 'data: ' ) === 0 ) {
+					$line = trim( $line );
+					if ( '' === $line ) {
+						continue;
+					}
+					if ( strpos( $line, 'data: ' ) !== 0 ) {
+						continue;
+					}
 
-						$json_data = substr( $line, 6 );
-						if ( trim( $json_data ) === '[DONE]' ) {
-							continue;
+					$json_data = substr( $line, 6 );
+					if ( '[DONE]' === trim( $json_data ) ) {
+						continue;
+					}
+					$chunk = json_decode( $json_data, true );
+					if ( ! is_array( $chunk ) ) {
+						continue;
+					}
+
+					if ( isset( $chunk['choices'][0]['delta']['content'] ) ) {
+						/**
+						 * Filters a chunk of the AI's response text right before it is sent to the user.
+						 *
+						 * This hook allows for real-time censorship or modification of the AI's output
+						 * as it is being streamed.
+						 *
+						 * @since 0.9.0
+						 *
+						 * @param string $content The text chunk generated by the AI model.
+						 */
+						$content       = apply_filters( 'fe_search_ai_preprocess_model_response', $chunk['choices'][0]['delta']['content'] );
+						$received_text = true;
+						echo 'data: ' . json_encode( [ 'text' => $content ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+						if ( ob_get_level() > 0 ) {
+							ob_flush();
 						}
-						$chunk = json_decode( $json_data, true );
-
-						if ( isset( $chunk['choices'][0]['delta']['content'] ) ) {
-
-							/**
-							 * Filters a chunk of the AI's response text right before it is sent to the user.
-							 *
-							 * This hook allows for real-time censorship or modification of the AI's output
-							 * as it is being streamed.
-							 *
-							 * @since 1.0.0
-							 *
-							 * @param string $content The text chunk generated by the AI model.
-							 */
-							$content = apply_filters( 'fe_search_ai_filter_model_response', $chunk['choices'][0]['delta']['content'] );
-
-							echo 'data: ' . json_encode( [ 'text' => $content ], JSON_UNESCAPED_UNICODE ) . "\n\n";
-							if ( ob_get_level() > 0 ) {
-								ob_flush();
-							}
-							flush();
-						}
+						flush();
 					}
 				}
 				return strlen( $data );
@@ -588,13 +702,65 @@ class FE_Search_AI_Chat_Handler {
 		);
 
 		// Execute the request.
-		curl_exec( $ch );
+		echo 'data: ' . wp_json_encode( [ 'debug' => [ 'step' => 'before_curl_exec' ] ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+		flush();
+		$result = curl_exec( $ch );
+
+		$http_status  = (int) curl_getinfo( $ch, CURLINFO_HTTP_CODE );
+		$curl_errno   = curl_errno( $ch );
+		$curl_error   = curl_error( $ch );
+		$had_response = ( false !== $result );
+
+		// Debug: Send diagnostics regardless of error conditions
+		echo 'data: ' . wp_json_encode(
+			[
+				'debug' => [
+					'http_status'    => $http_status,
+					'curl_errno'     => $curl_errno,
+					'curl_error'     => $curl_error,
+					'had_response'   => (bool) $had_response,
+					'received_text'  => (bool) $received_text,
+					'provider'       => $provider,
+					'openai_api_url' => $api_url,
+				],
+			],
+			JSON_UNESCAPED_UNICODE
+		) . "\n\n";
+		flush();
+
+		if ( 200 !== $http_status || $curl_errno || ! $received_text ) {
+			$public_message = __( 'Error: Failed to receive a response from the AI provider.', 'fe-search-ai' );
+			if ( 0 !== $http_status ) {
+				$public_message .= ' (HTTP ' . (int) $http_status . ')';
+			}
+			if ( ! empty( $curl_error ) ) {
+				$public_message .= ' ' . $curl_error;
+			}
+			echo 'data: ' . wp_json_encode( [ 'text' => $public_message ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+			flush();
+
+			echo 'data: ' . wp_json_encode(
+				[
+					'error' => [
+						'http_status'    => $http_status,
+						'curl_errno'     => $curl_errno,
+						'curl_error'     => $curl_error,
+						'had_response'   => (bool) $had_response,
+						'received_text'  => (bool) $received_text,
+						'provider'       => $provider,
+						'openai_api_url' => $api_url,
+					],
+				],
+				JSON_UNESCAPED_UNICODE
+			) . "\n\n";
+			flush();
+		}
+
+		echo "data: [DONE]\n\n";
+		flush();
 
 		// Calculate the total duration.
 		$duration = round( ( microtime( true ) - $start_time ) * 1000 );
-
-		// Retrieve HTTP status code for additional diagnostics (e.g., rate limit).
-		$http_status = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
 
 		// If the API responded with a rate limit status, notify the site administrator.
 		if ( 429 === (int) $http_status ) {
@@ -624,15 +790,15 @@ class FE_Search_AI_Chat_Handler {
 			);
 		} else {
 			// INFO: Log the successful completion of the stream.
-			\FESearchAI\Core\FE_Search_AI_Logger::log(
+			\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
 				'INFO',
 				'Chat completion stream finished successfully.',
 				[
 					'provider'    => $provider,
 					'model'       => $model,
-					'duration_ms' => $duration,
-					'http_status' => $http_status,
-				]
+					'tokens_used' => $tokens_used ?? 0,
+				],
+				$sequence_id
 			);
 		}
 
@@ -670,6 +836,265 @@ class FE_Search_AI_Chat_Handler {
 	}
 
 	/**
+	 * Performs non-streaming chat completion with structured output for OpenAI.
+	 *
+	 * When structured output is enabled, this method requests a JSON response
+	 * from the OpenAI API, parses it, and extracts the answer_markdown field.
+	 * The extracted text is then sent to the client via SSE for smooth display.
+	 * On failure, it falls back to standard streaming.
+	 *
+	 * @since 0.9.0
+	 *
+	 * @param string $question        The end user's original question.
+	 * @param array  $context_chunks  Retrieved context chunks to be added to the prompt.
+	 * @param array  $history         Prior chat messages used to maintain conversation state.
+	 * @param string $provider        The provider slug ('openai' or 'openai_compatible').
+	 * @param string $sequence_id     Unique identifier for the processing sequence.
+	 *
+	 * @return void Outputs SSE responses with the extracted answer and terminates.
+	 */
+	private function structured_chat_completion_for_openai( $question, $context_chunks, $history, $provider, $sequence_id = '' ) {
+		// Start the timer for System Log.
+		$start_time = microtime( true );
+
+		if ( 'openai_compatible' === $provider ) {
+			$api_url = $this->options['provider']['openai_compatible_endpoint'] ?? '';
+			$api_key = '';
+
+			$encrypted_key = $this->options['provider']['openai_compatible_key'] ?? '';
+			if ( is_string( $encrypted_key ) && '' !== $encrypted_key ) {
+				$api_key = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
+			}
+
+			if ( empty( $api_url ) || empty( $api_key ) ) {
+				$pro_settings      = get_option( 'fe_search_ai_pro_settings', [] );
+				$provider_settings = is_array( $pro_settings ) ? ( $pro_settings['provider'] ?? [] ) : [];
+
+				if ( empty( $api_url ) && is_array( $provider_settings ) ) {
+					$api_url = $provider_settings['openai_compatible_endpoint'] ?? $api_url;
+				}
+
+				if ( empty( $api_key ) && is_array( $provider_settings ) ) {
+					$pro_encrypted_key = $provider_settings['openai_compatible_api_key'] ?? '';
+					if ( is_string( $pro_encrypted_key ) && '' !== $pro_encrypted_key ) {
+						$api_key = FE_Search_AI_Encryption_Helper::decrypt( $pro_encrypted_key );
+					}
+				}
+			}
+		} else {
+			$api_url = 'https://api.openai.com/v1/chat/completions';
+			// Admin UI stores the key at provider.openai_key.
+			$encrypted_key = $this->options['provider']['openai_key'] ?? '';
+
+			$api_key = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
+		}
+
+		if ( empty( $api_key ) || empty( $api_url ) ) {
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
+				'ERROR',
+				'Structured output failed: API Key or Endpoint URL is not set.',
+				[ 'provider' => $provider ]
+			);
+
+			// Fallback to standard streaming.
+			$this->stream_chat_completion( $question, $context_chunks, $provider, $history, $sequence_id );
+			return;
+		}
+
+		$model = 'gpt-4o-mini'; // Default.
+		if ( $this->is_license_active ) {
+			if ( 'openai_compatible' === $provider ) {
+				$model = $this->options['model']['openai_compatible'] ?? $model;
+			} else {
+				$model = $this->options['model']['openai'] ?? [ 'type' => $model ];
+				$model = ( isset( $model['type'] ) && 'custom' === $model['type'] ) ? $model['custom'] : $model['type'];
+			}
+		}
+
+		// Log the start of the API call.
+		\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
+			'INFO',
+			'Structured output chat completion started.',
+			[
+				'provider' => $provider,
+				'model'    => $model,
+			],
+			$sequence_id
+		);
+
+		$messages = $this->build_prompt_messages(
+			$question,
+			$context_chunks,
+			$history,
+			false,
+			$provider,
+			$sequence_id
+		);
+
+		// Add instruction for structured output references.
+		if ( ! empty( $messages ) && isset( $messages[0]['role'] ) && 'system' === $messages[0]['role'] ) {
+			$messages[0]['content'] .= "\n\n## Structured Output Instructions\n" .
+				"When providing your answer, you MUST include a 'references' field in your JSON response containing the URLs of the sources you actually referenced from the Search Results. " .
+				"Only include URLs that you used to answer the user's question. " .
+				'Do not include URLs that were not relevant to your answer.';
+		}
+
+		// Define JSON schema for structured output.
+		$json_schema = [
+			'type'                 => 'object',
+			'properties'           => [
+				'answer_markdown' => [
+					'type'        => 'string',
+					'description' => 'The answer in Markdown format.',
+				],
+				'references'      => [
+					'type'        => 'array',
+					'description' => 'List of URLs referenced in the answer.',
+					'items'       => [
+						'type'        => 'string',
+						'description' => 'A URL from the search results.',
+					],
+				],
+			],
+			'required'             => [ 'answer_markdown', 'references' ],
+			'additionalProperties' => false,
+		];
+
+		$body = [
+			'model'           => $model,
+			'messages'        => $messages,
+			'stream'          => false,
+			'temperature'     => 0.1,
+			'response_format' => [
+				'type'        => 'json_schema',
+				'json_schema' => [
+					'name'   => 'structured_answer',
+					'strict' => true,
+					'schema' => $json_schema,
+				],
+			],
+		];
+
+		// Extend timeout for non-streaming requests.
+		set_time_limit( 300 );
+
+		$response = wp_remote_post(
+			$api_url,
+			[
+				'headers' => [
+					'Content-Type'  => 'application/json',
+					'Authorization' => 'Bearer ' . $api_key,
+				],
+				'body'    => wp_json_encode( $body ),
+				'timeout' => 300,
+			]
+		);
+
+		$duration      = round( ( microtime( true ) - $start_time ) * 1000 );
+		$http_status   = is_wp_error( $response ) ? 0 : (int) wp_remote_retrieve_response_code( $response );
+		$response_body = is_wp_error( $response ) ? null : json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( is_wp_error( $response ) ) {
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
+				'ERROR',
+				'Structured output failed (WP HTTP Error). Falling back to streaming.',
+				[
+					'provider'      => $provider,
+					'model'         => $model,
+					'error_message' => $response->get_error_message(),
+					'duration_ms'   => $duration,
+				]
+			);
+
+			// Fallback to standard streaming.
+			$this->stream_chat_completion( $question, $context_chunks, $provider, $history, $sequence_id );
+			return;
+		}
+
+		if ( 200 !== $http_status ) {
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
+				'ERROR',
+				'Structured output failed (HTTP Error). Falling back to streaming.',
+				[
+					'provider'    => $provider,
+					'model'       => $model,
+					'http_status' => $http_status,
+					'duration_ms' => $duration,
+				]
+			);
+
+			// Fallback to standard streaming.
+			$this->stream_chat_completion( $question, $context_chunks, $provider, $history, $sequence_id );
+			return;
+		}
+
+		if ( empty( $response_body ) || ! isset( $response_body['choices'][0]['message']['content'] ) ) {
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
+				'ERROR',
+				'Structured output failed (Invalid response). Falling back to streaming.',
+				[
+					'provider'    => $provider,
+					'model'       => $model,
+					'duration_ms' => $duration,
+				]
+			);
+
+			// Fallback to standard streaming.
+			$this->stream_chat_completion( $question, $context_chunks, $provider, $history, $sequence_id );
+			return;
+		}
+
+		$content = $response_body['choices'][0]['message']['content'];
+		$parsed  = json_decode( $content, true );
+
+		if ( ! is_array( $parsed ) || ! isset( $parsed['answer_markdown'] ) ) {
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
+				'ERROR',
+				'Structured output failed (JSON parse error). Falling back to streaming.',
+				[
+					'provider'    => $provider,
+					'model'       => $model,
+					'duration_ms' => $duration,
+				]
+			);
+
+			// Fallback to standard streaming.
+			$this->stream_chat_completion( $question, $context_chunks, $provider, $history, $sequence_id );
+			return;
+		}
+
+		$answer_text = $parsed['answer_markdown'];
+		$references  = $parsed['references'] ?? [];
+
+		// Ensure UTF-8 encoding.
+		if ( ! mb_check_encoding( $answer_text, 'UTF-8' ) ) {
+			$answer_text = mb_convert_encoding( $answer_text, 'UTF-8', 'UTF-8' );
+		}
+
+		// Send the answer via SSE for smooth display.
+		echo 'data: ' . json_encode( [ 'text' => $answer_text ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+
+		// Send references if available.
+		if ( ! empty( $references ) && is_array( $references ) ) {
+			echo 'data: ' . json_encode( [ 'references' => $references ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+		}
+
+		echo "data: [DONE]\n\n";
+		flush();
+
+		\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
+			'INFO',
+			'Structured output chat completed successfully.',
+			[
+				'provider'    => $provider,
+				'model'       => $model,
+				'duration_ms' => $duration,
+			],
+			$sequence_id
+		);
+	}
+
+	/**
 	 * Streams chat completions from the Gemini API.
 	 *
 	 * Resolves the Gemini model and endpoint based on the current settings
@@ -685,11 +1110,15 @@ class FE_Search_AI_Chat_Handler {
 	 * @param array  $context_chunks  Retrieved context chunks to be added to the prompt.
 	 * @param array  $history         Prior chat messages used to maintain conversation state.
 	 * @param string $provider        The provider slug for Gemini (e.g. 'google').
+	 * @param string $sequence_id     Unique identifier for the processing sequence.
 	 *
 	 * @return void Outputs streamed SSE responses directly and terminates.
 	 */
-	private function stream_completion_for_gemini( $question, $context_chunks, $history, $provider ) {
+	private function stream_completion_for_gemini( $question, $context_chunks, $history, $provider, $sequence_id = '' ) {
 		$start_time = microtime( true );
+
+		echo 'data: ' . wp_json_encode( [ 'debug' => [ 'step' => 'inside_stream_completion_for_gemini', 'provider' => $provider ] ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+		flush();
 
 		// DEBUG: Basic Gemini state for troubleshooting.
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -732,27 +1161,40 @@ class FE_Search_AI_Chat_Handler {
 		}
 
 		// INFO: Log the start of the API call.
-		\FESearchAI\Core\FE_Search_AI_Logger::log(
+		\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
 			'INFO',
 			'Chat completion stream started.',
 			[
 				'provider' => $provider,
 				'model'    => $model,
-			]
+			],
+			$sequence_id
 		);
 
 		$messages = self::build_prompt_messages(
 			$question,
 			$context_chunks,
 			$history,
-			false
+			false,
+			$provider,
+			$sequence_id
 		);
 
 		// DEBUG: Log the final system prompt that will be sent to the AI
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 			$system_prompt_data = array_shift( $messages );
 			$system_prompt_text = $system_prompt_data['content'];
-			error_log( 'FE AI Search - System prompt for ' . $provider . ': ' . $system_prompt_text );
+			\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
+				'DEBUG',
+				'System prompt prepared for chat completion.',
+				[
+					'provider'             => $provider,
+					'system_prompt_length' => strlen( (string) $system_prompt_text ),
+					'system_prompt_hash'   => md5( (string) $system_prompt_text ),
+					'message_cnt'          => is_array( $messages ) ? count( $messages ) : 0,
+				],
+				$sequence_id
+			);
 			// Put the system prompt back
 			array_unshift( $messages, $system_prompt_data );
 		}
@@ -762,30 +1204,27 @@ class FE_Search_AI_Chat_Handler {
 		// - Context chunks: each summarized as permalink + first ~80 chars of content
 		// - Question: original user question (without embedded Site Information)
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			$messages_copy     = $messages;
-			$system_full       = '';
-			$context_summaries = [];
+			$messages_copy = $messages;
+			$system_length = 0;
+			$system_hash   = '';
 			if ( ! empty( $messages_copy ) && isset( $messages_copy[0]['role'] ) && 'system' === $messages_copy[0]['role'] ) {
-				$system_full = (string) ( $messages_copy[0]['content'] ?? '' );
+				$system_text   = (string) ( $messages_copy[0]['content'] ?? '' );
+				$system_length = strlen( $system_text );
+				$system_hash   = md5( $system_text );
 			}
-			if ( is_array( $context_chunks ) && ! empty( $context_chunks ) ) {
-				foreach ( $context_chunks as $idx => $chunk ) {
-					// Limit the number of logged chunks to avoid excessive log size.
-					if ( $idx >= 10 ) {
-						break;
-					}
-					$context_summaries[] = [
-						'permalink' => $chunk['permalink'] ?? '',
-						'head'      => mb_substr( (string) ( $chunk['content_chunk'] ?? '' ), 0, 80, 'UTF-8' ),
-					];
-				}
-			}
-			$debug_payload = [
-				'system'            => $system_full,
-				'question'          => $question,
-				'context_summaries' => $context_summaries,
-				'message_cnt'       => count( $messages_copy ),
-			];
+			\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
+				'DEBUG',
+				'Prompt payload prepared for provider request.',
+				[
+					'provider'             => $provider,
+					'message_cnt'          => is_array( $messages_copy ) ? count( $messages_copy ) : 0,
+					'question_length'      => strlen( (string) $question ),
+					'system_prompt_length' => $system_length,
+					'system_prompt_hash'   => $system_hash,
+					'context_chunk_count'  => is_array( $context_chunks ) ? count( $context_chunks ) : 0,
+				],
+				$sequence_id
+			);
 		}
 
 		$system_prompt_data = array_shift( $messages );
@@ -852,11 +1291,11 @@ class FE_Search_AI_Chat_Handler {
 							 * This hook allows for real-time censorship or modification of the AI's output
 							 * as it is being streamed.
 							 *
-							 * @since 1.0.0
+							 * @since 0.9.0
 							 *
 							 * @param string $content The text chunk generated by the AI model.
 							 */
-							$content = apply_filters( 'fe_search_ai_filter_model_response', $content );
+							$content = apply_filters( 'fe_search_ai_preprocess_model_response', $content );
 
 							echo 'data: ' . json_encode( [ 'text' => $content ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 							if ( ob_get_level() > 0 ) {
@@ -921,10 +1360,11 @@ class FE_Search_AI_Chat_Handler {
 	 * @param array  $context_chunks  Retrieved context chunks to be added to the prompt.
 	 * @param array  $history         Prior chat messages used to maintain conversation state.
 	 * @param string $provider        The provider slug for Claude (e.g. 'anthropic').
+	 * @param string $sequence_id     Unique identifier for the processing sequence.
 	 *
 	 * @return void Outputs streamed SSE responses directly and terminates.
 	 */
-	private function stream_completion_for_claude( $question, $context_chunks, $history, $provider ) {
+	private function stream_completion_for_claude( $question, $context_chunks, $history, $provider, $sequence_id = '' ) {
 		// Start the timer.
 		$start_time = microtime( true );
 
@@ -953,25 +1393,38 @@ class FE_Search_AI_Chat_Handler {
 		}
 
 		// INFO: Log the start of the API call.
-		\FESearchAI\Core\FE_Search_AI_Logger::log(
+		\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
 			'INFO',
 			'Chat completion stream started.',
 			[
 				'provider' => $provider,
 				'model'    => $model,
-			]
+			],
+			$sequence_id
 		);
 
 		$messages = self::build_prompt_messages(
 			$question,
 			$context_chunks,
 			$history,
-			true  // This separates the system prompt for Claude.
+			true,
+			$provider,
+			$sequence_id
 		);
 
 		// DEBUG: Log the final system prompt that will be sent to the AI
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( 'FE AI Search - System prompt for ' . $provider . ': ' . $messages['system'] );
+			\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
+				'DEBUG',
+				'System prompt prepared for chat completion.',
+				[
+					'provider'             => $provider,
+					'system_prompt_length' => strlen( (string) ( $messages['system'] ?? '' ) ),
+					'system_prompt_hash'   => md5( (string) ( $messages['system'] ?? '' ) ),
+					'message_cnt'          => is_array( $messages['messages'] ?? null ) ? count( $messages['messages'] ) : 0,
+				],
+				$sequence_id
+			);
 		}
 
 		$body = [
@@ -1022,11 +1475,11 @@ class FE_Search_AI_Chat_Handler {
 							 * This hook allows for real-time censorship or modification of the AI's output
 							 * as it is being streamed.
 							 *
-							 * @since 1.0.0
+							 * @since 0.9.0
 							 *
 							 * @param string $content The text chunk generated by the AI model.
 							 */
-							$content = apply_filters( 'fe_search_ai_filter_model_response', $content );
+							$content = apply_filters( 'fe_search_ai_preprocess_model_response', $content );
 
 							echo 'data: ' . json_encode( [ 'text' => $content ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 
@@ -1087,14 +1540,12 @@ class FE_Search_AI_Chat_Handler {
 	 * @param array  $context_chunks Retrieved context chunks to be injected into the prompt.
 	 * @param array  $history        Prior conversation history messages.
 	 * @param bool   $for_claude     Whether to format messages for Claude's API shape.
-	 *
+	 * @param string $provider       The provider slug for prompt selection and logging.
+	 * @param string $sequence_id    Unique identifier for the processing sequence.
 	 * @return array The messages payload ready to be sent to the chat API.
 	 */
-	public function build_prompt_messages( $question, $context_chunks, $history, $for_claude = false ) {
+	public function build_prompt_messages( $question, $context_chunks, $history, $for_claude = false, $provider = 'openai', $sequence_id = '' ) {
 		$context_str = '';
-
-		// Provider slug from provider settings.
-		$provider = $this->options['provider']['chat'] ?? 'openai';
 
 		// Get the default prompt
 		$system_prompt = self::get_default_system_prompt();
@@ -1170,7 +1621,7 @@ class FE_Search_AI_Chat_Handler {
 		 * This hook allows developers to programmatically modify the system prompt
 		 * to change the AI's behavior, add rules, or tailor its personality.
 		 *
-		 * @since 1.0.0
+		 * @since 0.9.0
 		 *
 		 * @param string $system_prompt The system prompt string to be sent to the AI model.
 		 * @param string $provider      The slug of the current AI provider (e.g., 'openai', 'google').
@@ -1240,27 +1691,35 @@ class FE_Search_AI_Chat_Handler {
 				}
 
 				// Extract only the content part, removing metadata that's already included above
-				$content_only = $chunk['content_chunk'];
+				$summary_text = isset( $chunk['summary_text'] ) ? (string) $chunk['summary_text'] : '';
+				$content_only = '' !== trim( $summary_text )
+					? $summary_text
+					: ( isset( $chunk['content_chunk'] ) ? (string) $chunk['content_chunk'] : '' );
 
-				// Remove metadata lines from content if they exist
-				$content_lines      = explode( "\n", $content_only );
-				$clean_content      = [];
-				$in_content_section = false;
+				$clean_content = [];
+				if ( false !== strpos( $content_only, "\nContent:\n" ) || 0 === strpos( $content_only, 'Content:' ) ) {
+					// Remove metadata lines from content if they exist
+					$content_lines      = explode( "\n", $content_only );
+					$in_content_section = false;
 
-				foreach ( $content_lines as $line ) {
-					// Skip metadata lines that are already handled above
-					if ( preg_match( '/^(ID:|Title:|URL:|Date:|Metadata:)/', $line ) ) {
-						$in_content_section = false;
-						continue;
-					}
+					foreach ( $content_lines as $line ) {
+						// Skip metadata lines that are already handled above
+						if ( preg_match( '/^(ID:|Title:|URL:|Date:|Metadata:)/', $line ) ) {
+							$in_content_section = false;
+							continue;
+						}
 
-					// Start collecting content after "Content:" line
-					if ( $line === 'Content:' || $in_content_section ) {
-						$in_content_section = true;
-						if ( $line !== 'Content:' ) {
-							$clean_content[] = $line;
+						// Start collecting content after "Content:" line
+						if ( $line === 'Content:' || $in_content_section ) {
+							$in_content_section = true;
+							if ( $line !== 'Content:' ) {
+								$clean_content[] = $line;
+							}
 						}
 					}
+				} else {
+					// summary_text is typically plain text; use it as-is.
+					$clean_content = [ trim( $content_only ) ];
 				}
 
 				$context_str .= "Content:\n" . implode( "\n", $clean_content ) . "\n";
@@ -1291,7 +1750,7 @@ class FE_Search_AI_Chat_Handler {
 		 * This hook allows you to access and modify the complete system prompt
 		 * with all placeholders (site_name, context_content, etc.) already expanded.
 		 *
-		 * @since 1.0.0
+		 * @since 0.9.0
 		 *
 		 * @param string $system_prompt The complete system prompt with all placeholders replaced.
 		 * @param string $provider      The AI provider being used (openai, google, anthropic).
@@ -1300,11 +1759,16 @@ class FE_Search_AI_Chat_Handler {
 
 		// Debug: Log final system prompt after all replacements
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( 'FE AI Search - Final system prompt after replacements: ' . $system_prompt );
-
-			// Debug: Save complete prompt to file for inspection
-			$debug_file = __DIR__ . '/../../debug_prompt.txt';
-			file_put_contents( $debug_file, "=== System Prompt for {$provider} ===\n\n" . $system_prompt );
+			\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
+				'DEBUG',
+				'Final system prompt prepared after replacements.',
+				[
+					'provider'             => $provider,
+					'system_prompt_length' => strlen( (string) $system_prompt ),
+					'system_prompt_hash'   => md5( (string) $system_prompt ),
+				],
+				$sequence_id
+			);
 		}
 
 		/**
@@ -1328,8 +1792,17 @@ class FE_Search_AI_Chat_Handler {
 
 		// Debug: Log the context being sent to AI
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( 'FE AI Search - Context sent to AI: ' . $context_str );
-			error_log( 'FE AI Search - Number of context chunks: ' . count( $context_chunks ) );
+			\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
+				'DEBUG',
+				'Context prepared for provider request.',
+				[
+					'provider'            => $provider,
+					'context_length'      => strlen( (string) $context_str ),
+					'context_hash'        => md5( (string) $context_str ),
+					'context_chunk_count' => is_array( $context_chunks ) ? count( $context_chunks ) : 0,
+				],
+				$sequence_id
+			);
 		}
 
 		// Add conversation history
@@ -1407,7 +1880,7 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 	 * and the Pro version is active before proceeding. The method sanitizes input data and stores
 	 * the conversation in the custom database table.
 	 *
-	 * @since    1.0.0
+	 * @since 0.9.0
 	 * @return   void
 	 *
 	 * @uses     check_ajax_referer() Verifies the AJAX request to prevent CSRF.
@@ -1432,38 +1905,55 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 		global $wpdb;
 		$logs_table = $wpdb->prefix . 'fe_search_ai_logs';
 
-		$question = isset( $_POST['question'] ) ? sanitize_text_field( $_POST['question'] ) : '';
-		$answer   = isset( $_POST['answer'] ) ? wp_kses_post( $_POST['answer'] ) : '';
+		$question_raw = isset( $_POST['question'] ) ? sanitize_text_field( $_POST['question'] ) : '';
+		$answer_raw   = isset( $_POST['answer'] ) ? wp_kses_post( $_POST['answer'] ) : '';
 
-		// Apply personal data filter before logging, as an additional safety net.
-		$question      = $this->filter_personal_data( $question );
-		$answer        = $this->filter_personal_data( $answer );
+		$question      = $this->filter_personal_data( $question_raw );
+		$answer        = $this->filter_personal_data( $answer_raw );
+		$pii_suspected = ( $question_raw !== $question ) || ( $answer_raw !== $answer );
 		$session_id    = isset( $_POST['session_id'] ) ? sanitize_key( $_POST['session_id'] ) : '';
 		$context_found = isset( $_POST['context_found'] ) ? (bool) $_POST['context_found'] : false;
 		$question_len  = isset( $_POST['question_length'] ) ? intval( $_POST['question_length'] ) : 0;
 		$log_id        = 0;
 
-		// Check if question logging is enabled via constant or filter
-		$enable_question_logging = (
-			defined( 'FE_SEARCH_AI_LOG_QUESTIONS' ) && FE_SEARCH_AI_LOG_QUESTIONS
-		) || apply_filters( 'fe_search_ai_enable_question_logging', false );
+		$enable_question_logging = apply_filters( 'fe_search_ai_allow_conversation_log_question_text', false, $session_id );
+		$enable_answer_logging   = apply_filters( 'fe_search_ai_allow_conversation_log_answer_text', false, $session_id );
+		$allow_pii_logging       = apply_filters( 'fe_search_ai_allow_conversation_log_pii', false, $session_id );
+		if ( $pii_suspected && ! $allow_pii_logging ) {
+			$enable_question_logging = false;
+			$enable_answer_logging   = false;
+		}
 
 		// For privacy protection, do not store the full question text by default.
 		// Only create a log entry when both a session ID and an answer are available.
 		if ( ! empty( $session_id ) && ! empty( $answer ) ) {
-			// Store actual question text if logging is enabled, otherwise store length info only
 			$question_text = $enable_question_logging ? $question : sprintf( 'User question is not logged. (length: %d chars)', max( 0, $question_len ) );
+			$answer_length = strlen( wp_strip_all_tags( $answer ) );
+			$answer_text   = $enable_answer_logging ? $answer : sprintf( 'AI answer is not logged. (length: %d chars)', max( 0, $answer_length ) );
 
-			$wpdb->insert(
-				$logs_table,
-				[
-					'session_id'    => $session_id,
-					'question'      => $question_text,
-					'answer'        => $answer,
-					'context_found' => $context_found,
-					'created_at'    => current_time( 'mysql' ),
-				]
-			);
+			$log_row                  = [
+				'session_id'    => $session_id,
+				'question'      => $question_text,
+				'answer'        => $answer_text,
+				'context_found' => $context_found,
+				'created_at'    => current_time( 'mysql' ),
+			];
+			$log_row                  = apply_filters( 'fe_search_ai_conversation_log_payload', $log_row, $session_id );
+			$allowed_keys             = [
+				'session_id'    => true,
+				'question'      => true,
+				'answer'        => true,
+				'context_found' => true,
+				'created_at'    => true,
+			];
+			$log_row                  = array_intersect_key( (array) $log_row, $allowed_keys );
+			$log_row['session_id']    = $session_id;
+			$log_row['context_found'] = $context_found;
+			$log_row['created_at']    = $log_row['created_at'] ?? current_time( 'mysql' );
+			$log_row['question']      = $enable_question_logging ? (string) ( $log_row['question'] ?? '' ) : sprintf( 'User question is not logged. (length: %d chars)', max( 0, $question_len ) );
+			$log_row['answer']        = $enable_answer_logging ? (string) ( $log_row['answer'] ?? '' ) : sprintf( 'AI answer is not logged. (length: %d chars)', max( 0, $answer_length ) );
+
+			$wpdb->insert( $logs_table, $log_row );
 			$log_id = $wpdb->insert_id;
 		}
 
@@ -1476,7 +1966,7 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 	 * Records a simple INFO-level event in the {prefix}fe_search_ai_system_logs table
 	 * when the user accepts the privacy consent overlay in the frontend chat UI.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function ajax_log_consent() {
@@ -1503,7 +1993,7 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 	 * Returns logs for the given session ID including rating information so that
 	 * feedback buttons can be restored when the chat UI is reopened.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function ajax_get_session_logs() {
@@ -1536,7 +2026,7 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 	/**
 	 * AJAX handler: Stores a user feedback rating for a conversation log entry.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function ajax_rate_answer() {
@@ -1587,7 +2077,7 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 	 *
 	 * It sends a JSON response indicating success or failure.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @hook wp_ajax_fe_search_ai_test_api_key
 	 */
 	public function ajax_test_api_key() {
@@ -1694,6 +2184,24 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 					}
 					break;
 
+				case 'cohere':
+					if ( empty( $api_key ) ) {
+						$error_message = __( 'API key is missing.', 'fe-search-ai' );
+						break;
+					}
+					$response = wp_remote_get(
+						'https://api.cohere.com/v1/models',
+						[
+							'headers' => [ 'Authorization' => 'Bearer ' . $api_key ],
+						]
+					);
+					if ( ! is_wp_error( $response ) && 200 === wp_remote_retrieve_response_code( $response ) ) {
+						$is_valid = true;
+					} else {
+						$error_message = is_wp_error( $response ) ? $response->get_error_message() : __( 'Authentication failed.', 'fe-search-ai' );
+					}
+					break;
+
 				default:
 					$error_message = __( 'Unknown provider.', 'fe-search-ai' );
 			}
@@ -1784,7 +2292,7 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 		 * Developers can override or extend the default patterns by returning
 		 * a custom array of regular expressions.
 		 *
-		 * @since 1.0.0
+		 * @since 0.9.0
 		 *
 		 * @param array $patterns Default regex patterns for personal data.
 		 */
@@ -1807,7 +2315,7 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 	 * single master settings array ('fe_search_ai_settings') with the new
 	 * license key, status, and data.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @hook wp_ajax_fe_search_ai_manage_license
 	 */
 	public function ajax_manage_license() {
@@ -1861,9 +2369,12 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 			$local_status = ( 'activate' === $action ) ? 'active' : 'inactive';
 
 			if ( $product_id > 0 ) {
-				// Debug: Log encryption attempt
 				$encrypted_key = \FESearchAI\Core\FE_Search_AI_Encryption_Helper::encrypt( $license_key );
-				error_log( 'FE AI Search: License key encryption test - Original: ' . substr( $license_key, 0, 10 ) . '... Encrypted: ' . substr( $encrypted_key, 0, 20 ) . '...' );
+				\FESearchAI\Core\FE_Search_AI_Logger::log(
+					'DEBUG',
+					'License key encrypted for storage.',
+					[ 'product_id' => $product_id ]
+				);
 
 				$all_licenses['products'][ $product_id ] = [
 					'key'    => $encrypted_key,

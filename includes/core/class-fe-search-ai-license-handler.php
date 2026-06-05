@@ -7,7 +7,7 @@
  *
  * @package    fe-search-ai
  * @subpackage Core
- * @since      1.0.0
+ * @since 0.9.0
  * @license    GPL-2.0-or-later
  */
 
@@ -20,10 +20,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * The license handler class for the Pro add-on.
  *
- * @since      1.0.0
+ * @since 0.9.0
  * @package    fe-search-ai
  * @subpackage Core
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 class FE_Search_AI_License_Handler {
@@ -31,7 +31,7 @@ class FE_Search_AI_License_Handler {
 	/**
 	 * Activates a license key by sending it to the license server.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @param string $license_key The license key to activate.
 	 * @return array An array containing the result of the activation attempt.
 	 */
@@ -42,7 +42,7 @@ class FE_Search_AI_License_Handler {
 	/**
 	 * Deactivates a license key by sending it to the license server.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @param string $license_key The license key to deactivate.
 	 * @return array An array containing the result of the deactivation attempt.
 	 */
@@ -55,7 +55,7 @@ class FE_Search_AI_License_Handler {
 	 *
 	 * This is a common private method used for both activation and deactivation.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @access private
 	 * @param string $action      The action to perform ('activate' or 'deactivate').
 	 * @param string $license_key The license key.

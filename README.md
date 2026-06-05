@@ -1,184 +1,220 @@
 # FE Search AI
 
-[](https://fe-search.com/ai/)
-[](https://www.google.com/search?q=https://wordpress.org/plugins/fe-search-ai/)
-[](https://www.gnu.org/licenses/gpl-2.0.html)
+![FE Search AI Banner](docs/assets/images/img-sns-banner-100.jpg)
 
-**AI-powered, conversational search for your WordPress site.**
+[![Version](https://img.shields.io/badge/version-0.9.0-green.svg)](https://github.com/firstelementjp/fe-search-ai/releases)
+[![License](https://img.shields.io/badge/License-GPLv2%2B-blue.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
+[![WordPress](https://img.shields.io/badge/WordPress-6.6%2B-blue.svg)](https://wordpress.org/)
+[![PHP](https://img.shields.io/badge/PHP-8.1%2B-blue.svg)](https://www.php.net/)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/firstelementjp/fe-search-ai)
 
-FE Search AI replaces your standard WordPress search with a smart, conversational AI chat. It uses a RAG (Retrieval-Augmented Generation) model to provide accurate answers based _only_ on your website's content, preventing hallucinations.
+AI-powered, conversational search for WordPress. This repository contains the plugin source code, tests, and developer resources. For end-user guides and full documentation, see the links below.
 
----
+## ✨ Recent Highlights
 
-## Overview
+- Comprehensive unit test suite with 105 tests covering core functionality
+- Support for multiple AI providers (OpenAI, Google, Anthropic)
+- Advanced Japanese tokenization with TinySegmenter and optional Yahoo! MA API
+- Real-time post synchronization hooks
+- Cohere reranker integration for improved search relevance
+- Extensive filter hooks for customization
 
-This plugin indexes your posts, pages, and custom post types into a custom database table, creating vector embeddings and keyword indexes. When a user asks a question, it finds the most relevant content from your site and uses it to generate a precise, helpful answer.
+## 📖 Overview
 
-It supports multiple major AI providers and is built to be highly extensible and performant, even on standard MySQL databases.
+FE Search AI replaces standard WordPress search with a conversational AI chat using RAG (Retrieval-Augmented Generation). It indexes your content into vector embeddings and keyword indexes, providing accurate answers based only on your website's content.
 
-## Features
+This plugin is designed to be highly extensible and performant, running on standard MySQL databases without requiring external vector databases.
 
-- **Conversational AI Chat UI**: Adds a customizable chat bubble and window (via Shortcode, Block, or PHP function).
-- **Multiple AI Providers**: Supports major Generation Models (LLMs) out of the box.
-    - OpenAI (GPT-4o mini, etc.)
-    - Google (Gemini)
-    - Anthropic (Claude)
-- **Multiple Embedding Models**: Supports major vectorization models.
-    - OpenAI (`text-embedding-3-small`)
-    - Google (`text-embedding-004`)
-- **Content Synchronization**:
-    - **Manual Sync**: A dashboard to build or rebuild the entire search index.
-    - **Smart Sync**: Processes only new, updated, or deleted content to save time and API costs.
-    - **Real-time Sync**: Automatically indexes new or updated posts the moment they are published.
-- **Advanced Japanese Support**:
-    - Includes the lightweight `TinySegmenter` for Japanese word segmentation (わかち書き).
-    - Optional **Yahoo! Japanese Morphological Analysis API (MAService)** integration for higher-accuracy tokenization when an App ID is configured.
-- **Developer Friendly**: Packed with filter hooks to customize everything from the UI to the tokenizer.
+## ⚡ Quick Links
 
-## Pro & Add-Ons
+- **User Documentation**: https://firstelementjp.github.io/fe-search-ai/
+- **Installation Guide**: https://firstelementjp.github.io/fe-search-ai/#/installation
+- **Configuration**: https://firstelementjp.github.io/fe-search-ai/#/configuration
+- **Hooks Reference**: https://firstelementjp.github.io/fe-search-ai/#/hooks
+- **Releases**: https://github.com/firstelementjp/fe-search-ai/releases
+- **Issues**: https://github.com/firstelementjp/fe-search-ai/issues
 
-Supercharge your AI search with powerful add-ons:
+## ⚙️ Requirements
 
-- **[FE Search AI Pro](https://fe-search.com/ai/)**:
-    - Advanced model selection (e.g., GPT-4o, Claude 3.5 Sonnet).
-    - Support for **custom OpenAI-compatible endpoints** (for `Ollama`, `LocalAI`, etc.).
-    - Per-model custom system prompts.
-    - Advanced API cost management (rate limiting, notifications).
-    - Securely encrypted "Forbidden Words" list.
-    - **MCP Server**: Act as a tool for external AI agents.
+- WordPress 6.6 or higher
+- PHP 8.1 or higher
+- MySQL 5.7 or higher
+- OpenSSL extension
 
----
+## 🚀 Installation
 
-## Installation
+### From WordPress Admin
 
-### For General Users (Recommended)
+1. Download the latest release ZIP from the [Releases page](https://github.com/firstelementjp/fe-search-ai/releases)
+2. Go to **Plugins → Add New → Upload Plugin**
+3. Select the ZIP file and upload it
+4. Activate the plugin
 
-1.  Download the latest stable release from the [WordPress.org Plugin Directory](https://wordpress.org/plugins/fe-search-ai/).
-2.  Go to your WordPress Admin \> Plugins \> Add New \> Upload Plugin.
-3.  Upload the `.zip` file, install, and activate.
+### Manual Installation
 
-### For Developers (from GitHub)
+1. Download the latest release ZIP from the [Releases page](https://github.com/firstelementjp/fe-search-ai/releases)
+2. Extract the ZIP file
+3. Upload the `fe-search-ai/` directory to `/wp-content/plugins/`
+4. Activate the plugin from the WordPress admin screen
 
-This repository is for development. The `vendor/` directory (containing required libraries) is not included here. You must use Composer to build the plugin.
+> [!IMPORTANT]
+> Use the release ZIP file for installation, not **Source code (zip)**.
 
-1.  Clone this repository into your `wp-content/plugins/` directory:
-    ```bash
-    git clone https://github.com/firstelementjp/fe-search-ai.git
-    ```
-2.  Navigate into the plugin's directory:
-    ```bash
-    cd fe-search-ai
-    ```
-3.  Install the PHP dependencies:
-    ```bash
-    composer install --no-dev
-    ```
-4.  Activate the plugin from your WordPress Admin \> Plugins.
+## 💻 Local Development
 
----
+```bash
+git clone https://github.com/firstelementjp/fe-search-ai.git
+cd fe-search-ai
+composer install
+npm install
+```
 
-## Configuration
+After installing dependencies, place the plugin in your local WordPress environment and activate it from the admin dashboard.
 
-1.  Go to **FE Search AI \> Settings**.
-2.  **API Settings**: Enter your API keys for OpenAI, Google, or Anthropic.
-3.  **Sync Options**: Select which post types and content (titles, content, author nicknames) you want to include in the index.
-4.  **Run the Indexer**: Go to the **Sync** tab and click **"Rebuild Index"**. This is a mandatory first step to build your search index.
+## 🧪 Testing
 
-You're all set\! The chat UI will now be available on your site.
+PHPUnit for FE Search AI is designed to run in a local WordPress environment.
 
----
+### PHPUnit setup for Local by Flywheel
 
-## For Developers
+1. Copy `wp-tests-config.php.example` to `wp-tests-config.php`
+2. If you use `direnv`, copy or create a `.envrc` file for `fe-search-ai`
+3. Set `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, and `MYSQL_UNIX_PORT` for your Local site
+4. Approve the environment with `direnv allow`
+5. Run `composer install`
 
-This plugin is designed to be highly extensible.
+Example setup command:
 
-### Japanese Tokenization with Yahoo! Japanese MA API
+```bash
+cp wp-tests-config.php.example wp-tests-config.php
+```
 
-This plugin includes built-in support for Japanese tokenization. By default, it uses a lightweight PHP implementation of **TinySegmenter** to split Japanese text into words.
+Example environment values:
 
-For higher accuracy, especially on longer or more complex Japanese content, you can optionally enable the **Yahoo! Japanese Morphological Analysis API (MAService)**:
+```bash
+export DB_HOST=localhost
+export DB_NAME=local
+export DB_USER=root
+export DB_PASSWORD=root
+export MYSQL_UNIX_PORT="/Users/your-name/Library/Application Support/Local/run/xxxxxxx/mysql/mysqld.sock"
+```
 
-1.  Obtain a Yahoo! JAPAN Developer Network **Application ID (App ID)**.
-2.  Go to **FE Search AI  Settings  Advanced settings** and select **"Yahoo! Japanese MA API"** as the tokenizer.
-3.  Enter your App ID in the **Yahoo! Japanese MA API App ID** field.
+Verify the MySQL socket path from the **Database** tab in Local before running tests.
 
-When an App ID is configured and the Yahoo! tokenizer is selected, FE Search AI will call the Yahoo! MA API to perform morphological analysis and use the returned tokens as the basis for Japanese search.
+Run PHPUnit from the plugin root:
 
-For privacy, debug logs related to Yahoo! MA calls do **not** store the full user question text. Instead, only metadata such as token counts and status codes are recorded.
+```bash
+cd wp-content/plugins/fe-search-ai
+```
+
+Run all tests:
+
+```bash
+composer test
+```
+
+The equivalent direct PHPUnit command is:
+
+```bash
+./vendor/bin/phpunit
+```
+
+Run coverage:
+
+```bash
+composer run test-coverage
+```
+
+Coverage reports are generated in:
+
+```
+tests/coverage/
+```
+
+If the test database connection fails in Local, confirm that `MYSQL_UNIX_PORT` is loaded in the current shell:
+
+```bash
+printenv | grep MYSQL_UNIX_PORT
+```
+
+If `.envrc` was updated, reload it before running PHPUnit:
+
+```bash
+direnv allow
+direnv reload
+composer test
+```
+
+## 🛠️ Development Commands
+
+```bash
+# PHP/Composer
+composer test              # Run test suite
+composer phpcs             # Check coding standards
+composer phpcbf            # Fix coding standards automatically
+
+# Node.js/npm
+npm run build              # Build/minify frontend assets
+npm run lint:js            # Check JavaScript coding standards
+npm run lint:js:fix        # Fix JavaScript coding standards
+npm run dev                # Development build with source maps
+npm run watch:all          # Watch for changes and rebuild automatically
+```
+
+See `package.json` for the complete list of available npm scripts.
+
+## 📝 Developer Notes
+
+### Japanese Tokenization
+
+The plugin includes built-in support for Japanese tokenization using **TinySegmenter** (lightweight, dictionary-free). For higher accuracy, you can optionally enable the **Yahoo! Japanese Morphological Analysis API (MAService)** by configuring an App ID in the settings.
 
 ### Key Filter Hooks
 
-- **`fe_ai_search_chat_ui_html`**: Completely override the HTML of the chat UI.
-- **`fe_ai_search_system_prompt`**: Modify the base system prompt before it's sent to the AI.
-- **`fe_ai_search_tokenize_text`**: Implement your own custom tokenizer for any language.
-- **`fe_ai_search_stop_words`**: Add or remove stop words for any language.
-- **`fe_ai_search_retrieved_chunks`**: Modify the context chunks _after_ they are retrieved from the database but _before_ they are sent to the AI.
+- `fe_search_ai_chat_ui_html`: Override the chat UI HTML
+- `fe_search_ai_system_prompt`: Modify the system prompt sent to AI
+- `fe_search_ai_tokenize_text`: Implement custom tokenizers
+- `fe_search_ai_stop_words`: Add/remove stop words
+- `fe_search_ai_retrieved_chunks`: Modify retrieved context chunks
+- `fe_search_ai_rate_limit_settings`: Adjust rate limit configuration
 
----
+For detailed implementation notes, see the [hooks documentation](https://firstelementjp.github.io/fe-search-ai/#/hooks).
 
-## Development
+## 🤝 Contributing
 
-This project uses GitHub Actions for continuous integration and deployment.
+Contributions are welcome.
 
-### CI/CD Pipeline
+Basic workflow:
 
-- **Continuous Integration**: Runs on every push and pull request to `main` and `develop` branches
-    - PHP code quality checks (PHPCS) across PHP 7.4-8.2
-    - JavaScript quality checks (ESLint, Prettier)
-    - Security scanning (Composer audit, NPM audit)
-    - WordPress plugin structure validation
-    - Asset building verification
+- Fork the repository
+- Create a feature branch from develop
+- Make changes and run tests
+- Open a Pull Request against develop
 
-- **Release Pipeline**: Triggered by version tags (e.g., `v1.0.0`)
-    - Automated release zip creation
-    - GitHub release with changelog
-    - WordPress.org SVN deployment (if configured)
+Please check existing issues before opening a new feature request or bug report.
 
-### Required GitHub Secrets
+## 📄 License
 
-For the release workflow to work properly, configure these secrets in your GitHub repository:
+GPLv2+
 
-- `GITHUB_TOKEN`: Automatically provided by GitHub Actions
-- `SVN_USERNAME`: WordPress.org SVN username (optional)
-- `SVN_PASSWORD`: WordPress.org SVN password (optional)
-
-### Local Development Setup
-
-1. Clone the repository
-2. Install PHP dependencies: `composer install`
-3. Install Node.js dependencies: `npm install`
-4. Run code quality checks: `composer run phpcs`
-5. Build assets: `npm run build` (if available)
-
-### Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/new-feature`
-3. Make your changes and ensure they pass CI checks
-4. Submit a pull request to the `develop` branch
-
----
-
-## License
-
-**FE Search AI**
-Copyright (C) 2025 FirstElement, Inc.
-This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
+See LICENSE for details.
 
 ### Third-Party Libraries
 
 This plugin incorporates the following third-party libraries:
 
-- **php-stemmer**
-    - License: MIT
-    - Source: [https://github.com/wamania/php-stemmer](https://github.com/wamania/php-stemmer)
-- **TinySegmenter**
-    - License: Modified BSD
-    - Source: [https://github.com/u7aro/tinysegmenter-php](https://github.com/u7aro/tinysegmenter-php)
-    - The full license text is included in the `LICENSE-TinySegmenter.txt` file.
+- **php-stemmer** (MIT License)
+    - Source: https://github.com/wamania/php-stemmer
+- **TinySegmenter** (Modified BSD License)
+    - Source: https://github.com/u7aro/tinysegmenter-php
+    - Full license text: LICENSE-TinySegmenter.txt
 - **Web Services by Yahoo! JAPAN**
-    - Source: [https://developer.yahoo.co.jp/sitemap/](https://developer.yahoo.co.jp/sitemap/)
-- **Pickr**
+    - Source: https://developer.yahoo.co.jp/sitemap/
+- **Pickr** (MIT License)
     - Author: Simon Wep
-    - License: MIT
-    - Source: [https://github.com/Simonwep/pickr](https://github.com/Simonwep/pickr)
+    - Source: https://github.com/Simonwep/pickr
+
+## 👨‍💻 Authors
+
+- [Daijiro Miyazawa](https://x.com/dxd5001)
+- [FirstElement K.K.](https://www.firstelement.co.jp)

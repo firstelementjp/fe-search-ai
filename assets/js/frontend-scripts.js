@@ -579,6 +579,7 @@ function initFEAIChat() {
 		let contextFound = false;
 		let isFirstChunk = true;
 		let currentLogId = null;
+		let references = null;
 
 		startRenderingQueue();
 
@@ -617,11 +618,14 @@ function initFEAIChat() {
 									// Replace the spinner wrapper with the final, parsed content
 									aiMessageWrapperForFeedback.innerHTML =
 										marked.parse(fullResponse);
+									appendReferences(aiMessageWrapperForFeedback, references);
 
 									sessionHistory.push({
 										role: 'assistant',
 										content: fullResponse,
+										references: Array.isArray(references) ? references : [],
 									});
+									references = null;
 									sessionStorage.setItem(
 										FE_SEARCH_AI_CONFIG.STORAGE.CHAT_HISTORY,
 										JSON.stringify(sessionHistory)
@@ -681,6 +685,9 @@ function initFEAIChat() {
 											}
 											// Add text as string to preserve UTF-8 characters
 											characterQueue.push(jsonData.text);
+										}
+										if (jsonData.references) {
+											references = jsonData.references;
 										}
 									} catch (parseError) {
 										// Silently ignore malformed JSON chunks in the stream.
@@ -754,6 +761,27 @@ function initFEAIChat() {
 	}
 
 	/**
+	 * Appends reference links to an AI message.
+	 * @param {HTMLElement} messageElement - The AI message element.
+	 * @param {Array}       referencesList - Reference URLs.
+	 * @return {void}
+	 */
+	function appendReferences(messageElement, referencesList) {
+		if (!Array.isArray(referencesList) || referencesList.length === 0) {
+			return;
+		}
+
+		messageElement.innerHTML += `
+			<div class="fe-search-ai-references">
+				<strong>${__('References', 'fe-search-ai')}:</strong>
+				<ul>
+					${referencesList.map(url => `<li><a href="${url}">${url}</a></li>`).join('')}
+				</ul>
+			</div>
+		`;
+	}
+
+	/**
 	 * Restores the session history from sessionStorage into the visible chat UI.
 	 * Also restores feedback buttons for assistant messages based on server logs.
 	 *
@@ -784,6 +812,7 @@ function initFEAIChat() {
 			} else if (entry.role === 'assistant') {
 				// Assistant messages are stored as plain markdown text.
 				const messageElement = addMessage(marked.parse(entry.content), 'ai');
+				appendReferences(messageElement, entry.references);
 
 				// Check if this message has a log entry and restore feedback UI
 				const logInfo = logMap.get(entry.content);

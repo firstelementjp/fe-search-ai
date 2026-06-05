@@ -1,10 +1,10 @@
 <?php
 /**
  * Plugin Name: FE Search AI
- * Plugin URI:  https://fe-search.com/ai/
+ * Plugin URI:  https://github.com/firstelementjp/fe-search-ai
  * Description: AI-powered search for WordPress.
- * Version:     1.0.0
- * Author:      FirstElement, Inc.
+ * Version:     0.9.0
+ * Author:      FirstElement K.K., Daijiro Miyazawa
  * Author URI:  https://www.firstelement.co.jp/
  * Text Domain: fe-search-ai
  * Domain Path: /languages/
@@ -14,10 +14,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'FE_SEARCH_AI_VERSION', '1.0.0' );
+define( 'FE_SEARCH_AI_VERSION', '0.9.0' );
 define( 'FE_SEARCH_AI_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FE_SEARCH_AI_PLUGIN_FILE', __FILE__ );
-define( 'FE_SEARCH_AI_PRO_URL', 'https://fe-search.com/ai/pro' );
+define( 'FE_SEARCH_AI_PRO_URL', 'https://www.firstelement.co.jp/en/products/fe-search-ai-plugin/' );
 
 /**
  *  Custom Autoloader
@@ -81,6 +81,8 @@ add_action(
 		$assets_handler = new FESearchAI\Core\FE_Search_AI_Assets();
 		$sync_handler   = new FESearchAI\Ajax\FE_Search_AI_Sync_Handler();
 
+		\FESearchAI\Core\FE_Search_AI_Cohere_Reranker::register();
+
 		add_filter(
 			'fe_search_ai_get_sync_handler_instance',
 			function () use ( $sync_handler ) {
@@ -99,21 +101,10 @@ add_action(
 );
 
 add_action(
-	'init',
-	static function () {
-		load_plugin_textdomain(
-			'fe-search-ai',
-			false,
-			dirname( plugin_basename( __FILE__ ) ) . '/languages/'
-		);
-	},
-	5
-);
-
-add_action(
 	'fe_search_ai_daily_log_rotation_event',
 	static function () {
 		\FESearchAI\Core\FE_Search_AI_Logger::rotate_logs();
+		\FESearchAI\Core\FE_Search_AI_Logger::rotate_conversation_logs();
 	}
 );
 
@@ -123,7 +114,7 @@ add_action(
  * This function provides a simple template tag that can be used in themes
  * to display the AI search interface. It outputs the fe_search_ai shortcode.
  *
- * @since 1.0.0
+ * @since 0.9.0
  * @return void Outputs the AI search interface HTML
  */
 function fe_search_ai() {

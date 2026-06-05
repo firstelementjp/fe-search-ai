@@ -9,8 +9,8 @@
  *
  * @package    fe-search-ai
  * @subpackage Admin
- * @since      1.0.0
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @since 0.9.0
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 
@@ -23,10 +23,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Manages the UI and registration for the main license settings tab.
  *
- * @since      1.0.0
+ * @since 0.9.0
  * @package    fe-search-ai
  * @subpackage Admin
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 class FE_Search_AI_License_Settings {
@@ -57,7 +57,7 @@ class FE_Search_AI_License_Settings {
 	 *
 	 * Registers all necessary hooks for the license settings UI.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 */
 	public function __construct() {
 
@@ -83,7 +83,7 @@ class FE_Search_AI_License_Settings {
 	 *
 	 * Also displays a warning icon if the license is not active.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 */
 	public function add_tab() {
 		$icon = '';
@@ -96,7 +96,7 @@ class FE_Search_AI_License_Settings {
 	/**
 	 * Renders the HTML content wrapper for the "License" tab.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 */
 	public function render_content() {
 		?>
@@ -231,7 +231,7 @@ class FE_Search_AI_License_Settings {
 							</ul>
 						</li>
 					</ul>
-					<a href="https://firstelement.co.jp/products/fe-search-ai-pro/" target="_blank" class="button button-primary button-hero">
+					<a href="https://www.firstelement.co.jp/products/fe-search-ai-pro/" target="_blank" class="button button-primary button-hero">
 						<?php esc_html_e( 'View FE Search AI Pro Details', 'fe-search-ai' ); ?>
 					</a>
 				</div>
@@ -262,7 +262,7 @@ class FE_Search_AI_License_Settings {
 	/**
 	 * Renders the HTML for the license key input field and action buttons.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 */
 	public function field_html() {
 		$license_data = get_option( 'fe_search_ai_license', [] );

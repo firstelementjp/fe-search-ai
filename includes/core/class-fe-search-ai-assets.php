@@ -8,8 +8,8 @@
  *
  * @package    fe-search-ai
  * @subpackage Core
- * @since      1.0.0
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @since 0.9.0
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 
@@ -25,10 +25,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  * This class is responsible for registering and enqueueing all the
  * assets, styles, and scripts that the plugin uses.
  *
- * @since      1.0.0
+ * @since 0.9.0
  * @package    fe-search-ai
  * @subpackage Core
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 class FE_Search_AI_Assets {
@@ -186,7 +186,7 @@ class FE_Search_AI_Assets {
 			 * This allows advanced customization of the base CSS variables used by
 			 * the frontend chat UI (e.g. for light/dark theme switching).
 			 *
-			 * @since 1.0.0
+			 * @since 0.9.0
 			 *
 			 * @param string $color_css The generated inline CSS string.
 			 * @param array  $colors    Array of normalized hex colors with keys
@@ -220,11 +220,25 @@ class FE_Search_AI_Assets {
 		}
 
 		wp_enqueue_script(
-			'fe-search-ai-frontend-scripts',
-			plugin_dir_url( FE_SEARCH_AI_PLUGIN_FILE ) . $frontend_js,
-			[ 'wp-i18n' ],
+			'fe-search-ai-marked',
+			'https://cdn.jsdelivr.net/npm/marked/marked.min.js',
+			[],
 			FE_SEARCH_AI_VERSION,
 			true
+		);
+
+		wp_enqueue_script(
+			'fe-search-ai-frontend-scripts',
+			plugin_dir_url( FE_SEARCH_AI_PLUGIN_FILE ) . $frontend_js,
+			[ 'wp-i18n', 'fe-search-ai-marked' ],
+			FE_SEARCH_AI_VERSION,
+			true
+		);
+
+		wp_add_inline_script(
+			'fe-search-ai-frontend-scripts',
+			"document.addEventListener('DOMContentLoaded', function () { var container = document.getElementById('fe_search_ai_chat_container'); if (typeof initFEAIChat === 'function' && container && !container.dataset.initialized) { initFEAIChat(); } });",
+			'after'
 		);
 
 		wp_set_script_translations(

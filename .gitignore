@@ -7,17 +7,82 @@
 # Exclude hidden files and backup language files
 _*
 *-backup-*.po~
-node_modules
 
-# Exclude environment files
+# Dependencies
+node_modules
+vendor/
+
+# Environment files
 .env
+.envrc
 .env.*
 !.envrc.example
 
-vendor/
-_tmp/
-.DS_Store
-.vscode/
-fe-search-ai.code-workspace
+# Development and build files
+package-lock.json
+composer.lock
+phpcs.xml.dist
+
+# Test and debug files
 debug.log
-test-php-timeout.php
+debug_prompt.txt
+_test-*.php
+test-*.sh
+license_db_format.txt
+
+# Test outputs and coverage
+tests/coverage/
+tests/results/
+phpunit-coverage/
+wp-tests-config.php
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.windsurf/
+.devin/
+.idea/
+*.swp
+*.swo
+fe-search-ai.code-workspace
+
+# Temporary files
+_tmp/
+tmp/
+temp/
+*.tmp
+*.temp
+.cache/
+
+# Build directories
+/dist/
+/build/
+/test-release/
+
+# Minified files (build artifacts)
+*.min.js
+*.min.css
+assets/js/*.min.js
+assets/css/*.min.css
+
+# Release artifacts
+*.zip
+*.tar.gz
+release-*/
+
+# Cache files
+.phpunit.result.cache
+.phpcs.cache
+.php-cs-fixer.cache
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# PHP specific
+composer.phar
+.phpcs.xml

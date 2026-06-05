@@ -7,8 +7,8 @@
  *
  * @package    fe-search-ai
  * @subpackage Admin
- * @since      1.0.0
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @since 0.9.0
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 
@@ -26,10 +26,10 @@ use FESearchAI\Admin\FE_Search_AI_Settings;
  * Defines the plugin name, version, and hooks for how to
  * enqueue the admin-specific stylesheet and JavaScript.
  *
- * @since      1.0.0
+ * @since 0.9.0
  * @package    fe-search-ai
  * @subpackage Admin
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 class FE_Search_AI_Admin {
@@ -228,15 +228,16 @@ class FE_Search_AI_Admin {
 				'ajax_url' => admin_url( 'admin-ajax.php' ),
 				'nonce'    => wp_create_nonce( 'fe_search_ai_ajax_nonce' ),
 				'i18n'     => [
-					'processing_posts'   => __( 'Processing posts…', 'fe-search-ai' ),
-					'preparing_sync'     => __( 'Preparing for synchronization…', 'fe-search-ai' ),
-					'no_posts_to_sync'   => __( 'There are no posts to sync.', 'fe-search-ai' ),
-					'error'              => __( 'Error:', 'fe-search-ai' ),
-					'sync_complete'      => __( 'Synchronization complete!', 'fe-search-ai' ),
-					'items'              => __( 'items', 'fe-search-ai' ),
-					'batch_error'        => __( 'Error: A problem occurred while processing batch', 'fe-search-ai' ),
-					'confirm_rebuild'    => __( 'This will rebuild the index from scratch and may take some time. Do you want to continue?', 'fe-search-ai' ),
-					'confirm_smart_sync' => __( 'This will sync only new/updated/deleted content. Do you want to continue?', 'fe-search-ai' ),
+					'processing_posts'    => __( 'Processing posts…', 'fe-search-ai' ),
+					'preparing_sync'      => __( 'Preparing for synchronization…', 'fe-search-ai' ),
+					'no_posts_to_sync'    => __( 'There are no posts to sync.', 'fe-search-ai' ),
+					'error'               => __( 'Error:', 'fe-search-ai' ),
+					'sync_complete'       => __( 'Synchronization complete!', 'fe-search-ai' ),
+					'items'               => __( 'items', 'fe-search-ai' ),
+					'batch_error'         => __( 'Error: A problem occurred while processing batch', 'fe-search-ai' ),
+					'confirm_rebuild'     => __( 'This will rebuild the index from scratch and may take some time. Do you want to continue?', 'fe-search-ai' ),
+					'confirm_smart_sync'  => __( 'This will sync only new/updated/deleted content. Do you want to continue?', 'fe-search-ai' ),
+					'confirm_delete_data' => __( 'Are you sure you want to delete all synced data? This action cannot be undone.', 'fe-search-ai' ),
 				],
 			]
 		);

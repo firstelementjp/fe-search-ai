@@ -4,8 +4,8 @@
  *
  * @package    fe-search-ai
  * @subpackage Core
- * @since      1.0.0
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @since 0.9.0
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 
@@ -22,10 +22,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  * It can use either a custom encryption key defined in wp-config.php or fall back
  * to WordPress's AUTH_KEY for encryption/decryption operations.
  *
- * @since      1.0.0
+ * @since 0.9.0
  * @package    fe-search-ai
  * @subpackage Core
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 class FE_Search_AI_Encryption_Helper {
@@ -33,7 +33,7 @@ class FE_Search_AI_Encryption_Helper {
 	/**
 	 * The encryption cipher to use for OpenSSL operations.
 	 *
-	 * @since   1.0.0
+	 * @since 0.9.0
 	 * @var     string
 	 */
 	private const CIPHER = 'aes-256-cbc';
@@ -45,7 +45,7 @@ class FE_Search_AI_Encryption_Helper {
 	 * 1. Uses the FE_AI_SEARCH_ENCRYPTION_KEY constant if defined in wp-config.php.
 	 * 2. Falls back to using WordPress's default AUTH_KEY as a secure, site-unique key.
 	 *
-	 * @since   1.0.0
+	 * @since 0.9.0
 	 * @static
 	 *
 	 * @return string|false The encryption key, or false if no valid key is available.
@@ -69,7 +69,7 @@ class FE_Search_AI_Encryption_Helper {
 	/**
 	 * Encrypts a plaintext string using AES-256-CBC encryption.
 	 *
-	 * @since   1.0.0
+	 * @since 0.9.0
 	 * @static
 	 *
 	 * @param string $plaintext The plaintext string to encrypt.
@@ -95,7 +95,7 @@ class FE_Search_AI_Encryption_Helper {
 	/**
 	 * Decrypts a base64-encoded ciphertext string.
 	 *
-	 * @since   1.0.0
+	 * @since 0.9.0
 	 * @static
 	 *
 	 * @param string $ciphertext The base64-encoded string to decrypt.
@@ -112,17 +112,29 @@ class FE_Search_AI_Encryption_Helper {
 			return $ciphertext; // Do not decrypt if key is missing.
 		}
 
-		$c = base64_decode( $ciphertext, true );
-		if ( false === $c ) {
-			return $ciphertext; // Return original if not valid base64.
+		$value = $ciphertext;
+		for ( $i = 0; $i < 3; $i++ ) {
+			$c = base64_decode( $value, true );
+			if ( false === $c ) {
+				return $value; // Return current value if not valid base64.
+			}
+
+			$ivlen = openssl_cipher_iv_length( self::CIPHER );
+			if ( strlen( $c ) <= $ivlen ) {
+				return $value; // Return current value if the payload is too short.
+			}
+
+			$iv             = substr( $c, 0, $ivlen );
+			$ciphertext_raw = substr( $c, $ivlen );
+
+			$decrypted = openssl_decrypt( $ciphertext_raw, self::CIPHER, $key, OPENSSL_RAW_DATA, $iv );
+			if ( false === $decrypted || $decrypted === $value ) {
+				return $value;
+			}
+
+			$value = $decrypted;
 		}
 
-		$ivlen          = openssl_cipher_iv_length( self::CIPHER );
-		$iv             = substr( $c, 0, $ivlen );
-		$ciphertext_raw = substr( $c, $ivlen );
-
-		$decrypted = openssl_decrypt( $ciphertext_raw, self::CIPHER, $key, OPENSSL_RAW_DATA, $iv );
-
-		return false === $decrypted ? $ciphertext : $decrypted;
+		return $value;
 	}
 }

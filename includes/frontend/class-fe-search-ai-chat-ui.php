@@ -8,8 +8,8 @@
  *
  * @package    fe-search-ai
  * @subpackage Frontend
- * @since      1.0.0
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @since 0.9.0
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 
@@ -26,16 +26,36 @@ if ( ! defined( 'ABSPATH' ) ) {
  * on the frontend of the site, either automatically as a floating element
  * or manually via a shortcode, based on user settings.
  *
- * @since      1.0.0
+ * @since 0.9.0
  * @package    fe-search-ai
  * @subpackage Frontend
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 class FE_Search_AI_Chat_UI {
 
-	private $options            = [];
+	/**
+	 * Cached plugin settings.
+	 *
+	 * @since 0.9.0
+	 * @var array
+	 */
+	private $options = [];
+
+	/**
+	 * Tracks whether the UI has already been rendered in the current request.
+	 *
+	 * @since 0.9.0
+	 * @var bool
+	 */
 	private static $is_rendered = false;
+
+	/**
+	 * Assets handler instance.
+	 *
+	 * @since 0.9.0
+	 * @var \FESearchAI\Core\FE_Search_AI_Assets
+	 */
 	private $assets_handler;
 
 	/**
@@ -45,7 +65,7 @@ class FE_Search_AI_Chat_UI {
 	 * the assets handler reference for CSS/JS management, and registering
 	 * WordPress hooks for shortcode, dynamic styles, and floating chat output.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @param \FESearchAI\Core\FE_Search_AI_Assets $assets_handler The assets handler instance for CSS/JS management.
 	 * @return void
 	 */
@@ -65,7 +85,7 @@ class FE_Search_AI_Chat_UI {
 	 * manually place the chat interface anywhere in their content using
 	 * the [fe_search_ai] shortcode tag.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function register_shortcode() {
@@ -79,7 +99,7 @@ class FE_Search_AI_Chat_UI {
 	 * shortcode is used. It prevents duplicate rendering and enqueues
 	 * necessary CSS/JS assets before returning the chat HTML.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return string The chat interface HTML or empty string if already rendered.
 	 */
 	public function render_chat_shortcode() {
@@ -99,18 +119,18 @@ class FE_Search_AI_Chat_UI {
 	 * display rules) to determine if the floating chat bubble should be
 	 * output to the page footer.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 */
 	public function maybe_render_floating_chat() {
-		// Prevent double rendering
+		// Prevent double rendering.
 		if ( self::$is_rendered ) {
 			return;
 		}
 
-		// Get the correct settings from the master options array
+		// Get the correct settings from the master options array.
 		$floating_options = $this->options['display']['floating'] ?? [];
 
-		// Check basic floating mode conditions
+		// Check basic floating mode conditions.
 		if ( empty( $floating_options['enable_floating_mode'] ) ) {
 			return;
 		}
@@ -125,13 +145,13 @@ class FE_Search_AI_Chat_UI {
 			return;
 		}
 
-		// Check device visibility
+		// Check device visibility.
 		$is_mobile = wp_is_mobile();
 		if ( ( $is_mobile && empty( $floating_options['display_on_mobile'] ) ) || ( ! $is_mobile && empty( $floating_options['display_on_pc'] ) ) ) {
 			return;
 		}
 
-		// Check display rules
+		// Check display rules.
 		$rules          = $this->options['display']['floating']['display_rules'] ?? [];
 		$should_display = false;
 
@@ -145,10 +165,10 @@ class FE_Search_AI_Chat_UI {
 		$current_id  = get_the_ID();
 
 		if ( ! empty( $include_ids ) ) {
-			// Include ID list takes priority
-			$should_display = ( is_singular() && in_array( $current_id, $include_ids ) );
+			// Include ID list takes priority.
+			$should_display = ( is_singular() && in_array( $current_id, $include_ids, true ) );
 		} else {
-			// Otherwise, check against the general rules
+			// Otherwise, check against the general rules.
 			if ( is_front_page() && ! empty( $rules['show_on_front_page'] ) ) {
 				$should_display = true;
 			}
@@ -171,8 +191,8 @@ class FE_Search_AI_Chat_UI {
 			}
 		}
 
-		// Exclude ID list always overrides and acts as a final "no"
-		if ( is_singular() && in_array( $current_id, $exclude_ids ) ) {
+		// Exclude ID list always overrides and acts as a final "no".
+		if ( is_singular() && in_array( $current_id, $exclude_ids, true ) ) {
 			$should_display = false;
 		}
 
@@ -183,20 +203,16 @@ class FE_Search_AI_Chat_UI {
 		 * display logic that cannot be configured through the settings UI, such as
 		 * showing the chat only to logged-in users.
 		 *
-		 * @since 1.0.0
+		 * @since 0.9.0
 		 *
 		 * @param bool $should_display Whether the chat UI should be displayed.
 		 */
-		// Temporary force display for debugging
-		if ( true || apply_filters( 'fe_search_ai_should_display_chat', $should_display ) ) {
-			error_log( 'FE AI Search: About to output HTML' );
+		// Temporary force display for debugging.
+		if ( apply_filters( 'fe_search_ai_should_display_chat', $should_display ) ) {
 			self::$is_rendered = true;
 			$this->assets_handler->enqueue_assets();
 			$html = $this->get_chat_ui_html( 'float' );
-			error_log( 'FE AI Search: Generated HTML length: ' . strlen( $html ) );
 			echo $html;
-		} else {
-			error_log( 'FE AI Search: Display conditions not met' );
 		}
 	}
 
@@ -207,14 +223,11 @@ class FE_Search_AI_Chat_UI {
 	 * builds the default HTML, and then passes both through a filter to allow
 	 * for complete customization by themes or other plugins.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @param string $mode The display mode ('float', 'fullscreen', or 'embed').
 	 * @return string The final, filterable HTML for the chat UI.
 	 */
 	public function get_chat_ui_html( $mode = 'float' ) {
-		// Debug: Log when HTML generation starts
-		error_log( 'FE AI Search: get_chat_ui_html() called with mode: ' . $mode );
-
 		// Get settings from the master options array (cached in constructor)
 		$ui_options    = $this->options['display']['ui'] ?? [];
 		$text_options  = $this->options['display']['text'] ?? [];
@@ -249,7 +262,7 @@ class FE_Search_AI_Chat_UI {
 			$submit_button_text = $defaults['submit_button_text'];
 		}
 
-		// Build the $args array for passing to the filter
+		// Build the $args array for passing to the filter.
 		$args = [
 			'mode'                => $mode,
 			'window_title'        => $window_title,
@@ -261,12 +274,10 @@ class FE_Search_AI_Chat_UI {
 			'privacy_url'         => $privacy_page_id ? get_permalink( $privacy_page_id ) : get_privacy_policy_url(),
 		];
 
-		// Build the default HTML
+		// Build the default HTML.
 		ob_start();
 		?>
 		<div id="fe_search_ai_chat_container" class="fe-search-ai-mode-<?php echo esc_attr( $args['mode'] ); ?>">
-			<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
 			<div id="fe_search_ai_chat_bubble">
 				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="42" height="42" id="fe_search_ai_chat_bubble_icon">
 					<path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"></path>
@@ -323,8 +334,9 @@ class FE_Search_AI_Chat_UI {
 							if ( ! empty( $links ) ) {
 								echo '<p>';
 								printf(
+									/* translators: %s: Links to terms of service and privacy policy. */
 									wp_kses_post( __( 'By using this chat, you agree to our %s.', 'fe-search-ai' ) ),
-									implode( ' ' . esc_html__( 'and', 'fe-search-ai' ) . ' ', $links )
+									wp_kses_post( implode( ' ' . esc_html__( 'and', 'fe-search-ai' ) . ' ', $links ) )
 								);
 								echo '</p>';
 							}
@@ -357,11 +369,6 @@ class FE_Search_AI_Chat_UI {
 				</div>
 			</div>
 		</div>
-		<script>
-			if (typeof initFEAIChat === 'function' && !document.getElementById('fe_search_ai_chat_container').dataset.initialized) {
-				initFEAIChat();
-			}
-		</script>
 		<?php
 		$default_html = ob_get_clean();
 
@@ -371,7 +378,7 @@ class FE_Search_AI_Chat_UI {
 		 * This allows developers to completely replace or modify the chat UI.
 		 * The raw data used to build the HTML is also passed for convenience.
 		 *
-		 * @since 1.0.0
+		 * @since 0.9.0
 		 *
 		 * @param string $default_html The default HTML string generated by the plugin.
 		 * @param array  $args         An associative array of data used to build the HTML
@@ -388,7 +395,7 @@ class FE_Search_AI_Chat_UI {
 	 * It reads the settings from the class property $this->options,
 	 * which is populated in the constructor.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 */
 	public function output_dynamic_styles() {
 		$ui_options = $this->options['display']['ui'] ?? [];
@@ -420,18 +427,26 @@ class FE_Search_AI_Chat_UI {
 		 * This allows developers to completely override or extend the dynamic styles
 		 * generated by the plugin, such as the key color.
 		 *
-		 * @since 1.0.0
+		 * @since 0.9.0
 		 *
 		 * @param string $default_css The default CSS string, including the <style> tags.
 		 * @param string $key_color   The key color selected by the user in the settings.
 		 */
-		echo apply_filters( 'fe_search_ai_dynamic_styles_css', $default_css, $key_color );
+		$styles_css = apply_filters( 'fe_search_ai_dynamic_styles_css', $default_css, $key_color );
+		echo wp_kses(
+			$styles_css,
+			[
+				'style' => [
+					'id' => true,
+				],
+			]
+		);
 	}
 
 	/**
 	 * Adjusts the brightness of a hexadecimal color code.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @access private
 	 * @param string $hex   The hex color code (e.g., '#RRGGBB').
 	 * @param int    $steps A positive (lighter) or negative (darker) integer representing the brightness change.

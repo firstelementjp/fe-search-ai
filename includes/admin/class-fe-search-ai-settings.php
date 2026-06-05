@@ -7,8 +7,8 @@
  *
  * @package    fe-search-ai
  * @subpackage Admin
- * @since      1.0.0
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @since 0.9.0
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 
@@ -28,10 +28,10 @@ use FESearchAI\Core\FE_Search_AI_License;
  * various settings sections and fields, including API keys, synchronization options,
  * and display preferences.
  *
- * @since      1.0.0
+ * @since 0.9.0
  * @package    fe-search-ai
  * @subpackage Admin
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 class FE_Search_AI_Settings {
@@ -67,7 +67,7 @@ class FE_Search_AI_Settings {
 	 * It uses do_settings_sections() and do_settings_fields() to render the
 	 * content for each tab, which is defined in the settings_init() method.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 */
 	public static function render_page() {
 		// Determine if the Pro license is active and the Pro add-on is installed.
@@ -106,7 +106,7 @@ class FE_Search_AI_Settings {
 				 * non-Pro add-ons), as Pro-specific tabs are pre-defined above and
 				 * only shown when the license is active.
 				 *
-				 * @since 1.0.0
+				 * @since 0.9.0
 				 */
 				do_action( 'fe_search_ai_settings_tabs' );
 				?>
@@ -133,6 +133,11 @@ class FE_Search_AI_Settings {
 						<?php do_settings_sections( 'fe_search_ai_embedding_section' ); ?>
 						<table class="form-table">
 							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_embedding_section' ); ?>
+						</table>
+
+						<?php do_settings_sections( 'fe_search_ai_rerank_provider_section' ); ?>
+						<table class="form-table">
+							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_rerank_provider_section' ); ?>
 						</table>
 
 						<?php do_action( 'fe_search_ai_after_api_settings_fields' ); ?>
@@ -182,10 +187,7 @@ class FE_Search_AI_Settings {
 							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_display_embed_section' ); ?>
 						</table>
 
-						<?php do_settings_sections( 'fe_search_ai_display_fullscreen_section' ); ?>
-						<table class="form-table">
-							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_display_fullscreen_section' ); ?>
-						</table>
+						<?php do_action( 'fe_search_ai_after_display_embed_settings_fields' ); ?>
 
 						<?php do_settings_sections( 'fe_search_ai_display_appearance_section' ); ?>
 						<table class="form-table">
@@ -209,13 +211,27 @@ class FE_Search_AI_Settings {
 					</div>
 
 					<div id="tab_advanced" class="tab-content">
-						<?php do_settings_sections( 'fe_search_ai_advanced_section' ); ?>
+						<?php do_settings_sections( 'fe_search_ai_rerank_section' ); ?>
 						<table class="form-table">
-							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_advanced_section' ); ?>
+							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_rerank_section' ); ?>
 						</table>
 						<?php do_settings_sections( 'fe_search_ai_qdrant_section' ); ?>
 						<table class="form-table">
 							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_qdrant_section' ); ?>
+						</table>
+						<?php
+						$locale = get_locale();
+						if ( 'ja' === $locale || 'ja_JP' === $locale ) :
+							?>
+							<?php do_settings_sections( 'fe_search_ai_japanese_tokenizer_section' ); ?>
+							<table class="form-table">
+								<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_japanese_tokenizer_section' ); ?>
+							</table>
+						<?php endif; ?>
+
+						<?php do_settings_sections( 'fe_search_ai_advanced_section' ); ?>
+						<table class="form-table">
+							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_advanced_section' ); ?>
 						</table>
 						<?php if ( $is_pro ) : ?>
 						<?php endif; ?>
@@ -241,7 +257,7 @@ class FE_Search_AI_Settings {
 					 * 'fe_search_ai_settings_tabs' action. It allows other plugins to render the
 					 * content (the <div id="tab_...">) for the custom tabs they have added.
 					 *
-					 * @since 1.0.0
+					 * @since 0.9.0
 					 */
 					do_action( 'fe_search_ai_settings_tabs_content' );
 					?>
@@ -263,7 +279,7 @@ class FE_Search_AI_Settings {
 	/**
 	 * Renders the checkbox to control whether embeddings are generated from summaries.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function use_summary_for_embedding_field_html() {
@@ -273,10 +289,10 @@ class FE_Search_AI_Settings {
 		<input type="hidden" name="fe_search_ai_settings[sync][use_summary_for_embedding]" value="0">
 		<label>
 			<input type="checkbox" name="fe_search_ai_settings[sync][use_summary_for_embedding]" value="1" <?php checked( $is_enabled ); ?>>
-			<?php esc_html_e( 'Generate embedding vectors from post summaries (recommended)', 'fe-search-ai' ); ?>
+			<?php esc_html_e( 'Generate embedding vectors from structured chunk summaries (recommended)', 'fe-search-ai' ); ?>
 		</label>
 		<p class="description">
-			<?php esc_html_e( 'When enabled, the plugin will generate a short summary for each post and create embedding vectors from that summary. This usually improves matching for broad user queries.', 'fe-search-ai' ); ?>
+			<?php esc_html_e( 'When enabled, the plugin generates structured summaries from each chunk by extracting topics, facts, entities, and keywords, and uses those summaries as input for embedding vectors. This usually improves matching for broad user queries.', 'fe-search-ai' ); ?>
 		</p>
 		<?php
 	}
@@ -288,7 +304,7 @@ class FE_Search_AI_Settings {
 	 * and fields for the settings page, including provider configuration,
 	 * sync options, display settings, prompts, and advanced options.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function settings_init() {
@@ -332,6 +348,10 @@ class FE_Search_AI_Settings {
 		add_settings_section( 'fe_search_ai_embedding_section', __( 'Vectorization Model', 'fe-search-ai' ), null, $page_slug );
 		add_settings_field( 'fe_search_ai_embedding_provider', __( 'Vectorization AI', 'fe-search-ai' ), [ $this, 'embedding_provider_field_html' ], $page_slug, 'fe_search_ai_embedding_section' );
 
+		// Rerank Model Section
+		add_settings_section( 'fe_search_ai_rerank_provider_section', __( 'Rerank Model', 'fe-search-ai' ), null, $page_slug );
+		add_settings_field( 'fe_search_ai_rerank_provider', __( 'Rerank AI', 'fe-search-ai' ), [ $this, 'rerank_provider_field_html' ], $page_slug, 'fe_search_ai_rerank_provider_section' );
+
 		// ------------------
 		// Sync Tab
 		// ------------------
@@ -345,6 +365,7 @@ class FE_Search_AI_Settings {
 		add_settings_field( 'fe_search_ai_include_post_ids', __( 'Only Sync Specific Posts', 'fe-search-ai' ), [ $this, 'include_post_ids_field_html' ], $page_slug, 'fe_search_ai_sync_options_section' );
 		add_settings_field( 'fe_search_ai_exclude_post_ids', __( 'Exclude Specific Posts', 'fe-search-ai' ), [ $this, 'exclude_post_ids_field_html' ], $page_slug, 'fe_search_ai_sync_options_section' );
 		add_settings_field( 'fe_search_ai_vector_store', __( 'Data Storage', 'fe-search-ai' ), [ $this, 'vector_store_field_html' ], $page_slug, 'fe_search_ai_sync_options_section' );
+		add_settings_field( 'fe_search_ai_hybrid_search', __( 'Hybrid Search', 'fe-search-ai' ), [ $this, 'hybrid_search_field_html' ], $page_slug, 'fe_search_ai_sync_options_section' );
 		add_settings_field( 'fe_search_ai_use_summary_for_embedding', __( 'Embeddings from Summaries', 'fe-search-ai' ), [ $this, 'use_summary_for_embedding_field_html' ], $page_slug, 'fe_search_ai_sync_options_section' );
 		add_settings_field( 'fe_search_ai_sync_limit', __( 'Sync Limit', 'fe-search-ai' ), [ $this, 'sync_limit_field_html' ], $page_slug, 'fe_search_ai_sync_options_section' );
 		add_settings_field( 'fe_search_ai_batch_size', __( 'Batch Size', 'fe-search-ai' ), [ $this, 'batch_size_field_html' ], $page_slug, 'fe_search_ai_sync_options_section' );
@@ -369,10 +390,6 @@ class FE_Search_AI_Settings {
 		add_settings_section( 'fe_search_ai_display_embed_section', __( 'Embed Mode', 'fe-search-ai' ), null, $page_slug );
 		add_settings_field( 'fe_search_ai_display_embed', __( 'Shortcode', 'fe-search-ai' ), [ $this, 'display_embed_field_html' ], $page_slug, 'fe_search_ai_display_embed_section' );
 
-		// Full Screen Mode Section
-		add_settings_section( 'fe_search_ai_display_fullscreen_section', __( 'Fullscreen Mode Settings', 'fe-search-ai' ), null, $page_slug );
-		add_settings_field( 'fe_search_ai_display_fullscreen', __( 'Fullscreen Page', 'fe-search-ai' ), [ $this, 'display_fullscreen_field_html' ], $page_slug, 'fe_search_ai_display_fullscreen_section' );
-
 		// ------------------
 		// Prompt Tab
 		// ------------------
@@ -380,46 +397,111 @@ class FE_Search_AI_Settings {
 		add_settings_field( 'fe_search_ai_site_name', __( 'Site Name (AI)', 'fe-search-ai' ), [ $this, 'site_name_field_html' ], $page_slug, 'fe_search_ai_prompt_section' );
 		add_settings_field( 'fe_search_ai_site_purpose', __( 'Site Purpose (AI)', 'fe-search-ai' ), [ $this, 'site_purpose_field_html' ], $page_slug, 'fe_search_ai_prompt_section' );
 		add_settings_field( 'fe_search_ai_system_prompt', __( 'Base System Prompt', 'fe-search-ai' ), [ $this, 'system_prompt_field_html' ], $page_slug, 'fe_search_ai_prompt_section' );
+		add_settings_field( 'fe_search_ai_structured_output', __( 'Structured Output', 'fe-search-ai' ), [ $this, 'structured_output_field_html' ], $page_slug, 'fe_search_ai_prompt_section' );
 
 		// ------------------
-		// Data Tab
+		// Advanced Tab
 		// ------------------
+		// Qdrant connection settings (endpoint, API key, collection) shown in Advanced tab.
+		add_settings_section( 'fe_search_ai_qdrant_section', null, null, $page_slug );
+		add_settings_field( 'fe_search_ai_qdrant_settings', __( 'Qdrant Settings', 'fe-search-ai' ), [ $this, 'qdrant_settings_field_html' ], $page_slug, 'fe_search_ai_qdrant_section' );
+
+		// Reranker Settings Section
+		add_settings_section( 'fe_search_ai_rerank_section', __( 'Reranker Settings', 'fe-search-ai' ), null, $page_slug );
+		add_settings_field( 'fe_search_ai_rerank_settings', __( 'Reranker Settings', 'fe-search-ai' ), [ $this, 'rerank_settings_field_html' ], $page_slug, 'fe_search_ai_rerank_section' );
+
+		// Japanese Tokenizer Section
+		$locale = get_locale();
+		if ( 'ja' === $locale || 'ja_JP' === $locale ) {
+			add_settings_section( 'fe_search_ai_japanese_tokenizer_section', __( 'Japanese Tokenizer', 'fe-search-ai' ), null, $page_slug );
+			add_settings_field( 'fe_search_ai_japanese_tokenizer', __( 'Japanese Tokenizer', 'fe-search-ai' ), [ $this, 'japanese_tokenizer_field_html' ], $page_slug, 'fe_search_ai_japanese_tokenizer_section' );
+		}
+
+		// Advanced settings
+		add_settings_section( 'fe_search_ai_advanced_section', __( 'Advanced Settings', 'fe-search-ai' ), null, $page_slug );
+		add_settings_field( 'fe_search_ai_display_advanced', __( 'Assets Loading', 'fe-search-ai' ), [ $this, 'display_advanced_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
+		add_settings_field( 'fe_search_ai_debug_mode_enabled', __( 'Debug Mode', 'fe-search-ai' ), [ $this, 'debug_mode_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
+		add_settings_field( 'fe_search_ai_log_retention_days', __( 'Log Retention (days)', 'fe-search-ai' ), [ $this, 'log_retention_days_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
+
+		// Data delete
 		add_settings_section( 'fe_search_ai_data_section', __( 'Data Management', 'fe-search-ai' ), null, $page_slug );
 		add_settings_field( 'fe_search_ai_delete_vectors_ui', __( 'Delete Synced Data', 'fe-search-ai' ), [ $this, 'delete_vectors_ui_field_html' ], $page_slug, 'fe_search_ai_data_section' );
 		add_settings_field( 'fe_search_ai_delete_system_logs_ui', __( 'Delete System Logs', 'fe-search-ai' ), [ $this, 'delete_system_logs_ui_field_html' ], $page_slug, 'fe_search_ai_data_section' );
 		add_settings_field( 'fe_search_ai_delete_conversation_logs_ui', __( 'Delete Conversation Logs', 'fe-search-ai' ), [ $this, 'delete_conversation_logs_ui_field_html' ], $page_slug, 'fe_search_ai_data_section' );
 		add_settings_field( 'fe_search_ai_delete_on_uninstall', __( 'Delete Data on Uninstall', 'fe-search-ai' ), [ $this, 'delete_on_uninstall_field_html' ], $page_slug, 'fe_search_ai_data_section' );
+	}
 
-		// ------------------
-		// Advanced Tab
-		// ------------------
-		add_settings_section( 'fe_search_ai_advanced_section', __( 'Advanced Settings', 'fe-search-ai' ), null, $page_slug );
-		add_settings_field( 'fe_search_ai_display_advanced', __( 'Assets Loading', 'fe-search-ai' ), [ $this, 'display_advanced_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
-		add_settings_field( 'fe_search_ai_debug_mode_enabled', __( 'Debug Mode', 'fe-search-ai' ), [ $this, 'debug_mode_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
-		add_settings_field( 'fe_search_ai_log_retention_days', __( 'Log Retention (days)', 'fe-search-ai' ), [ $this, 'log_retention_days_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
-		$locale = get_locale();
-		if ( 'ja' === $locale || 'ja_JP' === $locale ) {
-			add_settings_field( 'fe_search_ai_japanese_tokenizer', __( 'Japanese Tokenizer', 'fe-search-ai' ), [ $this, 'japanese_tokenizer_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
-		}
-
-		// Qdrant connection settings (endpoint, API key, collection) shown in Advanced tab.
-		add_settings_section( 'fe_search_ai_qdrant_section', null, null, $page_slug );
-		add_settings_field( 'fe_search_ai_qdrant_settings', __( 'Qdrant Settings', 'fe-search-ai' ), [ $this, 'qdrant_settings_field_html' ], $page_slug, 'fe_search_ai_qdrant_section' );
+	/**
+	 * Renders the HTML for the reranker settings section.
+	 *
+	 * @since 0.9.0
+	 * @return void
+	 */
+	public function rerank_settings_field_html() {
+		$rerank      = $this->options['rerank'] ?? [];
+		$enabled     = ! empty( $rerank['enabled'] );
+		$top_n       = isset( $rerank['top_n'] ) ? (int) $rerank['top_n'] : 5;
+		$initial_k   = isset( $rerank['initial_k'] ) ? (int) $rerank['initial_k'] : 50;
+		$timeout_sec = isset( $rerank['timeout_sec'] ) ? (int) $rerank['timeout_sec'] : 15;
+		?>
+		<div class="fe-search-ai-boxed-option">
+			<p class="description">
+				<?php esc_html_e( 'Reranking improves answer quality and reduces the amount of context sent to the LLM by selecting the most relevant chunks.', 'fe-search-ai' ); ?>
+			</p>
+			<p>
+				<input type="hidden" name="fe_search_ai_settings[rerank][enabled]" value="0">
+				<label>
+					<input type="checkbox" name="fe_search_ai_settings[rerank][enabled]" value="1" <?php checked( $enabled ); ?>>
+					<?php esc_html_e( 'Enable reranker (recommended)', 'fe-search-ai' ); ?>
+				</label>
+			</p>
+			<table class="form-table">
+				<tr>
+					<th scope="row"><label for="fe_search_ai_rerank_top_n"><?php esc_html_e( 'Top N chunks for LLM', 'fe-search-ai' ); ?></label></th>
+					<td>
+						<input type="number" min="1" max="20" step="1" id="fe_search_ai_rerank_top_n" name="fe_search_ai_settings[rerank][top_n]" value="<?php echo esc_attr( $top_n ); ?>" class="small-text">
+						<p class="description"><?php esc_html_e( 'Only the top N reranked chunks will be sent to the LLM.', 'fe-search-ai' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="fe_search_ai_rerank_initial_k"><?php esc_html_e( 'Initial candidates (vector search)', 'fe-search-ai' ); ?></label></th>
+					<td>
+						<input type="number" min="5" max="200" step="1" id="fe_search_ai_rerank_initial_k" name="fe_search_ai_settings[rerank][initial_k]" value="<?php echo esc_attr( $initial_k ); ?>" class="small-text">
+						<p class="description"><?php esc_html_e( 'How many candidates to retrieve from the vector search before reranking.', 'fe-search-ai' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="fe_search_ai_rerank_timeout"><?php esc_html_e( 'Rerank timeout (sec)', 'fe-search-ai' ); ?></label></th>
+					<td>
+						<input type="number" min="1" max="60" step="1" id="fe_search_ai_rerank_timeout" name="fe_search_ai_settings[rerank][timeout_sec]" value="<?php echo esc_attr( $timeout_sec ); ?>" class="small-text">
+					</td>
+				</tr>
+			</table>
+		</div>
+		<?php
 	}
 
 	/**
 	 * Renders the HTML for the vector storage configuration section.
 	 *
-	 * This method outputs radio buttons for selecting between MariaDB/MySQL
-	 * and Qdrant as the storage backend for vector embeddings and chunk data.
+	 * This method outputs checkboxes for selecting MariaDB/MySQL and/or Qdrant
+	 * as storage backends for chunk data and vector embeddings.
 	 * It displays database engine information and configuration guidance.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function vector_store_field_html() {
 		$vector     = $this->options['vector'] ?? [];
 		$current    = $vector['store'] ?? 'mariadb';
+		$stores     = isset( $vector['stores'] ) && is_array( $vector['stores'] ) ? $vector['stores'] : [];
+		$mariadb_on = isset( $stores['mariadb'] ) ? ! empty( $stores['mariadb'] ) : ( 'mariadb' === $current );
+		$qdrant_on  = isset( $stores['qdrant'] ) ? ! empty( $stores['qdrant'] ) : ( 'qdrant' === $current );
+		$hybrid_on  = ! empty( $vector['hybrid_search'] );
+		if ( $hybrid_on ) {
+			$mariadb_on = true;
+			$qdrant_on  = true;
+		}
 		$endpoint   = $vector['qdrant']['endpoint'] ?? '';
 		$collection = $vector['qdrant']['collection'] ?? '';
 		global $wpdb;
@@ -439,11 +521,14 @@ class FE_Search_AI_Settings {
 			</p>
 			<fieldset>
 				<label>
+					<input type="hidden" name="fe_search_ai_settings[vector][stores][mariadb]" value="0">
 					<input
-						type="radio"
-						name="fe_search_ai_settings[vector][store]"
+						type="checkbox"
+						name="fe_search_ai_settings[vector][stores][mariadb]"
 						value="mariadb"
-						<?php checked( $current, 'mariadb' ); ?>
+						class="fe-search-ai-vector-store-checkbox"
+						data-store="mariadb"
+						<?php checked( $mariadb_on ); ?>
 					>
 					<?php echo esc_html( $engine_label ); ?>
 					<br>
@@ -452,11 +537,14 @@ class FE_Search_AI_Settings {
 					</span>
 				</label>
 				<label>
+					<input type="hidden" name="fe_search_ai_settings[vector][stores][qdrant]" value="0">
 					<input
-						type="radio"
-						name="fe_search_ai_settings[vector][store]"
+						type="checkbox"
+						name="fe_search_ai_settings[vector][stores][qdrant]"
 						value="qdrant"
-						<?php checked( $current, 'qdrant' ); ?>
+						class="fe-search-ai-vector-store-checkbox"
+						data-store="qdrant"
+						<?php checked( $qdrant_on ); ?>
 					>
 					<?php esc_html_e( 'Qdrant (external vector database)', 'fe-search-ai' ); ?>
 				</label>
@@ -475,13 +563,44 @@ class FE_Search_AI_Settings {
 	}
 
 	/**
+	 * Renders the HTML for the hybrid search setting.
+	 *
+	 * @since 0.9.0
+	 * @return void
+	 */
+	public function hybrid_search_field_html() {
+		$vector     = $this->options['vector'] ?? [];
+		$is_enabled = ! empty( $vector['hybrid_search'] );
+		?>
+		<div class="fe-search-ai-boxed-option">
+			<p>
+				<input type="hidden" name="fe_search_ai_settings[vector][hybrid_search]" value="0">
+				<label>
+					<input
+						type="checkbox"
+						id="fe_search_ai_hybrid_search"
+						name="fe_search_ai_settings[vector][hybrid_search]"
+						value="1"
+						<?php checked( $is_enabled ); ?>
+					>
+					<?php esc_html_e( 'Enable hybrid search', 'fe-search-ai' ); ?>
+				</label>
+			</p>
+			<p class="description">
+				<?php esc_html_e( 'Hybrid search uses both the WordPress keyword index and Qdrant vector search. When enabled, both data storage options are required.', 'fe-search-ai' ); ?>
+			</p>
+		</div>
+		<?php
+	}
+
+	/**
 	 * Renders the HTML for the Qdrant vector database settings section.
 	 *
 	 * This method outputs input fields for Qdrant endpoint URL, API key,
 	 * and collection name configuration. It provides descriptions for
 	 * each field and handles secure API key management.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function qdrant_settings_field_html() {
@@ -494,6 +613,16 @@ class FE_Search_AI_Settings {
 		<div class="fe-search-ai-boxed-option">
 			<p class="description">
 				<?php esc_html_e( 'Configure the connection to your Qdrant Cloud or self-hosted Qdrant instance.', 'fe-search-ai' ); ?>
+			</p>
+			<p class="description">
+				<strong><?php esc_html_e( 'Note:', 'fe-search-ai' ); ?></strong>
+				<?php
+				printf(
+					/* translators: %s: 'free' in bold */
+					esc_html__( 'With Qdrant Cloud %s accounts, collections may be deleted after a period of inactivity.', 'fe-search-ai' ),
+					'<strong>' . esc_html__( 'free', 'fe-search-ai' ) . '</strong>'
+				);
+				?>
 			</p>
 			<table class="form-table">
 				<tr>
@@ -561,7 +690,7 @@ class FE_Search_AI_Settings {
 	 * (OpenAI, Google, Anthropic, etc.) with support for provider filtering
 	 * via hooks. It displays the current selection and provider descriptions.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function chat_provider_field_html() {
@@ -579,7 +708,7 @@ class FE_Search_AI_Settings {
 		 * This hook allows other plugins or themes to add, remove, or modify
 		 * the AI models available for selection in the settings.
 		 *
-		 * @since 1.0.0
+		 * @since 0.9.0
 		 *
 		 * @param array $providers An associative array of AI providers,
 		 * where the key is the provider slug (e.g., 'openai')
@@ -602,13 +731,57 @@ class FE_Search_AI_Settings {
 	}
 
 	/**
+	 * Renders the HTML for the rerank provider selection section.
+	 *
+	 * This method outputs a dropdown menu for selecting the AI rerank
+	 * provider used for reranking search results. Currently only Cohere is supported.
+	 *
+	 * @since 0.9.0
+	 * @return void
+	 */
+	public function rerank_provider_field_html() {
+		$provider = $this->options['provider']['rerank'] ?? 'cohere';
+
+		$providers = [
+			'cohere' => 'Cohere (Rerank)',
+		];
+
+		/**
+		 * Filters the array of available AI rerank providers.
+		 *
+		 * This hook allows other plugins or themes to add, remove, or modify
+		 * the AI models available for selection for the reranking process.
+		 *
+		 * @since 0.9.0
+		 *
+		 * @param array $providers An associative array of AI rerank providers,
+		 * where the key is the provider slug (e.g., 'cohere')
+		 * and the value is the display name (e.g., 'Cohere (Rerank)').
+		 */
+		$providers = apply_filters( 'fe_search_ai_rerank_providers', $providers );
+
+		?>
+		<select name="fe_search_ai_settings[provider][rerank]">
+			<?php foreach ( $providers as $key => $name ) : ?>
+				<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $provider, $key ); ?>>
+					<?php echo esc_html( $name ); ?>
+				</option>
+			<?php endforeach; ?>
+		</select>
+		<p class="description">
+			<?php esc_html_e( 'Select the AI that reranks search results for improved relevance.', 'fe-search-ai' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
 	 * Renders the HTML for the embedding provider selection section.
 	 *
 	 * This method outputs a dropdown menu for selecting the AI embedding
 	 * provider used for vectorization. It supports provider filtering via
 	 * hooks and includes descriptions for each available provider.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function embedding_provider_field_html() {
@@ -625,7 +798,7 @@ class FE_Search_AI_Settings {
 		 * This hook allows other plugins or themes to add, remove, or modify
 		 * the AI models available for selection for the vectorization process.
 		 *
-		 * @since 1.0.0
+		 * @since 0.9.0
 		 *
 		 * @param array $providers An associative array of AI embedding providers,
 		 * where the key is the provider slug (e.g., 'google')
@@ -661,7 +834,7 @@ class FE_Search_AI_Settings {
 	 * This method displays all API providers in a table format with
 	 * columns for API key creation, API key input, connection test, and model.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 */
 	public function api_keys_field_html() {
 		// Define provider data
@@ -683,6 +856,12 @@ class FE_Search_AI_Settings {
 				'api_url'       => 'https://console.anthropic.com/',
 				'description'   => __( 'Enter your Anthropic API key.', 'fe-search-ai' ),
 				'default_model' => 'claude-3-5-haiku-20241022',
+			],
+			'cohere'    => [
+				'name'          => 'Cohere (Rerank)',
+				'api_url'       => 'https://dashboard.cohere.com/api-keys',
+				'description'   => __( 'Enter your Cohere API key.', 'fe-search-ai' ),
+				'default_model' => 'rerank-v3.0',
 			],
 		];
 		?>
@@ -731,12 +910,22 @@ class FE_Search_AI_Settings {
 				<?php foreach ( $providers as $provider_key => $provider_data ) : ?>
 					<?php
 					$encrypted_key = $this->options['provider'][ $provider_key . '_key' ] ?? '';
-					$api_key       = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
+					if ( 'cohere' === $provider_key && '' === $encrypted_key ) {
+						$encrypted_key = $this->options['rerank']['cohere_api_key'] ?? '';
+					}
+					$api_key = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
 
 					$model_to_display = $provider_data['default_model'];
 					if ( $this->is_license_active ) {
-						$pro_options      = get_option( 'fe_search_ai_pro_settings', [] );
-						$model_to_display = $pro_options['model'][ $provider_key ] ?? $model_to_display;
+						$pro_options    = get_option( 'fe_search_ai_pro_settings', [] );
+						$model_settings = $pro_options['model'][ $provider_key . '_model' ] ?? [];
+						$model_type     = $model_settings['type'] ?? '';
+						$custom_model   = $model_settings['custom'] ?? '';
+						if ( 'custom' === $model_type && '' !== trim( (string) $custom_model ) ) {
+							$model_to_display = $custom_model;
+						} elseif ( '' !== trim( (string) $model_type ) ) {
+							$model_to_display = $model_type;
+						}
 					}
 					?>
 					<tr>
@@ -778,6 +967,9 @@ class FE_Search_AI_Settings {
 						</td>
 					</tr>
 				<?php endforeach; ?>
+				<?php
+				do_action( 'fe_search_ai_api_keys_table_rows', $this );
+				?>
 			</tbody>
 		</table>
 		
@@ -813,7 +1005,7 @@ class FE_Search_AI_Settings {
 	 * (title, content, date, author), taxonomy configuration with include/exclude
 	 * term IDs, and custom field integration for Pro users.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function sync_options_field_html() {
@@ -834,16 +1026,13 @@ class FE_Search_AI_Settings {
 			}
 
 			// Get saved options for this post type from sync['targets'][post_type].
-			$pt_options                  = $sync_targets[ $post_type->name ] ?? [];
-			$is_enabled                  = $pt_options['enabled'] ?? in_array( $post_type->name, [ 'post', 'page' ], true );
-			$snippet_title               = $pt_options['snippet_include_title'] ?? true;
-			$snippet_content             = $pt_options['snippet_include_content'] ?? true;
-			$snippet_date                = $pt_options['snippet_include_date'] ?? false;
-			$snippet_author              = $pt_options['snippet_include_author'] ?? false;
-			$snippet_taxonomies          = isset( $pt_options['snippet_taxonomies'] ) && is_array( $pt_options['snippet_taxonomies'] ) ? $pt_options['snippet_taxonomies'] : [];
-			$enable_custom_fields        = $pt_options['enable_custom_fields'] ?? false;
-			$snippet_custom_fields_value = $pt_options['snippet_custom_fields'] ?? '';
-			$snippet_field_input_id      = sanitize_html_class( 'fe-search-ai-snippet-cf-' . $post_type->name );
+			$pt_options         = $sync_targets[ $post_type->name ] ?? [];
+			$is_enabled         = $pt_options['enabled'] ?? in_array( $post_type->name, [ 'post', 'page' ], true );
+			$snippet_title      = $pt_options['snippet_include_title'] ?? true;
+			$snippet_content    = $pt_options['snippet_include_content'] ?? true;
+			$snippet_date       = $pt_options['snippet_include_date'] ?? false;
+			$snippet_author     = $pt_options['snippet_include_author'] ?? false;
+			$snippet_taxonomies = isset( $pt_options['snippet_taxonomies'] ) && is_array( $pt_options['snippet_taxonomies'] ) ? $pt_options['snippet_taxonomies'] : [];
 			?>
 			<div class="post-type-accordion-item">
 				<h4 class="accordion-title">
@@ -955,56 +1144,7 @@ class FE_Search_AI_Settings {
 									}
 									?>
 
-									<!-- Custom Fields Row -->
-									<tr>
-										<td><?php esc_html_e( 'Custom Fields (Post Meta)', 'fe-search-ai' ); ?></td>
-										<td>
-											<div>
-												<label>
-													<input
-														type="checkbox"
-														name="fe_search_ai_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][enable_custom_fields]"
-														value="1"
-														class="fe-search-ai-cf-toggle"
-														data-target-input-id="<?php echo $snippet_field_input_id; ?>"
-														<?php checked( $enable_custom_fields ); ?>
-														<?php disabled( ! $is_pro ); ?>
-													>
-													<?php echo $this->license_alert_icon; ?>
-													<?php if ( ! class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) ) : ?>
-														<span class="description">(
-															<?php
-															printf(
-																/* translators: %s: Link to the Pro version. */
-																wp_kses_post( __( 'Available in the %s version.', 'fe-search-ai' ) ),
-																sprintf(
-																	'<a href="%s" class="%s">%s</a>',
-																	'#tab_license',
-																	'fe-search-ai-change-model-link',
-																	esc_html__( 'Pro', 'fe-search-ai' )
-																)
-															);
-															?>
-															)</span>
-													<?php endif; ?>
-												</label>
-											</div>
-											<div class="custom-field-input-wrapper" style="<?php echo $enable_custom_fields ? '' : 'display: none;'; ?>">
-												<textarea
-													id="<?php echo $snippet_field_input_id; ?>"
-													name="fe_search_ai_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_custom_fields]"
-													rows="3"
-													cols="60"
-													class="large-text code"
-													placeholder="field_name_1, field_name_2"
-													<?php disabled( ! $is_pro ); ?>
-												><?php echo esc_textarea( $snippet_custom_fields_value ); ?></textarea>
-												<p class="description">
-													<?php esc_html_e( 'Enter only the keys of custom fields you want to include in chunk data (content snippets), separated by commas or new lines.', 'fe-search-ai' ); ?>
-												</p>
-											</div>
-										</td>
-									</tr>
+									<?php do_action( 'fe_search_ai_sync_target_rows', $post_type, $pt_options ); ?>
 								</tbody>
 							</table>
 
@@ -1024,7 +1164,7 @@ class FE_Search_AI_Settings {
 	 * This includes the status of the Japanese tokenizer (if applicable),
 	 * the last sync time, and the buttons to trigger a sync.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 */
 	public function sync_ui_field_html() {
 		global $wpdb;
@@ -1064,15 +1204,18 @@ class FE_Search_AI_Settings {
 
 			<div id="fe_search_ai_sync_wrapper">
 				<?php
-				$vector_store = $this->options['vector']['store'] ?? 'mariadb';
-				if ( 'qdrant' !== $vector_store ) {
+				$vector        = $this->options['vector'] ?? [];
+				$vector_store  = $vector['store'] ?? 'mariadb';
+				$stores        = isset( $vector['stores'] ) && is_array( $vector['stores'] ) ? $vector['stores'] : [];
+				$mariadb_store = isset( $stores['mariadb'] ) ? ! empty( $stores['mariadb'] ) : ( 'mariadb' === $vector_store );
+				if ( $mariadb_store ) {
 					/**
 					 * Filters the array of status messages to display on the Sync tab.
 					 *
 					 * This allows the Sync_Handler (for MeCab) or add-ons (for other languages)
 					 * to add their own tokenizer status UI.
 					 *
-					 * @since 1.0.0
+					 * @since 0.9.0
 					 * @param array $statuses An array of HTML strings, each representing a status line.
 					 */
 					$tokenizer_statuses = apply_filters( 'fe_search_ai_tokenizer_status', [] );
@@ -1124,7 +1267,7 @@ class FE_Search_AI_Settings {
 	 * This displays a button that triggers an AJAX-based delete process and
 	 * a status area for feedback messages.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function delete_vectors_ui_field_html() {
@@ -1146,7 +1289,7 @@ class FE_Search_AI_Settings {
 	 * Placed under the "Delete Synced Data" control in the Advanced tab so that
 	 * all destructive maintenance actions are grouped together.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function delete_system_logs_ui_field_html() {
@@ -1168,7 +1311,7 @@ class FE_Search_AI_Settings {
 	 * Placed next to the system log delete control so that each log type can
 	 * be purged independently.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function delete_conversation_logs_ui_field_html() {
@@ -1187,7 +1330,7 @@ class FE_Search_AI_Settings {
 	/**
 	 * Handles the AJAX request to delete all system logs.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function ajax_delete_system_logs() {
@@ -1205,7 +1348,7 @@ class FE_Search_AI_Settings {
 	/**
 	 * Handles the AJAX request to delete all conversation logs.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function ajax_delete_conversation_logs() {
@@ -1235,7 +1378,7 @@ class FE_Search_AI_Settings {
 	 * Controls login status visibility, device targeting, and per-template
 	 * display conditions including include/exclude post ID rules.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function display_floating_field_html() {
@@ -1247,7 +1390,6 @@ class FE_Search_AI_Settings {
 			'display_on_mobile'       => true,
 			'show_to_logged_in_users' => true,
 			'show_to_guests'          => true,
-			'fullscreen_page_id'      => 0,
 			'display_rules'           => [
 				'show_on_front_page' => true,
 				'show_on_archives'   => true,
@@ -1415,7 +1557,7 @@ class FE_Search_AI_Settings {
 	 * Controls how many days system logs and conversation logs are kept before
 	 * being automatically deleted by the daily log rotation cron.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function log_retention_days_field_html() {
@@ -1451,7 +1593,7 @@ class FE_Search_AI_Settings {
 	 * Yahoo! App ID. It only displays for Japanese locale sites and includes
 	 * information about wp-config.php constant overrides.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function japanese_tokenizer_field_html() {
@@ -1522,7 +1664,7 @@ class FE_Search_AI_Settings {
 	 * Outputs a simple description and the shortcode that can be pasted into
 	 * a fixed page or post to embed the chat UI.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function display_embed_field_html() {
@@ -1540,77 +1682,6 @@ class FE_Search_AI_Settings {
 	}
 
 	/**
-	 * Renders the settings for the full-screen chat page.
-	 *
-	 * Uses a page dropdown to select the dedicated page and conditionally
-	 * disables the control when the Pro add-on is not active.
-	 *
-	 * @since 1.0.0
-	 * @return void
-	 */
-	public function display_fullscreen_field_html() {
-		$display_options = $this->options['display'] ?? [];
-		$should_disable  = ! ( class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) && $this->is_license_active );
-
-		?>
-		<fieldset>
-			<?php echo $this->license_alert_icon; ?>
-			<label for="fe_search_ai_fullscreen_page_id">
-				<?php esc_html_e( 'Select Chat-Only Page', 'fe-search-ai' ); ?>
-			</label>
-			<?php
-			$dropdown_html = wp_dropdown_pages(
-				[
-					'name'              => 'fe_search_ai_settings[display][fullscreen_page_id]',
-					'id'                => 'fe_search_ai_fullscreen_page_id',
-					'echo'              => 0,
-					'selected'          => $display_options['fullscreen_page_id'] ?? 0,
-					'show_option_none'  => __( '— Don\'t use a dedicated page —', 'fe-search-ai' ),
-					'option_none_value' => '0',
-				]
-			);
-
-			if ( $should_disable ) {
-				$dropdown_html = preg_replace(
-					'/<select\b/',
-					'<select disabled="disabled"',
-					$dropdown_html,
-					1
-				);
-			}
-
-			echo $dropdown_html;
-			?>
-			<?php if ( ! class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) ) : ?>
-				<span class="description">(
-					<?php
-					printf(
-						/* translators: %s: Link to the Pro version. */
-						wp_kses_post( __( 'Available in the %s version.', 'fe-search-ai' ) ),
-						sprintf(
-							'<a href="%s" class="%s">%s</a>',
-							'#tab_license',
-							'fe-search-ai-change-model-link',
-							esc_html__( 'Pro', 'fe-search-ai' )
-						)
-					);
-					?>
-				)</span>
-			<?php endif; ?>
-			<br />
-			<span class="description">
-				<?php
-				esc_html_e(
-					'When you access the selected static page here, the full-screen chat UI will be displayed directly.',
-					'fe-search-ai'
-				);
-				?>
-			</span>
-		</fieldset>
-		<?php
-	}
-
-	/**
 	 * Renders the HTML for the "Chat Text & Colors" settings section.
 	 *
 	 * This method outputs input fields for chat UI customization including
@@ -1618,7 +1689,7 @@ class FE_Search_AI_Settings {
 	 * and color pickers for key color, background color, and text color.
 	 * It also includes the gradient toggle option for visual styling.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function display_text_color_field_html() {
@@ -1780,7 +1851,7 @@ class FE_Search_AI_Settings {
 	 * CSS and JavaScript assets. It allows developers to replace default
 	 * assets with custom implementations for full control over the chat UI.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function display_advanced_field_html() {
@@ -1825,7 +1896,7 @@ class FE_Search_AI_Settings {
 	 * When any IDs are provided here, general post-type based sync rules
 	 * are ignored and only the specified posts are synchronized.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function include_post_ids_field_html() {
@@ -1850,7 +1921,7 @@ class FE_Search_AI_Settings {
 	 * Posts whose IDs are entered here will be skipped even if they match
 	 * the post-type based inclusion rules.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function exclude_post_ids_field_html() {
@@ -1877,7 +1948,7 @@ class FE_Search_AI_Settings {
 	 * A positive value limits synchronization to the most recent N posts,
 	 * while -1 indicates that all eligible posts should be synchronized.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function sync_limit_field_html() {
@@ -1908,7 +1979,7 @@ class FE_Search_AI_Settings {
 	 * When enabled, all plugin-related tables and options are removed during
 	 * uninstallation; otherwise data is preserved for potential re-use.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function delete_on_uninstall_field_html() {
@@ -1945,7 +2016,7 @@ class FE_Search_AI_Settings {
 	 * This method is retained for backward compatibility and provides a
 	 * simple post-type checkbox list used by older sync configurations.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function sync_post_types_field_html() {
@@ -2021,7 +2092,7 @@ class FE_Search_AI_Settings {
 	 * Converts full-width numerals, spaces, and commas to their half-width
 	 * equivalents, then removes any character that is not a digit or comma.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 *
 	 * @param string $input Value before being saved.
 	 * @return string Value after sanitization.
@@ -2042,7 +2113,7 @@ class FE_Search_AI_Settings {
 	 * full-width numbers to half-width, while preserving the rest of the
 	 * structure as-is.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 *
 	 * @param array $input Option array before being saved.
 	 * @return array Option array after sanitization.
@@ -2068,7 +2139,7 @@ class FE_Search_AI_Settings {
 	 * If no custom prompt is saved, it falls back to the shared default
 	 * system prompt from the chat handler class.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function system_prompt_field_html() {
@@ -2091,12 +2162,38 @@ class FE_Search_AI_Settings {
 	}
 
 	/**
+	 * Renders the structured output option field.
+	 *
+	 * @since 0.9.0
+	 * @return void
+	 */
+	public function structured_output_field_html() {
+		$prompt     = get_option( 'fe_search_ai_custom_prompts', [] );
+		$is_enabled = ! empty( $prompt['structured_output'] );
+		?>
+		<input type="hidden" name="fe_search_ai_custom_prompts[structured_output]" value="0">
+		<label>
+			<input
+				type="checkbox"
+				name="fe_search_ai_custom_prompts[structured_output]"
+				value="1"
+				<?php checked( $is_enabled ); ?>
+			>
+			<?php esc_html_e( 'Enable structured output when supported by the selected AI provider.', 'fe-search-ai' ); ?>
+		</label>
+		<p class="description">
+			<?php esc_html_e( 'When enabled, the plugin requests structured data (JSON format) from providers that support Structured Output. Unsupported providers or models will be requested to respond in standard text format.', 'fe-search-ai' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
 	 * Renders the numeric input for the sync batch size.
 	 *
 	 * Controls how many posts are processed per batch during synchronization
 	 * to balance performance and timeout risk on shared hosting.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function batch_size_field_html() {
@@ -2121,7 +2218,7 @@ class FE_Search_AI_Settings {
 	/**
 	 * Renders the HTML for the Debug Mode checkbox.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 */
 	public function debug_mode_field_html() {
 		$advanced_options = $this->options['advanced'] ?? [];
@@ -2146,7 +2243,7 @@ class FE_Search_AI_Settings {
 	 * This value is injected into the system prompt in place of the
 	 * {site_name} placeholder; defaults to the WordPress site title.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function site_name_field_html() {
@@ -2164,7 +2261,7 @@ class FE_Search_AI_Settings {
 	 * This value is injected into the system prompt in place of the
 	 * {site_purpose} placeholder; defaults to the site tagline.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function site_purpose_field_html() {
@@ -2184,7 +2281,7 @@ class FE_Search_AI_Settings {
 	 * It receives the raw input from the form, validates/cleans each part,
 	 * and merges it with the existing settings to ensure no data is lost.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @param array $input The raw array of settings data from the $_POST request.
 	 * @return array The fully sanitized and merged array to be saved.
 	 */
@@ -2192,15 +2289,32 @@ class FE_Search_AI_Settings {
 		// Start with the existing, saved options.
 		$new_input = get_option( 'fe_search_ai_settings', [] );
 
-		// Provider Tab - Encrypt API keys before saving
-		$new_input['provider']['openai_key']    = FE_Search_AI_Encryption_Helper::encrypt( sanitize_text_field( $input['provider']['openai_key'] ?? '' ) );
-		$new_input['provider']['google_key']    = FE_Search_AI_Encryption_Helper::encrypt( sanitize_text_field( $input['provider']['google_key'] ?? '' ) );
-		$new_input['provider']['anthropic_key'] = FE_Search_AI_Encryption_Helper::encrypt( sanitize_text_field( $input['provider']['anthropic_key'] ?? '' ) );
+		// Provider Tab - Encrypt API keys before saving.
+		$new_input['provider']['openai_key']    = $this->sanitize_encrypted_secret( $input['provider']['openai_key'] ?? '', $new_input['provider']['openai_key'] ?? '' );
+		$new_input['provider']['google_key']    = $this->sanitize_encrypted_secret( $input['provider']['google_key'] ?? '', $new_input['provider']['google_key'] ?? '' );
+		$new_input['provider']['anthropic_key'] = $this->sanitize_encrypted_secret( $input['provider']['anthropic_key'] ?? '', $new_input['provider']['anthropic_key'] ?? '' );
+		$new_input['provider']['cohere_key']    = $this->sanitize_encrypted_secret( $input['provider']['cohere_key'] ?? '', $new_input['provider']['cohere_key'] ?? '' );
 		$new_input['provider']['embedding']     = sanitize_key( $input['provider']['embedding'] ?? 'openai' );
 		$new_input['provider']['chat']          = sanitize_key( $input['provider']['chat'] ?? 'openai' );
+		$new_input['provider']['rerank']        = sanitize_key( $input['provider']['rerank'] ?? 'cohere' );
 
-		// OpenAI-Compatible key (stored in Free version settings)
-		$new_input['provider']['openai_compatible_key'] = FE_Search_AI_Encryption_Helper::encrypt( sanitize_text_field( $input['provider']['openai_compatible_key'] ?? '' ) );
+		// OpenAI-Compatible key (stored in Free version settings).
+		$new_input['provider']['openai_compatible_key'] = $this->sanitize_encrypted_secret( $input['provider']['openai_compatible_key'] ?? '', $new_input['provider']['openai_compatible_key'] ?? '' );
+
+		// Reranker (Free)
+		$existing_rerank = $new_input['rerank'] ?? [];
+		if ( ! is_array( $existing_rerank ) ) {
+			$existing_rerank = [];
+		}
+		$rerank_input = $input['rerank'] ?? [];
+		if ( ! is_array( $rerank_input ) ) {
+			$rerank_input = [];
+		}
+		$new_input['rerank']['enabled']     = ! empty( $rerank_input['enabled'] );
+		$new_input['rerank']['top_n']       = absint( $rerank_input['top_n'] ?? ( $existing_rerank['top_n'] ?? 5 ) );
+		$new_input['rerank']['initial_k']   = absint( $rerank_input['initial_k'] ?? ( $existing_rerank['initial_k'] ?? 50 ) );
+		$new_input['rerank']['timeout_sec'] = absint( $rerank_input['timeout_sec'] ?? ( $existing_rerank['timeout_sec'] ?? 15 ) );
+		$new_input['rerank']['model']       = 'rerank-v3.0';
 
 		// Prompt Tab - site_name and site_purpose are now saved separately in fe_search_ai_site_info option
 
@@ -2255,11 +2369,25 @@ class FE_Search_AI_Settings {
 		if ( ! is_array( $vector_input ) ) {
 			$vector_input = [];
 		}
-		$store = $vector_input['store'] ?? ( $existing_vector['store'] ?? 'mariadb' );
-		if ( ! in_array( $store, [ 'mariadb', 'qdrant' ], true ) ) {
-			$store = 'mariadb';
+		$stores_input = isset( $vector_input['stores'] ) && is_array( $vector_input['stores'] ) ? $vector_input['stores'] : [];
+		$mariadb_on   = ! empty( $stores_input['mariadb'] );
+		$qdrant_on    = ! empty( $stores_input['qdrant'] );
+		if ( empty( $stores_input ) && isset( $vector_input['store'] ) ) {
+			$mariadb_on = 'mariadb' === $vector_input['store'];
+			$qdrant_on  = 'qdrant' === $vector_input['store'];
 		}
-		$new_input['vector']['store'] = $store;
+		$hybrid_search = ! empty( $vector_input['hybrid_search'] );
+		if ( $hybrid_search ) {
+			$mariadb_on = true;
+			$qdrant_on  = true;
+		}
+		if ( ! $mariadb_on && ! $qdrant_on ) {
+			$mariadb_on = true;
+		}
+		$new_input['vector']['stores']['mariadb'] = $mariadb_on;
+		$new_input['vector']['stores']['qdrant']  = $qdrant_on;
+		$new_input['vector']['hybrid_search']     = $hybrid_search;
+		$new_input['vector']['store']             = $qdrant_on && ! $mariadb_on ? 'qdrant' : 'mariadb';
 
 		$qdrant_existing = $existing_vector['qdrant'] ?? [];
 		if ( ! is_array( $qdrant_existing ) ) {
@@ -2337,7 +2465,7 @@ class FE_Search_AI_Settings {
 	/**
 	 * Sanitizes the site info settings before saving to the database.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @param array $input The raw array of site info data from the $_POST request.
 	 * @return array The sanitized array to be saved.
 	 */
@@ -2349,15 +2477,75 @@ class FE_Search_AI_Settings {
 	}
 
 	/**
+	 * Sanitizes and encrypts a secret setting value.
+	 *
+	 * @since 0.9.0
+	 * @param string $new_value The submitted secret value.
+	 * @param string $existing_value The currently saved encrypted value.
+	 * @return string The encrypted secret value.
+	 */
+	private function sanitize_encrypted_secret( $new_value, $existing_value = '' ) {
+		$new_value = sanitize_text_field( $new_value );
+
+		if ( '' === trim( (string) $new_value ) && '' !== $existing_value ) {
+			return $existing_value;
+		}
+
+		if ( '' === trim( (string) $new_value ) ) {
+			return '';
+		}
+
+		$existing_plain = FE_Search_AI_Encryption_Helper::decrypt( $existing_value );
+		if ( '' !== $existing_value && hash_equals( (string) $existing_plain, (string) $new_value ) ) {
+			return $existing_value;
+		}
+
+		return FE_Search_AI_Encryption_Helper::encrypt( $new_value );
+	}
+
+	/**
 	 * Sanitizes the custom prompts array.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @param array $input The raw array of custom prompts data from the $_POST request.
 	 * @return array The sanitized array to be saved.
 	 */
 	public function sanitize_custom_prompts( $input ) {
-		$sanitized                  = [];
-		$sanitized['system_prompt'] = sanitize_textarea_field( $input['system_prompt'] ?? '' );
+		$existing = get_option( 'fe_search_ai_custom_prompts', [] );
+		if ( ! is_array( $existing ) ) {
+			$existing = [];
+		}
+
+		$sanitized = $existing;
+
+		// Base (shared) system prompt.
+		$sanitized['system_prompt'] = sanitize_textarea_field( $input['system_prompt'] ?? ( $existing['system_prompt'] ?? '' ) );
+
+		// Structured output option.
+		if ( array_key_exists( 'structured_output', $input ) ) {
+			$sanitized['structured_output'] = ! empty( $input['structured_output'] );
+		}
+
+		// Model-specific prompts (used by Pro). Keep them if present.
+		if ( isset( $input['custom_prompts'] ) && is_array( $input['custom_prompts'] ) ) {
+			$allowed_keys                = [
+				'openai',
+				'anthropic',
+				'google',
+				'deepseek',
+				'openai_compatible',
+			];
+			$sanitized['custom_prompts'] = $sanitized['custom_prompts'] ?? [];
+			if ( ! is_array( $sanitized['custom_prompts'] ) ) {
+				$sanitized['custom_prompts'] = [];
+			}
+			foreach ( $allowed_keys as $key ) {
+				if ( array_key_exists( $key, $input['custom_prompts'] ) ) {
+					$sanitized['custom_prompts'][ $key ] = sanitize_textarea_field( $input['custom_prompts'][ $key ] );
+				}
+			}
+		}
+
 		return $sanitized;
 	}
 
@@ -2381,19 +2569,13 @@ class FE_Search_AI_Settings {
 				continue;
 			}
 
-			$new_input[ $pt_name ]['enabled']              = ! empty( $input[ $pt_name ]['enabled'] );
-			$new_input[ $pt_name ]['enable_custom_fields'] = ! empty( $input[ $pt_name ]['enable_custom_fields'] );
+			$new_input[ $pt_name ]['enabled'] = ! empty( $input[ $pt_name ]['enabled'] );
 
 			// Snippet flags control which metadata is embedded into each chunk.
 			$new_input[ $pt_name ]['snippet_include_title']   = ! empty( $input[ $pt_name ]['snippet_include_title'] );
 			$new_input[ $pt_name ]['snippet_include_content'] = ! empty( $input[ $pt_name ]['snippet_include_content'] );
 			$new_input[ $pt_name ]['snippet_include_date']    = ! empty( $input[ $pt_name ]['snippet_include_date'] );
 			$new_input[ $pt_name ]['snippet_include_author']  = ! empty( $input[ $pt_name ]['snippet_include_author'] );
-
-			// Custom Fields (Pro) - only snippet_custom_fields remains
-			if ( isset( $input[ $pt_name ]['snippet_custom_fields'] ) ) {
-				$new_input[ $pt_name ]['snippet_custom_fields'] = sanitize_textarea_field( $input[ $pt_name ]['snippet_custom_fields'] );
-			}
 
 			// Taxonomies: new per-taxonomy enabled/behavior/term_ids structure
 			if ( isset( $input[ $pt_name ]['snippet_taxonomies'] ) && is_array( $input[ $pt_name ]['snippet_taxonomies'] ) ) {
@@ -2414,6 +2596,7 @@ class FE_Search_AI_Settings {
 			} else {
 				$new_input[ $pt_name ]['snippet_taxonomies'] = [];
 			}
+			$new_input[ $pt_name ] = apply_filters( 'fe_search_ai_sanitize_sync_target', $new_input[ $pt_name ], $input[ $pt_name ], $pt_name );
 		}
 		return $new_input;
 	}
@@ -2486,7 +2669,6 @@ class FE_Search_AI_Settings {
 		// Login status visibility flags.
 		$new_input['show_to_logged_in_users'] = ! empty( $input['show_to_logged_in_users'] );
 		$new_input['show_to_guests']          = ! empty( $input['show_to_guests'] );
-		$new_input['fullscreen_page_id']      = absint( $input['fullscreen_page_id'] ?? 0 );
 
 		// Rules
 		$rules = $input['display_rules'] ?? [];
@@ -2498,6 +2680,8 @@ class FE_Search_AI_Settings {
 		$new_input['display_rules']['include_ids']        = $this->sanitize_numeric_string( $rules['include_ids'] ?? '' );
 		$new_input['display_rules']['exclude_ids']        = $this->sanitize_numeric_string( $rules['exclude_ids'] ?? '' );
 
+		$new_input = apply_filters( 'fe_search_ai_sanitize_display_floating', $new_input, $input );
+
 		return $new_input;
 	}
 
@@ -2508,7 +2692,7 @@ class FE_Search_AI_Settings {
 	 * send key configuration. It includes a range slider for animation speed
 	 * (1-10) and a dropdown for send key behavior (Enter/Shift+Enter/Cmd+Enter).
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function display_interaction_field_html() {
@@ -2562,7 +2746,7 @@ class FE_Search_AI_Settings {
 	 * and Privacy Policy pages using WordPress page dropdowns. It includes
 	 * descriptions for each field and fallback behavior for privacy settings.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function display_links_field_html() {

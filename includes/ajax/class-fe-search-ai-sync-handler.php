@@ -8,8 +8,8 @@
  *
  * @package    fe-search-ai
  * @subpackage Ajax
- * @since      1.0.0
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @since 0.9.0
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 
@@ -29,10 +29,10 @@ use WP_Error;
  * content synchronization. It also provides the core search method (`find_similar_chunks`)
  * used by other classes to retrieve contextually relevant data.
  *
- * @since      1.0.0
+ * @since 0.9.0
  * @package    fe-search-ai
  * @subpackage Ajax
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 class FE_Search_AI_Sync_Handler {
@@ -199,9 +199,9 @@ class FE_Search_AI_Sync_Handler {
 								$pt_options['snippet_taxonomies'] ?? []
 							)
 						)
-					) ||
-					( ! empty( $pt_options['enable_custom_fields'] ) && ! empty( $pt_options['custom_fields'] ) )
+					)
 					);
+					$has_any_snippet = (bool) apply_filters( 'fe_search_ai_sync_target_has_snippet', $has_any_snippet, $pt_options, $pt_slug );
 					if ( $has_any_snippet ) {
 						$post_types_to_sync[] = $pt_slug;
 					}
@@ -236,7 +236,7 @@ class FE_Search_AI_Sync_Handler {
 		 * This hook allows developers to add custom query parameters (e.g., meta_query,
 		 * category__in) to modify which posts are selected for indexing by the AI.
 		 *
-		 * @since 1.0.0
+		 * @since 0.9.0
 		 *
 		 * @param array $args The array of query arguments passed to `get_posts()`.
 		 */
@@ -307,9 +307,9 @@ class FE_Search_AI_Sync_Handler {
 								$pt_options['snippet_taxonomies'] ?? []
 							)
 						)
-					) ||
-					( ! empty( $pt_options['enable_custom_fields'] ) && ! empty( $pt_options['custom_fields'] ) )
+					)
 					);
+					$has_any_snippet = (bool) apply_filters( 'fe_search_ai_sync_target_has_snippet', $has_any_snippet, $pt_options, $pt_slug );
 					if ( $has_any_snippet ) {
 						$post_types_to_sync[] = $pt_slug;
 					}
@@ -520,12 +520,15 @@ class FE_Search_AI_Sync_Handler {
 			$vector_config = isset( $settings['vector'] ) && is_array( $settings['vector'] ) ? $settings['vector'] : [];
 			$qdrant_config = isset( $vector_config['qdrant'] ) && is_array( $vector_config['qdrant'] ) ? $vector_config['qdrant'] : [];
 			$vector_store  = $vector_config['store'] ?? 'mariadb';
+			$stores        = isset( $vector_config['stores'] ) && is_array( $vector_config['stores'] ) ? $vector_config['stores'] : [];
+			$qdrant_store  = isset( $stores['qdrant'] ) ? ! empty( $stores['qdrant'] ) : ( 'qdrant' === $vector_store );
 
 			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'INFO',
 				'Qdrant config check in ajax_process_batch.',
 				[
 					'vector_store'  => $vector_store,
+					'stores'        => $stores,
 					'vector_config' => $vector_config,
 					'qdrant_config' => $qdrant_config,
 					'collection'    => $qdrant_config['collection'] ?? 'NOT_SET',
@@ -535,7 +538,7 @@ class FE_Search_AI_Sync_Handler {
 			);
 
 			$qdrant_enabled = (
-				'qdrant' === $vector_store
+				$qdrant_store
 				&& ! empty( $qdrant_config['endpoint'] )
 				&& ! empty( $qdrant_config['api_key'] )
 				&& ! empty( $qdrant_config['collection'] )
@@ -1082,6 +1085,12 @@ class FE_Search_AI_Sync_Handler {
 	 * @return array An array of the most relevant text chunks and their permalinks.
 	 */
 	private function find_similar_chunks_via_qdrant( $question, $qdrant_config ) {
+		// Get sequence ID from global context
+		$sequence_id = '';
+		if ( isset( $GLOBALS['fe_search_ai_current_sequence_id'] ) ) {
+			$sequence_id = $GLOBALS['fe_search_ai_current_sequence_id'];
+		}
+
 		$endpoint   = isset( $qdrant_config['endpoint'] ) ? rtrim( $qdrant_config['endpoint'], '/' ) : '';
 		$collection = $qdrant_config['collection'] ?? '';
 		$api_key    = isset( $qdrant_config['api_key'] ) && ! empty( $qdrant_config['api_key'] )
@@ -1092,16 +1101,53 @@ class FE_Search_AI_Sync_Handler {
 			return new WP_Error( 'qdrant_error', 'Qdrant configuration is missing.' );
 		}
 
-		$embedding_response = $this->get_embeddings_via_selected_provider( [ $question ] );
+		// Log embedding generation start
+		\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
+			'INFO',
+			'Starting embedding generation for Qdrant search',
+			[],
+			$sequence_id
+		);
+
+		$embedding_response = $this->get_embeddings_via_selected_provider( [ $question ], $sequence_id );
 		if ( is_wp_error( $embedding_response ) || empty( $embedding_response['data'][0]['embedding'] ) ) {
+			\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
+				'ERROR',
+				'Embedding generation failed for Qdrant search',
+				[
+					'error' => is_wp_error( $embedding_response ) ? $embedding_response->get_error_message() : 'No embedding data',
+				],
+				$sequence_id
+			);
 			return new WP_Error( 'qdrant_error', 'Embedding generation failed.' );
 		}
 
 		$vector = $embedding_response['data'][0]['embedding'];
 
+		// Log embedding generation completion
+		\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
+			'INFO',
+			'Embedding generation completed, starting Qdrant search',
+			[
+				'vector_dimension' => count( $vector ),
+			],
+			$sequence_id
+		);
+
+		$default_limit = 50;
+		$settings      = get_option( 'fe_search_ai_settings', [] );
+		$rerank        = isset( $settings['rerank'] ) && is_array( $settings['rerank'] ) ? $settings['rerank'] : [];
+		if ( isset( $rerank['initial_k'] ) ) {
+			$default_limit = (int) $rerank['initial_k'];
+		}
+		$limit = (int) apply_filters( 'fe_search_ai_qdrant_search_limit', $default_limit, $question );
+		if ( $limit <= 0 ) {
+			$limit = $default_limit;
+		}
+
 		$body = [
 			'vector'       => $vector,
-			'limit'        => 20,
+			'limit'        => $limit,
 			'with_payload' => true,
 			'with_vector'  => false,
 		];
@@ -1192,12 +1238,15 @@ class FE_Search_AI_Sync_Handler {
 				'permalink'     => $permalink,
 				'post_id'       => $post_id,
 				'title'         => $title ?: 'Untitled',
+				'source'        => 'qdrant',
+				'score'         => isset( $point['score'] ) ? (float) $point['score'] : 0.0,
 			];
 		}
 
-		\FESearchAI\Core\FE_Search_AI_Logger::log(
+		// Log Qdrant search completion
+		\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
 			'INFO',
-			'Qdrant search succeeded.',
+			'Qdrant search completed',
 			[
 				'hits'              => count( $results ),
 				'sample_permalinks' => array_slice(
@@ -1205,7 +1254,8 @@ class FE_Search_AI_Sync_Handler {
 					0,
 					3
 				),
-			]
+			],
+			$sequence_id
 		);
 
 		return $results;
@@ -1225,18 +1275,35 @@ class FE_Search_AI_Sync_Handler {
 	 * @return array An array of the most relevant text chunks and their permalinks.
 	 */
 	public function find_similar_chunks( $question ) {
+		// Get sequence ID from logger if available (passed via global or static context)
+		$sequence_id = '';
+		if ( isset( $GLOBALS['fe_search_ai_current_sequence_id'] ) ) {
+			$sequence_id = $GLOBALS['fe_search_ai_current_sequence_id'];
+		}
+
 		// When Qdrant is enabled, prefer vector search via Qdrant.
 		$settings      = get_option( 'fe_search_ai_settings', [] );
 		$vector_config = isset( $settings['vector'] ) && is_array( $settings['vector'] ) ? $settings['vector'] : [];
 		$qdrant_config = isset( $vector_config['qdrant'] ) && is_array( $vector_config['qdrant'] ) ? $vector_config['qdrant'] : [];
 		$vector_store  = $vector_config['store'] ?? 'mariadb';
+		$stores        = isset( $vector_config['stores'] ) && is_array( $vector_config['stores'] ) ? $vector_config['stores'] : [];
+		$qdrant_store  = isset( $stores['qdrant'] ) ? ! empty( $stores['qdrant'] ) : ( 'qdrant' === $vector_store );
 
 		$qdrant_enabled = (
-			'qdrant' === $vector_store &&
+			$qdrant_store &&
 			! empty( $qdrant_config['endpoint'] ) &&
 			! empty( $qdrant_config['api_key'] ) &&
 			! empty( $qdrant_config['collection'] )
 		);
+
+		$hybrid_search = ! empty( $vector_config['hybrid_search'] );
+		if ( $hybrid_search && $qdrant_enabled ) {
+			$qdrant_results  = $this->find_similar_chunks_via_qdrant( $question, $qdrant_config );
+			$keyword_results = $this->find_similar_chunks_via_keyword_index( $question, $sequence_id );
+			if ( ! is_wp_error( $qdrant_results ) ) {
+				return $this->merge_hybrid_search_results( $qdrant_results, $keyword_results, $question, $sequence_id );
+			}
+		}
 
 		if ( $qdrant_enabled ) {
 			$results = $this->find_similar_chunks_via_qdrant( $question, $qdrant_config );
@@ -1245,7 +1312,17 @@ class FE_Search_AI_Sync_Handler {
 			}
 		}
 
-		// Keyword-based search (fallback when Qdrant is disabled or returns no results)
+		return $this->find_similar_chunks_via_keyword_index( $question, $sequence_id );
+	}
+
+	/**
+	 * Retrieves similar chunks from the local keyword index.
+	 *
+	 * @param string $question    The end user's question text.
+	 * @param string $sequence_id Optional log sequence ID.
+	 * @return array An array of the most relevant text chunks and their permalinks.
+	 */
+	private function find_similar_chunks_via_keyword_index( $question, $sequence_id = '' ) {
 		global $wpdb;
 		$vectors_table = $wpdb->prefix . 'fe_search_ai_vectors';
 		$index_table   = $wpdb->prefix . 'fe_search_ai_keyword_index';
@@ -1266,14 +1343,15 @@ class FE_Search_AI_Sync_Handler {
 		);
 
 		// DEBUG: Log keyword extraction results.
-		\FESearchAI\Core\FE_Search_AI_Logger::log(
+		\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
 			'DEBUG',
 			'Keyword extraction from user question.',
 			[
 				'initial_keywords' => count( $keywords ),
 				'valid_keywords'   => count( $valid_keywords ),
-				'keywords_list'    => $valid_keywords, // Log the actual keywords
-			]
+				'keywords_hash'    => md5( wp_json_encode( array_values( $valid_keywords ) ) ),
+			],
+			$sequence_id
 		);
 
 		if ( empty( $valid_keywords ) ) {
@@ -1303,8 +1381,9 @@ class FE_Search_AI_Sync_Handler {
 			'DEBUG',
 			'Keyword index search completed.',
 			[
-				'keywords_searched'  => $valid_keywords,
-				'matched_vector_ids' => count( $vector_ids ),
+				'keywords_searched_count' => count( $valid_keywords ),
+				'keywords_hash'           => md5( wp_json_encode( array_values( $valid_keywords ) ) ),
+				'matched_vector_ids'      => count( $vector_ids ),
 			]
 		);
 
@@ -1313,8 +1392,9 @@ class FE_Search_AI_Sync_Handler {
 		}
 
 		// Retrieve the full content chunks for the found vector IDs.
+		// Order by newest post date to keep UX stable when reranking is disabled.
 		$placeholders = implode( ', ', array_fill( 0, count( $vector_ids ), '%d' ) );
-		$sql          = "SELECT `content_chunk`, `post_id` FROM `{$vectors_table}` WHERE `id` IN ( {$placeholders} )";
+		$sql          = "SELECT v.`content_chunk`, v.`summary_text`, v.`post_id` FROM `{$vectors_table}` v INNER JOIN `{$wpdb->posts}` p ON p.ID = v.post_id WHERE v.`id` IN ( {$placeholders} ) ORDER BY p.post_date DESC";
 		$chunks_data  = $wpdb->get_results( $wpdb->prepare( $sql, $vector_ids ), ARRAY_A );
 
 		// Add permalink and additional data to the results.
@@ -1323,13 +1403,102 @@ class FE_Search_AI_Sync_Handler {
 			$post      = get_post( $row['post_id'] );
 			$results[] = [
 				'content_chunk' => $row['content_chunk'],
+				'summary_text'  => isset( $row['summary_text'] ) ? (string) $row['summary_text'] : '',
 				'permalink'     => get_permalink( $row['post_id'] ),
 				'post_id'       => $row['post_id'],
 				'title'         => $post ? $post->post_title : 'Untitled',
+				'source'        => 'keyword',
 			];
 		}
 
 		return $results;
+	}
+
+	/**
+	 * Merges vector and keyword search results using Reciprocal Rank Fusion.
+	 *
+	 * @param array  $qdrant_results  Results returned from Qdrant.
+	 * @param array  $keyword_results Results returned from the keyword index.
+	 * @param string $question        The end user's question text.
+	 * @param string $sequence_id     Optional log sequence ID.
+	 * @return array Merged and ranked search results.
+	 */
+	private function merge_hybrid_search_results( $qdrant_results, $keyword_results, $question, $sequence_id = '' ) {
+		$rrf_k       = (int) apply_filters( 'fe_search_ai_hybrid_rrf_k', 60, $question );
+		$max_results = (int) apply_filters( 'fe_search_ai_hybrid_search_limit', 100, $question );
+		if ( $rrf_k <= 0 ) {
+			$rrf_k = 60;
+		}
+		if ( $max_results <= 0 ) {
+			$max_results = 100;
+		}
+
+		$merged = [];
+		$lists  = [
+			'qdrant'  => is_array( $qdrant_results ) ? $qdrant_results : [],
+			'keyword' => is_array( $keyword_results ) ? $keyword_results : [],
+		];
+
+		foreach ( $lists as $source => $results ) {
+			foreach ( array_values( $results ) as $rank => $chunk ) {
+				if ( ! is_array( $chunk ) ) {
+					continue;
+				}
+				$key = $this->get_hybrid_search_result_key( $chunk );
+				if ( '' === $key ) {
+					continue;
+				}
+				if ( ! isset( $merged[ $key ] ) ) {
+					$merged[ $key ]                    = $chunk;
+					$merged[ $key ]['hybrid_score']    = 0.0;
+					$merged[ $key ]['hybrid_sources']  = [];
+					$merged[ $key ]['hybrid_rankings'] = [];
+				}
+				$merged[ $key ]['hybrid_score']              += 1 / ( $rrf_k + $rank + 1 );
+				$merged[ $key ]['hybrid_sources'][ $source ]  = true;
+				$merged[ $key ]['hybrid_rankings'][ $source ] = $rank + 1;
+			}
+		}
+
+		$results = array_values( $merged );
+		usort(
+			$results,
+			function ( $a, $b ) {
+				return ( $b['hybrid_score'] ?? 0 ) <=> ( $a['hybrid_score'] ?? 0 );
+			}
+		);
+		$results = array_slice( $results, 0, $max_results );
+
+		\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
+			'INFO',
+			'Hybrid search completed.',
+			[
+				'qdrant_hits'  => is_array( $qdrant_results ) ? count( $qdrant_results ) : 0,
+				'keyword_hits' => is_array( $keyword_results ) ? count( $keyword_results ) : 0,
+				'merged_hits'  => count( $results ),
+				'rrf_k'        => $rrf_k,
+				'max_results'  => $max_results,
+			],
+			$sequence_id
+		);
+
+		return $results;
+	}
+
+	/**
+	 * Builds a stable deduplication key for hybrid search results.
+	 *
+	 * @param array $chunk Search result chunk.
+	 * @return string Deduplication key.
+	 */
+	private function get_hybrid_search_result_key( $chunk ) {
+		if ( ! is_array( $chunk ) ) {
+			return '';
+		}
+		$post_id = isset( $chunk['post_id'] ) ? (int) $chunk['post_id'] : 0;
+		$url     = isset( $chunk['permalink'] ) ? (string) $chunk['permalink'] : '';
+		$content = isset( $chunk['content_chunk'] ) ? (string) $chunk['content_chunk'] : '';
+		return md5( $post_id . '|' . $url . '|' . $content );
 	}
 
 	/**
@@ -1451,42 +1620,7 @@ class FE_Search_AI_Sync_Handler {
 			}
 		}
 
-		$enable_custom_fields = ! empty( $pt_options['enable_custom_fields'] );
-		$custom_fields_input  = $pt_options['custom_fields'] ?? '';
-		if ( $enable_custom_fields && '' !== trim( (string) $custom_fields_input ) ) {
-			$keys_raw = explode( ',', (string) $custom_fields_input );
-			$keys     = array_filter(
-				array_map(
-					'sanitize_key',
-					array_map( 'trim', $keys_raw )
-				)
-			);
-			$cf_items = [];
-			foreach ( $keys as $meta_key ) {
-				if ( '' === $meta_key ) {
-					continue;
-				}
-				$value = get_post_meta( $post->ID, $meta_key, true );
-				if ( '' === $value || null === $value ) {
-					continue;
-				}
-				$normalized = $this->normalize_custom_field_value( $value );
-				if ( '' === $normalized ) {
-					continue;
-				}
-				$cf_items[] = sprintf( '[%s:%s]', $meta_key, $normalized );
-			}
-			if ( ! empty( $cf_items ) ) {
-				$cf_items = apply_filters( 'fe_search_ai_custom_field_items', $cf_items, $post, $pt_options );
-				if ( ! empty( $meta_parts ) && strpos( end( $meta_parts ), 'Metadata:' ) === 0 ) {
-					// Append to existing metadata
-					$meta_parts[ count( $meta_parts ) - 1 ] .= implode( '', $cf_items );
-				} else {
-					// Create new metadata line
-					$meta_parts[] = 'Metadata: ' . implode( '', $cf_items );
-				}
-			}
-		}
+		$meta_parts = apply_filters( 'fe_search_ai_post_metadata_parts', $meta_parts, $post, $pt_options );
 
 		// Add the main content.
 		if ( ! empty( $pt_options['include_content'] ) ) {
@@ -1625,15 +1759,16 @@ class FE_Search_AI_Sync_Handler {
 	 * @param array $texts List of text chunks to embed.
 	 * @return array|WP_Error Embedding response or error object.
 	 */
-	public function get_embeddings_via_selected_provider( $texts ) {
+	public function get_embeddings_via_selected_provider( $texts, $sequence_id = '' ) {
 
-		\FESearchAI\Core\FE_Search_AI_Logger::log(
+		\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
 			'INFO',
 			'Embedding process started.',
 			[
 				'provider'     => $this->options['provider']['embedding'] ?? 'openai',
 				'chunks_count' => count( $texts ),
-			]
+			],
+			$sequence_id
 		);
 
 		$provider = $this->options['provider']['embedding'] ?? 'openai';
@@ -1653,10 +1788,10 @@ class FE_Search_AI_Sync_Handler {
 
 		switch ( $provider ) {
 			case 'google':
-				return $this->fetch_embeddings_for_gemini( $texts );
+				return $this->fetch_embeddings_for_gemini( $texts, $sequence_id );
 			case 'openai':
 			default:
-				return $this->fetch_embeddings_for_openai( $texts );
+				return $this->fetch_embeddings_for_openai( $texts, $sequence_id );
 		}
 	}
 
@@ -1669,7 +1804,7 @@ class FE_Search_AI_Sync_Handler {
 	 * @param array $texts Text chunks to embed.
 	 * @return array|WP_Error API response body or error object.
 	 */
-	public function fetch_embeddings_for_openai( $texts ) {
+	public function fetch_embeddings_for_openai( $texts, $sequence_id = '' ) {
 		// Start the timer.
 		$start_time = microtime( true );
 
@@ -1760,7 +1895,7 @@ class FE_Search_AI_Sync_Handler {
 		$response_body['embedding_dim']   = $embedding_dim;
 
 		// Log the successful call.
-		\FESearchAI\Core\FE_Search_AI_Logger::log(
+		\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
 			'INFO',
 			'OpenAI Embedding API call succeeded.',
 			[
@@ -1769,7 +1904,8 @@ class FE_Search_AI_Sync_Handler {
 				'total_tokens'    => $usage['total_tokens'] ?? 'N/A',
 				'embedding_model' => $embedding_model,
 				'embedding_dim'   => $embedding_dim,
-			]
+			],
+			$sequence_id
 		);
 
 		return $response_body;
@@ -2187,7 +2323,6 @@ class FE_Search_AI_Sync_Handler {
 	 * Renders an administrator notification about internationalization
 	 */
 	public function render_i18n_notice() {
-		error_log( 'FEAS i18n: transient=' . ( get_transient( 'fe_search_ai_i18n_notice_dismissed' ) ? '1' : '0' ) . ' locale=' . get_locale() );
 		// Do not show the notice if it was recently dismissed.
 		if ( get_transient( 'fe_search_ai_i18n_notice_dismissed' ) ) {
 			return;
@@ -2232,7 +2367,7 @@ class FE_Search_AI_Sync_Handler {
 				dismissButton.addEventListener('click', function (e) {
 					e.preventDefault();
 					try {
-						var formData = new URLSearchParams();
+						var formData = new (window['FormData'])();
 						formData.append('action', 'dismiss-wp-pointer');
 						formData.append('pointer', 'fe_search_ai_i18n_notice_dismissed');
 						if (typeof ajaxurl !== 'undefined') {
@@ -2257,7 +2392,7 @@ class FE_Search_AI_Sync_Handler {
 	 *
 	 * This method hooks into the 'fe_search_ai_tokenizer_status' filter.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @param array $statuses The existing status messages.
 	 * @return array The modified status messages.
 	 */
@@ -2287,7 +2422,7 @@ class FE_Search_AI_Sync_Handler {
 		 * label with their own description (for example, when providing a
 		 * custom tokenizer implementation via other hooks).
 		 *
-		 * @since 1.0.0
+		 * @since 0.9.0
 		 *
 		 * @param string $status_text        The HTML snippet describing the tokenizer.
 		 * @param string $japanese_tokenizer The current tokenizer identifier (e.g. 'tinysegmenter', 'mecab').

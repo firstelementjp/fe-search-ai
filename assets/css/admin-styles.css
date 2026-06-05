@@ -192,23 +192,23 @@ textarea {
 #plugin_header #plugin_header_title {
 	font-size: 21px;
 	font-weight: 500;
-    display: flex;
-    align-items: self-end;
+	display: flex;
+	align-items: self-end;
 }
 
 #plugin_header #plugin_header_title span {
 	color: #6d6ddb;
-    margin-left: 0.3rem;
+	margin-left: 0.3rem;
 }
 
 #plugin_header #plugin_header_title span.pro-badge {
-    background: #6d6ddb;
-    color: white;
-    border-radius: 99px;
-    padding: 0px 5px;
-    font-size: 12px;
-    margin: 0 0 0 0.3rem;
-    line-height: 1.4em;
+	background: #6d6ddb;
+	color: white;
+	border-radius: 99px;
+	padding: 0px 5px;
+	font-size: 12px;
+	margin: 0 0 0 0.3rem;
+	line-height: 1.4em;
 }
 
 .toplevel_page_fe-search-ai .fe-search-ai-notices .notice {
@@ -349,7 +349,7 @@ a.nav-tab:last-of-type {
 	padding: 12px 8px;
 }
 
-.fe-search-ai-api-keys-table input[type="password"] {
+.fe-search-ai-api-keys-table input[type='password'] {
 	font-family: monospace;
 	font-size: 13px;
 	margin: 0;
@@ -398,8 +398,8 @@ a.nav-tab:last-of-type {
 	.fe-search-ai-api-keys-table td {
 		padding: 8px 6px;
 	}
-	
-	.fe-search-ai-api-keys-table input[type="password"] {
+
+	.fe-search-ai-api-keys-table input[type='password'] {
 		font-size: 12px;
 	}
 }
@@ -408,13 +408,13 @@ a.nav-tab:last-of-type {
 	.fe-search-ai-api-keys-table {
 		font-size: 13px;
 	}
-	
+
 	.fe-search-ai-api-keys-table th,
 	.fe-search-ai-api-keys-table td {
 		padding: 6px 4px;
 	}
-	
-	.fe-search-ai-api-keys-table input[type="password"] {
+
+	.fe-search-ai-api-keys-table input[type='password'] {
 		width: 100% !important;
 		font-size: 11px;
 	}
@@ -453,7 +453,7 @@ a.nav-tab:last-of-type {
 	padding: 5px 10px;
 }
 
-.form-table #fe_search_ai_sync_options_accordion td>div {
+.form-table #fe_search_ai_sync_options_accordion td > div {
 	margin: 0;
 }
 
@@ -475,6 +475,7 @@ a.nav-tab:last-of-type {
 
 table.fe-search-ai-sync-targets-table {
 	border: none;
+	box-shadow: none;
 }
 
 table.fe-search-ai-sync-targets-table th {
@@ -502,7 +503,7 @@ table.fe-search-ai-sync-targets-table th {
 #fe_search_ai_condition_for_displaying_the_chat {
 	padding: 1em;
 	background: #f0f0f1;
-	margin: 0 -1em -1em;
+	margin: 0 -1em;
 }
 
 #fe_search_ai_floating_display_accordion .accordion-inner {
@@ -766,8 +767,8 @@ a:has(.dashicons-warning) span {
 	transition: opacity 0.3s ease;
 	min-width: fit-content;
 	text-align: center;
-    margin: 3em auto;
-    display: block;
+	margin: 3em auto;
+	display: block;
 }
 
 /* External link icon */
@@ -885,7 +886,7 @@ a:has(.dashicons-warning) span {
 }
 
 .fe-search-ai-tax-config-wrapper .description {
-	margin-top: .5em;
+	margin-top: 0.5em;
 	margin-bottom: 10px;
 	font-style: italic;
 	color: #666;

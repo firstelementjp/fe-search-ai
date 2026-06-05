@@ -19,15 +19,21 @@
 		"phpcompatibility/phpcompatibility-wp": "^2.1",
 		"wp-coding-standards/wpcs": "^3.2",
 		"phpcsstandards/phpcsextra": "^1.4",
-		"direnv/direnv": "^2.0"
+		"phpunit/phpunit": "^9.6",
+		"wp-phpunit/wp-phpunit": "^6.5",
+		"yoast/phpunit-polyfills": "^4.0"
 	},
 	"config": {
 		"allow-plugins": {
 			"dealerdirect/phpcodesniffer-composer-installer": true
-		}
+		},
+		"platform-check": false
 	},
 	"scripts": {
 		"phpcs": "phpcs --standard=phpcs.xml.dist",
-		"phpcbf": "phpcbf --standard=phpcs.xml.dist"
+		"phpcbf": "phpcbf --standard=phpcs.xml.dist",
+		"test": "phpunit",
+		"test-coverage": "phpunit --coverage-html tests/coverage",
+		"test-unit": "phpunit --testsuite=\"FE Search AI Unit Tests\""
 	}
 }

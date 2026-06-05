@@ -35,6 +35,8 @@ document.addEventListener('DOMContentLoaded', () => {
 		'#fe_search_ai_delete_conversation_logs_status'
 	);
 	const tabsWrapper = document.querySelector('.nav-tab-wrapper');
+	const hybridSearchCheckbox = document.querySelector('#fe_search_ai_hybrid_search');
+	const vectorStoreCheckboxes = document.querySelectorAll('.fe-search-ai-vector-store-checkbox');
 
 	// ==========================================================================
 	// Variables
@@ -62,6 +64,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		return response.json();
 	}
+
+	/**
+	 * Syncs vector storage checkboxes with the hybrid search setting.
+	 *
+	 * @return {void}
+	 */
+	function syncHybridSearchStorageState() {
+		if (!hybridSearchCheckbox || !vectorStoreCheckboxes.length) {
+			return;
+		}
+
+		vectorStoreCheckboxes.forEach(checkbox => {
+			if (hybridSearchCheckbox.checked) {
+				checkbox.checked = true;
+				checkbox.disabled = true;
+			} else {
+				checkbox.disabled = false;
+			}
+		});
+	}
+
+	syncHybridSearchStorageState();
+	hybridSearchCheckbox?.addEventListener('change', syncHybridSearchStorageState);
 
 	// Color Picker (Pickr) Initialization
 	if (typeof Pickr !== 'undefined') {
@@ -404,12 +429,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	deleteButton?.addEventListener('click', async () => {
 		if (
 			// eslint-disable-next-line no-alert
-			!confirm(
-				__(
-					'Are you sure you want to delete all synced data? This action cannot be undone.',
-					'fe-search-ai'
-				)
-			)
+			!confirm( fe_search_ai_sync_obj.i18n.confirm_delete_data )
 		) {
 			return;
 		}
@@ -794,20 +814,6 @@ document.addEventListener('DOMContentLoaded', () => {
 				const wrapper = wrapperClass
 					? scope.querySelector(`.${wrapperClass}`)
 					: scope.querySelector('.fe-search-ai-tax-config-wrapper');
-				if (!wrapper) {
-					return;
-				}
-				wrapper.style.display = checkbox.checked ? 'block' : 'none';
-			}
-		});
-
-		// Custom fields toggle functionality
-		document.addEventListener('change', function (event) {
-			if (event.target.matches('input[name*="[enable_custom_fields]"]')) {
-				const checkbox = event.target;
-				const scope =
-					checkbox.closest('.accordion-inner') || checkbox.closest('td') || document;
-				const wrapper = scope.querySelector('.custom-field-input-wrapper');
 				if (!wrapper) {
 					return;
 				}

@@ -5,6 +5,13 @@ on:
         tags:
             - 'v*'
 
+permissions:
+    contents: write
+
+concurrency:
+    group: release-${{ github.ref }}
+    cancel-in-progress: true
+
 jobs:
     create-release:
         name: Create Release
@@ -13,6 +20,14 @@ jobs:
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '8.2'
+                  coverage: none
 
             - name: Setup Node.js
               uses: actions/setup-node@v4
@@ -20,90 +35,69 @@ jobs:
                   node-version: '18'
                   cache: 'npm'
 
-            - name: Install dependencies
+            - name: Install PHP dependencies
+              run: composer install --no-dev --prefer-dist
+
+            - name: Install Node dependencies
               run: npm ci
 
             - name: Build assets
+              run: npm run build
+
+            - name: Create ZIP
+              id: create_zip
               run: |
-                  if npm run | grep -q "build"; then
-                    npm run build
+                  rm -rf release
+                  mkdir -p release
+                  ZIP_VERSION="${GITHUB_REF_NAME#v}"
+                  ZIP_FILE="fe-search-ai-${ZIP_VERSION}.zip"
+
+                  # Create release tree from git (respects .gitattributes export-ignore).
+                  git archive --format=tar --prefix=fe-search-ai/ --worktree-attributes ${{ github.ref_name }} | tar -x -C release
+
+                  # Copy vendor directory (required for WordPress plugin).
+                  cp -r vendor release/fe-search-ai/
+
+                  # Copy built/minified assets from working directory into the release tree.
+                  mkdir -p release/fe-search-ai/assets/js
+                  mkdir -p release/fe-search-ai/assets/css
+                  cp -f assets/js/*.min.js release/fe-search-ai/assets/js/ || true
+                  cp -f assets/css/*.min.css release/fe-search-ai/assets/css/ || true
+
+                  cd release
+                  rm -f ../${ZIP_FILE}
+                  zip -r ../${ZIP_FILE} fe-search-ai
+
+                  echo "zip_file=${ZIP_FILE}" >> "$GITHUB_OUTPUT"
+
+            - name: Security checks on release tree
+              run: |
+                  echo "=== Security checks in release tree ==="
+                  echo "Files starting with underscore (should be 0):"
+                  UNDERSCORE_COUNT=$(find release/fe-search-ai -name "_*" | wc -l)
+                  echo "$UNDERSCORE_COUNT"
+                  if [ "$UNDERSCORE_COUNT" -gt 0 ]; then
+                      echo "ERROR: Found files starting with underscore:"
+                      find release/fe-search-ai -name "_*"
+                      exit 1
                   fi
 
-            - name: Create release zip
-              run: |
-                  # Create release directory
-                  mkdir -p release
-
-                  # Copy plugin files (excluding development files)
-                  rsync -av --exclude-from=.deployignore \
-                    --exclude='.git' \
-                    --exclude='.github' \
-                    --exclude='node_modules' \
-                    --exclude='vendor' \
-                    --exclude='*.log' \
-                    --exclude='.envrc*' \
-                    --exclude='tests' \
-                    --exclude='*.md' \
-                    --exclude='package*.json' \
-                    --exclude='composer.lock' \
-                    --exclude='phpcs.xml.dist' \
-                    --exclude='.eslintrc.json' \
-                    --exclude='.prettierrc*' \
-                    --exclude='.gitignore' \
-                    --exclude='LICENSE' \
-                    . release/fe-search-ai/
-                    
-                  # Create zip file
-                  cd release
-                  zip -r fe-search-ai-${{ github.ref_name }}.zip fe-search-ai/
-
-            - name: Generate changelog
-              id: changelog
-              run: |
-                  # Get previous tag
-                  PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-
-                  if [ -n "$PREVIOUS_TAG" ]; then
-                    echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
-                    echo "## Changes since $PREVIOUS_TAG" >> $GITHUB_OUTPUT
-                    git log --pretty=format:"- %s (%h)" $PREVIOUS_TAG..HEAD >> $GITHUB_OUTPUT
-                    echo "EOF" >> $GITHUB_OUTPUT
-                  else
-                    echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
-                    echo "## Initial Release" >> $GITHUB_OUTPUT
-                    echo "First release of FE Search AI plugin" >> $GITHUB_OUTPUT
-                    echo "EOF" >> $GITHUB_OUTPUT
+                  echo "Files starting with dot (should be 0):"
+                  DOT_COUNT=$(find release/fe-search-ai -name ".*" | wc -l)
+                  echo "$DOT_COUNT"
+                  if [ "$DOT_COUNT" -gt 0 ]; then
+                      echo "ERROR: Found files starting with dot:"
+                      find release/fe-search-ai -name ".*"
+                      exit 1
                   fi
 
             - name: Create GitHub Release
-              id: create_release
-              uses: actions/create-release@v1
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              uses: softprops/action-gh-release@v2
               with:
-                  tag_name: ${{ github.ref_name }}
-                  release_name: FE Search AI ${{ github.ref_name }}
-                  body: |
-                      ${{ steps.changelog.outputs.CHANGELOG }}
-
-                      ## Installation
-
-                      1. Download the zip file below
-                      2. Upload to your WordPress plugins directory
-                      3. Activate the plugin in WordPress
-
+                  files: ${{ steps.create_zip.outputs.zip_file }}
+                  generate_release_notes: true
                   draft: false
                   prerelease: false
-
-            - name: Upload Release Asset
-              uses: actions/upload-release-asset@v1
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              with:
-                  upload_url: ${{ steps.create_release.outputs.upload_url }}
-                  asset_path: ./release/fe-search-ai-${{ github.ref_name }}.zip
-                  asset_name: fe-search-ai-${{ github.ref_name }}.zip
-                  asset_content_type: application/zip
 
     deploy-to-svn:
         name: Deploy to WordPress.org SVN
@@ -115,20 +109,26 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v4
 
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '8.2'
+                  coverage: none
+
             - name: Setup Node.js
               uses: actions/setup-node@v4
               with:
                   node-version: '18'
                   cache: 'npm'
 
-            - name: Install dependencies
+            - name: Install PHP dependencies
+              run: composer install --no-dev --prefer-dist
+
+            - name: Install Node dependencies
               run: npm ci
 
             - name: Build assets
-              run: |
-                  if npm run | grep -q "build"; then
-                    npm run build
-                  fi
+              run: npm run build
 
             - name: Deploy to WordPress.org
               uses: 10up/action-wordpress-plugin-deploy@stable

@@ -3,7 +3,7 @@ Contributors: firstelementjp
 Tags: ai, search, chat, conversational, semantic, vector, embedding, rag
 Requires at least: 5.8
 Tested up to: 6.4
-Stable tag: 1.0.0
+Stable tag: 0.9.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -67,7 +67,7 @@ Yes, the plugin includes numerous customization options and filter hooks for dev
 
 == Changelog ==
 
-= 1.0.0 =
+= 0.9.0 =
 * Initial release
 * Core AI search functionality
 * Multiple AI provider support
@@ -76,7 +76,7 @@ Yes, the plugin includes numerous customization options and filter hooks for dev
 
 == Upgrade Notice ==
 
-= 1.0.0 =
+= 0.9.0 =
 Initial release of FE Search AI.
 
 == Arbitrary section ==
