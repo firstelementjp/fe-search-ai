@@ -4,8 +4,8 @@
  *
  * @package    fe-search-ai
  * @subpackage Core
- * @since      1.0.0
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @since 0.9.0
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 
@@ -22,10 +22,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  * It can use either a custom encryption key defined in wp-config.php or fall back
  * to WordPress's AUTH_KEY for encryption/decryption operations.
  *
- * @since      1.0.0
+ * @since 0.9.0
  * @package    fe-search-ai
  * @subpackage Core
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 class FE_Search_AI_Encryption_Helper {
@@ -33,7 +33,7 @@ class FE_Search_AI_Encryption_Helper {
 	/**
 	 * The encryption cipher to use for OpenSSL operations.
 	 *
-	 * @since   1.0.0
+	 * @since 0.9.0
 	 * @var     string
 	 */
 	private const CIPHER = 'aes-256-cbc';
@@ -45,7 +45,7 @@ class FE_Search_AI_Encryption_Helper {
 	 * 1. Uses the FE_AI_SEARCH_ENCRYPTION_KEY constant if defined in wp-config.php.
 	 * 2. Falls back to using WordPress's default AUTH_KEY as a secure, site-unique key.
 	 *
-	 * @since   1.0.0
+	 * @since 0.9.0
 	 * @static
 	 *
 	 * @return string|false The encryption key, or false if no valid key is available.
@@ -69,7 +69,7 @@ class FE_Search_AI_Encryption_Helper {
 	/**
 	 * Encrypts a plaintext string using AES-256-CBC encryption.
 	 *
-	 * @since   1.0.0
+	 * @since 0.9.0
 	 * @static
 	 *
 	 * @param string $plaintext The plaintext string to encrypt.
@@ -95,7 +95,7 @@ class FE_Search_AI_Encryption_Helper {
 	/**
 	 * Decrypts a base64-encoded ciphertext string.
 	 *
-	 * @since   1.0.0
+	 * @since 0.9.0
 	 * @static
 	 *
 	 * @param string $ciphertext The base64-encoded string to decrypt.

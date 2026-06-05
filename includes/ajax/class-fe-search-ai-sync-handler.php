@@ -8,8 +8,8 @@
  *
  * @package    fe-search-ai
  * @subpackage Ajax
- * @since      1.0.0
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @since 0.9.0
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 
@@ -29,10 +29,10 @@ use WP_Error;
  * content synchronization. It also provides the core search method (`find_similar_chunks`)
  * used by other classes to retrieve contextually relevant data.
  *
- * @since      1.0.0
+ * @since 0.9.0
  * @package    fe-search-ai
  * @subpackage Ajax
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 class FE_Search_AI_Sync_Handler {

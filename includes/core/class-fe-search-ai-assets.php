@@ -8,8 +8,8 @@
  *
  * @package    fe-search-ai
  * @subpackage Core
- * @since      1.0.0
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @since 0.9.0
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 
@@ -25,10 +25,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  * This class is responsible for registering and enqueueing all the
  * assets, styles, and scripts that the plugin uses.
  *
- * @since      1.0.0
+ * @since 0.9.0
  * @package    fe-search-ai
  * @subpackage Core
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 class FE_Search_AI_Assets {

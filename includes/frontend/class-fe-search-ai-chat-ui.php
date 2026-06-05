@@ -8,8 +8,8 @@
  *
  * @package    fe-search-ai
  * @subpackage Frontend
- * @since      1.0.0
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @since 0.9.0
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 
@@ -26,10 +26,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  * on the frontend of the site, either automatically as a floating element
  * or manually via a shortcode, based on user settings.
  *
- * @since      1.0.0
+ * @since 0.9.0
  * @package    fe-search-ai
  * @subpackage Frontend
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 class FE_Search_AI_Chat_UI {

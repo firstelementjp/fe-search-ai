@@ -612,8 +612,8 @@ msgid "First greeting"
 msgstr "最初の挨拶文"
 
 #. Author of the plugin
-msgid "FirstElement, Inc."
-msgstr "FirstElement, Inc."
+msgid "FirstElement K.K."
+msgstr "FirstElement K.K."
 
 #: includes/admin/class-fe-search-ai-settings.php:386
 msgid "Floating Mode Settings"

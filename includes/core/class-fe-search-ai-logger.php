@@ -4,8 +4,8 @@
  *
  * @package    fe-search-ai
  * @subpackage Core
- * @since      1.0.0
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @since 0.9.0
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 
@@ -21,10 +21,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Provides a static interface for writing structured log entries to the
  * custom system logs table when debug mode is enabled.
  *
- * @since      1.0.0
+ * @since 0.9.0
  * @package    fe-search-ai
  * @subpackage Core
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 class FE_Search_AI_Logger {

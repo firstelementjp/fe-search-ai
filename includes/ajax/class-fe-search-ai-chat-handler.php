@@ -8,8 +8,8 @@
  *
  * @package    fe-search-ai
  * @subpackage Ajax
- * @since      1.0.0
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @since 0.9.0
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 
@@ -29,10 +29,10 @@ use FESearchAI\Core\FE_Search_AI_License;
  * real-time streaming chat, non-streaming API queries, conversation logging,
  * and API key validation tests.
  *
- * @since      1.0.0
+ * @since 0.9.0
  * @package    fe-search-ai
  * @subpackage Ajax
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 class FE_Search_AI_Chat_Handler {
@@ -1880,7 +1880,7 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 	 * and the Pro version is active before proceeding. The method sanitizes input data and stores
 	 * the conversation in the custom database table.
 	 *
-	 * @since    1.0.0
+	 * @since 0.9.0
 	 * @return   void
 	 *
 	 * @uses     check_ajax_referer() Verifies the AJAX request to prevent CSRF.

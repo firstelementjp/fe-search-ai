@@ -608,7 +608,7 @@ msgid "First greeting"
 msgstr ""
 
 #. Author of the plugin
-msgid "FirstElement, Inc."
+msgid "FirstElement K.K."
 msgstr ""
 
 #: includes/admin/class-fe-search-ai-settings.php:386

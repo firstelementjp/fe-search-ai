@@ -7,8 +7,8 @@
  *
  * @package    fe-search-ai
  * @subpackage Core
- * @since      1.0.0
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @since 0.9.0
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 
@@ -28,10 +28,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  * the plugin, and registers them with the WordPress API. Call the
  * run function to execute the list of actions and filters.
  *
- * @since      1.0.0
+ * @since 0.9.0
  * @package    fe-search-ai
  * @subpackage Core
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 class FE_Search_AI_Activator {

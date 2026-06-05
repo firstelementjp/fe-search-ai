@@ -7,8 +7,8 @@
  *
  * @package    fe-search-ai
  * @subpackage Admin
- * @since      1.0.0
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @since 0.9.0
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 
@@ -28,10 +28,10 @@ use FESearchAI\Core\FE_Search_AI_License;
  * various settings sections and fields, including API keys, synchronization options,
  * and display preferences.
  *
- * @since      1.0.0
+ * @since 0.9.0
  * @package    fe-search-ai
  * @subpackage Admin
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 class FE_Search_AI_Settings {

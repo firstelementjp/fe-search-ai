@@ -7,7 +7,7 @@
  * and options.
  *
  * @package    fe-search-ai
- * @since      1.0.0
+ * @since      0.9.0
  */
 
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {

@@ -7,8 +7,8 @@
  *
  * @package    fe-search-ai
  * @subpackage Admin
- * @since      1.0.0
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @since 0.9.0
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 
@@ -26,10 +26,10 @@ use FESearchAI\Admin\FE_Search_AI_Settings;
  * Defines the plugin name, version, and hooks for how to
  * enqueue the admin-specific stylesheet and JavaScript.
  *
- * @since      1.0.0
+ * @since 0.9.0
  * @package    fe-search-ai
  * @subpackage Admin
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 class FE_Search_AI_Admin {

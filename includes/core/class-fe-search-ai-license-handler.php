@@ -7,7 +7,7 @@
  *
  * @package    fe-search-ai
  * @subpackage Core
- * @since      1.0.0
+ * @since 0.9.0
  * @license    GPL-2.0-or-later
  */
 
@@ -20,10 +20,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * The license handler class for the Pro add-on.
  *
- * @since      1.0.0
+ * @since 0.9.0
  * @package    fe-search-ai
  * @subpackage Core
- * @author     FirstElement, Inc. <info@firstelement.co.jp>
+ * @author     FirstElement K.K. <info@firstelement.co.jp>
  * @license    GPL-2.0-or-later
  */
 class FE_Search_AI_License_Handler {
