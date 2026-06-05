@@ -93,7 +93,7 @@
 		"bare-events": "^2.8.1",
 		"base64-js": "^1.5.1",
 		"baseline-browser-mapping": "^2.8.24",
-		"basic-ftp": "^5.0.5",
+		"basic-ftp": "^5.3.1",
 		"batch": "^0.6.1",
 		"big.js": "^5.2.2",
 		"binary-extensions": "^2.3.0",
