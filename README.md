@@ -176,27 +176,6 @@ The plugin includes built-in support for Japanese tokenization using **TinySegme
 
 For detailed implementation notes, see the [hooks documentation](https://firstelementjp.github.io/fe-search-ai/#/hooks).
 
-### CI/CD Pipeline
-
-- **Continuous Integration**: Runs on every push and pull request to `main` and `develop` branches
-    - PHP code quality checks (PHPCS) across PHP 7.4-8.2
-    - JavaScript quality checks (ESLint, Prettier)
-    - Security scanning (Composer audit, NPM audit)
-    - WordPress plugin structure validation
-
-- **Release Pipeline**: Triggered by version tags (e.g., `v1.0.0`)
-    - Automated release zip creation
-    - GitHub release with changelog
-    - WordPress.org SVN deployment (if configured)
-
-### Required GitHub Secrets
-
-For the release workflow to work properly, configure these secrets in your GitHub repository:
-
-- `GITHUB_TOKEN`: Automatically provided by GitHub Actions
-- `SVN_USERNAME`: WordPress.org SVN username (optional)
-- `SVN_PASSWORD`: WordPress.org SVN password (optional)
-
 ## 🤝 Contributing
 
 Contributions are welcome.
