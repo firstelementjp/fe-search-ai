@@ -1,6 +1,6 @@
 {
 	"name": "fe-search-ai",
-	"version": "1.0.0",
+	"version": "0.9.0",
 	"description": "AI Search functionality for WordPress",
 	"main": "index.js",
 	"scripts": {

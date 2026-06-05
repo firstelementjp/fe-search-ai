@@ -7,7 +7,7 @@
 **FE Search AI** is a WordPress plugin that provides AI-powered semantic search.
 Uses vector embeddings and AI reranking for intelligent content discovery.
 
-- **Version**: 1.0.0
+- **Version**: 0.9.0
 - **License**: GPL-2.0+
 - **PHP**: >= 7.4
 - **Repository**: https://github.com/firstelementjp/fe-search-ai
@@ -177,9 +177,9 @@ $decrypted = Encryption_Helper::decrypt( $encrypted );
 4. Create git tag: `git tag v1.0.0`
 5. Push tag: `git push origin v1.0.0`
 6. GitHub Actions will automatically:
-   - Create release ZIP
-   - Create GitHub Release with changelog
-   - Deploy to WordPress.org SVN (if secrets configured)
+    - Create release ZIP
+    - Create GitHub Release with changelog
+    - Deploy to WordPress.org SVN (if secrets configured)
 
 ## GitHub Actions Workflows
 

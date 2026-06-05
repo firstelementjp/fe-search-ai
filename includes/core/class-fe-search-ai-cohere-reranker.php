@@ -14,14 +14,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  * injected into the LLM prompt.
  *
  * @package fe-search-ai
- * @since 1.0.0
+ * @since 0.9.0
  */
 class FE_Search_AI_Cohere_Reranker {
 
 	/**
 	 * Check whether plugin debug mode is enabled.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return bool
 	 */
 	private static function is_debug_enabled() {
@@ -33,7 +33,7 @@ class FE_Search_AI_Cohere_Reranker {
 	/**
 	 * Build debug payload items from chunks.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @param array $chunks Chunks.
 	 * @return array
 	 */
@@ -55,7 +55,7 @@ class FE_Search_AI_Cohere_Reranker {
 	/**
 	 * Register filter hooks.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public static function register() {
@@ -72,7 +72,7 @@ class FE_Search_AI_Cohere_Reranker {
 	 * - If reranking is disabled or misconfigured, returns the original chunks.
 	 * - If the API call fails, returns the original chunks trimmed to top N.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @param array  $chunks   Retrieved chunks.
 	 * @param string $question User question.
 	 * @return array
@@ -246,7 +246,7 @@ class FE_Search_AI_Cohere_Reranker {
 	/**
 	 * Call Cohere Rerank API.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @param string $api_key   Cohere API key.
 	 * @param string $question  Query string.
 	 * @param array  $documents Document strings.

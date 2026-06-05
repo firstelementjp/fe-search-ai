@@ -1,5 +1,6 @@
 # Distribution files for git archive (release ZIP)
 # This file controls what is excluded from git archive.
+.gitattributes export-ignore
 
 # Exclude development and build files
 composer.json export-ignore
@@ -14,6 +15,7 @@ phpcs.xml.dist export-ignore
 .eslintrc.json export-ignore
 .prettierrc export-ignore
 .prettierignore export-ignore
+.eslintignore export-ignore
 .envrc export-ignore
 .envrc.example export-ignore
 

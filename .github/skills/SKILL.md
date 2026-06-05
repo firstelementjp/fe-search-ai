@@ -10,11 +10,13 @@
 **Problem**: Large content sets cause sync to timeout.
 
 **Solution**:
+
 - Reduce batch size in sync settings
 - Increase PHP `max_execution_time`
 - Use AJAX-based sync with progress tracking
 
 **Code Pattern**:
+
 ```php
 // Check execution time periodically
 if ( time() - $start_time > $max_execution_time - 5 ) {
@@ -27,11 +29,13 @@ if ( time() - $start_time > $max_execution_time - 5 ) {
 **Problem**: Embedding generation fails for certain content.
 
 **Solution**:
+
 - Check API key validity
 - Verify content encoding (UTF-8)
 - Handle API rate limits with exponential backoff
 
 **Code Pattern**:
+
 ```php
 try {
     $embedding = $api->generate_embedding( $text );
@@ -49,12 +53,14 @@ try {
 **Problem**: Search returns no results even for existing content.
 
 **Solution**:
+
 - Verify content has been synced
 - Check vector embeddings exist in database
 - Verify search query is not empty
 - Check minimum score threshold settings
 
 **Debug Steps**:
+
 1. Check sync status in admin
 2. Query database for embeddings: `SELECT * FROM wp_fe_search_ai_embeddings`
 3. Test with simple query
@@ -65,11 +71,13 @@ try {
 **Problem**: Cohere API errors during reranking.
 
 **Solution**:
+
 - Verify API key is valid
 - Check API quota limits
 - Implement graceful fallback to original results
 
 **Code Pattern**:
+
 ```php
 if ( ! empty( $api_key ) ) {
     try {
@@ -88,11 +96,13 @@ if ( ! empty( $api_key ) ) {
 **Problem**: API keys stored in plain text in database.
 
 **Solution**:
+
 - Use OpenSSL encryption for API keys
 - Store encrypted keys in options
 - Decrypt only when needed
 
 **Code Pattern**:
+
 ```php
 // Encrypt
 $encrypted = openssl_encrypt(
@@ -118,11 +128,13 @@ $decrypted = openssl_decrypt(
 **Problem**: API calls hit rate limits during sync.
 
 **Solution**:
+
 - Implement exponential backoff
 - Add delays between batches
 - Track API usage and throttle accordingly
 
 **Code Pattern**:
+
 ```php
 $retry_count = 0;
 $max_retries = 3;
@@ -145,12 +157,14 @@ while ( $retry_count < $max_retries ) {
 **Problem**: Search form shortcode returns empty output.
 
 **Solution**:
+
 - Verify plugin is active
 - Check shortcode syntax: `[fe_search_ai]`
 - Check for JavaScript errors in browser console
 - Verify assets are enqueued
 
 **Debug Steps**:
+
 1. Check browser console for errors
 2. Verify assets are loaded in network tab
 3. Check if `wp_enqueue_scripts` hook is firing
@@ -161,12 +175,14 @@ while ( $retry_count < $max_retries ) {
 **Problem**: Search AJAX requests fail with 500 error.
 
 **Solution**:
+
 - Check WordPress debug log
 - Verify nonce is valid
 - Check user capabilities
 - Verify AJAX handler is registered
 
 **Code Pattern**:
+
 ```php
 // Always verify nonce
 check_ajax_referer( 'fe_search_ai_nonce', 'nonce' );
@@ -184,11 +200,13 @@ if ( ! current_user_can( 'read' ) ) {
 **Problem**: Plugin tables not created on activation.
 
 **Solution**:
+
 - Verify activation hook is firing
 - Check dbDelta() SQL syntax
 - Ensure user has CREATE TABLE permissions
 
 **Code Pattern**:
+
 ```php
 register_activation_hook( __FILE__, 'fe_search_ai_activate' );
 
@@ -215,13 +233,15 @@ function fe_search_ai_activate() {
 **Problem**: Schema changes cause errors on update.
 
 **Solution**:
+
 - Use version tracking in options
 - Implement incremental migrations
 - Test migrations on staging first
 
 **Code Pattern**:
+
 ```php
-$current_version = get_option( 'fe_search_ai_db_version', '1.0.0' );
+$current_version = get_option( 'fe_search_ai_db_version', '0.9.0' );
 
 if ( version_compare( $current_version, '1.1.0', '<' ) ) {
     // Migration to 1.1.0
@@ -237,12 +257,14 @@ if ( version_compare( $current_version, '1.1.0', '<' ) ) {
 **Problem**: Search queries take too long.
 
 **Solution**:
+
 - Add database indexes on frequently queried columns
 - Implement caching for common queries
 - Use vector similarity search optimizations
 - Consider pagination for large result sets
 
 **Code Pattern**:
+
 ```php
 // Add index to post_id column
 ALTER TABLE wp_fe_search_ai_embeddings ADD INDEX post_id (post_id);
@@ -262,12 +284,14 @@ if ( false === $cached ) {
 **Problem**: Sync process runs out of memory.
 
 **Solution**:
+
 - Reduce batch size
 - Use memory-efficient data structures
 - Clear unnecessary variables between batches
 - Increase PHP memory limit if needed
 
 **Code Pattern**:
+
 ```php
 // Clear memory between batches
 unset( $batch_data );
@@ -284,11 +308,13 @@ ini_set( 'memory_limit', '512M' );
 **Problem**: Japanese text not properly segmented for search.
 
 **Solution**:
+
 - Use TinySegmenter for Japanese text
 - Ensure proper UTF-8 encoding
 - Test with Japanese-specific queries
 
 **Code Pattern**:
+
 ```php
 if ( 'ja' === $language ) {
     $segmenter = new TinySegmenter();
@@ -305,11 +331,13 @@ if ( 'ja' === $language ) {
 **Problem**: User input not properly escaped in output.
 
 **Solution**:
+
 - Always escape output with WordPress functions
 - Use `esc_html()`, `esc_attr()`, `esc_url()`
 - Sanitize input with `sanitize_text_field()`
 
 **Code Pattern**:
+
 ```php
 // Bad
 echo $user_input;
@@ -323,11 +351,13 @@ echo esc_html( $user_input );
 **Problem**: User input used directly in SQL queries.
 
 **Solution**:
+
 - Use `$wpdb->prepare()` for all queries
 - Never concatenate user input into SQL
 - Validate and sanitize input before use
 
 **Code Pattern**:
+
 ```php
 // Bad
 $sql = "SELECT * FROM table WHERE id = " . $_POST['id'];
@@ -343,12 +373,14 @@ $sql = $wpdb->prepare( "SELECT * FROM table WHERE id = %d", $_POST['id'] );
 **Problem**: Tests fail in CI but pass locally.
 
 **Solution**:
+
 - Check PHP version differences
 - Verify test database configuration
 - Check for environment-specific dependencies
 - Review test isolation
 
 **Debug Steps**:
+
 1. Run tests locally with same PHP version as CI
 2. Check test database schema
 3. Verify all dependencies are installed

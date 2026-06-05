@@ -67,7 +67,7 @@ class FE_Search_AI_Settings {
 	 * It uses do_settings_sections() and do_settings_fields() to render the
 	 * content for each tab, which is defined in the settings_init() method.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 */
 	public static function render_page() {
 		// Determine if the Pro license is active and the Pro add-on is installed.
@@ -106,7 +106,7 @@ class FE_Search_AI_Settings {
 				 * non-Pro add-ons), as Pro-specific tabs are pre-defined above and
 				 * only shown when the license is active.
 				 *
-				 * @since 1.0.0
+				 * @since 0.9.0
 				 */
 				do_action( 'fe_search_ai_settings_tabs' );
 				?>
@@ -257,7 +257,7 @@ class FE_Search_AI_Settings {
 					 * 'fe_search_ai_settings_tabs' action. It allows other plugins to render the
 					 * content (the <div id="tab_...">) for the custom tabs they have added.
 					 *
-					 * @since 1.0.0
+					 * @since 0.9.0
 					 */
 					do_action( 'fe_search_ai_settings_tabs_content' );
 					?>
@@ -279,7 +279,7 @@ class FE_Search_AI_Settings {
 	/**
 	 * Renders the checkbox to control whether embeddings are generated from summaries.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function use_summary_for_embedding_field_html() {
@@ -304,7 +304,7 @@ class FE_Search_AI_Settings {
 	 * and fields for the settings page, including provider configuration,
 	 * sync options, display settings, prompts, and advanced options.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function settings_init() {
@@ -434,7 +434,7 @@ class FE_Search_AI_Settings {
 	/**
 	 * Renders the HTML for the reranker settings section.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function rerank_settings_field_html() {
@@ -488,7 +488,7 @@ class FE_Search_AI_Settings {
 	 * as storage backends for chunk data and vector embeddings.
 	 * It displays database engine information and configuration guidance.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function vector_store_field_html() {
@@ -565,7 +565,7 @@ class FE_Search_AI_Settings {
 	/**
 	 * Renders the HTML for the hybrid search setting.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function hybrid_search_field_html() {
@@ -600,7 +600,7 @@ class FE_Search_AI_Settings {
 	 * and collection name configuration. It provides descriptions for
 	 * each field and handles secure API key management.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function qdrant_settings_field_html() {
@@ -690,7 +690,7 @@ class FE_Search_AI_Settings {
 	 * (OpenAI, Google, Anthropic, etc.) with support for provider filtering
 	 * via hooks. It displays the current selection and provider descriptions.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function chat_provider_field_html() {
@@ -708,7 +708,7 @@ class FE_Search_AI_Settings {
 		 * This hook allows other plugins or themes to add, remove, or modify
 		 * the AI models available for selection in the settings.
 		 *
-		 * @since 1.0.0
+		 * @since 0.9.0
 		 *
 		 * @param array $providers An associative array of AI providers,
 		 * where the key is the provider slug (e.g., 'openai')
@@ -736,7 +736,7 @@ class FE_Search_AI_Settings {
 	 * This method outputs a dropdown menu for selecting the AI rerank
 	 * provider used for reranking search results. Currently only Cohere is supported.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function rerank_provider_field_html() {
@@ -752,7 +752,7 @@ class FE_Search_AI_Settings {
 		 * This hook allows other plugins or themes to add, remove, or modify
 		 * the AI models available for selection for the reranking process.
 		 *
-		 * @since 1.0.0
+		 * @since 0.9.0
 		 *
 		 * @param array $providers An associative array of AI rerank providers,
 		 * where the key is the provider slug (e.g., 'cohere')
@@ -781,7 +781,7 @@ class FE_Search_AI_Settings {
 	 * provider used for vectorization. It supports provider filtering via
 	 * hooks and includes descriptions for each available provider.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function embedding_provider_field_html() {
@@ -798,7 +798,7 @@ class FE_Search_AI_Settings {
 		 * This hook allows other plugins or themes to add, remove, or modify
 		 * the AI models available for selection for the vectorization process.
 		 *
-		 * @since 1.0.0
+		 * @since 0.9.0
 		 *
 		 * @param array $providers An associative array of AI embedding providers,
 		 * where the key is the provider slug (e.g., 'google')
@@ -834,7 +834,7 @@ class FE_Search_AI_Settings {
 	 * This method displays all API providers in a table format with
 	 * columns for API key creation, API key input, connection test, and model.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 */
 	public function api_keys_field_html() {
 		// Define provider data
@@ -1005,7 +1005,7 @@ class FE_Search_AI_Settings {
 	 * (title, content, date, author), taxonomy configuration with include/exclude
 	 * term IDs, and custom field integration for Pro users.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function sync_options_field_html() {
@@ -1164,7 +1164,7 @@ class FE_Search_AI_Settings {
 	 * This includes the status of the Japanese tokenizer (if applicable),
 	 * the last sync time, and the buttons to trigger a sync.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 */
 	public function sync_ui_field_html() {
 		global $wpdb;
@@ -1215,7 +1215,7 @@ class FE_Search_AI_Settings {
 					 * This allows the Sync_Handler (for MeCab) or add-ons (for other languages)
 					 * to add their own tokenizer status UI.
 					 *
-					 * @since 1.0.0
+					 * @since 0.9.0
 					 * @param array $statuses An array of HTML strings, each representing a status line.
 					 */
 					$tokenizer_statuses = apply_filters( 'fe_search_ai_tokenizer_status', [] );
@@ -1267,7 +1267,7 @@ class FE_Search_AI_Settings {
 	 * This displays a button that triggers an AJAX-based delete process and
 	 * a status area for feedback messages.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function delete_vectors_ui_field_html() {
@@ -1289,7 +1289,7 @@ class FE_Search_AI_Settings {
 	 * Placed under the "Delete Synced Data" control in the Advanced tab so that
 	 * all destructive maintenance actions are grouped together.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function delete_system_logs_ui_field_html() {
@@ -1311,7 +1311,7 @@ class FE_Search_AI_Settings {
 	 * Placed next to the system log delete control so that each log type can
 	 * be purged independently.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function delete_conversation_logs_ui_field_html() {
@@ -1330,7 +1330,7 @@ class FE_Search_AI_Settings {
 	/**
 	 * Handles the AJAX request to delete all system logs.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function ajax_delete_system_logs() {
@@ -1348,7 +1348,7 @@ class FE_Search_AI_Settings {
 	/**
 	 * Handles the AJAX request to delete all conversation logs.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function ajax_delete_conversation_logs() {
@@ -1378,7 +1378,7 @@ class FE_Search_AI_Settings {
 	 * Controls login status visibility, device targeting, and per-template
 	 * display conditions including include/exclude post ID rules.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function display_floating_field_html() {
@@ -1557,7 +1557,7 @@ class FE_Search_AI_Settings {
 	 * Controls how many days system logs and conversation logs are kept before
 	 * being automatically deleted by the daily log rotation cron.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function log_retention_days_field_html() {
@@ -1593,7 +1593,7 @@ class FE_Search_AI_Settings {
 	 * Yahoo! App ID. It only displays for Japanese locale sites and includes
 	 * information about wp-config.php constant overrides.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function japanese_tokenizer_field_html() {
@@ -1664,7 +1664,7 @@ class FE_Search_AI_Settings {
 	 * Outputs a simple description and the shortcode that can be pasted into
 	 * a fixed page or post to embed the chat UI.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function display_embed_field_html() {
@@ -1689,7 +1689,7 @@ class FE_Search_AI_Settings {
 	 * and color pickers for key color, background color, and text color.
 	 * It also includes the gradient toggle option for visual styling.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function display_text_color_field_html() {
@@ -1851,7 +1851,7 @@ class FE_Search_AI_Settings {
 	 * CSS and JavaScript assets. It allows developers to replace default
 	 * assets with custom implementations for full control over the chat UI.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function display_advanced_field_html() {
@@ -1896,7 +1896,7 @@ class FE_Search_AI_Settings {
 	 * When any IDs are provided here, general post-type based sync rules
 	 * are ignored and only the specified posts are synchronized.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function include_post_ids_field_html() {
@@ -1921,7 +1921,7 @@ class FE_Search_AI_Settings {
 	 * Posts whose IDs are entered here will be skipped even if they match
 	 * the post-type based inclusion rules.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function exclude_post_ids_field_html() {
@@ -1948,7 +1948,7 @@ class FE_Search_AI_Settings {
 	 * A positive value limits synchronization to the most recent N posts,
 	 * while -1 indicates that all eligible posts should be synchronized.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function sync_limit_field_html() {
@@ -1979,7 +1979,7 @@ class FE_Search_AI_Settings {
 	 * When enabled, all plugin-related tables and options are removed during
 	 * uninstallation; otherwise data is preserved for potential re-use.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function delete_on_uninstall_field_html() {
@@ -2016,7 +2016,7 @@ class FE_Search_AI_Settings {
 	 * This method is retained for backward compatibility and provides a
 	 * simple post-type checkbox list used by older sync configurations.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function sync_post_types_field_html() {
@@ -2092,7 +2092,7 @@ class FE_Search_AI_Settings {
 	 * Converts full-width numerals, spaces, and commas to their half-width
 	 * equivalents, then removes any character that is not a digit or comma.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 *
 	 * @param string $input Value before being saved.
 	 * @return string Value after sanitization.
@@ -2113,7 +2113,7 @@ class FE_Search_AI_Settings {
 	 * full-width numbers to half-width, while preserving the rest of the
 	 * structure as-is.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 *
 	 * @param array $input Option array before being saved.
 	 * @return array Option array after sanitization.
@@ -2139,7 +2139,7 @@ class FE_Search_AI_Settings {
 	 * If no custom prompt is saved, it falls back to the shared default
 	 * system prompt from the chat handler class.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function system_prompt_field_html() {
@@ -2164,7 +2164,7 @@ class FE_Search_AI_Settings {
 	/**
 	 * Renders the structured output option field.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function structured_output_field_html() {
@@ -2193,7 +2193,7 @@ class FE_Search_AI_Settings {
 	 * Controls how many posts are processed per batch during synchronization
 	 * to balance performance and timeout risk on shared hosting.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function batch_size_field_html() {
@@ -2218,7 +2218,7 @@ class FE_Search_AI_Settings {
 	/**
 	 * Renders the HTML for the Debug Mode checkbox.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 */
 	public function debug_mode_field_html() {
 		$advanced_options = $this->options['advanced'] ?? [];
@@ -2243,7 +2243,7 @@ class FE_Search_AI_Settings {
 	 * This value is injected into the system prompt in place of the
 	 * {site_name} placeholder; defaults to the WordPress site title.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function site_name_field_html() {
@@ -2261,7 +2261,7 @@ class FE_Search_AI_Settings {
 	 * This value is injected into the system prompt in place of the
 	 * {site_purpose} placeholder; defaults to the site tagline.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function site_purpose_field_html() {
@@ -2281,7 +2281,7 @@ class FE_Search_AI_Settings {
 	 * It receives the raw input from the form, validates/cleans each part,
 	 * and merges it with the existing settings to ensure no data is lost.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @param array $input The raw array of settings data from the $_POST request.
 	 * @return array The fully sanitized and merged array to be saved.
 	 */
@@ -2465,7 +2465,7 @@ class FE_Search_AI_Settings {
 	/**
 	 * Sanitizes the site info settings before saving to the database.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @param array $input The raw array of site info data from the $_POST request.
 	 * @return array The sanitized array to be saved.
 	 */
@@ -2479,7 +2479,7 @@ class FE_Search_AI_Settings {
 	/**
 	 * Sanitizes and encrypts a secret setting value.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @param string $new_value The submitted secret value.
 	 * @param string $existing_value The currently saved encrypted value.
 	 * @return string The encrypted secret value.
@@ -2506,7 +2506,7 @@ class FE_Search_AI_Settings {
 	/**
 	 * Sanitizes the custom prompts array.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @param array $input The raw array of custom prompts data from the $_POST request.
 	 * @return array The sanitized array to be saved.
 	 */
@@ -2692,7 +2692,7 @@ class FE_Search_AI_Settings {
 	 * send key configuration. It includes a range slider for animation speed
 	 * (1-10) and a dropdown for send key behavior (Enter/Shift+Enter/Cmd+Enter).
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function display_interaction_field_html() {
@@ -2746,7 +2746,7 @@ class FE_Search_AI_Settings {
 	 * and Privacy Policy pages using WordPress page dropdowns. It includes
 	 * descriptions for each field and fallback behavior for privacy settings.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public function display_links_field_html() {

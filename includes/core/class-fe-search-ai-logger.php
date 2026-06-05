@@ -155,7 +155,7 @@ class FE_Search_AI_Logger {
 	 * This method is intended to be called from an admin-only context when
 	 * the site owner explicitly requests a full log purge.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public static function clear_logs() {
@@ -177,7 +177,7 @@ class FE_Search_AI_Logger {
 	 * This method is called by the daily cron event to automatically clean up
 	 * old log entries and prevent the logs table from growing indefinitely.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public static function rotate_logs() {
@@ -209,7 +209,7 @@ class FE_Search_AI_Logger {
 	 * This method is intended to be called by the daily cron event, similarly to
 	 * rotate_logs(), but targets the conversation logs table.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public static function rotate_conversation_logs() {

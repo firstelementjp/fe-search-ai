@@ -227,7 +227,7 @@ class FE_Search_AI_Sync_Hooks {
 	 * This method is hooked to 'wp_trash_post' and 'delete_post' to ensure that
 	 * when a post is removed, its data is also removed from the AI index.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @param int $post_id The ID of the post being deleted.
 	 */
 	public function delete_post_from_index( $post_id ) {

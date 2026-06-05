@@ -186,7 +186,7 @@ class FE_Search_AI_Assets {
 			 * This allows advanced customization of the base CSS variables used by
 			 * the frontend chat UI (e.g. for light/dark theme switching).
 			 *
-			 * @since 1.0.0
+			 * @since 0.9.0
 			 *
 			 * @param string $color_css The generated inline CSS string.
 			 * @param array  $colors    Array of normalized hex colors with keys

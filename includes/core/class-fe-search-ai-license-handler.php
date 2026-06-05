@@ -31,7 +31,7 @@ class FE_Search_AI_License_Handler {
 	/**
 	 * Activates a license key by sending it to the license server.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @param string $license_key The license key to activate.
 	 * @return array An array containing the result of the activation attempt.
 	 */
@@ -42,7 +42,7 @@ class FE_Search_AI_License_Handler {
 	/**
 	 * Deactivates a license key by sending it to the license server.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @param string $license_key The license key to deactivate.
 	 * @return array An array containing the result of the deactivation attempt.
 	 */
@@ -55,7 +55,7 @@ class FE_Search_AI_License_Handler {
 	 *
 	 * This is a common private method used for both activation and deactivation.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @access private
 	 * @param string $action      The action to perform ('activate' or 'deactivate').
 	 * @param string $license_key The license key.

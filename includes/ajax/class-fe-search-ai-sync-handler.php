@@ -236,7 +236,7 @@ class FE_Search_AI_Sync_Handler {
 		 * This hook allows developers to add custom query parameters (e.g., meta_query,
 		 * category__in) to modify which posts are selected for indexing by the AI.
 		 *
-		 * @since 1.0.0
+		 * @since 0.9.0
 		 *
 		 * @param array $args The array of query arguments passed to `get_posts()`.
 		 */
@@ -2392,7 +2392,7 @@ class FE_Search_AI_Sync_Handler {
 	 *
 	 * This method hooks into the 'fe_search_ai_tokenizer_status' filter.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @param array $statuses The existing status messages.
 	 * @return array The modified status messages.
 	 */
@@ -2422,7 +2422,7 @@ class FE_Search_AI_Sync_Handler {
 		 * label with their own description (for example, when providing a
 		 * custom tokenizer implementation via other hooks).
 		 *
-		 * @since 1.0.0
+		 * @since 0.9.0
 		 *
 		 * @param string $status_text        The HTML snippet describing the tokenizer.
 		 * @param string $japanese_tokenizer The current tokenizer identifier (e.g. 'tinysegmenter', 'mecab').

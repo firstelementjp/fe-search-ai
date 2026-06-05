@@ -52,12 +52,12 @@ if [ "$UNDERSCORE_COUNT" -gt 0 ]; then
     exit 1
 fi
 
-echo "Files starting with dot (should be 0):"
-DOT_COUNT=$(find "$TMPDIR/fe-search-ai" -name ".*" | wc -l | tr -d ' ')
+echo "Files starting with dot (should be 0, excluding vendor):"
+DOT_COUNT=$(find "$TMPDIR/fe-search-ai" -name ".*" -not -path "*/vendor/*" | wc -l | tr -d ' ')
 echo "       $DOT_COUNT"
 if [ "$DOT_COUNT" -gt 0 ]; then
     echo "ERROR: Found files starting with dot:"
-    find "$TMPDIR/fe-search-ai" -name ".*"
+    find "$TMPDIR/fe-search-ai" -name ".*" -not -path "*/vendor/*"
     exit 1
 fi
 

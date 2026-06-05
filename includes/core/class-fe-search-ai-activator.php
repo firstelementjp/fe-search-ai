@@ -42,7 +42,7 @@ class FE_Search_AI_Activator {
 	 * This constant is used to track the version of the database schema.
 	 * It should be incremented whenever the schema in create_tables() is changed.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 */
 	const DB_VERSION = '1.2';
 
@@ -52,7 +52,7 @@ class FE_Search_AI_Activator {
 	 * Creates the custom tables, sets the initial database version,
 	 * and sets default settings values.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 */
 	public static function activate() {
 		self::create_tables();
@@ -69,7 +69,7 @@ class FE_Search_AI_Activator {
 	 *
 	 * Clears any scheduled cron jobs.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 */
 	public static function deactivate() {
 		// Canceling Cron Job.
@@ -83,7 +83,7 @@ class FE_Search_AI_Activator {
 	 * and triggers the create_tables() method if an update is required.
 	 * It is hooked to 'plugins_loaded' to run on every page load.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 */
 	public static function check_db_version() {
 		$options           = get_option( 'fe_search_ai_settings', [] );
@@ -102,7 +102,7 @@ class FE_Search_AI_Activator {
 	/**
 	 * Creates or updates the custom database tables using dbDelta.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @global \wpdb $wpdb WordPress database abstraction object.
 	 */
 	public static function create_tables() {
@@ -179,7 +179,7 @@ class FE_Search_AI_Activator {
 	/**
 	 * Schedules the daily cron job for log rotation.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 */
 	public static function schedule_cron_jobs() {
 		// Registering Cron Job.
@@ -193,7 +193,7 @@ class FE_Search_AI_Activator {
 	 *
 	 * This ensures that the floating chat is enabled by default for better UX.
 	 *
-	 * @since 1.0.0
+	 * @since 0.9.0
 	 * @return void
 	 */
 	public static function set_default_settings() {

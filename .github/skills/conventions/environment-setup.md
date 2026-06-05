@@ -46,13 +46,13 @@ npm run build
 2. Create or select a site
 3. Right-click site → Open Site SSH
 4. Navigate to plugins directory:
-   ```bash
-   cd app/public/wp-content/plugins
-   ```
+    ```bash
+    cd app/public/wp-content/plugins
+    ```
 5. Create symlink or copy plugin:
-   ```bash
-   ln -s /path/to/fe-search-ai fe-search-ai
-   ```
+    ```bash
+    ln -s /path/to/fe-search-ai fe-search-ai
+    ```
 
 #### Manual WordPress Installation
 
@@ -159,6 +159,7 @@ tail -f wp-content/debug.log
 ### Browser Console
 
 Open browser DevTools (F12) to view:
+
 - Console errors
 - Network requests
 - AJAX responses
@@ -251,17 +252,19 @@ npm run build
 ### VS Code
 
 Install extensions:
+
 - PHP Intelephense
 - ESLint
 - Prettier
 - WordPress Snippets
 
 Recommended settings:
+
 ```json
 {
-    "php.validate.executablePath": "/usr/bin/php",
-    "editor.formatOnSave": true,
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+	"php.validate.executablePath": "/usr/bin/php",
+	"editor.formatOnSave": true,
+	"editor.defaultFormatter": "esbenp.prettier-vscode"
 }
 ```
 
@@ -284,6 +287,7 @@ Recommended settings:
 ### Commit Messages
 
 Follow conventional commits:
+
 ```
 feat: add custom embedding provider
 fix: resolve sync timeout issues
@@ -306,13 +310,13 @@ docs: update API integration guide
 ### PHP
 
 - Increase memory limit in `php.ini`:
-  ```ini
-  memory_limit = 512M
-  ```
+    ```ini
+    memory_limit = 512M
+    ```
 - Increase execution time:
-  ```ini
-  max_execution_time = 300
-  ```
+    ```ini
+    max_execution_time = 300
+    ```
 
 ### Database
 
@@ -346,6 +350,7 @@ chmod 755 directories
 ### .gitignore
 
 Ensure `.gitignore` excludes:
+
 - `node_modules/`
 - `vendor/`
 - `.env`
@@ -361,8 +366,8 @@ Ensure `.gitignore` excludes:
 2. Update `readme.txt`
 3. Run `./test-release.sh`
 4. Commit changes
-5. Create tag: `git tag v1.0.0`
-6. Push tag: `git push origin v1.0.0`
+5. Create tag: `git tag v0.9.0`
+6. Push tag: `git push origin v0.9.0`
 7. GitHub Actions will auto-deploy
 
 ### Manual Deployment

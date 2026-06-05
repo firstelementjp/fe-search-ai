@@ -23,7 +23,7 @@ Add PHPDoc to all classes, methods, and functions:
 /**
  * Generate embedding for text content.
  *
- * @since 1.0.0
+ * @since 0.9.0
  * @param string $text Text content to embed.
  * @param int    $post_id Post ID.
  * @return array Embedding vector.
@@ -34,6 +34,7 @@ public function generate_embedding( $text, $post_id ) {
 ```
 
 **PHPDoc Rules**:
+
 - First line: Brief description (no period)
 - `@since` tag for version when introduced
 - `@param` tags for all parameters
@@ -127,8 +128,8 @@ Add JSDoc to all functions:
  * @param {Object} options Search options.
  * @return {Promise<Array>} Search results.
  */
-async function performSearch( query, options ) {
-    // Implementation
+async function performSearch(query, options) {
+	// Implementation
 }
 ```
 
@@ -146,23 +147,24 @@ Use async/await for asynchronous operations:
 ```javascript
 // Good
 async function search() {
-    try {
-        const results = await api.search( query );
-        return results;
-    } catch ( error ) {
-        console.error( 'Search failed:', error );
-        return [];
-    }
+	try {
+		const results = await api.search(query);
+		return results;
+	} catch (error) {
+		console.error('Search failed:', error);
+		return [];
+	}
 }
 
 // Avoid
 function search() {
-    return api.search( query )
-        .then( results => results )
-        .catch( error => {
-            console.error( 'Search failed:', error );
-            return [];
-        } );
+	return api
+		.search(query)
+		.then(results => results)
+		.catch(error => {
+			console.error('Search failed:', error);
+			return [];
+		});
 }
 ```
 
@@ -171,9 +173,9 @@ function search() {
 Always check element existence:
 
 ```javascript
-const container = document.querySelector( '.fe-search-ai-results' );
-if ( ! container ) {
-    return;
+const container = document.querySelector('.fe-search-ai-results');
+if (!container) {
+	return;
 }
 
 container.innerHTML = results;
@@ -185,16 +187,16 @@ Use event delegation where possible:
 
 ```javascript
 // Good (delegation)
-document.addEventListener( 'click', ( e ) => {
-    if ( e.target.matches( '.fe-search-ai-button' ) ) {
-        handleClick( e );
-    }
-} );
+document.addEventListener('click', e => {
+	if (e.target.matches('.fe-search-ai-button')) {
+		handleClick(e);
+	}
+});
 
 // OK (direct)
-document.querySelectorAll( '.fe-search-ai-button' ).forEach( button => {
-    button.addEventListener( 'click', handleClick );
-} );
+document.querySelectorAll('.fe-search-ai-button').forEach(button => {
+	button.addEventListener('click', handleClick);
+});
 ```
 
 ## CSS Standards
@@ -212,16 +214,16 @@ Group related styles:
 ```css
 /* Search Form */
 .fe-search-ai-form {
-    /* Styles */
+	/* Styles */
 }
 
 .fe-search-ai-form__input {
-    /* Styles */
+	/* Styles */
 }
 
 /* Search Results */
 .fe-search-ai-results {
-    /* Styles */
+	/* Styles */
 }
 ```
 
@@ -232,21 +234,21 @@ Use mobile-first approach:
 ```css
 /* Mobile first */
 .fe-search-ai-container {
-    width: 100%;
+	width: 100%;
 }
 
 /* Tablet */
-@media ( min-width: 768px ) {
-    .fe-search-ai-container {
-        width: 50%;
-    }
+@media (min-width: 768px) {
+	.fe-search-ai-container {
+		width: 50%;
+	}
 }
 
 /* Desktop */
-@media ( min-width: 1024px ) {
-    .fe-search-ai-container {
-        width: 33.33%;
-    }
+@media (min-width: 1024px) {
+	.fe-search-ai-container {
+		width: 33.33%;
+	}
 }
 ```
 
