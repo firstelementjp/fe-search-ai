@@ -149,6 +149,8 @@ class FE_Search_AI_Activator {
 			`message` text NOT NULL,
 			`extra_data` longtext,
 			`created_at` datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
+			`sequence_id` varchar(64) DEFAULT '',
+			`sequence_order` int(11) DEFAULT 0,
 			PRIMARY KEY  (`id`),
 			KEY `level` (`level`),
 			KEY `sequence` (`sequence_id`, `sequence_order`)
