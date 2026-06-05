@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<phpunit
+    bootstrap="tests/bootstrap.php"
+    colors="true"
+    convertErrorsToExceptions="true"
+    convertNoticesToExceptions="true"
+    convertWarningsToExceptions="true"
+    processIsolation="false"
+    stopOnFailure="false"
+    executionOrder="random"
+    timeoutForSmallTests="1"
+    timeoutForMediumTests="10"
+    timeoutForLargeTests="60"
+>
+    <testsuites>
+        <testsuite name="FE Search AI Unit Tests">
+            <directory>tests/Unit</directory>
+        </testsuite>
+    </testsuites>
+    <coverage processUncoveredFiles="true">
+        <include>
+            <directory suffix=".php">includes</directory>
+            <file>fe-search-ai.php</file>
+        </include>
+        <exclude>
+            <directory>vendor</directory>
+            <directory>node_modules</directory>
+        </exclude>
+    </coverage>
+    <logging>
+        <junit outputFile="tests/results/junit.xml"/>
+        <teamcity outputFile="tests/results/teamcity.txt"/>
+    </logging>
+</phpunit>

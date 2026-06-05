@@ -30,6 +30,12 @@ test-*.php
 test-*.sh
 license_db_format.txt
 
+# Test outputs and coverage
+tests/coverage/
+tests/results/
+phpunit-coverage/
+wp-tests-config.php
+
 # OS files
 .DS_Store
 Thumbs.db
