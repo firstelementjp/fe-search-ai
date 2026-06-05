@@ -894,7 +894,7 @@
 		"webpack-bundle-analyzer": "^4.10.2",
 		"webpack-cli": "^5.1.4",
 		"webpack-dev-middleware": "^5.3.4",
-		"webpack-dev-server": "^4.15.2",
+		"webpack-dev-server": "^5.2.4",
 		"webpack-merge": "^5.10.0",
 		"webpack-sources": "^3.3.3",
 		"websocket-driver": "^0.7.4",
