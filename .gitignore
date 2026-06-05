@@ -26,7 +26,7 @@ phpcs.xml.dist
 # Test and debug files
 debug.log
 debug_prompt.txt
-test-*.php
+_test-*.php
 test-*.sh
 license_db_format.txt
 
