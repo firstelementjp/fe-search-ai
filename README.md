@@ -1,5 +1,7 @@
 # FE Search AI
 
+![FE CSV Import & Export Banner](https://github.com/firstelementjp/fe-search-ai/blob/main/assets/images/img-sns-banner-100.jpg?raw=true)
+
 [![License](https://img.shields.io/badge/License-GPLv2%2B-blue.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
 [![WordPress](https://img.shields.io/badge/WordPress-6.6%2B-blue.svg)](https://wordpress.org/)
 [![PHP](https://img.shields.io/badge/PHP-8.1%2B-blue.svg)](https://www.php.net/)
