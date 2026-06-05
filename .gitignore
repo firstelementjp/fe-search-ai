@@ -21,9 +21,6 @@ vendor/
 # Development and build files
 package-lock.json
 composer.lock
-.eslintrc.json
-.prettierrc*
-.prettierignore
 phpcs.xml.dist
 
 # Test and debug files
