@@ -877,7 +877,7 @@
 		"url-parse": "^1.5.10",
 		"util-deprecate": "^1.0.2",
 		"utils-merge": "^1.0.1",
-		"uuid": "^8.3.2",
+		"uuid": "^14.0.0",
 		"v8-compile-cache": "^2.4.0",
 		"v8-to-istanbul": "^9.3.0",
 		"validate-npm-package-license": "^3.0.4",
