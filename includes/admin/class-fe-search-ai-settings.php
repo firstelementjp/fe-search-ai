@@ -135,9 +135,9 @@ class FE_Search_AI_Settings {
 							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_embedding_section' ); ?>
 						</table>
 
-						<?php do_settings_sections( 'fe_search_ai_rerank_section' ); ?>
+						<?php do_settings_sections( 'fe_search_ai_rerank_provider_section' ); ?>
 						<table class="form-table">
-							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_rerank_section' ); ?>
+							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_rerank_provider_section' ); ?>
 						</table>
 
 						<?php do_action( 'fe_search_ai_after_api_settings_fields' ); ?>
@@ -211,13 +211,27 @@ class FE_Search_AI_Settings {
 					</div>
 
 					<div id="tab_advanced" class="tab-content">
-						<?php do_settings_sections( 'fe_search_ai_advanced_section' ); ?>
+						<?php do_settings_sections( 'fe_search_ai_rerank_section' ); ?>
 						<table class="form-table">
-							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_advanced_section' ); ?>
+							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_rerank_section' ); ?>
 						</table>
 						<?php do_settings_sections( 'fe_search_ai_qdrant_section' ); ?>
 						<table class="form-table">
 							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_qdrant_section' ); ?>
+						</table>
+						<?php
+						$locale = get_locale();
+						if ( 'ja' === $locale || 'ja_JP' === $locale ) :
+							?>
+							<?php do_settings_sections( 'fe_search_ai_japanese_tokenizer_section' ); ?>
+							<table class="form-table">
+								<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_japanese_tokenizer_section' ); ?>
+							</table>
+						<?php endif; ?>
+
+						<?php do_settings_sections( 'fe_search_ai_advanced_section' ); ?>
+						<table class="form-table">
+							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_advanced_section' ); ?>
 						</table>
 						<?php if ( $is_pro ) : ?>
 						<?php endif; ?>
@@ -334,9 +348,9 @@ class FE_Search_AI_Settings {
 		add_settings_section( 'fe_search_ai_embedding_section', __( 'Vectorization Model', 'fe-search-ai' ), null, $page_slug );
 		add_settings_field( 'fe_search_ai_embedding_provider', __( 'Vectorization AI', 'fe-search-ai' ), [ $this, 'embedding_provider_field_html' ], $page_slug, 'fe_search_ai_embedding_section' );
 
-		// Reranker Section
-		add_settings_section( 'fe_search_ai_rerank_section', __( 'Reranker', 'fe-search-ai' ), null, $page_slug );
-		add_settings_field( 'fe_search_ai_rerank_settings', __( 'Reranker Settings', 'fe-search-ai' ), [ $this, 'rerank_settings_field_html' ], $page_slug, 'fe_search_ai_rerank_section' );
+		// Rerank Model Section
+		add_settings_section( 'fe_search_ai_rerank_provider_section', __( 'Rerank Model', 'fe-search-ai' ), null, $page_slug );
+		add_settings_field( 'fe_search_ai_rerank_provider', __( 'Rerank AI', 'fe-search-ai' ), [ $this, 'rerank_provider_field_html' ], $page_slug, 'fe_search_ai_rerank_provider_section' );
 
 		// ------------------
 		// Sync Tab
@@ -386,29 +400,35 @@ class FE_Search_AI_Settings {
 		add_settings_field( 'fe_search_ai_structured_output', __( 'Structured Output', 'fe-search-ai' ), [ $this, 'structured_output_field_html' ], $page_slug, 'fe_search_ai_prompt_section' );
 
 		// ------------------
-		// Data Tab
+		// Advanced Tab
 		// ------------------
+		// Qdrant connection settings (endpoint, API key, collection) shown in Advanced tab.
+		add_settings_section( 'fe_search_ai_qdrant_section', null, null, $page_slug );
+		add_settings_field( 'fe_search_ai_qdrant_settings', __( 'Qdrant Settings', 'fe-search-ai' ), [ $this, 'qdrant_settings_field_html' ], $page_slug, 'fe_search_ai_qdrant_section' );
+
+		// Reranker Settings Section
+		add_settings_section( 'fe_search_ai_rerank_section', __( 'Reranker Settings', 'fe-search-ai' ), null, $page_slug );
+		add_settings_field( 'fe_search_ai_rerank_settings', __( 'Reranker Settings', 'fe-search-ai' ), [ $this, 'rerank_settings_field_html' ], $page_slug, 'fe_search_ai_rerank_section' );
+
+		// Japanese Tokenizer Section
+		$locale = get_locale();
+		if ( 'ja' === $locale || 'ja_JP' === $locale ) {
+			add_settings_section( 'fe_search_ai_japanese_tokenizer_section', __( 'Japanese Tokenizer', 'fe-search-ai' ), null, $page_slug );
+			add_settings_field( 'fe_search_ai_japanese_tokenizer', __( 'Japanese Tokenizer', 'fe-search-ai' ), [ $this, 'japanese_tokenizer_field_html' ], $page_slug, 'fe_search_ai_japanese_tokenizer_section' );
+		}
+
+		// Advanced settings
+		add_settings_section( 'fe_search_ai_advanced_section', __( 'Advanced Settings', 'fe-search-ai' ), null, $page_slug );
+		add_settings_field( 'fe_search_ai_display_advanced', __( 'Assets Loading', 'fe-search-ai' ), [ $this, 'display_advanced_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
+		add_settings_field( 'fe_search_ai_debug_mode_enabled', __( 'Debug Mode', 'fe-search-ai' ), [ $this, 'debug_mode_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
+		add_settings_field( 'fe_search_ai_log_retention_days', __( 'Log Retention (days)', 'fe-search-ai' ), [ $this, 'log_retention_days_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
+
+		// Data delete
 		add_settings_section( 'fe_search_ai_data_section', __( 'Data Management', 'fe-search-ai' ), null, $page_slug );
 		add_settings_field( 'fe_search_ai_delete_vectors_ui', __( 'Delete Synced Data', 'fe-search-ai' ), [ $this, 'delete_vectors_ui_field_html' ], $page_slug, 'fe_search_ai_data_section' );
 		add_settings_field( 'fe_search_ai_delete_system_logs_ui', __( 'Delete System Logs', 'fe-search-ai' ), [ $this, 'delete_system_logs_ui_field_html' ], $page_slug, 'fe_search_ai_data_section' );
 		add_settings_field( 'fe_search_ai_delete_conversation_logs_ui', __( 'Delete Conversation Logs', 'fe-search-ai' ), [ $this, 'delete_conversation_logs_ui_field_html' ], $page_slug, 'fe_search_ai_data_section' );
 		add_settings_field( 'fe_search_ai_delete_on_uninstall', __( 'Delete Data on Uninstall', 'fe-search-ai' ), [ $this, 'delete_on_uninstall_field_html' ], $page_slug, 'fe_search_ai_data_section' );
-
-		// ------------------
-		// Advanced Tab
-		// ------------------
-		add_settings_section( 'fe_search_ai_advanced_section', __( 'Advanced Settings', 'fe-search-ai' ), null, $page_slug );
-		add_settings_field( 'fe_search_ai_display_advanced', __( 'Assets Loading', 'fe-search-ai' ), [ $this, 'display_advanced_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
-		add_settings_field( 'fe_search_ai_debug_mode_enabled', __( 'Debug Mode', 'fe-search-ai' ), [ $this, 'debug_mode_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
-		add_settings_field( 'fe_search_ai_log_retention_days', __( 'Log Retention (days)', 'fe-search-ai' ), [ $this, 'log_retention_days_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
-		$locale = get_locale();
-		if ( 'ja' === $locale || 'ja_JP' === $locale ) {
-			add_settings_field( 'fe_search_ai_japanese_tokenizer', __( 'Japanese Tokenizer', 'fe-search-ai' ), [ $this, 'japanese_tokenizer_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
-		}
-
-		// Qdrant connection settings (endpoint, API key, collection) shown in Advanced tab.
-		add_settings_section( 'fe_search_ai_qdrant_section', null, null, $page_slug );
-		add_settings_field( 'fe_search_ai_qdrant_settings', __( 'Qdrant Settings', 'fe-search-ai' ), [ $this, 'qdrant_settings_field_html' ], $page_slug, 'fe_search_ai_qdrant_section' );
 	}
 
 	/**
@@ -696,6 +716,50 @@ class FE_Search_AI_Settings {
 		</select>
 		<p class="description">
 			<?php esc_html_e( 'Select the AI that generates answers for the user.', 'fe-search-ai' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Renders the HTML for the rerank provider selection section.
+	 *
+	 * This method outputs a dropdown menu for selecting the AI rerank
+	 * provider used for reranking search results. Currently only Cohere is supported.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public function rerank_provider_field_html() {
+		$provider = $this->options['provider']['rerank'] ?? 'cohere';
+
+		$providers = [
+			'cohere' => 'Cohere (Rerank)',
+		];
+
+		/**
+		 * Filters the array of available AI rerank providers.
+		 *
+		 * This hook allows other plugins or themes to add, remove, or modify
+		 * the AI models available for selection for the reranking process.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $providers An associative array of AI rerank providers,
+		 * where the key is the provider slug (e.g., 'cohere')
+		 * and the value is the display name (e.g., 'Cohere (Rerank)').
+		 */
+		$providers = apply_filters( 'fe_search_ai_rerank_providers', $providers );
+
+		?>
+		<select name="fe_search_ai_settings[provider][rerank]">
+			<?php foreach ( $providers as $key => $name ) : ?>
+				<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $provider, $key ); ?>>
+					<?php echo esc_html( $name ); ?>
+				</option>
+			<?php endforeach; ?>
+		</select>
+		<p class="description">
+			<?php esc_html_e( 'Select the AI that reranks search results for improved relevance.', 'fe-search-ai' ); ?>
 		</p>
 		<?php
 	}
@@ -2222,6 +2286,7 @@ class FE_Search_AI_Settings {
 		$new_input['provider']['cohere_key']    = $this->sanitize_encrypted_secret( $input['provider']['cohere_key'] ?? '', $new_input['provider']['cohere_key'] ?? '' );
 		$new_input['provider']['embedding']     = sanitize_key( $input['provider']['embedding'] ?? 'openai' );
 		$new_input['provider']['chat']          = sanitize_key( $input['provider']['chat'] ?? 'openai' );
+		$new_input['provider']['rerank']        = sanitize_key( $input['provider']['rerank'] ?? 'cohere' );
 
 		// OpenAI-Compatible key (stored in Free version settings).
 		$new_input['provider']['openai_compatible_key'] = $this->sanitize_encrypted_secret( $input['provider']['openai_compatible_key'] ?? '', $new_input['provider']['openai_compatible_key'] ?? '' );
