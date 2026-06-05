@@ -690,7 +690,7 @@
 		"punycode": "^2.3.1",
 		"puppeteer-core": "^13.7.0",
 		"pure-rand": "^6.1.0",
-		"qs": "^6.13.0",
+		"qs": "^6.15.2",
 		"querystringify": "^2.2.0",
 		"queue-microtask": "^1.2.3",
 		"quick-lru": "^4.0.1",
