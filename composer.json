@@ -8,7 +8,7 @@
 		}
 	},
 	"require": {
-		"wamania/php-stemmer": "^4.0",
+		"wamania/php-stemmer": "^3.0",
 		"u7aro/tinysegmenter-php": "dev-main"
 	},
 	"require-dev": {
