@@ -349,7 +349,7 @@ a.nav-tab:last-of-type {
 	padding: 12px 8px;
 }
 
-.fe-search-ai-api-keys-table input[type="password"] {
+.fe-search-ai-api-keys-table input[type='password'] {
 	font-family: monospace;
 	font-size: 13px;
 	margin: 0;
@@ -399,7 +399,7 @@ a.nav-tab:last-of-type {
 		padding: 8px 6px;
 	}
 
-	.fe-search-ai-api-keys-table input[type="password"] {
+	.fe-search-ai-api-keys-table input[type='password'] {
 		font-size: 12px;
 	}
 }
@@ -414,7 +414,7 @@ a.nav-tab:last-of-type {
 		padding: 6px 4px;
 	}
 
-	.fe-search-ai-api-keys-table input[type="password"] {
+	.fe-search-ai-api-keys-table input[type='password'] {
 		width: 100% !important;
 		font-size: 11px;
 	}
@@ -453,7 +453,7 @@ a.nav-tab:last-of-type {
 	padding: 5px 10px;
 }
 
-.form-table #fe_search_ai_sync_options_accordion td>div {
+.form-table #fe_search_ai_sync_options_accordion td > div {
 	margin: 0;
 }
 
@@ -475,6 +475,7 @@ a.nav-tab:last-of-type {
 
 table.fe-search-ai-sync-targets-table {
 	border: none;
+	box-shadow: none;
 }
 
 table.fe-search-ai-sync-targets-table th {
@@ -502,7 +503,7 @@ table.fe-search-ai-sync-targets-table th {
 #fe_search_ai_condition_for_displaying_the_chat {
 	padding: 1em;
 	background: #f0f0f1;
-	margin: 0 -1em -1em;
+	margin: 0 -1em;
 }
 
 #fe_search_ai_floating_display_accordion .accordion-inner {
@@ -885,7 +886,7 @@ a:has(.dashicons-warning) span {
 }
 
 .fe-search-ai-tax-config-wrapper .description {
-	margin-top: .5em;
+	margin-top: 0.5em;
 	margin-bottom: 10px;
 	font-style: italic;
 	color: #666;
