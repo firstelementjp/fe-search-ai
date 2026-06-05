@@ -614,6 +614,16 @@ class FE_Search_AI_Settings {
 			<p class="description">
 				<?php esc_html_e( 'Configure the connection to your Qdrant Cloud or self-hosted Qdrant instance.', 'fe-search-ai' ); ?>
 			</p>
+			<p class="description">
+				<strong><?php esc_html_e( 'Note:', 'fe-search-ai' ); ?></strong>
+				<?php
+				printf(
+					/* translators: %s: 'free' in bold */
+					esc_html__( 'With Qdrant Cloud %s accounts, collections may be deleted after a period of inactivity.', 'fe-search-ai' ),
+					'<strong>' . esc_html__( 'free', 'fe-search-ai' ) . '</strong>'
+				);
+				?>
+			</p>
 			<table class="form-table">
 				<tr>
 					<th scope="row">
