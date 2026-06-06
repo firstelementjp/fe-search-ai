@@ -1447,7 +1447,7 @@ class FE_Search_AI_Chat_Handler {
 			[
 				'Content-Type: application/json',
 				'x-api-key: ' . $api_key,
-				'anthropic-version: 2023-06-01',
+				'anthropic-version: 2024-03-01',
 			]
 		);
 		curl_setopt(
@@ -2155,13 +2155,13 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 						$error_message = __( 'API key is missing.', 'fe-search-ai' );
 						break;
 					}
-					$model = 'claude-3-5-haiku-20241022';
+					$model = 'claude-haiku-4-5-20251001';
 					$response = wp_remote_post(
 						'https://api.anthropic.com/v1/messages',
 						[
 							'headers' => [
 								'x-api-key'         => $api_key,
-								'anthropic-version' => '2023-06-01',
+								'anthropic-version' => '2024-03-01',
 								'Content-Type'      => 'application/json',
 							],
 							'body'    => json_encode(
