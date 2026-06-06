@@ -1,7 +1,7 @@
 === FE Search AI ===
 Contributors: firstelementjp
 Tags: ai, search, chat, conversational, semantic, vector, embedding, rag
-Requires at least: 5.8
+Requires at least: 6.6
 Tested up to: 7.0
 Stable tag: 0.9.0
 Requires PHP: 7.4

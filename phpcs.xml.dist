@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<ruleset name="FE AI Search">
+<ruleset name="FE Search AI">
     <description>WordPress plugin coding standards ruleset</description>
 
     <!-- Target directory -->
@@ -23,6 +23,7 @@
     <!-- Execution options -->
     <arg value="p"/>
     <arg name="basepath" value="./"/>
+    <arg name="extensions" value="php"/>
 
     <!-- WordPress coding standards -->
     <rule ref="WordPress">
@@ -45,6 +46,14 @@
             <property name="text_domain" type="array">
                 <element key="0" value="fe-search-ai"/>
             </property>
+        </properties>
+    </rule>
+
+    <!-- Minimum supported versions -->
+    <config name="minimum_wp_version" value="6.6"/>
+    <rule ref="WordPress.WP.DeprecatedFunctions">
+        <properties>
+            <property name="minimum_wp_version" value="6.6"/>
         </properties>
     </rule>
 </ruleset>
