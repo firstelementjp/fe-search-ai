@@ -1030,7 +1030,7 @@ class FE_Search_AI_Sync_Handler {
 		if ( empty( $api_key ) ) {
 			return new WP_Error( 'api_key_missing', __( 'The Google Cloud API key is not configured.', 'fe-search-ai' ) );
 		}
-		$model    = 'gemini-2.5-flash-lite';
+		$model    = 'gemini-2.5-flash';
 		$url      = sprintf(
 			'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s',
 			rawurlencode( $model ),

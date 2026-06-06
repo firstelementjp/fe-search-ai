@@ -1140,7 +1140,7 @@ class FE_Search_AI_Chat_Handler {
 			return;
 		}
 
-		$model = 'gemini-2.5-flash-lite'; // Default
+		$model = 'gemini-2.5-flash'; // Default
 		if ( $this->is_license_active ) {
 			// Read Gemini model settings from Pro options (fe_search_ai_pro_settings).
 			$pro_settings   = get_option( 'fe_search_ai_pro_settings', [] );

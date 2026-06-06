@@ -884,7 +884,7 @@ class FE_Search_AI_Settings {
 				'name'          => 'Google (Gemini)',
 				'api_url'       => 'https://console.cloud.google.com/apis/credentials',
 				'description'   => __( 'Enter your Google Cloud API key.', 'fe-search-ai' ),
-				'default_model' => 'gemini-2.5-flash-lite',
+				'default_model' => 'gemini-2.5-flash',
 			],
 			'anthropic' => [
 				'name'          => 'Anthropic (Claude)',
