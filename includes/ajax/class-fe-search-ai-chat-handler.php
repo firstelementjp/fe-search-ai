@@ -503,7 +503,7 @@ class FE_Search_AI_Chat_Handler {
 			}
 		}
 
-		$model = 'gpt-4o-mini'; // Default
+		$model = 'gpt-5.4-mini'; // Default
 		if ( $this->is_license_active ) {
 			if ( 'openai_compatible' === $provider ) {
 				$model = $this->options['model']['openai_compatible'] ?? $model;
@@ -901,7 +901,7 @@ class FE_Search_AI_Chat_Handler {
 			return;
 		}
 
-		$model = 'gpt-4o-mini'; // Default.
+		$model = 'gpt-5.4-mini'; // Default.
 		if ( $this->is_license_active ) {
 			if ( 'openai_compatible' === $provider ) {
 				$model = $this->options['model']['openai_compatible'] ?? $model;
