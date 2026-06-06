@@ -20,7 +20,7 @@ jobs:
               uses: actions/checkout@v4
 
             - name: Setup PHP
-              uses: shivammathur/setup-php@2.31.0
+              uses: shivammathur/setup-php@2.37.1
               with:
                   php-version: ${{ matrix.php-version }}
                   extensions: mbstring, xml, curl, zip
@@ -79,7 +79,7 @@ jobs:
               uses: actions/checkout@v4
 
             - name: Setup PHP
-              uses: shivammathur/setup-php@2.31.0
+              uses: shivammathur/setup-php@2.37.1
               with:
                   php-version: '8.2'
                   coverage: none
@@ -101,7 +101,7 @@ jobs:
               uses: actions/checkout@v4
 
             - name: Setup PHP
-              uses: shivammathur/setup-php@2.31.0
+              uses: shivammathur/setup-php@2.37.1
               with:
                   php-version: '8.2'
                   extensions: mbstring, xml, curl, zip
