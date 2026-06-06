@@ -2165,7 +2165,7 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 							],
 							'body'    => json_encode(
 								[
-									'model'      => 'claude-3-haiku-20240307',
+									'model'      => 'claude-haiku-4-5',
 									'max_tokens' => 1,
 									'messages'   => [ [ 'role' => 'user', 'content' => 'Hello' ] ],
 								]
