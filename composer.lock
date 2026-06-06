@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3142ca15286c5d2e31bc411927ae965a",
+    "content-hash": "a6ee98a56bd0a9361f64aa4a970bd5aa",
     "packages": [
         {
             "name": "symfony/polyfill-iconv",
@@ -3224,5 +3224,8 @@
     "prefer-lowest": false,
     "platform": {},
     "platform-dev": {},
+    "platform-overrides": {
+        "php": "8.0.0"
+    },
     "plugin-api-version": "2.6.0"
 }
