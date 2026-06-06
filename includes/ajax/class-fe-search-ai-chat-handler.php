@@ -1447,7 +1447,7 @@ class FE_Search_AI_Chat_Handler {
 			[
 				'Content-Type: application/json',
 				'x-api-key: ' . $api_key,
-				'anthropic-version: 2024-03-01',
+				'anthropic-version: 2023-06-01',
 			]
 		);
 		curl_setopt(
@@ -2160,7 +2160,7 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 						[
 							'headers' => [
 								'x-api-key'         => $api_key,
-								'anthropic-version' => '2024-03-01',
+								'anthropic-version' => '2023-06-01',
 								'Content-Type'      => 'application/json',
 							],
 							'body'    => json_encode(

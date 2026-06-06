@@ -1082,7 +1082,7 @@ class FE_Search_AI_Sync_Handler {
 				'headers' => [
 					'Content-Type'      => 'application/json',
 					'x-api-key'         => $api_key,
-					'anthropic-version' => '2024-03-01',
+					'anthropic-version' => '2023-06-01',
 				],
 				'body'    => wp_json_encode( $body ),
 				'timeout' => 60,
