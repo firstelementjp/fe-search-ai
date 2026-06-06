@@ -2,6 +2,7 @@
 	"name": "firstelementjp/fe-search-ai",
 	"description": "AI-powered search for WordPress.",
 	"type": "wordpress-plugin",
+	"license": "GPL-2.0-or-later",
 	"autoload": {
 		"psr-4": {
 			"FEAISearch\\": "includes/"
