@@ -465,7 +465,14 @@ class FE_Search_AI_Settings {
 			</p>
 			<?php if ( $enabled && ! $has_api_key ) : ?>
 				<p class="fe-search-ai-warning" style="color: #d63638; margin-top: 5px;">
-					<?php esc_html_e( 'Please configure the Cohere API key in the API Keys section.', 'fe-search-ai' ); ?>
+					<?php
+					printf(
+						/* translators: 1: opening link tag, 2: closing link tag */
+						esc_html__( 'Please configure the Cohere API key in the %1$sAPI Keys section%2$s.', 'fe-search-ai' ),
+						'<a href="#tab_provider">',
+						'</a>'
+					);
+					?>
 				</p>
 			<?php endif; ?>
 			<table class="form-table">
@@ -567,7 +574,14 @@ class FE_Search_AI_Settings {
 			</fieldset>
 			<?php if ( $qdrant_on && ! $qdrant_configured ) : ?>
 				<p class="fe-search-ai-warning" style="color: #d63638; margin-top: 5px;">
-					<?php esc_html_e( 'Please configure the Qdrant endpoint, API key, and collection in the Advanced settings tab.', 'fe-search-ai' ); ?>
+					<?php
+					printf(
+						/* translators: 1: opening link tag, 2: closing link tag */
+						esc_html__( 'Please configure the Qdrant endpoint, API key, and collection in the %1$sAdvanced settings tab%2$s.', 'fe-search-ai' ),
+						'<a href="#tab_advanced">',
+						'</a>'
+					);
+					?>
 				</p>
 			<?php endif; ?>
 			<p class="description">
