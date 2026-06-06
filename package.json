@@ -550,7 +550,7 @@
 		"min-indent": "^1.0.1",
 		"mini-css-extract-plugin": "^2.9.4",
 		"minimalistic-assert": "^1.0.1",
-		"minimatch": "^9.0.3",
+		"minimatch": "^9.0.7",
 		"minimist": "^1.2.8",
 		"minimist-options": "^4.1.0",
 		"mitt": "^3.0.0",
