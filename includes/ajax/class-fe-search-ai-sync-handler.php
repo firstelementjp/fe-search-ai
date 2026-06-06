@@ -37,9 +37,32 @@ use WP_Error;
  */
 class FE_Search_AI_Sync_Handler {
 
+	/**
+	 * Plugin options.
+	 *
+	 * @var array
+	 */
 	private $options = [];
+
+	/**
+	 * License activation status.
+	 *
+	 * @var bool
+	 */
 	private $is_license_active;
+
+	/**
+	 * TinySegmenter instance or null if PHP < 8.0.
+	 *
+	 * @var \U7aro\TinySegmenter\TinySegmenter|null
+	 */
 	private $segmenter;
+
+	/**
+	 * Japanese tokenizer engine identifier.
+	 *
+	 * @var string
+	 */
 	private $japanese_tokenizer = 'tinysegmenter';
 
 	/**
