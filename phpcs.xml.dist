@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <ruleset name="FE AI Search">
-    <description>WordPress plugin coding standards ruleset (minimal)</description>
+    <description>WordPress plugin coding standards ruleset</description>
 
     <!-- Target directory -->
     <file>.</file>
@@ -24,6 +24,27 @@
     <arg value="p"/>
     <arg name="basepath" value="./"/>
 
-    <!-- Only check for syntax errors -->
-    <rule ref="Generic.PHP.Syntax"/>
+    <!-- WordPress coding standards -->
+    <rule ref="WordPress">
+        <!-- Disable array declaration spacing check -->
+        <exclude name="WordPress.Arrays.ArrayDeclarationSpacing"/>
+        <!-- Allow short array syntax [] instead of array() -->
+        <exclude name="Universal.Arrays.DisallowShortArraySyntax"/>
+    </rule>
+
+    <!-- PHP compatibility with supported minimum PHP version -->
+    <config name="testVersion" value="7.4-"/>
+    <rule ref="PHPCompatibilityWP"/>
+
+    <!-- Enforce short array syntax (disallow long array() syntax) -->
+    <rule ref="Generic.Arrays.DisallowLongArraySyntax"/>
+
+    <!-- I18n: Specify text domain -->
+    <rule ref="WordPress.WP.I18n">
+        <properties>
+            <property name="text_domain" type="array">
+                <element key="0" value="fe-search-ai"/>
+            </property>
+        </properties>
+    </rule>
 </ruleset>
