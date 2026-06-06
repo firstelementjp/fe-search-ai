@@ -951,7 +951,7 @@ class FE_Search_AI_Settings {
 					$api_key = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
 
 					$model_to_display = $provider_data['default_model'];
-					if ( $this->is_license_active ) {
+					if ( $this->is_license_active && class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) ) {
 						$pro_options    = get_option( 'fe_search_ai_pro_settings', [] );
 						$model_settings = $pro_options['model'][ $provider_key . '_model' ] ?? [];
 						$model_type     = $model_settings['type'] ?? '';
