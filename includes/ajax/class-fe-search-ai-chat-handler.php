@@ -2155,6 +2155,7 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 						$error_message = __( 'API key is missing.', 'fe-search-ai' );
 						break;
 					}
+					$model = 'claude-3-5-haiku-20241022';
 					$response = wp_remote_post(
 						'https://api.anthropic.com/v1/messages',
 						[
@@ -2165,7 +2166,7 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 							],
 							'body'    => json_encode(
 								[
-									'model'      => 'claude-3-5-haiku-20241022',
+									'model'      => $model,
 									'max_tokens' => 1,
 									'messages'   => [ [ 'role' => 'user', 'content' => 'Hello' ] ],
 								]
@@ -2177,9 +2178,36 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 						$is_valid = true;
 					} else {
 						$error_message = __( 'Authentication failed.', 'fe-search-ai' );
-						if ( ! is_wp_error( $response ) ) {
-							$body          = json_decode( wp_remote_retrieve_body( $response ), true );
+						if ( is_wp_error( $response ) ) {
+							\FESearchAI\Core\FE_Search_AI_Logger::log(
+								'ERROR',
+								'Anthropic API key test failed with WP_Error.',
+								[
+									'provider'      => $provider,
+									'model'         => $model,
+									'error_code'    => $response->get_error_code(),
+									'error_message' => $response->get_error_message(),
+								]
+							);
+							$error_message = $response->get_error_message();
+						} else {
+							$response_code = (int) wp_remote_retrieve_response_code( $response );
+							$response_body = wp_remote_retrieve_body( $response );
+							$body          = json_decode( $response_body, true );
 							$error_message = $body['error']['message'] ?? $error_message;
+
+							\FESearchAI\Core\FE_Search_AI_Logger::log(
+								'ERROR',
+								'Anthropic API key test failed.',
+								[
+									'provider'      => $provider,
+									'model'         => $model,
+									'http_status'   => $response_code,
+									'error_type'    => $body['error']['type'] ?? '',
+									'error_message' => $body['error']['message'] ?? '',
+									'raw_response'  => $response_body,
+								]
+							);
 						}
 					}
 					break;
