@@ -1386,7 +1386,7 @@ class FE_Search_AI_Chat_Handler {
 			return;
 		}
 
-		$model = 'claude-haiku-4-5-20251001'; // Default
+		$model = 'claude-3-5-haiku-20241022'; // Default
 		if ( $this->is_license_active ) {
 			$model = $this->options['model']['anthropic'] ?? [ 'type' => $model ];
 			$model = ( 'custom' === $model['type'] ) ? $model['custom'] : $model['type'];
