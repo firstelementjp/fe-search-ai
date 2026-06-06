@@ -1069,7 +1069,7 @@ class FE_Search_AI_Sync_Handler {
 		if ( empty( $api_key ) ) {
 			return new WP_Error( 'api_key_missing', __( 'The Anthropic API key is not configured.', 'fe-search-ai' ) );
 		}
-		$model    = 'claude-haiku-4-5';
+		$model    = 'claude-3-5-haiku-20241022';
 		$body     = [
 			'model'       => $model,
 			'max_tokens'  => 1024,

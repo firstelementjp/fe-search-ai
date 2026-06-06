@@ -890,7 +890,7 @@ class FE_Search_AI_Settings {
 				'name'          => 'Anthropic (Claude)',
 				'api_url'       => 'https://console.anthropic.com/',
 				'description'   => __( 'Enter your Anthropic API key.', 'fe-search-ai' ),
-				'default_model' => 'claude-haiku-4-5',
+				'default_model' => 'claude-3-5-haiku-20241022',
 			],
 			'cohere'    => [
 				'name'          => 'Cohere (Rerank)',
