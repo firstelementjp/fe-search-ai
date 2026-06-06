@@ -37,7 +37,7 @@ This plugin is designed to be highly extensible and performant, running on stand
 ## ⚙️ Requirements
 
 - WordPress 6.6 or higher
-- PHP 8.0 or higher
+- PHP 7.4 or higher (PHP 8.0+ required for built-in Japanese tokenizer)
 - MySQL 5.7 or higher
 - OpenSSL extension
 

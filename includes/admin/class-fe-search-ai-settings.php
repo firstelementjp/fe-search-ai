@@ -1606,6 +1606,13 @@ class FE_Search_AI_Settings {
 		$encrypted_yahoo_id = $tokenizer_options['yahoo_id'] ?? '';
 		$yahoo_id           = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_yahoo_id );
 
+		// Force Yahoo! MA API if PHP < 8.0 (TinySegmenter requires PHP >= 8.0).
+		$php_version = PHP_VERSION;
+		$is_php_below_8 = version_compare( $php_version, '8.0.0', '<' );
+		if ( $is_php_below_8 ) {
+			$engine = 'yahoo_ma';
+		}
+
 		$engines = [
 			'tinysegmenter' => __( 'Built-in (TinySegmenter)', 'fe-search-ai' ),
 			'yahoo_ma'      => __( 'Yahoo! Japanese MA API', 'fe-search-ai' ),
@@ -1615,10 +1622,29 @@ class FE_Search_AI_Settings {
 		$const_id     = $has_constant ? FE_SEARCH_AI_YAHOO_APP_ID : '';
 		?>
 		<fieldset>
-			<select id="fe_search_ai_japanese_tokenizer_engine" name="fe_search_ai_settings[tokenizer][ja][engine]">
+			<?php if ( $is_php_below_8 ) : ?>
+				<div class="notice notice-warning inline" style="margin-bottom: 1em;">
+					<p>
+						<strong><?php esc_html_e( 'PHP Version Notice', 'fe-search-ai' ); ?></strong><br>
+						<?php
+							printf(
+								/* translators: 1: current PHP version, 2: required PHP version */
+								esc_html__( 'Your server is running PHP %1$s. The built-in TinySegmenter requires PHP %2$s or higher. Please configure the Yahoo! Japanese MA API below for Japanese tokenization.', 'fe-search-ai' ),
+								esc_html( $php_version ),
+								'8.0'
+							);
+						?>
+					</p>
+				</div>
+			<?php endif; ?>
+
+			<select id="fe_search_ai_japanese_tokenizer_engine" name="fe_search_ai_settings[tokenizer][ja][engine]" <?php disabled( $is_php_below_8 ); ?>>
 				<?php foreach ( $engines as $key => $label ) : ?>
-					<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $engine, $key ); ?>>
+					<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $engine, $key ); ?> <?php disabled( $is_php_below_8 && 'tinysegmenter' === $key ); ?>>
 						<?php echo esc_html( $label ); ?>
+						<?php if ( 'tinysegmenter' === $key && $is_php_below_8 ) : ?>
+							(<?php esc_html_e( 'Requires PHP 8.0+', 'fe-search-ai' ); ?>)
+						<?php endif; ?>
 					</option>
 				<?php endforeach; ?>
 			</select>
