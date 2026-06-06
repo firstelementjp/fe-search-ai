@@ -37,7 +37,7 @@ This plugin is designed to be highly extensible and performant, running on stand
 ## ⚙️ Requirements
 
 - WordPress 6.6 or higher
-- PHP 8.1 or higher
+- PHP 7.4 or higher
 - MySQL 5.7 or higher
 - OpenSSL extension
 
