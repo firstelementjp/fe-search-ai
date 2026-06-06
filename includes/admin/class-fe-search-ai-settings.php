@@ -878,7 +878,7 @@ class FE_Search_AI_Settings {
 				'name'          => 'OpenAI (GPT)',
 				'api_url'       => 'https://platform.openai.com/api-keys',
 				'description'   => __( 'Enter your OpenAI API key.', 'fe-search-ai' ),
-				'default_model' => 'gpt-4o-mini',
+				'default_model' => 'gpt-5.4-mini',
 			],
 			'google'    => [
 				'name'          => 'Google (Gemini)',
@@ -924,7 +924,7 @@ class FE_Search_AI_Settings {
 							esc_html__( 'You can change these limits from your theme or another plugin using the %1$sfe_search_ai_rate_limit_settings%2$s filter hook. For full sample code, please refer to the %3$sdocumentation%4$s.', 'fe-search-ai' ),
 							'<code>',
 							'</code>',
-							'<a href="https://fe-search.com/docs/ai" target="_blank" rel="noopener noreferrer">',
+							'<a href="https://firstelementjp.github.io/fe-search-ai/#/" target="_blank" rel="noopener noreferrer">',
 							'</a>'
 						);
 					?>

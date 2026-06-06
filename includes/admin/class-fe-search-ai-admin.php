@@ -52,15 +52,12 @@ class FE_Search_AI_Admin {
 	public static function render_plugin_header( $is_pro = false ) {
 		$locale = get_user_locale();
 
-		$docs_url = 'https://fe-search.com/docs/ai';
+		$docs_url = 'https://firstelementjp.github.io/fe-search-ai/#/';
 		if ( 'ja' === $locale || 'ja_JP' === $locale ) {
-			$docs_url = 'https://fe-search.com/jp/docs/ai';
+			$docs_url = 'https://firstelementjp.github.io/fe-search-ai/#/ja/';
 		}
 
-		$forum_url = 'https://fe-search.com/en-forums/ai';
-		if ( 'ja' === $locale || 'ja_JP' === $locale ) {
-			$forum_url = 'https://fe-search.com/jp-forums/ai';
-		}
+		$deepwiki_url = 'https://deepwiki.com/firstelementjp/fe-search-ai';
 		?>
 		<div id="plugin_header">
 			<div id="plugin_header_upper">
@@ -82,10 +79,10 @@ class FE_Search_AI_Admin {
 					title="<?php esc_attr_e( 'Go to the instruction manual', 'fe-search-ai' ); ?>">
 					<?php esc_html_e( 'Documentation', 'fe-search-ai' ); ?>
 				</a>
-				<a href="<?php echo esc_url( $forum_url ); ?>"
+				<a href="<?php echo esc_url( $deepwiki_url ); ?>"
 					target="_blank"
-					title="<?php esc_attr_e( 'Go to a forum', 'fe-search-ai' ); ?>">
-					<?php esc_html_e( 'Forums', 'fe-search-ai' ); ?>
+					title="<?php esc_attr_e( 'Go to the DeepWiki', 'fe-search-ai' ); ?>">
+					<?php esc_html_e( 'DeepWiki', 'fe-search-ai' ); ?>
 				</a>
 				<a href="https://github.com/firstelementjp/fe-search-ai"
 					target="_blank"
@@ -102,22 +99,6 @@ class FE_Search_AI_Admin {
 								<path d="M94,7399 C99.523,7399 104,7403.59 104,7409.253 C104,7413.782 101.138,7417.624 97.167,7418.981 C96.66,7419.082 96.48,7418.762 96.48,7418.489 C96.48,7418.151 96.492,7417.047 96.492,7415.675 C96.492,7414.719 96.172,7414.095 95.813,7413.777 C98.04,7413.523 100.38,7412.656 100.38,7408.718 C100.38,7407.598 99.992,7406.684 99.35,7405.966 C99.454,7405.707 99.797,7404.664 99.252,7403.252 C99.252,7403.252 98.414,7402.977 96.505,7404.303 C95.706,7404.076 94.85,7403.962 94,7403.958 C93.15,7403.962 92.295,7404.076 91.497,7404.303 C89.586,7402.977 88.746,7403.252 88.746,7403.252 C88.203,7404.664 88.546,7405.707 88.649,7405.966 C88.01,7406.684 87.619,7407.598 87.619,7408.718 C87.619,7412.646 89.954,7413.526 92.175,7413.785 C91.889,7414.041 91.63,7414.493 91.54,7415.156 C90.97,7415.418 89.522,7415.871 88.63,7414.304 C88.63,7414.304 88.101,7413.319 87.097,7413.247 C87.097,7413.247 86.122,7413.234 87.029,7413.87 C87.029,7413.87 87.684,7414.185 88.139,7415.37 C88.139,7415.37 88.726,7417.2 91.508,7416.58 C91.513,7417.437 91.522,7418.245 91.522,7418.489 C91.522,7418.76 91.338,7419.077 90.839,7418.982 C86.865,7417.627 84,7413.783 84,7409.253 C84,7403.59 88.478,7399 94,7399" />
 							</g>
 						</g>
-					</svg>
-				</a>
-				<a href="https://www.youtube.com/@firstelementjp"
-					target="_blank"
-					title="<?php esc_attr_e( 'Go to a YouTube channel', 'fe-search-ai' ); ?>"
-					class="icon icon_yt">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						viewBox="0 0 32 32"
-						width="20"
-						height="20"
-					>
-						<path
-							fill="currentColor"
-							d="M29.41,9.26a3.5,3.5,0,0,0-2.47-2.47C24.76,6.2,16,6.2,16,6.2s-8.76,0-10.94.59A3.5,3.5,0,0,0,2.59,9.26,36.13,36.13,0,0,0,2,16a36.13,36.13,0,0,0,.59,6.74,3.5,3.5,0,0,0,2.47,2.47C7.24,25.8,16,25.8,16,25.8s8.76,0,10.94-.59a3.5,3.5,0,0,0,2.47-2.47A36.13,36.13,0,0,0,30,16a36.13,36.13,0,0,0-.59-6.74ZM13.2,20.2V11.8L20.47,16Z"
-						/>
 					</svg>
 				</a>
 				<a href="https://x.com/feas_wp/"
