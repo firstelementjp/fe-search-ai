@@ -1607,7 +1607,7 @@ class FE_Search_AI_Settings {
 		$yahoo_id           = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_yahoo_id );
 
 		// Force Yahoo! MA API if PHP < 8.0 (TinySegmenter requires PHP >= 8.0).
-		$php_version = PHP_VERSION;
+		$php_version    = PHP_VERSION;
 		$is_php_below_8 = version_compare( $php_version, '8.0.0', '<' );
 		if ( $is_php_below_8 ) {
 			$engine = 'yahoo_ma';

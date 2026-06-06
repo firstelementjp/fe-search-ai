@@ -17,7 +17,7 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 if ( get_option( 'fe_search_ai_delete_on_uninstall' ) ) {
 	global $wpdb;
 
-	// Delete custom table
+	// Delete custom table.
 	$table_names = [
 		$wpdb->prefix . 'fe_search_ai_vectors',
 		$wpdb->prefix . 'fe_search_ai_logs',
@@ -25,10 +25,11 @@ if ( get_option( 'fe_search_ai_delete_on_uninstall' ) ) {
 	];
 
 	foreach ( $table_names as $table_name ) {
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
 		$wpdb->query( "DROP TABLE IF EXISTS `{$table_name}`" );
 	}
 
-	// Delete option
+	// Delete option.
 	$option_names = [
 		'fe_search_ai_chat_provider',
 		'fe_search_ai_embedding_provider',
@@ -47,6 +48,6 @@ if ( get_option( 'fe_search_ai_delete_on_uninstall' ) ) {
 	}
 	delete_option( 'fe_search_ai_delete_on_uninstall' );
 
-	// Delete Cron Job
+	// Delete Cron Job.
 	wp_clear_scheduled_hook( 'fe_search_ai_daily_log_rotation_event' );
 }
