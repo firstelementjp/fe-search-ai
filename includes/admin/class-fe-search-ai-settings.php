@@ -439,10 +439,18 @@ class FE_Search_AI_Settings {
 	 */
 	public function rerank_settings_field_html() {
 		$rerank      = $this->options['rerank'] ?? [];
-		$enabled     = ! empty( $rerank['enabled'] );
+		$enabled     = isset( $rerank['enabled'] ) ? ! empty( $rerank['enabled'] ) : true;
 		$top_n       = isset( $rerank['top_n'] ) ? (int) $rerank['top_n'] : 5;
 		$initial_k   = isset( $rerank['initial_k'] ) ? (int) $rerank['initial_k'] : 50;
 		$timeout_sec = isset( $rerank['timeout_sec'] ) ? (int) $rerank['timeout_sec'] : 15;
+
+		// Check if Cohere API key is configured for reranker.
+		$encrypted_key = $this->options['provider']['cohere_key'] ?? '';
+		if ( '' === $encrypted_key ) {
+			$encrypted_key = $rerank['cohere_api_key'] ?? '';
+		}
+		$api_key = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
+		$has_api_key = ! empty( $api_key );
 		?>
 		<div class="fe-search-ai-boxed-option">
 			<p class="description">
@@ -455,6 +463,11 @@ class FE_Search_AI_Settings {
 					<?php esc_html_e( 'Enable reranker (recommended)', 'fe-search-ai' ); ?>
 				</label>
 			</p>
+			<?php if ( $enabled && ! $has_api_key ) : ?>
+				<p class="fe-search-ai-warning" style="color: #d63638; margin-top: 5px;">
+					<?php esc_html_e( 'Please configure the Cohere API key in the API Keys section.', 'fe-search-ai' ); ?>
+				</p>
+			<?php endif; ?>
 			<table class="form-table">
 				<tr>
 					<th scope="row"><label for="fe_search_ai_rerank_top_n"><?php esc_html_e( 'Top N chunks for LLM', 'fe-search-ai' ); ?></label></th>
@@ -496,7 +509,7 @@ class FE_Search_AI_Settings {
 		$current    = $vector['store'] ?? 'mariadb';
 		$stores     = isset( $vector['stores'] ) && is_array( $vector['stores'] ) ? $vector['stores'] : [];
 		$mariadb_on = isset( $stores['mariadb'] ) ? ! empty( $stores['mariadb'] ) : ( 'mariadb' === $current );
-		$qdrant_on  = isset( $stores['qdrant'] ) ? ! empty( $stores['qdrant'] ) : ( 'qdrant' === $current );
+		$qdrant_on  = isset( $stores['qdrant'] ) ? ! empty( $stores['qdrant'] ) : true;
 		$hybrid_on  = ! empty( $vector['hybrid_search'] );
 		if ( $hybrid_on ) {
 			$mariadb_on = true;
@@ -504,6 +517,9 @@ class FE_Search_AI_Settings {
 		}
 		$endpoint   = $vector['qdrant']['endpoint'] ?? '';
 		$collection = $vector['qdrant']['collection'] ?? '';
+		$encrypted_key = $vector['qdrant']['api_key'] ?? '';
+		$api_key = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
+		$qdrant_configured = ! empty( $endpoint ) && ! empty( $collection ) && ! empty( $api_key );
 		global $wpdb;
 		$db_version = method_exists( $wpdb, 'db_version' ) ? (string) $wpdb->db_version() : '';
 		$db_engine  = '';
@@ -549,6 +565,11 @@ class FE_Search_AI_Settings {
 					<?php esc_html_e( 'Qdrant (external vector database)', 'fe-search-ai' ); ?>
 				</label>
 			</fieldset>
+			<?php if ( $qdrant_on && ! $qdrant_configured ) : ?>
+				<p class="fe-search-ai-warning" style="color: #d63638; margin-top: 5px;">
+					<?php esc_html_e( 'Please configure the Qdrant endpoint, API key, and collection in the Advanced settings tab.', 'fe-search-ai' ); ?>
+				</p>
+			<?php endif; ?>
 			<p class="description">
 				<?php
 				if ( ! empty( $endpoint ) && ! empty( $collection ) ) {
@@ -570,7 +591,7 @@ class FE_Search_AI_Settings {
 	 */
 	public function hybrid_search_field_html() {
 		$vector     = $this->options['vector'] ?? [];
-		$is_enabled = ! empty( $vector['hybrid_search'] );
+		$is_enabled = isset( $vector['hybrid_search'] ) ? ! empty( $vector['hybrid_search'] ) : true;
 		?>
 		<div class="fe-search-ai-boxed-option">
 			<p>
@@ -2195,7 +2216,7 @@ class FE_Search_AI_Settings {
 	 */
 	public function structured_output_field_html() {
 		$prompt     = get_option( 'fe_search_ai_custom_prompts', [] );
-		$is_enabled = ! empty( $prompt['structured_output'] );
+		$is_enabled = isset( $prompt['structured_output'] ) ? ! empty( $prompt['structured_output'] ) : true;
 		?>
 		<input type="hidden" name="fe_search_ai_custom_prompts[structured_output]" value="0">
 		<label>
