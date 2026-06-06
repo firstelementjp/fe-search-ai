@@ -2,6 +2,7 @@
 	"name": "firstelementjp/fe-search-ai",
 	"description": "AI-powered search for WordPress.",
 	"type": "wordpress-plugin",
+	"license": "GPL-2.0-or-later",
 	"autoload": {
 		"psr-4": {
 			"FEAISearch\\": "includes/"
@@ -21,13 +22,17 @@
 		"phpcsstandards/phpcsextra": "^1.4",
 		"phpunit/phpunit": "^9.6",
 		"wp-phpunit/wp-phpunit": "^7.0",
-		"yoast/phpunit-polyfills": "^4.0"
+		"yoast/phpunit-polyfills": "^4.0",
+		"doctrine/instantiator": "^1.5.0"
 	},
 	"config": {
 		"allow-plugins": {
 			"dealerdirect/phpcodesniffer-composer-installer": true
 		},
-		"platform-check": false
+		"platform-check": false,
+		"platform": {
+			"php": "8.0.0"
+		}
 	},
 	"scripts": {
 		"phpcs": "phpcs --standard=phpcs.xml.dist",

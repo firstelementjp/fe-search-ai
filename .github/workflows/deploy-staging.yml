@@ -25,7 +25,8 @@ jobs:
     deploy-staging:
         name: Deploy to Staging
         runs-on: ubuntu-latest
-        if: github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+        # Temporarily disabled - no staging environment available
+        if: false
 
         steps:
             - name: Checkout code
@@ -117,7 +118,8 @@ jobs:
     deploy-production:
         name: Deploy to Production
         runs-on: ubuntu-latest
-        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'))
+        # Temporarily disabled - no production environment available
+        if: false
 
         steps:
             - name: Checkout code

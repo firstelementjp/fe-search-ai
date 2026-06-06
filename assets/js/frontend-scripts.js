@@ -126,6 +126,7 @@ function handleError(error, context = 'unknown', showMessage = true) {
 
 	// Log error for debugging (only in development or if debug mode is enabled)
 	if (typeof fe_search_ai_ajax_obj !== 'undefined' && fe_search_ai_ajax_obj.debug) {
+		// eslint-disable-next-line no-console
 		console.error(`[FE Search AI] Error in ${context}:`, error);
 	}
 
@@ -209,7 +210,7 @@ function getChatDOMElements() {
 	const messagesContainer = document.getElementById('fe_search_ai_chat_messages');
 	const container = document.getElementById('fe_search_ai_chat_container');
 
-	if (!bubble || !form || !input || !messagesContainer || !container) {
+	if (!bubble || !chatWindowElement || !form || !input || !messagesContainer || !container) {
 		return null;
 	}
 

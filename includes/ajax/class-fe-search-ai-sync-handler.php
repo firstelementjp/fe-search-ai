@@ -37,9 +37,32 @@ use WP_Error;
  */
 class FE_Search_AI_Sync_Handler {
 
+	/**
+	 * Plugin options.
+	 *
+	 * @var array
+	 */
 	private $options = [];
+
+	/**
+	 * License activation status.
+	 *
+	 * @var bool
+	 */
 	private $is_license_active;
+
+	/**
+	 * TinySegmenter instance or null if PHP < 8.0.
+	 *
+	 * @var \U7aro\TinySegmenter\TinySegmenter|null
+	 */
 	private $segmenter;
+
+	/**
+	 * Japanese tokenizer engine identifier.
+	 *
+	 * @var string
+	 */
 	private $japanese_tokenizer = 'tinysegmenter';
 
 	/**
@@ -49,8 +72,15 @@ class FE_Search_AI_Sync_Handler {
 	 */
 	public function __construct() {
 
-		$this->options   = get_option( 'fe_search_ai_settings', [] );
-		$this->segmenter = new TinySegmenter();
+		$this->options = get_option( 'fe_search_ai_settings', [] );
+
+		// Initialize TinySegmenter only if PHP >= 8.0.
+		// For PHP < 8.0, Yahoo! MA API must be used for Japanese tokenization.
+		if ( version_compare( PHP_VERSION, '8.0.0', '>=' ) ) {
+			$this->segmenter = new TinySegmenter();
+		} else {
+			$this->segmenter = null;
+		}
 
 		$license_data = get_option( 'fe_search_ai_license', [] );
 		$status       = $license_data['status'] ?? 'inactive';
@@ -2086,13 +2116,31 @@ class FE_Search_AI_Sync_Handler {
 		// Tokenize
 		if ( 'ja' === $lang_code ) {
 			$tokenizer_engine = $this->get_japanese_tokenizer_engine();
+
+			// Force Yahoo! MA API if PHP < 8.0 (TinySegmenter requires PHP >= 8.0).
+			if ( version_compare( PHP_VERSION, '8.0.0', '<' ) ) {
+				$tokenizer_engine = 'yahoo_ma';
+			}
+
 			if ( 'yahoo_ma' === $tokenizer_engine && $this->get_yahoo_app_id() ) {
 				$words = $this->tokenize_with_yahoo_api( $text_normalized );
 				if ( is_wp_error( $words ) || empty( $words ) ) {
-					$words = $this->segmenter->segment( $text_normalized );
+					// Fallback to TinySegmenter if available (PHP >= 8.0).
+					if ( null !== $this->segmenter ) {
+						$words = $this->segmenter->segment( $text_normalized );
+					} else {
+						// No tokenizer available, fall back to simple split.
+						$words = preg_split( '/\s+/', $text_normalized, -1, PREG_SPLIT_NO_EMPTY );
+					}
 				}
 			} else {
-				$words = $this->segmenter->segment( $text_normalized );
+				// Use TinySegmenter if available (PHP >= 8.0).
+				if ( null !== $this->segmenter ) {
+					$words = $this->segmenter->segment( $text_normalized );
+				} else {
+					// TinySegmenter not available, fall back to simple split.
+					$words = preg_split( '/\s+/', $text_normalized, -1, PREG_SPLIT_NO_EMPTY );
+				}
 			}
 		} else {
 			$words = preg_split( '/\s+/', $text_normalized, -1, PREG_SPLIT_NO_EMPTY );

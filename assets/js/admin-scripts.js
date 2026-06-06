@@ -9,7 +9,7 @@
  * @since   1.0.0
  */
 
-/* global ajaxurl, fe_search_ai_sync_obj, CodeMirror */
+/* global Pickr, ajaxurl, fe_search_ai_sync_obj, CodeMirror */
 
 document.addEventListener('DOMContentLoaded', () => {
 	// Initialize WordPress internationalization functions.
@@ -223,10 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	// Bind click events for manual synchronization buttons.
 	rebuildBtn?.addEventListener('click', e => {
 		e.preventDefault();
-		startSyncProcess(
-			'fe_search_ai_start_sync',
-			fe_search_ai_sync_obj.i18n.confirm_rebuild
-		);
+		startSyncProcess('fe_search_ai_start_sync', fe_search_ai_sync_obj.i18n.confirm_rebuild);
 	});
 
 	smartSyncBtn?.addEventListener('click', e => {
@@ -429,7 +426,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	deleteButton?.addEventListener('click', async () => {
 		if (
 			// eslint-disable-next-line no-alert
-			!confirm( fe_search_ai_sync_obj.i18n.confirm_delete_data )
+			!confirm(fe_search_ai_sync_obj.i18n.confirm_delete_data)
 		) {
 			return;
 		}
@@ -798,8 +795,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		const wrap = document.querySelector('.wrap');
 		const header = document.querySelector('#plugin_header');
 		const firstNotice = document.querySelector('.notice.settings-error');
-
-		console.log('[FEAS] wrap:', !!wrap, 'header:', !!header, 'firstNotice:', !!firstNotice);
 
 		if (wrap && header && firstNotice) {
 			wrap.insertBefore(firstNotice, header);
