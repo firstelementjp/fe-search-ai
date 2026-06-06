@@ -29,7 +29,10 @@
 		"allow-plugins": {
 			"dealerdirect/phpcodesniffer-composer-installer": true
 		},
-		"platform-check": false
+		"platform-check": false,
+		"platform": {
+			"php": "8.0.0"
+		}
 	},
 	"scripts": {
 		"phpcs": "phpcs --standard=phpcs.xml.dist",
