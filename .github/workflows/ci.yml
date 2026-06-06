@@ -13,7 +13,9 @@ jobs:
 
         strategy:
             matrix:
-                php-version: ['7.4', '8.0', '8.1', '8.2']
+                php-version: ['8.0', '8.1', '8.2']
+                # Temporarily exclude PHP 7.4 due to dependency incompatibility
+                # php-version: ['7.4', '8.0', '8.1', '8.2']
 
         steps:
             - name: Checkout code
@@ -39,7 +41,7 @@ jobs:
                       ${{ runner.os }}-php-${{ matrix.php-version }}-
 
             - name: Install dependencies
-              run: composer install --prefer-dist --no-progress --no-suggest
+              run: composer install --prefer-dist --no-progress
 
             - name: Run PHPCS
               run: composer run phpcs
@@ -85,7 +87,7 @@ jobs:
                   coverage: none
 
             - name: Install dependencies
-              run: composer install --prefer-dist --no-progress --no-suggest
+              run: composer install --prefer-dist --no-progress
 
             - name: Run security audit
               run: |
@@ -108,7 +110,7 @@ jobs:
                   coverage: none
 
             - name: Install dependencies
-              run: composer install --prefer-dist --no-progress --no-suggest
+              run: composer install --prefer-dist --no-progress
 
             - name: Check plugin header
               run: |
