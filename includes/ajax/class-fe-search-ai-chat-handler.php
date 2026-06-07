@@ -1431,7 +1431,6 @@ class FE_Search_AI_Chat_Handler {
 			'model'       => $model,
 			'max_tokens'  => 4096,
 			'messages'    => $messages['messages'],
-			'system'      => $messages['system'],
 			'stream'      => true,
 			'temperature' => 0.1, // RAG用に低い温度を設定
 		];
@@ -1458,9 +1457,10 @@ class FE_Search_AI_Chat_Handler {
 				$lines = explode( "\n", $data );
 
 				foreach ( $lines as $line ) {
-					if ( strpos( $line, 'data: ' ) === 0 ) {
+					$trimmed_line = trim( $line );
+					if ( strpos( $trimmed_line, 'data: ' ) === 0 ) {
 
-						$json_data = substr( $line, 6 );
+						$json_data = substr( $trimmed_line, 6 );
 						$chunk     = json_decode( $json_data, true );
 
 						if ( isset( $chunk['type'] )
@@ -1810,14 +1810,19 @@ class FE_Search_AI_Chat_Handler {
 			$final_messages[] = $msg;
 		}
 
-		// Add the complete prompt as system message
-		$final_messages[] = [
-			'role'    => 'system',
-			'content' => $system_prompt,
-		];
+		// Add the complete prompt as system message (for OpenAI & Gemini)
+		// For Claude (new API), we will prepend it as a user message instead.
+		if ( ! $for_claude ) {
+			$final_messages[] = [
+				'role'    => 'system',
+				'content' => $system_prompt,
+			];
+		}
 
 		// Return the final data in the format specified by the provider.
 		if ( $for_claude ) {
+			// For Claude (new API), prepend system prompt as a user message.
+			array_unshift( $final_messages, [ 'role' => 'user', 'content' => $system_prompt ] );
 			return [ 'messages' => array_values( $final_messages ), 'system' => $system_prompt ];
 		} else { // for OpenAI & Gemini
 			return $final_messages;
@@ -2128,6 +2133,34 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 						$is_valid = true;
 					} else {
 						$error_message = is_wp_error( $response ) ? $response->get_error_message() : __( 'Authentication failed.', 'fe-search-ai' );
+						// Log detailed error information.
+						if ( ! is_wp_error( $response ) ) {
+							$response_code = (int) wp_remote_retrieve_response_code( $response );
+							$response_body = wp_remote_retrieve_body( $response );
+							$body          = json_decode( $response_body, true );
+							$error_message = $body['error']['message'] ?? $error_message;
+							\FESearchAI\Core\FE_Search_AI_Logger::log(
+								'ERROR',
+								'OpenAI API key test failed.',
+								[
+									'provider'      => $provider,
+									'http_status'   => $response_code,
+									'error_type'    => $body['error']['type'] ?? '',
+									'error_message' => $body['error']['message'] ?? '',
+									'raw_response'  => $response_body,
+								]
+							);
+						} else {
+							\FESearchAI\Core\FE_Search_AI_Logger::log(
+								'ERROR',
+								'OpenAI API key test failed with WP_Error.',
+								[
+									'provider'      => $provider,
+									'error_code'    => $response->get_error_code(),
+									'error_message' => $response->get_error_message(),
+								]
+							);
+						}
 					}
 					break;
 
@@ -2143,9 +2176,33 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 						$is_valid = true;
 					} else {
 						$error_message = __( 'Authentication failed.', 'fe-search-ai' );
+						// Log detailed error information.
 						if ( ! is_wp_error( $response ) ) {
-							$body          = json_decode( wp_remote_retrieve_body( $response ), true );
+							$response_code = (int) wp_remote_retrieve_response_code( $response );
+							$response_body = wp_remote_retrieve_body( $response );
+							$body          = json_decode( $response_body, true );
 							$error_message = $body['error']['message'] ?? $error_message;
+							\FESearchAI\Core\FE_Search_AI_Logger::log(
+								'ERROR',
+								'Google API key test failed.',
+								[
+									'provider'      => $provider,
+									'http_status'   => $response_code,
+									'error_type'    => $body['error']['status'] ?? '',
+									'error_message' => $body['error']['message'] ?? '',
+									'raw_response'  => $response_body,
+								]
+							);
+						} else {
+							\FESearchAI\Core\FE_Search_AI_Logger::log(
+								'ERROR',
+								'Google API key test failed with WP_Error.',
+								[
+									'provider'      => $provider,
+									'error_code'    => $response->get_error_code(),
+									'error_message' => $response->get_error_message(),
+								]
+							);
 						}
 					}
 					break;
