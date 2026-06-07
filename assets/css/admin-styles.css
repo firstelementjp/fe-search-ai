@@ -351,7 +351,6 @@ a.nav-tab:last-of-type {
 
 .fe-search-ai-api-keys-table input[type='password'] {
 	font-family: monospace;
-	font-size: 13px;
 	margin: 0;
 }
 
@@ -634,7 +633,8 @@ a:has(.dashicons-warning) span {
 	color: #0071a1;
 }
 
-#tab_provider details summary {
+#tab_provider details summary,
+#tab_advanced details summary {
 	cursor: pointer;
 	color: #0071a1;
 }
@@ -790,22 +790,28 @@ a:has(.dashicons-warning) span {
 	margin: 1em 0;
 }
 
-#fe_search_ai_tool_manifest,
+/* #fe_search_ai_tool_manifest,
 #fe_search_ai_api_guide {
+	margin: 1em 0;
+	cursor: pointer;
+} */
+#tab_advanced details {
 	margin: 1em 0;
 	cursor: pointer;
 }
 
-#fe_search_ai_tool_manifest summary,
+/* #fe_search_ai_tool_manifest summary,
 #fe_search_ai_api_guide summary {
 	margin: 2em 0 1em;
-}
+} */
 
-#fe_search_ai_api_guide h4 {
+#fe_search_ai_api_guide h4,
+#fe_search_ai_mcp_guide h4 {
 	margin: 2em 0 1em;
 }
 
-#fe_search_ai_api_guide li {
+#fe_search_ai_api_guide li,
+#fe_search_ai_mcp_guide li {
 	margin: 0 0 1em;
 }
 
