@@ -58,12 +58,23 @@ class FE_Search_AI_Admin {
 		}
 
 		$deepwiki_url = 'https://deepwiki.com/firstelementjp/fe-search-ai';
+
+		// Check if Pro license is active.
+		$is_pro_license_active = class_exists( 'FE_Search_AI_License' )
+			&& is_callable( [ 'FE_Search_AI_License', 'is_pro_active' ] )
+			&& FE_Search_AI_License::is_pro_active()
+			&& defined( 'FE_SEARCH_AI_PRO_VERSION' ); // Also check if Pro plugin is actually installed and active.
+
+		$version_label = (string) FE_SEARCH_AI_VERSION;
+		if ( defined( 'FE_SEARCH_AI_PRO_VERSION' ) && is_string( FE_SEARCH_AI_PRO_VERSION ) && '' !== FE_SEARCH_AI_PRO_VERSION ) {
+			$version_label .= ' / ' . FE_SEARCH_AI_PRO_VERSION;
+		}
 		?>
 		<div id="plugin_header">
 			<div id="plugin_header_upper">
 				<div id="plugin_header_title">FE Search <span>AI</span>
 				<?php
-				if ( $is_pro ) :
+				if ( $is_pro_license_active ) :
 					?>
 					<span class="pro-badge">Pro</span><?php endif; ?></div>
 				<a href="https://www.firstelement.co.jp/" id="plugin_logo" target="_blank" title="<?php esc_attr_e( 'Go to the developer\'s website', 'fe-search-ai' ); ?>">
@@ -71,7 +82,7 @@ class FE_Search_AI_Admin {
 				</a>
 			</div>
 			<div id="plugin_version">
-				version <?php echo esc_html( FE_SEARCH_AI_VERSION ); ?>
+				version <?php echo esc_html( $version_label ); ?>
 			</div>
 			<div id="plugin_support">
 				<a href="<?php echo esc_url( $docs_url ); ?>"
