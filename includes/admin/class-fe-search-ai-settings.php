@@ -88,11 +88,15 @@ class FE_Search_AI_Settings {
 
 			<div class="nav-tab-wrapper">
 				<a href="#tab_provider" class="nav-tab"><?php esc_html_e( 'Providers', 'fe-search-ai' ); ?></a>
-				<a href="#tab_models" class="nav-tab"><?php esc_html_e( 'Models', 'fe-search-ai' ); ?></a>
+				<?php if ( class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) ) : ?>
+					<a href="#tab_models" class="nav-tab"><?php esc_html_e( 'Models', 'fe-search-ai' ); ?></a>
+				<?php endif; ?>
 				<a href="#tab_sync" class="nav-tab"><?php esc_html_e( 'Sync', 'fe-search-ai' ); ?></a>
 				<a href="#tab_prompt" class="nav-tab"><?php esc_html_e( 'Prompts', 'fe-search-ai' ); ?></a>
 				<a href="#tab_display" class="nav-tab"><?php esc_html_e( 'Display', 'fe-search-ai' ); ?></a>
-				<a href="#tab_security" class="nav-tab"><?php esc_html_e( 'Security', 'fe-search-ai' ); ?></a>
+				<?php if ( class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) ) : ?>
+					<a href="#tab_security" class="nav-tab"><?php esc_html_e( 'Security', 'fe-search-ai' ); ?></a>
+				<?php endif; ?>
 				<a href="#tab_advanced" class="nav-tab"><?php esc_html_e( 'Advanced settings', 'fe-search-ai' ); ?></a>
 				<?php
 				/**
