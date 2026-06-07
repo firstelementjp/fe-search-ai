@@ -50,11 +50,17 @@ class FE_Search_AI_Admin {
 	 * @return void
 	 */
 	public static function render_plugin_header( $is_pro = false ) {
-		$locale = get_user_locale();
+		$current_locale = function_exists( 'determine_locale' ) ? determine_locale() : get_locale();
 
-		$docs_url = 'https://firstelementjp.github.io/fe-search-ai/#/';
-		if ( 'ja' === $locale || 'ja_JP' === $locale ) {
+		$docs_url    = 'https://firstelementjp.github.io/fe-search-ai/#/';
+		$contact_url = 'https://www.firstelement.co.jp/contact';
+		$site_url    = 'https://www.firstelement.co.jp/';
+
+		if ( is_string( $current_locale ) && 0 === strpos( strtolower( $current_locale ), 'ja' ) ) {
 			$docs_url = 'https://firstelementjp.github.io/fe-search-ai/#/ja/';
+		} else {
+			$site_url    = 'https://www.firstelement.co.jp/en/';
+			$contact_url = 'https://www.firstelement.co.jp/en/contact';
 		}
 
 		$deepwiki_url = 'https://deepwiki.com/firstelementjp/fe-search-ai';
@@ -77,7 +83,7 @@ class FE_Search_AI_Admin {
 				if ( $is_pro_license_active ) :
 					?>
 					<span class="pro-badge">Pro</span><?php endif; ?></div>
-				<a href="https://www.firstelement.co.jp/" id="plugin_logo" target="_blank" title="<?php esc_attr_e( 'Go to the developer\'s website', 'fe-search-ai' ); ?>">
+				<a href="<?php echo esc_url( $site_url ); ?>" id="plugin_logo" target="_blank" title="<?php esc_attr_e( 'Go to the developer\'s website', 'fe-search-ai' ); ?>">
 					<img src="<?php echo esc_url( plugin_dir_url( FE_SEARCH_AI_PLUGIN_FILE ) . '/assets/images/logo-feas-white-shadow-s@2x-min.png' ); ?>" width="106" height="27">
 				</a>
 			</div>
@@ -112,7 +118,7 @@ class FE_Search_AI_Admin {
 						</g>
 					</svg>
 				</a>
-				<a href="https://x.com/feas_wp/"
+				<a href="https://x.com/firstelement"
 					target="_blank"
 					title="<?php esc_attr_e( 'Go to X', 'fe-search-ai' ); ?>"
 					class="icon icon_tw">
@@ -133,7 +139,7 @@ class FE_Search_AI_Admin {
 					title="<?php esc_attr_e( 'Go to Facebook page', 'fe-search-ai' ); ?>"
 					class="icon icon_fb">
 				</a>
-				<a href="https://fe-search.com/contact/"
+				<a href="<?php echo esc_url( $contact_url ); ?>"
 					target="_blank"
 					title="<?php esc_attr_e( 'Go to contact form', 'fe-search-ai' ); ?>"
 					class="icon icon_mail">
