@@ -896,7 +896,7 @@ class FE_Search_AI_Settings {
 				'name'          => 'Cohere (Rerank)',
 				'api_url'       => 'https://dashboard.cohere.com/api-keys',
 				'description'   => __( 'Enter your Cohere API key.', 'fe-search-ai' ),
-				'default_model' => 'rerank-v3.0',
+				'default_model' => 'rerank-v3.5',
 			],
 		];
 		?>
@@ -2375,7 +2375,7 @@ class FE_Search_AI_Settings {
 		$new_input['rerank']['top_n']       = absint( $rerank_input['top_n'] ?? ( $existing_rerank['top_n'] ?? 5 ) );
 		$new_input['rerank']['initial_k']   = absint( $rerank_input['initial_k'] ?? ( $existing_rerank['initial_k'] ?? 50 ) );
 		$new_input['rerank']['timeout_sec'] = absint( $rerank_input['timeout_sec'] ?? ( $existing_rerank['timeout_sec'] ?? 15 ) );
-		$new_input['rerank']['model']       = 'rerank-v3.0';
+		$new_input['rerank']['model']       = 'rerank-v3.5';
 
 		// Prompt Tab - site_name and site_purpose are now saved separately in fe_search_ai_site_info option
 
