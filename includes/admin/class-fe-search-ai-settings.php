@@ -240,17 +240,7 @@ class FE_Search_AI_Settings {
 						<table class="form-table">
 							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_data_section' ); ?>
 						</table>
-						<?php // Pro add-on: external API token section only. ?>
-						<?php if ( $is_pro ) : ?>
-							<?php do_settings_sections( 'fe_search_ai_api_token_section_pro' ); ?>
-							<table class="form-table">
-								<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_api_token_section_pro' ); ?>
-							</table>
-							<?php do_settings_sections( 'fe_search_ai_mcp_section_pro' ); ?>
-							<table class="form-table">
-								<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_mcp_section_pro' ); ?>
-							</table>
-						<?php endif; ?>
+						<?php do_action( 'fe_search_ai_after_advanced_settings_fields', $is_pro ); ?>
 					</div>
 
 					<?php
