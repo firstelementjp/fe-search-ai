@@ -88,15 +88,11 @@ class FE_Search_AI_Settings {
 
 			<div class="nav-tab-wrapper">
 				<a href="#tab_provider" class="nav-tab"><?php esc_html_e( 'Providers', 'fe-search-ai' ); ?></a>
-				<?php if ( $is_pro ) : ?>
-					<a href="#tab_models" class="nav-tab"><?php esc_html_e( 'Models', 'fe-search-ai' ); ?></a>
-				<?php endif; ?>
+				<a href="#tab_models" class="nav-tab"><?php esc_html_e( 'Models', 'fe-search-ai' ); ?></a>
 				<a href="#tab_sync" class="nav-tab"><?php esc_html_e( 'Sync', 'fe-search-ai' ); ?></a>
 				<a href="#tab_prompt" class="nav-tab"><?php esc_html_e( 'Prompts', 'fe-search-ai' ); ?></a>
 				<a href="#tab_display" class="nav-tab"><?php esc_html_e( 'Display', 'fe-search-ai' ); ?></a>
-				<?php if ( $is_pro ) : ?>
-					<a href="#tab_security" class="nav-tab"><?php esc_html_e( 'Security', 'fe-search-ai' ); ?></a>
-				<?php endif; ?>
+				<a href="#tab_security" class="nav-tab"><?php esc_html_e( 'Security', 'fe-search-ai' ); ?></a>
 				<a href="#tab_advanced" class="nav-tab"><?php esc_html_e( 'Advanced settings', 'fe-search-ai' ); ?></a>
 				<?php
 				/**
@@ -163,17 +159,7 @@ class FE_Search_AI_Settings {
 						<table class="form-table">
 							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_vector_store_section' ); ?>
 						</table>
-						<?php // Pro add-on: tuning (Custom Stop Words) now lives at the end of the Sync tab. ?>
-						<?php if ( $is_pro ) : ?>
-							<?php do_settings_sections( 'fe_search_ai_vector_store_section_pro' ); ?>
-							<table class="form-table">
-								<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_vector_store_section_pro' ); ?>
-							</table>
-							<?php do_settings_sections( 'fe_search_ai_tuning_section_pro' ); ?>
-							<table class="form-table">
-								<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_tuning_section_pro' ); ?>
-							</table>
-						<?php endif; ?>
+						<?php do_action( 'fe_search_ai_after_vector_store_settings_fields', $is_pro ); ?>
 					</div>
 
 					<div id="tab_display" class="tab-content">
@@ -193,13 +179,7 @@ class FE_Search_AI_Settings {
 						<table class="form-table">
 							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_display_appearance_section' ); ?>
 						</table>
-						<?php // Pro add-on: Privacy opt-in (User Consent) is shown below the legal links. ?>
-						<?php if ( $is_pro ) : ?>
-							<?php do_settings_sections( 'fe_search_ai_privacy_section_pro' ); ?>
-							<table class="form-table">
-								<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_privacy_section_pro' ); ?>
-							</table>
-						<?php endif; ?>
+						<?php do_action( 'fe_search_ai_after_display_settings_fields', $is_pro ); ?>
 					</div>
 
 					<div id="tab_prompt" class="tab-content">
