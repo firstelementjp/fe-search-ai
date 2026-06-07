@@ -733,8 +733,8 @@ class FE_Search_AI_Settings {
 
 		$providers = [
 			'openai'    => __( 'OpenAI（GPT）', 'fe-search-ai' ),
-			'google'    => __( 'Google (Gemini)', 'fe-search-ai' ),
 			'anthropic' => __( 'Anthropic (Claude)', 'fe-search-ai' ),
+			'google'    => __( 'Google (Gemini)', 'fe-search-ai' ),
 		];
 
 		/**
@@ -880,17 +880,17 @@ class FE_Search_AI_Settings {
 				'description'   => __( 'Enter your OpenAI API key.', 'fe-search-ai' ),
 				'default_model' => 'gpt-5.4-mini',
 			],
-			'google'    => [
-				'name'          => 'Google (Gemini)',
-				'api_url'       => 'https://console.cloud.google.com/apis/credentials',
-				'description'   => __( 'Enter your Google Cloud API key.', 'fe-search-ai' ),
-				'default_model' => 'gemini-2.5-flash',
-			],
 			'anthropic' => [
 				'name'          => 'Anthropic (Claude)',
 				'api_url'       => 'https://console.anthropic.com/',
 				'description'   => __( 'Enter your Anthropic API key.', 'fe-search-ai' ),
 				'default_model' => 'claude-haiku-4-5-20251001',
+			],
+			'google'    => [
+				'name'          => 'Google (Gemini)',
+				'api_url'       => 'https://console.cloud.google.com/apis/credentials',
+				'description'   => __( 'Enter your Google Cloud API key.', 'fe-search-ai' ),
+				'default_model' => 'gemini-2.5-flash',
 			],
 			'cohere'    => [
 				'name'          => 'Cohere (Rerank)',
