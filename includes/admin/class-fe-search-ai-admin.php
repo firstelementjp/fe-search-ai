@@ -60,9 +60,9 @@ class FE_Search_AI_Admin {
 		$deepwiki_url = 'https://deepwiki.com/firstelementjp/fe-search-ai';
 
 		// Check if Pro license is active.
-		$is_pro_license_active = class_exists( 'FE_Search_AI_License' )
-			&& is_callable( [ 'FE_Search_AI_License', 'is_pro_active' ] )
-			&& FE_Search_AI_License::is_pro_active()
+		$is_pro_license_active = class_exists( '\FESearchAI\Core\FE_Search_AI_License' )
+			&& is_callable( [ '\FESearchAI\Core\FE_Search_AI_License', 'is_pro_active' ] )
+			&& \FESearchAI\Core\FE_Search_AI_License::is_pro_active()
 			&& defined( 'FE_SEARCH_AI_PRO_VERSION' ); // Also check if Pro plugin is actually installed and active.
 
 		$version_label = (string) FE_SEARCH_AI_VERSION;
