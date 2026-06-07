@@ -505,11 +505,13 @@ class FE_Search_AI_Chat_Handler {
 
 		$model = 'gpt-5.4-mini'; // Default
 		if ( $this->is_license_active ) {
+			// Read Pro settings for model selection.
+			$pro_settings = get_option( 'fe_search_ai_pro_settings', [] );
 			if ( 'openai_compatible' === $provider ) {
-				$model = $this->options['model']['openai_compatible'] ?? $model;
+				$model = $pro_settings['model']['openai_compatible_model']['custom'] ?? $model;
 			} else {
-				$model = $this->options['model']['openai'] ?? [ 'type' => $model ];
-				$model = ( isset( $model['type'] ) && 'custom' === $model['type'] ) ? $model['custom'] : $model['type'];
+				$openai_model = $pro_settings['model']['openai_model'] ?? [ 'type' => $model, 'custom' => '' ];
+				$model = ( 'custom' === $openai_model['type'] ) ? $openai_model['custom'] : $openai_model['type'];
 			}
 		}
 
@@ -1388,8 +1390,10 @@ class FE_Search_AI_Chat_Handler {
 
 		$model = 'claude-haiku-4-5-20251001'; // Default
 		if ( $this->is_license_active ) {
-			$model = $this->options['model']['anthropic'] ?? [ 'type' => $model ];
-			$model = ( 'custom' === $model['type'] ) ? $model['custom'] : $model['type'];
+			// Read Pro settings for model selection.
+			$pro_settings = get_option( 'fe_search_ai_pro_settings', [] );
+			$anthropic_model = $pro_settings['model']['anthropic_model'] ?? [ 'type' => $model, 'custom' => '' ];
+			$model = ( 'custom' === $anthropic_model['type'] ) ? $anthropic_model['custom'] : $anthropic_model['type'];
 		}
 
 		// INFO: Log the start of the API call.
