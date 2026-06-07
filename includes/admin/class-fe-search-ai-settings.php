@@ -246,6 +246,10 @@ class FE_Search_AI_Settings {
 							<table class="form-table">
 								<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_api_token_section_pro' ); ?>
 							</table>
+							<?php do_settings_sections( 'fe_search_ai_mcp_section_pro' ); ?>
+							<table class="form-table">
+								<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_mcp_section_pro' ); ?>
+							</table>
 						<?php endif; ?>
 					</div>
 
