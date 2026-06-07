@@ -556,7 +556,7 @@ class FE_Search_AI_Settings {
 					<?php echo esc_html( $engine_label ); ?>
 					<br>
 					<span style="display:inline-block; margin-left:24px; color:#666; font-size:11px;">
-						<?php esc_html_e( 'When \'WordPress database\' is selected, it performs keyword index search based on chunk data without generating vector data, allowing you to run simple AI search without using a dedicated vector database.', 'fe-search-ai' ); ?>
+						<?php esc_html_e( 'When \'WordPress database\' is selected, it performs keyword index search based on chunk data without generating vector data. Search accuracy may be lower compared to vector-based search.', 'fe-search-ai' ); ?>
 					</span>
 				</label>
 				<label>
