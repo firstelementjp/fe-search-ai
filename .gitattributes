@@ -7,6 +7,9 @@ composer.json export-ignore
 composer.lock export-ignore
 vendor/ export-ignore
 node_modules/ export-ignore
+
+# Include assets/vendor (Pickr color picker)
+assets/vendor/
 package.json export-ignore
 package-lock.json export-ignore
 
