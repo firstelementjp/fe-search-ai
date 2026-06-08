@@ -1071,7 +1071,10 @@ class FE_Search_AI_Settings {
 								</thead>
 								<tbody>
 									<tr>
-										<td><?php printf( esc_html__( '%1$s (%2$s)', 'fe-search-ai' ), esc_html__( 'Post Title', 'fe-search-ai' ), 'post_title' ); ?></td>
+										<td><?php
+											/* translators: 1: field label, 2: field name */
+											printf( esc_html__( '%1$s (%2$s)', 'fe-search-ai' ), esc_html__( 'Post Title', 'fe-search-ai' ), 'post_title' );
+										?></td>
 										<td>
 											<label>
 												<input type="checkbox" name="fe_search_ai_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_include_title]" value="1" <?php checked( $snippet_title ); ?>>
@@ -1079,7 +1082,10 @@ class FE_Search_AI_Settings {
 										</td>
 									</tr>
 									<tr>
-										<td><?php printf( esc_html__( '%1$s (%2$s)', 'fe-search-ai' ), esc_html__( 'Post Content', 'fe-search-ai' ), 'post_content' ); ?></td>
+										<td><?php
+											/* translators: 1: field label, 2: field name */
+											printf( esc_html__( '%1$s (%2$s)', 'fe-search-ai' ), esc_html__( 'Post Content', 'fe-search-ai' ), 'post_content' );
+										?></td>
 										<td>
 											<label>
 												<input type="checkbox" name="fe_search_ai_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_include_content]" value="1" <?php checked( $snippet_content ); ?>>
@@ -1087,7 +1093,10 @@ class FE_Search_AI_Settings {
 										</td>
 									</tr>
 									<tr>
-										<td><?php printf( esc_html__( '%1$s (%2$s)', 'fe-search-ai' ), esc_html__( 'Post Date', 'fe-search-ai' ), 'post_date' ); ?></td>
+										<td><?php
+											/* translators: 1: field label, 2: field name */
+											printf( esc_html__( '%1$s (%2$s)', 'fe-search-ai' ), esc_html__( 'Post Date', 'fe-search-ai' ), 'post_date' );
+										?></td>
 										<td>
 											<label>
 												<input type="checkbox" name="fe_search_ai_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_include_date]" value="1" <?php checked( $snippet_date ); ?>>
@@ -1095,7 +1104,10 @@ class FE_Search_AI_Settings {
 										</td>
 									</tr>
 									<tr>
-										<td><?php printf( esc_html__( '%1$s (%2$s)', 'fe-search-ai' ), esc_html__( 'Post Author', 'fe-search-ai' ), 'usermeta > nickname' ); ?></td>
+										<td><?php
+											/* translators: 1: field label, 2: field name */
+											printf( esc_html__( '%1$s (%2$s)', 'fe-search-ai' ), esc_html__( 'Post Author', 'fe-search-ai' ), 'usermeta > nickname' );
+										?></td>
 										<td>
 											<label>
 												<input type="checkbox" name="fe_search_ai_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_include_author]" value="1" <?php checked( $snippet_author ); ?>>
@@ -1118,7 +1130,10 @@ class FE_Search_AI_Settings {
 											$tax_config_wrapper_class = sanitize_html_class( 'fe-search-ai-tax-config-wrapper-' . $post_type->name . '-' . $tax->name );
 											?>
 											<tr>
-												<td><?php printf( esc_html__( '%1$s (%2$s)', 'fe-search-ai' ), esc_html( $tax->label ), esc_html( $tax->name ) ); ?></td>
+												<td><?php
+													/* translators: 1: taxonomy label, 2: taxonomy name */
+													printf( esc_html__( '%1$s (%2$s)', 'fe-search-ai' ), esc_html( $tax->label ), esc_html( $tax->name ) );
+												?></td>
 												<td>
 													<div>
 														<label>
