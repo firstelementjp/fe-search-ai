@@ -27,6 +27,9 @@ if ( get_option( 'fe_search_ai_delete_on_uninstall' ) ) {
 	foreach ( $table_names as $table_name ) {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange
 		// phpcs:ignore PluginCheck.Security.PreparedSQLInterpolatedNotPrepared
+		// phpcs:ignore PluginCheck.Security.DirectDatabaseQuery
+		// phpcs:ignore PluginCheck.Security.NoCaching
+		// phpcs:ignore PluginCheck.Security.SchemaChange
 		// Table name is interpolated but controlled internally.
 		$wpdb->query( "DROP TABLE IF EXISTS `{$table_name}`" );
 	}

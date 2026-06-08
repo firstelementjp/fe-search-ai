@@ -2045,6 +2045,8 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
 			// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter
+			// phpcs:ignore PluginCheck.Security.DirectDatabaseQuery
+			// phpcs:ignore PluginCheck.Security.NoCaching
 			// Direct insert required for custom table. Table name is controlled internally.
 			$wpdb->insert( $logs_table, $log_row );
 			$log_id = $wpdb->insert_id;
@@ -2108,6 +2110,9 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore PluginCheck.Security.PreparedSQLInterpolatedNotPrepared
+		// phpcs:ignore PluginCheck.Security.DirectDatabaseQuery
+		// phpcs:ignore PluginCheck.Security.NoCaching
 		// Table name is interpolated but controlled internally, session_id is prepared.
 		$logs = $wpdb->get_results(
 			$wpdb->prepare(
@@ -2151,6 +2156,9 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 		global $wpdb;
 		$logs_table = $wpdb->prefix . 'fe_search_ai_logs';
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:ignore PluginCheck.Security.DirectDatabaseQuery
+		// Direct update required for custom table. Table name is controlled internally.
 		$updated = $wpdb->update(
 			$logs_table,
 			[ 'rating' => $rating ],
