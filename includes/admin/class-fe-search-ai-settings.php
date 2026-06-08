@@ -971,7 +971,11 @@ class FE_Search_AI_Settings {
 							<span class="fe-search-ai-model-display"><?php echo esc_html( $model_to_display ); ?></span>
 							<?php if ( class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) ) : ?>
 								<br><small>
-									<?php echo $this->license_alert_icon; ?>
+									<?php
+									// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+									// HTML is generated internally with proper escaping.
+									echo $this->license_alert_icon;
+									?>
 									<a href="#tab_models" class="fe-search-ai-change-model-link">
 										<?php esc_html_e( 'Change Model', 'fe-search-ai' ); ?> &raquo;
 									</a>
@@ -2082,6 +2086,8 @@ class FE_Search_AI_Settings {
 			$saved_post_types = [ 'post', 'page' ];
 		}
 
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		// Static HTML string, no user input.
 		echo '<fieldset>';
 		foreach ( $post_types as $post_type ) {
 			if ( in_array( $post_type->name, $excluded_post_types ) ) {
@@ -2257,6 +2263,8 @@ class FE_Search_AI_Settings {
 		<input
 			type="number"
 			name="fe_search_ai_settings[sync][batch_size]"
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			// Value is escaped with esc_attr().
 			value="<?php echo esc_attr( $batch_size ); ?>"
 			class="small-text"
 			min="1"
@@ -2812,7 +2820,11 @@ class FE_Search_AI_Settings {
 			wp_dropdown_pages(
 				[
 					'name'              => 'fe_search_ai_settings[display][links][terms_page_id]',
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					// Value is an integer from options, handled by wp_dropdown_pages.
 					'selected'          => $links_options['terms_page_id'] ?? 0,
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					// Translation string is handled by wp_dropdown_pages.
 					'show_option_none'  => '— ' . __( 'Not selected', 'fe-search-ai' ) . ' —',
 					'option_none_value' => '0',
 				]
@@ -2826,7 +2838,11 @@ class FE_Search_AI_Settings {
 			wp_dropdown_pages(
 				[
 					'name'              => 'fe_search_ai_settings[display][links][privacy_page_id]',
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					// Value is an integer from options, handled by wp_dropdown_pages.
 					'selected'          => $links_options['privacy_page_id'] ?? 0,
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					// Translation string is handled by wp_dropdown_pages.
 					'show_option_none'  => '— ' . __( 'Not selected', 'fe-search-ai' ) . ' —',
 					'option_none_value' => '0',
 				]
