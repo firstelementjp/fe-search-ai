@@ -133,6 +133,8 @@ class FE_Search_AI_Assets {
 		 * Allows external code (themes/plugins) to adjust the rate limit settings
 		 * using $default_limits as the base configuration.
 		 */
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		// Hook name is properly prefixed with fe_search_ai_.
 		$rate_limit_config = apply_filters( 'fe_search_ai_rate_limit_settings', $default_limits );
 
 		// Ensure any missing keys are filled with defaults to avoid notices/warnings.
@@ -192,6 +194,8 @@ class FE_Search_AI_Assets {
 			 * @param array  $colors    Array of normalized hex colors with keys
 			 *                          "accent", "background", and "text".
 			 */
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+			// Hook name is properly prefixed with fe_search_ai_.
 			$color_css = apply_filters(
 				'fe_search_ai_frontend_color_css',
 				$color_css,
@@ -250,6 +254,8 @@ class FE_Search_AI_Assets {
 		);
 
 		// Pass data to JavaScript.
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		// Hook name is properly prefixed with fe_search_ai_.
 		$rate_limit_message = apply_filters(
 			'fe_search_ai_rate_limit_message',
 			__( '(You have reached the request limit. Please wait a while before trying again.)', 'fe-search-ai' )

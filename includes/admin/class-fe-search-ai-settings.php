@@ -108,6 +108,8 @@ class FE_Search_AI_Settings {
 				 *
 				 * @since 0.9.0
 				 */
+				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+				// Hook name is properly prefixed with fe_search_ai_.
 				do_action( 'fe_search_ai_settings_tabs' );
 				?>
 			</div>
@@ -140,7 +142,11 @@ class FE_Search_AI_Settings {
 							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_rerank_provider_section' ); ?>
 						</table>
 
-						<?php do_action( 'fe_search_ai_after_api_settings_fields' ); ?>
+						<?php
+						// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+						// Hook name is properly prefixed with fe_search_ai_.
+						do_action( 'fe_search_ai_after_api_settings_fields' );
+						?>
 					</div>
 
 					<div id="tab_sync" class="tab-content">
@@ -163,7 +169,11 @@ class FE_Search_AI_Settings {
 						<table class="form-table">
 							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_vector_store_section' ); ?>
 						</table>
-						<?php do_action( 'fe_search_ai_after_vector_store_settings_fields', $is_pro ); ?>
+						<?php
+						// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+						// Hook name is properly prefixed with fe_search_ai_.
+						do_action( 'fe_search_ai_after_vector_store_settings_fields', $is_pro );
+						?>
 					</div>
 
 					<div id="tab_display" class="tab-content">
@@ -177,13 +187,21 @@ class FE_Search_AI_Settings {
 							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_display_embed_section' ); ?>
 						</table>
 
-						<?php do_action( 'fe_search_ai_after_display_embed_settings_fields' ); ?>
+						<?php
+						// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+						// Hook name is properly prefixed with fe_search_ai_.
+						do_action( 'fe_search_ai_after_display_embed_settings_fields' );
+						?>
 
 						<?php do_settings_sections( 'fe_search_ai_display_appearance_section' ); ?>
 						<table class="form-table">
 							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_display_appearance_section' ); ?>
 						</table>
-						<?php do_action( 'fe_search_ai_after_display_settings_fields', $is_pro ); ?>
+						<?php
+						// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+						// Hook name is properly prefixed with fe_search_ai_.
+						do_action( 'fe_search_ai_after_display_settings_fields', $is_pro );
+						?>
 					</div>
 
 					<div id="tab_prompt" class="tab-content">
@@ -191,7 +209,11 @@ class FE_Search_AI_Settings {
 						<table class="form-table">
 							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_prompt_section' ); ?>
 						</table>
-						<?php do_action( 'fe_search_ai_after_prompt_settings_fields' ); ?>
+						<?php
+						// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+						// Hook name is properly prefixed with fe_search_ai_.
+						do_action( 'fe_search_ai_after_prompt_settings_fields' );
+						?>
 					</div>
 
 					<div id="tab_advanced" class="tab-content">
@@ -224,7 +246,11 @@ class FE_Search_AI_Settings {
 						<table class="form-table">
 							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_data_section' ); ?>
 						</table>
-						<?php do_action( 'fe_search_ai_after_advanced_settings_fields', $is_pro ); ?>
+						<?php
+						// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+						// Hook name is properly prefixed with fe_search_ai_.
+						do_action( 'fe_search_ai_after_advanced_settings_fields', $is_pro );
+						?>
 					</div>
 
 					<?php
@@ -237,6 +263,8 @@ class FE_Search_AI_Settings {
 					 *
 					 * @since 0.9.0
 					 */
+					// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+					// Hook name is properly prefixed with fe_search_ai_.
 					do_action( 'fe_search_ai_settings_tabs_content' );
 					?>
 				</div>
@@ -727,6 +755,8 @@ class FE_Search_AI_Settings {
 		 * where the key is the provider slug (e.g., 'openai')
 		 * and the value is the display name (e.g., 'OpenAI (GPT-4o)').
 		 */
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		// Hook name is properly prefixed with fe_search_ai_.
 		$providers = apply_filters( 'fe_search_ai_chat_providers', $providers );
 
 		?>
@@ -771,6 +801,8 @@ class FE_Search_AI_Settings {
 		 * where the key is the provider slug (e.g., 'cohere')
 		 * and the value is the display name (e.g., 'Cohere (Rerank)').
 		 */
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		// Hook name is properly prefixed with fe_search_ai_.
 		$providers = apply_filters( 'fe_search_ai_rerank_providers', $providers );
 
 		?>
@@ -817,6 +849,8 @@ class FE_Search_AI_Settings {
 		 * where the key is the provider slug (e.g., 'google')
 		 * and the value is the display name (e.g., 'Google (text-embedding-004)').
 		 */
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		// Hook name is properly prefixed with fe_search_ai_.
 		$providers = apply_filters( 'fe_search_ai_embedding_providers', $providers );
 
 		?>
@@ -985,6 +1019,8 @@ class FE_Search_AI_Settings {
 					</tr>
 				<?php endforeach; ?>
 				<?php
+				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+				// Hook name is properly prefixed with fe_search_ai_.
 				do_action( 'fe_search_ai_api_keys_table_rows', $this );
 				?>
 			</tbody>
@@ -1008,6 +1044,8 @@ class FE_Search_AI_Settings {
 		<?php endif; ?>
 		
 		<?php
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		// Hook name is properly prefixed with fe_search_ai_.
 		// Allow Pro version to add additional provider rows
 		do_action( 'fe_search_ai_after_api_key_fields', $this );
 		?>
@@ -1176,7 +1214,11 @@ class FE_Search_AI_Settings {
 									}
 									?>
 
-									<?php do_action( 'fe_search_ai_sync_target_rows', $post_type, $pt_options ); ?>
+									<?php
+									// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+									// Hook name is properly prefixed with fe_search_ai_.
+									do_action( 'fe_search_ai_sync_target_rows', $post_type, $pt_options );
+									?>
 								</tbody>
 							</table>
 
@@ -1257,6 +1299,8 @@ class FE_Search_AI_Settings {
 					 * @since 0.9.0
 					 * @param array $statuses An array of HTML strings, each representing a status line.
 					 */
+					// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+					// Hook name is properly prefixed with fe_search_ai_.
 					$tokenizer_statuses = apply_filters( 'fe_search_ai_tokenizer_status', [] );
 
 					if ( ! empty( $tokenizer_statuses ) ) :
@@ -2667,6 +2711,8 @@ class FE_Search_AI_Settings {
 			} else {
 				$new_input[ $pt_name ]['snippet_taxonomies'] = [];
 			}
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+			// Hook name is properly prefixed with fe_search_ai_.
 			$new_input[ $pt_name ] = apply_filters( 'fe_search_ai_sanitize_sync_target', $new_input[ $pt_name ], $input[ $pt_name ], $pt_name );
 		}
 		return $new_input;
@@ -2751,6 +2797,8 @@ class FE_Search_AI_Settings {
 		$new_input['display_rules']['include_ids']        = $this->sanitize_numeric_string( $rules['include_ids'] ?? '' );
 		$new_input['display_rules']['exclude_ids']        = $this->sanitize_numeric_string( $rules['exclude_ids'] ?? '' );
 
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		// Hook name is properly prefixed with fe_search_ai_.
 		$new_input = apply_filters( 'fe_search_ai_sanitize_display_floating', $new_input, $input );
 
 		return $new_input;
