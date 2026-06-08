@@ -51,12 +51,10 @@ class FE_Search_AI_Admin {
 	/**
 	 * Render the settings page header.
 	 *
-	 * @param bool $is_pro Whether Pro license is active.
+	 * @param bool $is_pro Whether the Pro plugin is active and the Pro license is active.
 	 * @return void
 	 */
 	public static function render_plugin_header( $is_pro = false ) {
-		unset( $is_pro );
-
 		$current_locale = function_exists( 'determine_locale' ) ? determine_locale() : get_locale();
 
 		$docs_url    = 'https://firstelementjp.github.io/fe-search-ai/#/';
@@ -72,11 +70,7 @@ class FE_Search_AI_Admin {
 
 		$deepwiki_url = 'https://deepwiki.com/firstelementjp/fe-search-ai';
 
-		// Check if Pro license is active.
-		$is_pro_license_active = class_exists( '\FESearchAI\Core\FE_Search_AI_License' )
-			&& is_callable( [ '\FESearchAI\Core\FE_Search_AI_License', 'is_pro_active' ] )
-			&& \FESearchAI\Core\FE_Search_AI_License::is_pro_active()
-			&& defined( 'FE_SEARCH_AI_PRO_VERSION' ); // Also check if Pro plugin is actually installed and active.
+		$is_pro_active = (bool) $is_pro;
 
 		$version_label = (string) FE_SEARCH_AI_VERSION;
 		if ( defined( 'FE_SEARCH_AI_PRO_VERSION' ) && is_string( FE_SEARCH_AI_PRO_VERSION ) && '' !== FE_SEARCH_AI_PRO_VERSION ) {
@@ -87,7 +81,7 @@ class FE_Search_AI_Admin {
 			<div id="plugin_header_upper">
 				<div id="plugin_header_title">FE Search <span>AI</span>
 				<?php
-				if ( $is_pro_license_active ) :
+				if ( $is_pro_active ) :
 					?>
 					<span class="pro-badge">Pro</span><?php endif; ?></div>
 				<a href="<?php echo esc_url( $site_url ); ?>" id="plugin_logo" target="_blank" title="<?php esc_attr_e( 'Go to the developer\'s website', 'fe-search-ai' ); ?>">
