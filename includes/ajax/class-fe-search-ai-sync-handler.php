@@ -184,7 +184,11 @@ class FE_Search_AI_Sync_Handler {
 		global $wpdb;
 		$vectors_table = $wpdb->prefix . 'fe_search_ai_vectors';
 		$index_table   = $wpdb->prefix . 'fe_search_ai_keyword_index';
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// Table name is interpolated but controlled internally.
 		$wpdb->query( "TRUNCATE TABLE `{$vectors_table}`" );
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// Table name is interpolated but controlled internally.
 		$wpdb->query( "TRUNCATE TABLE `{$index_table}`" );
 
 		// Normalize sync options structure to a safe array using new schema.
@@ -374,6 +378,8 @@ class FE_Search_AI_Sync_Handler {
 		// Find deleted posts
 		global $wpdb;
 		$vectors_table         = $wpdb->prefix . 'fe_search_ai_vectors';
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// Table name is interpolated but controlled internally.
 		$indexed_post_ids      = array_map( 'intval', $wpdb->get_col( "SELECT DISTINCT post_id FROM {$vectors_table}" ) );
 		$all_existing_post_ids = array_map(
 			'intval',
@@ -411,9 +417,9 @@ class FE_Search_AI_Sync_Handler {
 			);
 		}
 		// Convert the stored local timestamp to a GMT datetime string for post_modified_gmt.
-		$last_sync_local_datetime = date( 'Y-m-d H:i:s', $last_sync );
+		$last_sync_local_datetime = gmdate( 'Y-m-d H:i:s', $last_sync );
 		$last_sync_gmt_timestamp  = get_gmt_from_date( $last_sync_local_datetime, 'U' );
-		$last_sync_gmt_datetime   = date( 'Y-m-d H:i:s', $last_sync_gmt_timestamp );
+		$last_sync_gmt_datetime   = gmdate( 'Y-m-d H:i:s', $last_sync_gmt_timestamp );
 
 		$updated_post_ids = get_posts(
 			[
@@ -508,6 +514,8 @@ class FE_Search_AI_Sync_Handler {
 	 */
 	public function ajax_process_batch() {
 		try {
+			// phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged
+			// Required for long-running batch processing.
 			set_time_limit( 0 );
 			ob_start();
 
@@ -515,7 +523,10 @@ class FE_Search_AI_Sync_Handler {
 
 			// Process input data
 			$page          = isset( $_POST['page'] ) ? absint( $_POST['page'] ) : 1;
-			$post_ids_json = isset( $_POST['post_ids'] ) ? stripslashes( $_POST['post_ids'] ) : '[]';
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			// Input is JSON string, validated by json_decode().
+			$post_ids_json = isset( $_POST['post_ids'] ) ? wp_unslash( $_POST['post_ids'] ) : '[]';
 			$post_ids      = json_decode( $post_ids_json, true );
 			$sync_options  = isset( $this->options['sync'] ) && is_array( $this->options['sync'] ) ? $this->options['sync'] : [];
 			$batch_conf    = isset( $sync_options['options'] ) && is_array( $sync_options['options'] ) ? $sync_options['options'] : [];
@@ -633,6 +644,8 @@ class FE_Search_AI_Sync_Handler {
 								if ( mb_strlen( $keyword ) > 1 ) {
 									// Use INSERT IGNORE semantics so that duplicate (keyword, vector_id)
 									// combinations do not trigger database errors during sync.
+									// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+									// Table name is interpolated but controlled internally, values are prepared.
 									$wpdb->query(
 										$wpdb->prepare(
 											"INSERT IGNORE INTO `{$index_table}` (`keyword`, `vector_id`, `lang`) VALUES (%s, %d, %s)",
@@ -710,7 +723,11 @@ class FE_Search_AI_Sync_Handler {
 		$vectors_table = $wpdb->prefix . 'fe_search_ai_vectors';
 		$index_table   = $wpdb->prefix . 'fe_search_ai_keyword_index';
 
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// Table name is interpolated but controlled internally.
 		$wpdb->query( "TRUNCATE TABLE `{$vectors_table}`" );
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// Table name is interpolated but controlled internally.
 		$wpdb->query( "TRUNCATE TABLE `{$index_table}`" );
 
 		// Reset last sync timestamps inside the main settings array.
@@ -1403,6 +1420,8 @@ class FE_Search_AI_Sync_Handler {
 			$max_chunks = 100;
 		}
 		$placeholders = implode( ', ', array_fill( 0, count( $valid_keywords ), '%s' ) );
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		// Table name is interpolated but controlled internally, keywords are prepared.
 		$sql          = "SELECT DISTINCT `vector_id` FROM `{$index_table}` WHERE `keyword` IN ( {$placeholders} ) LIMIT {$max_chunks}";
 		$vector_ids   = $wpdb->get_col( $wpdb->prepare( $sql, $valid_keywords ) );
 
@@ -1424,6 +1443,8 @@ class FE_Search_AI_Sync_Handler {
 		// Retrieve the full content chunks for the found vector IDs.
 		// Order by newest post date to keep UX stable when reranking is disabled.
 		$placeholders = implode( ', ', array_fill( 0, count( $vector_ids ), '%d' ) );
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		// Table names are interpolated but controlled internally, vector_ids are prepared.
 		$sql          = "SELECT v.`content_chunk`, v.`summary_text`, v.`post_id` FROM `{$vectors_table}` v INNER JOIN `{$wpdb->posts}` p ON p.ID = v.post_id WHERE v.`id` IN ( {$placeholders} ) ORDER BY p.post_date DESC";
 		$chunks_data  = $wpdb->get_results( $wpdb->prepare( $sql, $vector_ids ), ARRAY_A );
 
@@ -1573,7 +1594,7 @@ class FE_Search_AI_Sync_Handler {
 		$meta_parts[] = sprintf( 'URL: %s', get_permalink( $post ) );
 
 		if ( ! empty( $pt_options['include_date'] ) ) {
-			$meta_parts[] = sprintf( 'Date: %s', date( 'Y-m-d', strtotime( $post->post_date ) ) );
+			$meta_parts[] = sprintf( 'Date: %s', gmdate( 'Y-m-d', strtotime( $post->post_date ) ) );
 		}
 		if ( ! empty( $pt_options['include_author'] ) ) {
 			$user = get_user_by( 'ID', $post->post_author );
@@ -2371,6 +2392,8 @@ class FE_Search_AI_Sync_Handler {
 	 * Renders an administrator notification about internationalization
 	 */
 	public function render_i18n_notice() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		// This is a display method, not a form handler. No nonce verification needed.
 		// Do not show the notice if it was recently dismissed.
 		if ( get_transient( 'fe_search_ai_i18n_notice_dismissed' ) ) {
 			return;
