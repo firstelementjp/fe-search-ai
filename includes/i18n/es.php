@@ -17,7 +17,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Spanish Language Data.
-// phpcs:ignore PluginCheck.PluginTheme.NonPrefixedVariableFound
 // Local variable for language-specific stop words.
 $base_stop_words = [
 	'a', 'al', 'algo', 'algunas', 'algunos', 'ante', 'antes', 'como',
@@ -32,7 +31,6 @@ $base_stop_words = [
 ];
 
 // Stop words used only for system-prompt / label phrases.
-// phpcs:ignore PluginCheck.PluginTheme.NonPrefixedVariableFound
 // Local variable for language-specific stop words.
 $prompt_label_stop_words = [
 	'the', 'this', 'is', 'are', 'was',

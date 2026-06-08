@@ -1007,7 +1007,6 @@ class FE_Search_AI_Settings {
 								<br><small>
 									<?php
 									// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-									// phpcs:ignore PluginCheck.Security.OutputNotEscaped
 									// HTML is generated internally with proper escaping.
 									echo $this->license_alert_icon;
 									?>
@@ -1257,9 +1256,6 @@ class FE_Search_AI_Settings {
 		// Check if the table exists *before* querying it to prevent errors.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
-		// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter
-		// phpcs:ignore PluginCheck.Security.DirectDatabaseQuery
-		// phpcs:ignore PluginCheck.Security.NoCaching
 		// Direct query required for custom table check.
 		$table_exists       = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $vectors_table ) ) === $vectors_table;
 		$indexed_post_count = 0;
@@ -1267,10 +1263,6 @@ class FE_Search_AI_Settings {
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
-			// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter
-			// phpcs:ignore PluginCheck.Security.PreparedSQLInterpolatedNotPrepared
-			// phpcs:ignore PluginCheck.Security.DirectDatabaseQuery
-			// phpcs:ignore PluginCheck.Security.NoCaching
 			// Table name is interpolated but controlled internally.
 			$indexed_post_count = $wpdb->get_var( "SELECT COUNT(DISTINCT post_id) FROM `{$vectors_table}`" );
 		}
@@ -1469,10 +1461,6 @@ class FE_Search_AI_Settings {
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
-			// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter
-			// phpcs:ignore PluginCheck.Security.PreparedSQLInterpolatedNotPrepared
-			// phpcs:ignore PluginCheck.Security.DirectDatabaseQuery
-			// phpcs:ignore PluginCheck.Security.NoCaching
 			// Table name is interpolated but controlled internally.
 			$wpdb->query( "TRUNCATE TABLE `{$table_name}`" );
 		}
@@ -2163,7 +2151,6 @@ class FE_Search_AI_Settings {
 		}
 
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		// phpcs:ignore PluginCheck.Security.OutputNotEscaped
 		// Static HTML string, no user input.
 		echo '<fieldset>';
 		foreach ( $post_types as $post_type ) {
@@ -2345,7 +2332,6 @@ class FE_Search_AI_Settings {
 			type="number"
 			name="fe_search_ai_settings[sync][batch_size]"
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			// phpcs:ignore PluginCheck.Security.OutputNotEscaped
 			// Value is escaped with esc_attr().
 			value="<?php echo esc_attr( $batch_size ); ?>"
 			class="small-text"
@@ -2906,11 +2892,9 @@ class FE_Search_AI_Settings {
 				[
 					'name'              => 'fe_search_ai_settings[display][links][terms_page_id]',
 					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-					// phpcs:ignore PluginCheck.Security.OutputNotEscaped
 					// Value is an integer from options, handled by wp_dropdown_pages.
 					'selected'          => $links_options['terms_page_id'] ?? 0,
 					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-					// phpcs:ignore PluginCheck.Security.OutputNotEscaped
 					// Translation string is handled by wp_dropdown_pages.
 					'show_option_none'  => '— ' . __( 'Not selected', 'fe-search-ai' ) . ' —',
 					'option_none_value' => '0',
@@ -2926,11 +2910,9 @@ class FE_Search_AI_Settings {
 				[
 					'name'              => 'fe_search_ai_settings[display][links][privacy_page_id]',
 					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-					// phpcs:ignore PluginCheck.Security.OutputNotEscaped
 					// Value is an integer from options, handled by wp_dropdown_pages.
 					'selected'          => $links_options['privacy_page_id'] ?? 0,
 					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-					// phpcs:ignore PluginCheck.Security.OutputNotEscaped
 					// Translation string is handled by wp_dropdown_pages.
 					'show_option_none'  => '— ' . __( 'Not selected', 'fe-search-ai' ) . ' —',
 					'option_none_value' => '0',

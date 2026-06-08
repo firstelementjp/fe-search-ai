@@ -18,7 +18,6 @@ if ( get_option( 'fe_search_ai_delete_on_uninstall' ) ) {
 	global $wpdb;
 
 	// Delete custom table.
-	// phpcs:ignore PluginCheck.PluginTheme.NonPrefixedVariableFound
 	// Local variable, not global.
 	$table_names = [
 		$wpdb->prefix . 'fe_search_ai_vectors',
@@ -27,19 +26,13 @@ if ( get_option( 'fe_search_ai_delete_on_uninstall' ) ) {
 	];
 
 	foreach ( $table_names as $table_name ) {
-		// phpcs:ignore PluginCheck.PluginTheme.NonPrefixedVariableFound
 		// Local variable, not global.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange
-		// phpcs:ignore PluginCheck.Security.PreparedSQLInterpolatedNotPrepared
-		// phpcs:ignore PluginCheck.Security.DirectDatabaseQuery
-		// phpcs:ignore PluginCheck.Security.NoCaching
-		// phpcs:ignore PluginCheck.Security.SchemaChange
 		// Table name is interpolated but controlled internally.
 		$wpdb->query( "DROP TABLE IF EXISTS `{$table_name}`" );
 	}
 
 	// Delete option.
-	// phpcs:ignore PluginCheck.PluginTheme.NonPrefixedVariableFound
 	// Local variable, not global.
 	$option_names = [
 		'fe_search_ai_chat_provider',
@@ -55,7 +48,6 @@ if ( get_option( 'fe_search_ai_delete_on_uninstall' ) ) {
 	];
 
 	foreach ( $option_names as $option_name ) {
-		// phpcs:ignore PluginCheck.PluginTheme.NonPrefixedVariableFound
 		// Local variable, not global.
 		delete_option( $option_name );
 	}
