@@ -186,6 +186,7 @@ class FE_Search_AI_Logger {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
 		// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter
+		// phpcs:ignore PluginCheck.Security.PreparedSQLInterpolatedNotPrepared
 		// Table name is interpolated but controlled internally.
 		$wpdb->query( "TRUNCATE TABLE `{$table_name}`" );
 	}

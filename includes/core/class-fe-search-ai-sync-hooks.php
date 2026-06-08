@@ -248,6 +248,7 @@ class FE_Search_AI_Sync_Hooks {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
 		// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter
+		// phpcs:ignore PluginCheck.Security.PreparedSQLInterpolatedNotPrepared
 		// Table name is interpolated but controlled internally, post_id is prepared.
 		$vector_ids = $wpdb->get_col( $wpdb->prepare( "SELECT id FROM `{$vectors_table}` WHERE `post_id` = %d", $post_id ) );
 
@@ -259,6 +260,7 @@ class FE_Search_AI_Sync_Hooks {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
 			// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter
+			// phpcs:ignore PluginCheck.Security.PreparedSQLInterpolatedNotPrepared
 			// Table name is interpolated but controlled internally, placeholders are for IN clause, vector_ids are prepared.
 			$wpdb->query( $wpdb->prepare( "DELETE FROM `{$index_table}` WHERE `vector_id` IN ( {$placeholders} )", $vector_ids ) );
 			// Delete vectors.
@@ -267,6 +269,7 @@ class FE_Search_AI_Sync_Hooks {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
 			// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter
+			// phpcs:ignore PluginCheck.Security.PreparedSQLInterpolatedNotPrepared
 			// Table name is interpolated but controlled internally, placeholders are for IN clause, vector_ids are prepared.
 			$wpdb->query( $wpdb->prepare( "DELETE FROM `{$vectors_table}` WHERE `id` IN ( {$placeholders} )", $vector_ids ) );
 		}
