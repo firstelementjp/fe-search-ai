@@ -144,7 +144,7 @@ class FE_Search_AI_Chat_Handler {
 
 			if ( $ip_request_count > $ip_limit_count ) {
 				status_header( 429 );
-				echo 'data: ' . json_encode( [ 'text' => __( 'You have exceeded the request limit. Please try again later.', 'fe-search-ai' ) ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+				echo 'data: ' . wp_json_encode( [ 'text' => __( 'You have exceeded the request limit. Please try again later.', 'fe-search-ai' ) ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 				exit;
 			}
 			set_transient( $ip_transient_key, ( (int) $ip_request_count + 1 ), HOUR_IN_SECONDS );
@@ -156,7 +156,7 @@ class FE_Search_AI_Chat_Handler {
 
 			if ( $global_request_count > $global_limit_count ) {
 				status_header( 429 );
-				echo 'data: ' . json_encode( [ 'text' => __( 'The site-wide request limit for today has been reached.', 'fe-search-ai' ) ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+				echo 'data: ' . wp_json_encode( [ 'text' => __( 'The site-wide request limit for today has been reached.', 'fe-search-ai' ) ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 				exit;
 			}
 
@@ -319,7 +319,7 @@ class FE_Search_AI_Chat_Handler {
 				);
 			}
 
-			echo 'data: ' . json_encode(
+			echo 'data: ' . wp_json_encode(
 				[
 					'meta' => [
 						'context_found' => $context_found,
@@ -372,7 +372,7 @@ class FE_Search_AI_Chat_Handler {
 				$sequence_id
 			);
 
-			echo 'data: ' . json_encode( [ 'error' => 'An error occurred during processing.' ] ) . "\n\n";
+			echo 'data: ' . wp_json_encode( [ 'error' => 'An error occurred during processing.' ] ) . "\n\n";
 			flush();
 		} finally {
 			exit;
@@ -496,7 +496,7 @@ class FE_Search_AI_Chat_Handler {
 				[ 'provider' => $provider ]
 			);
 
-			echo 'data: ' . json_encode( [ 'text' => __( 'Error: OpenAI API key not set.', 'fe-search-ai' ) ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+			echo 'data: ' . wp_json_encode( [ 'text' => __( 'Error: OpenAI API key not set.', 'fe-search-ai' ) ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 			echo "data: [DONE]\n\n";
 			flush();
 			return;
@@ -611,7 +611,7 @@ class FE_Search_AI_Chat_Handler {
 						'duration_ms'   => $duration,
 					]
 				);
-				echo 'data: ' . json_encode( [ 'text' => __( 'Error: Connection failed.', 'fe-search-ai' ) ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+				echo 'data: ' . wp_json_encode( [ 'text' => __( 'Error: Connection failed.', 'fe-search-ai' ) ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 				echo "data: [DONE]\n\n";
 				flush();
 				return;
@@ -628,7 +628,7 @@ class FE_Search_AI_Chat_Handler {
 						'duration_ms' => $duration,
 					]
 				);
-				echo 'data: ' . json_encode( [ 'text' => __( 'Error: API request failed.', 'fe-search-ai' ) ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+				echo 'data: ' . wp_json_encode( [ 'text' => __( 'Error: API request failed.', 'fe-search-ai' ) ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 				echo "data: [DONE]\n\n";
 				flush();
 				return;
@@ -652,7 +652,7 @@ class FE_Search_AI_Chat_Handler {
 				$content = mb_convert_encoding( $content, 'UTF-8', 'UTF-8' );
 			}
 
-			echo 'data: ' . json_encode( [ 'text' => $content ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+			echo 'data: ' . wp_json_encode( [ 'text' => $content ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 			echo "data: [DONE]\n\n";
 			flush();
 			return;
@@ -669,7 +669,7 @@ class FE_Search_AI_Chat_Handler {
 		curl_setopt( $ch, CURLOPT_URL, $api_url );
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, false );
 		curl_setopt( $ch, CURLOPT_POST, true );
-		curl_setopt( $ch, CURLOPT_POSTFIELDS, json_encode( $body ) );
+		curl_setopt( $ch, CURLOPT_POSTFIELDS, wp_json_encode( $body ) );
 		curl_setopt( $ch, CURLOPT_CONNECTTIMEOUT, 20 );
 		curl_setopt( $ch, CURLOPT_TIMEOUT, 120 );
 		curl_setopt( $ch, CURLOPT_HTTPHEADER, [ 'Content-Type: application/json', 'Accept: text/event-stream', 'Authorization: Bearer ' . $api_key ] );
@@ -719,7 +719,7 @@ class FE_Search_AI_Chat_Handler {
 						// Hook name is properly prefixed with fe_search_ai_.
 						$content       = apply_filters( 'fe_search_ai_preprocess_model_response', $chunk['choices'][0]['delta']['content'] );
 						$received_text = true;
-						echo 'data: ' . json_encode( [ 'text' => $content ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+						echo 'data: ' . wp_json_encode( [ 'text' => $content ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 						if ( ob_get_level() > 0 ) {
 							ob_flush();
 						}
@@ -1109,11 +1109,11 @@ class FE_Search_AI_Chat_Handler {
 		}
 
 		// Send the answer via SSE for smooth display.
-		echo 'data: ' . json_encode( [ 'text' => $answer_text ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+		echo 'data: ' . wp_json_encode( [ 'text' => $answer_text ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 
 		// Send references if available.
 		if ( ! empty( $references ) && is_array( $references ) ) {
-			echo 'data: ' . json_encode( [ 'references' => $references ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+			echo 'data: ' . wp_json_encode( [ 'references' => $references ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 		}
 
 		echo "data: [DONE]\n\n";
@@ -1171,7 +1171,7 @@ class FE_Search_AI_Chat_Handler {
 				[ 'provider' => $provider ]
 			);
 
-			echo 'data: ' . json_encode( [ 'text' => __( 'Error: Google API key is not set.', 'fe-search-ai' ) ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+			echo 'data: ' . wp_json_encode( [ 'text' => __( 'Error: Google API key is not set.', 'fe-search-ai' ) ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 			echo "data: [DONE]\n\n";
 			flush();
 			return;
@@ -1310,7 +1310,7 @@ class FE_Search_AI_Chat_Handler {
 		curl_setopt( $ch, CURLOPT_URL, $api_url );
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
 		curl_setopt( $ch, CURLOPT_POST, true );
-		curl_setopt( $ch, CURLOPT_POSTFIELDS, json_encode( $body ) );
+		curl_setopt( $ch, CURLOPT_POSTFIELDS, wp_json_encode( $body ) );
 		curl_setopt( $ch, CURLOPT_HTTPHEADER, [ 'Content-Type: application/json' ] );
 		curl_setopt(
 			$ch,
@@ -1343,7 +1343,7 @@ class FE_Search_AI_Chat_Handler {
 							// Hook name is properly prefixed with fe_search_ai_.
 							$content = apply_filters( 'fe_search_ai_preprocess_model_response', $content );
 
-							echo 'data: ' . json_encode( [ 'text' => $content ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+							echo 'data: ' . wp_json_encode( [ 'text' => $content ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 							if ( ob_get_level() > 0 ) {
 								ob_flush();
 							}
@@ -1428,7 +1428,7 @@ class FE_Search_AI_Chat_Handler {
 				[ 'provider' => $provider ]
 			);
 
-			echo 'data: ' . json_encode(
+			echo 'data: ' . wp_json_encode(
 				[ 'text' => __( 'Error: Anthropic API key not set.', 'fe-search-ai' ) ]
 			) . "\n\n";
 			echo "data: [DONE]\n\n";
@@ -1498,7 +1498,7 @@ class FE_Search_AI_Chat_Handler {
 		curl_setopt( $ch, CURLOPT_URL, 'https://api.anthropic.com/v1/messages' );
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
 		curl_setopt( $ch, CURLOPT_POST, true );
-		curl_setopt( $ch, CURLOPT_POSTFIELDS, json_encode( $body ) );
+		curl_setopt( $ch, CURLOPT_POSTFIELDS, wp_json_encode( $body ) );
 		curl_setopt(
 			$ch,
 			CURLOPT_HTTPHEADER,
@@ -1542,7 +1542,7 @@ class FE_Search_AI_Chat_Handler {
 							// Hook name is properly prefixed with fe_search_ai_.
 							$content = apply_filters( 'fe_search_ai_preprocess_model_response', $content );
 
-							echo 'data: ' . json_encode( [ 'text' => $content ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+							echo 'data: ' . wp_json_encode( [ 'text' => $content ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 
 							if ( ob_get_level() > 0 ) {
 								ob_flush();
@@ -2317,7 +2317,7 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 								'anthropic-version' => '2023-06-01',
 								'Content-Type'      => 'application/json',
 							],
-							'body'    => json_encode(
+							'body'    => wp_json_encode(
 								[
 									'model'      => $model,
 									'max_tokens' => 1,

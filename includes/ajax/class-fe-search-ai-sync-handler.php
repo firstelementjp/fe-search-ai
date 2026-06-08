@@ -1938,7 +1938,7 @@ class FE_Search_AI_Sync_Handler {
 					'Content-Type'  => 'application/json',
 					'Authorization' => 'Bearer ' . $api_key,
 				],
-				'body'    => json_encode( $body ),
+				'body'    => wp_json_encode( $body ),
 				'timeout' => 60,
 			]
 		);
@@ -2052,7 +2052,7 @@ class FE_Search_AI_Sync_Handler {
 			$api_url,
 			[
 				'headers' => [ 'Content-Type' => 'application/json' ],
-				'body'    => json_encode( $body ),
+				'body'    => wp_json_encode( $body ),
 				'timeout' => 60,
 			]
 		);
