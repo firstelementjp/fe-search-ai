@@ -629,12 +629,11 @@ a:has(.dashicons-warning) span {
 	margin-bottom: 1em;
 }
 
-#tab_provider details strong {
+/* #tab_provider details strong {
 	color: #0071a1;
-}
+} */
 
-#tab_provider details summary,
-#tab_advanced details summary {
+details summary {
 	cursor: pointer;
 	color: #0071a1;
 }
