@@ -673,7 +673,13 @@ class FE_Search_AI_Settings {
 		?>
 		<div class="fe-search-ai-boxed-option">
 			<p class="description">
-				<?php esc_html_e( 'Configure the connection to your Qdrant Cloud or self-hosted Qdrant instance.', 'fe-search-ai' ); ?>
+				<?php
+				printf(
+					/* translators: %s: Link to Qdrant Cloud */
+					esc_html__( 'Configure the connection to your %1$s or self-hosted Qdrant instance.', 'fe-search-ai' ),
+					'<a href="https://qdrant.tech/cloud/" target="_blank" rel="noopener noreferrer">Qdrant Cloud</a>'
+				);
+				?>
 			</p>
 			<p class="description">
 				<strong><?php esc_html_e( 'Note:', 'fe-search-ai' ); ?></strong>
