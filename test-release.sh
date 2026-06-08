@@ -40,6 +40,13 @@ mkdir -p "$TMPDIR/fe-search-ai/assets/css"
 cp -f assets/js/*.min.js "$TMPDIR/fe-search-ai/assets/js/" || true
 cp -f assets/css/*.min.css "$TMPDIR/fe-search-ai/assets/css/" || true
 
+# Copy vendor assets (Pickr color picker)
+echo "=== Copy vendor assets ==="
+if [ -d "assets/vendor" ]; then
+    mkdir -p "$TMPDIR/fe-search-ai/assets/vendor"
+    cp -r assets/vendor/* "$TMPDIR/fe-search-ai/assets/vendor/"
+fi
+
 # Security checks in release tree
 echo "=== Security checks in release tree ==="
 

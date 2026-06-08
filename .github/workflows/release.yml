@@ -64,6 +64,12 @@ jobs:
                   cp -f assets/js/*.min.js release/fe-search-ai/assets/js/ || true
                   cp -f assets/css/*.min.css release/fe-search-ai/assets/css/ || true
 
+                  # Copy vendor assets (Pickr color picker).
+                  if [ -d "assets/vendor" ]; then
+                      mkdir -p release/fe-search-ai/assets/vendor
+                      cp -r assets/vendor/* release/fe-search-ai/assets/vendor/
+                  fi
+
                   cd release
                   rm -f ../${ZIP_FILE}
                   zip -r ../${ZIP_FILE} fe-search-ai
