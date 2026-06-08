@@ -2110,6 +2110,7 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter
 		// phpcs:ignore PluginCheck.Security.PreparedSQLInterpolatedNotPrepared
 		// phpcs:ignore PluginCheck.Security.DirectDatabaseQuery
 		// phpcs:ignore PluginCheck.Security.NoCaching

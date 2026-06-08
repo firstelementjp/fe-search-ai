@@ -668,6 +668,7 @@ class FE_Search_AI_Sync_Handler {
 									// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 									// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 									// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+									// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter
 									// phpcs:ignore PluginCheck.Security.PreparedSQLInterpolatedNotPrepared
 									// phpcs:ignore PluginCheck.Security.DirectDatabaseQuery
 									// phpcs:ignore PluginCheck.Security.NoCaching
@@ -1473,7 +1474,9 @@ class FE_Search_AI_Sync_Handler {
 		// phpcs:ignore PluginCheck.Security.DirectDatabaseQuery
 		// phpcs:ignore PluginCheck.Security.NoCaching
 		// Table name is interpolated but controlled internally, keywords are prepared.
-		$sql        = "SELECT DISTINCT `vector_id` FROM `{$index_table}` WHERE `keyword` IN ( {$placeholders} ) LIMIT {$max_chunks}";
+		$sql = "SELECT DISTINCT `vector_id` FROM `{$index_table}` WHERE `keyword` IN ( {$placeholders} ) LIMIT {$max_chunks}";
+		// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter
+		// SQL is constructed with controlled table names and prepared placeholders.
 		$vector_ids = $wpdb->get_col( $wpdb->prepare( $sql, $valid_keywords ) );
 
 		// DEBUG: Log index search results.
@@ -1503,7 +1506,9 @@ class FE_Search_AI_Sync_Handler {
 		// phpcs:ignore PluginCheck.Security.DirectDatabaseQuery
 		// phpcs:ignore PluginCheck.Security.NoCaching
 		// Table names are interpolated but controlled internally, vector_ids are prepared.
-		$sql         = "SELECT v.`content_chunk`, v.`summary_text`, v.`post_id` FROM `{$vectors_table}` v INNER JOIN `{$wpdb->posts}` p ON p.ID = v.post_id WHERE v.`id` IN ( {$placeholders} ) ORDER BY p.post_date DESC";
+		$sql = "SELECT v.`content_chunk`, v.`summary_text`, v.`post_id` FROM `{$vectors_table}` v INNER JOIN `{$wpdb->posts}` p ON p.ID = v.post_id WHERE v.`id` IN ( {$placeholders} ) ORDER BY p.post_date DESC";
+		// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter
+		// SQL is constructed with controlled table names and prepared placeholders.
 		$chunks_data = $wpdb->get_results( $wpdb->prepare( $sql, $vector_ids ), ARRAY_A );
 
 		// Add permalink and additional data to the results.

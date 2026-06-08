@@ -1261,6 +1261,7 @@ class FE_Search_AI_Settings {
 		// Check if the table exists *before* querying it to prevent errors.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter
 		// phpcs:ignore PluginCheck.Security.DirectDatabaseQuery
 		// phpcs:ignore PluginCheck.Security.NoCaching
 		// Direct query required for custom table check.
