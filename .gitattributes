@@ -3,7 +3,6 @@
 .gitattributes export-ignore
 
 # Exclude development and build files
-composer.json export-ignore
 composer.lock export-ignore
 vendor/ export-ignore
 node_modules/ export-ignore
