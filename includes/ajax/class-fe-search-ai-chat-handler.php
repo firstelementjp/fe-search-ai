@@ -2049,7 +2049,8 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
-			// Direct insert required for custom table.
+			// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter
+			// Direct insert required for custom table. Table name is controlled internally.
 			$wpdb->insert( $logs_table, $log_row );
 			$log_id = $wpdb->insert_id;
 		}

@@ -185,9 +185,11 @@ class FE_Search_AI_Sync_Handler {
 		$vectors_table = $wpdb->prefix . 'fe_search_ai_vectors';
 		$index_table   = $wpdb->prefix . 'fe_search_ai_keyword_index';
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter
 		// Table name is interpolated but controlled internally.
 		$wpdb->query( "TRUNCATE TABLE `{$vectors_table}`" );
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter
 		// Table name is interpolated but controlled internally.
 		$wpdb->query( "TRUNCATE TABLE `{$index_table}`" );
 
@@ -389,8 +391,9 @@ class FE_Search_AI_Sync_Handler {
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter
 		// Table name is interpolated but controlled internally.
-		$indexed_post_ids      = array_map( 'intval', $wpdb->get_col( "SELECT DISTINCT post_id FROM {$vectors_table}" ) );
+		$indexed_post_ids = array_map( 'intval', $wpdb->get_col( "SELECT DISTINCT post_id FROM {$vectors_table}" ) );
 		$all_existing_post_ids = array_map(
 			'intval',
 			get_posts(
@@ -630,7 +633,8 @@ class FE_Search_AI_Sync_Handler {
 						$summary_hash = isset( $summary_hashes[ $index ] ) ? (string) $summary_hashes[ $index ] : '';
 
 						// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-						// Direct insert required for custom table.
+						// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter
+						// Direct insert required for custom table. Table name is controlled internally.
 						$wpdb->insert(
 							$vectors_table,
 							[
@@ -738,9 +742,11 @@ class FE_Search_AI_Sync_Handler {
 		$index_table   = $wpdb->prefix . 'fe_search_ai_keyword_index';
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter
 		// Table name is interpolated but controlled internally.
 		$wpdb->query( "TRUNCATE TABLE `{$vectors_table}`" );
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter
 		// Table name is interpolated but controlled internally.
 		$wpdb->query( "TRUNCATE TABLE `{$index_table}`" );
 
@@ -1454,9 +1460,10 @@ class FE_Search_AI_Sync_Handler {
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter
 		// Table name is interpolated but controlled internally, keywords are prepared.
-		$sql          = "SELECT DISTINCT `vector_id` FROM `{$index_table}` WHERE `keyword` IN ( {$placeholders} ) LIMIT {$max_chunks}";
-		$vector_ids   = $wpdb->get_col( $wpdb->prepare( $sql, $valid_keywords ) );
+		$sql        = "SELECT DISTINCT `vector_id` FROM `{$index_table}` WHERE `keyword` IN ( {$placeholders} ) LIMIT {$max_chunks}";
+		$vector_ids = $wpdb->get_col( $wpdb->prepare( $sql, $valid_keywords ) );
 
 		// DEBUG: Log index search results.
 		\FESearchAI\Core\FE_Search_AI_Logger::log(
@@ -1480,9 +1487,10 @@ class FE_Search_AI_Sync_Handler {
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter
 		// Table names are interpolated but controlled internally, vector_ids are prepared.
-		$sql          = "SELECT v.`content_chunk`, v.`summary_text`, v.`post_id` FROM `{$vectors_table}` v INNER JOIN `{$wpdb->posts}` p ON p.ID = v.post_id WHERE v.`id` IN ( {$placeholders} ) ORDER BY p.post_date DESC";
-		$chunks_data  = $wpdb->get_results( $wpdb->prepare( $sql, $vector_ids ), ARRAY_A );
+		$sql         = "SELECT v.`content_chunk`, v.`summary_text`, v.`post_id` FROM `{$vectors_table}` v INNER JOIN `{$wpdb->posts}` p ON p.ID = v.post_id WHERE v.`id` IN ( {$placeholders} ) ORDER BY p.post_date DESC";
+		$chunks_data = $wpdb->get_results( $wpdb->prepare( $sql, $vector_ids ), ARRAY_A );
 
 		// Add permalink and additional data to the results.
 		$results = [];
