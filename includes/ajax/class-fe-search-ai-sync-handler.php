@@ -235,6 +235,8 @@ class FE_Search_AI_Sync_Handler {
 						)
 					)
 					);
+					// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+					// Hook name is properly prefixed with fe_search_ai_.
 					$has_any_snippet = (bool) apply_filters( 'fe_search_ai_sync_target_has_snippet', $has_any_snippet, $pt_options, $pt_slug );
 					if ( $has_any_snippet ) {
 						$post_types_to_sync[] = $pt_slug;
@@ -276,6 +278,8 @@ class FE_Search_AI_Sync_Handler {
 		 *
 		 * @param array $args The array of query arguments passed to `get_posts()`.
 		 */
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		// Hook name is properly prefixed with fe_search_ai_.
 		$args = apply_filters( 'fe_search_ai_sync_query_args', $args );
 
 		$all_post_ids = get_posts( $args );
@@ -345,6 +349,8 @@ class FE_Search_AI_Sync_Handler {
 						)
 					)
 					);
+					// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+					// Hook name is properly prefixed with fe_search_ai_.
 					$has_any_snippet = (bool) apply_filters( 'fe_search_ai_sync_target_has_snippet', $has_any_snippet, $pt_options, $pt_slug );
 					if ( $has_any_snippet ) {
 						$post_types_to_sync[] = $pt_slug;
@@ -789,6 +795,8 @@ class FE_Search_AI_Sync_Handler {
 
 			$chunk          = $chunks_with_meta[ $index ];
 			$summary_text   = isset( $chunk['summary_text'] ) ? (string) $chunk['summary_text'] : '';
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+			// Hook name is properly prefixed with fe_search_ai_.
 			$snippet_length = (int) apply_filters( 'fe_search_ai_qdrant_snippet_length', 1000, $post, $chunk );
 			if ( $snippet_length <= 0 ) {
 				$snippet_length = 1000;
@@ -883,19 +891,27 @@ class FE_Search_AI_Sync_Handler {
 		if ( '' === trim( $raw_chunk ) ) {
 			return '';
 		}
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		// Hook name is properly prefixed with fe_search_ai_.
 		$override = apply_filters( 'fe_search_ai_chunk_summary', null, $chunk_item, $post, $lang_code );
 		if ( null !== $override ) {
 			return is_string( $override ) ? $override : '';
 		}
 		$context = $this->build_summary_prompt_context( $chunk_item, $post, $lang_code );
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		// Hook name is properly prefixed with fe_search_ai_.
 		$context = apply_filters( 'fe_search_ai_chunk_summary_prompt_context', $context, $chunk_item, $post, $lang_code );
 		$prompt  = $this->build_default_summary_prompt( $context, $lang_code );
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		// Hook name is properly prefixed with fe_search_ai_.
 		$prompt  = apply_filters( 'fe_search_ai_chunk_summary_generation_prompt', $prompt, $context, $chunk_item, $post, $lang_code );
 		$result  = $this->request_chat_completion_for_summary( $prompt );
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
 		$summary = trim( (string) $result );
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		// Hook name is properly prefixed with fe_search_ai_.
 		$summary = apply_filters( 'fe_search_ai_chunk_summary_output_postprocess', $summary, $chunk_item, $post, $lang_code );
 		return trim( (string) $summary );
 	}
@@ -986,6 +1002,8 @@ class FE_Search_AI_Sync_Handler {
 	 */
 	private function request_chat_completion_for_summary( $prompt ) {
 		$provider = isset( $this->options['provider']['chat'] ) ? (string) $this->options['provider']['chat'] : 'openai';
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		// Hook name is properly prefixed with fe_search_ai_.
 		$override = apply_filters( 'fe_search_ai_summary_chat_result', null, $prompt, $provider );
 		if ( null !== $override ) {
 			return is_string( $override ) ? $override : '';
@@ -1195,6 +1213,8 @@ class FE_Search_AI_Sync_Handler {
 		if ( isset( $rerank['initial_k'] ) ) {
 			$default_limit = (int) $rerank['initial_k'];
 		}
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		// Hook name is properly prefixed with fe_search_ai_.
 		$limit = (int) apply_filters( 'fe_search_ai_qdrant_search_limit', $default_limit, $question );
 		if ( $limit <= 0 ) {
 			$limit = $default_limit;
@@ -1423,6 +1443,8 @@ class FE_Search_AI_Sync_Handler {
 		 * @param int    $max_chunks Default maximum number of chunks.
 		 * @param string $question   The end user's question text.
 		 */
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		// Hook name is properly prefixed with fe_search_ai_.
 		$max_chunks = (int) apply_filters( 'fe_search_ai_max_chunks_for_llm', 100, $question );
 		if ( $max_chunks <= 0 ) {
 			$max_chunks = 100;
@@ -1489,7 +1511,11 @@ class FE_Search_AI_Sync_Handler {
 	 * @return array Merged and ranked search results.
 	 */
 	private function merge_hybrid_search_results( $qdrant_results, $keyword_results, $question, $sequence_id = '' ) {
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		// Hook name is properly prefixed with fe_search_ai_.
 		$rrf_k       = (int) apply_filters( 'fe_search_ai_hybrid_rrf_k', 60, $question );
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		// Hook name is properly prefixed with fe_search_ai_.
 		$max_results = (int) apply_filters( 'fe_search_ai_hybrid_search_limit', 100, $question );
 		if ( $rrf_k <= 0 ) {
 			$rrf_k = 60;
@@ -1680,11 +1706,15 @@ class FE_Search_AI_Sync_Handler {
 				}
 			}
 			if ( ! empty( $metadata_items ) ) {
+				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+				// Hook name is properly prefixed with fe_search_ai_.
 				$metadata_items = apply_filters( 'fe_search_ai_taxonomy_items', $metadata_items, $post, $pt_options );
 				$meta_parts[]   = 'Metadata: ' . implode( '', $metadata_items );
 			}
 		}
 
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		// Hook name is properly prefixed with fe_search_ai_.
 		$meta_parts = apply_filters( 'fe_search_ai_post_metadata_parts', $meta_parts, $post, $pt_options );
 
 		// Add the main content.
@@ -1711,6 +1741,8 @@ class FE_Search_AI_Sync_Handler {
 		 * @param int      $chunk_size Default chunk size in characters.
 		 * @param \WP_Post $post       The post being processed.
 		 */
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		// Hook name is properly prefixed with fe_search_ai_.
 		$chunk_size = (int) apply_filters( 'fe_search_ai_chunk_size', 1000, $post );
 		$chunks     = [];
 		$meta_text  = trim( (string) $meta_text );
@@ -1845,6 +1877,8 @@ class FE_Search_AI_Sync_Handler {
 		 * @param WP_Error|array|null $result Result. If null, the default processing will be performed.
 		 * @param array               $texts  Array of text to vectorize.
 		 */
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		// Hook name is properly prefixed with fe_search_ai_.
 		$result = apply_filters( "fe_search_ai_embedding_result_for_{$provider}", null, $texts );
 
 		if ( null !== $result ) {
@@ -2146,6 +2180,8 @@ class FE_Search_AI_Sync_Handler {
 		 * @param array  $stop_words The default stop-word list loaded for the locale.
 		 * @param string $locale     The full locale string (e.g. "en_US", "ja").
 		 */
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		// Hook name is properly prefixed with fe_search_ai_.
 		$stop_words = apply_filters( 'fe_search_ai_stop_words', $stop_words, $locale );
 
 		// Tokenize
@@ -2194,6 +2230,8 @@ class FE_Search_AI_Sync_Handler {
 		 * @param string $text_normalized The normalized input text.
 		 * @param string $lang_code       Two-letter language code (e.g. 'en', 'ja', 'zh', 'ko').
 		 */
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		// Hook name is properly prefixed with fe_search_ai_.
 		$words = apply_filters( 'fe_search_ai_tokens_for_lang', $words, $text_normalized, $lang_code );
 
 		// Remove stop words
@@ -2241,6 +2279,8 @@ class FE_Search_AI_Sync_Handler {
 		 * @param string $text_normalized The normalized input text.
 		 * @param string $locale          The full locale string (e.g. "en_US", "ja").
 		 */
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		// Hook name is properly prefixed with fe_search_ai_.
 		$final_words = apply_filters( 'fe_search_ai_tokenize_text', $final_words, $text_normalized, $locale );
 
 		return $final_words;
@@ -2512,6 +2552,8 @@ class FE_Search_AI_Sync_Handler {
 		 * @param string $status_text        The HTML snippet describing the tokenizer.
 		 * @param string $japanese_tokenizer The current tokenizer identifier (e.g. 'tinysegmenter', 'mecab').
 		 */
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		// Hook name is properly prefixed with fe_search_ai_.
 		$status_text = apply_filters( 'fe_search_ai_japanese_tokenizer_status_text', $status_text, $this->japanese_tokenizer );
 
 		$statuses[] = $status_label . ' ' . $status_text;

@@ -17,6 +17,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // French Language Data.
+// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
+// Local variable for language-specific stop words.
 $base_stop_words = [
 	'a', 'à', 'alors', 'au', 'aucuns', 'aussi', 'autre', 'avec', 'aux',
 	'car', 'ce', 'ceci', 'cela', 'ces', 'dans', 'de', 'des', 'du',
@@ -29,6 +31,8 @@ $base_stop_words = [
 ];
 
 // Stop words used only for system-prompt / label phrases.
+// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
+// Local variable for language-specific stop words.
 $prompt_label_stop_words = [
 	'the', 'this', 'is', 'are', 'was',
 	'article', 'content', 'keywords', 'title', 'main', 'related',
