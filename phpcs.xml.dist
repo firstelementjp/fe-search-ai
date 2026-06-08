@@ -33,6 +33,8 @@
         <exclude name="Universal.Arrays.DisallowShortArraySyntax"/>
         <!-- Exclude false positive hook name warnings - all hooks are properly prefixed with fe_search_ai_ -->
         <exclude name="WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound"/>
+        <!-- Exclude false positive variable warnings - these are local variables, not global variables -->
+        <exclude name="WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound"/>
         <!-- Allow direct database queries for custom table operations -->
         <exclude name="WordPress.DB.DirectDatabaseQuery.DirectQuery"/>
         <exclude name="WordPress.DB.DirectDatabaseQuery.NoCaching"/>

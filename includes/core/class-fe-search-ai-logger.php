@@ -54,7 +54,6 @@ class FE_Search_AI_Logger {
 			return;
 		}
 
-		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		// Hook name is properly prefixed with fe_search_ai_.
 		$should_log = apply_filters( 'fe_search_ai_allow_system_log_entry', true, $level, $message, $data );
 		if ( ! $should_log ) {
@@ -99,7 +98,6 @@ class FE_Search_AI_Logger {
 			'prompt',
 			'system_prompt',
 		];
-		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		// Hook name is properly prefixed with fe_search_ai_.
 		$forbidden_keys = apply_filters( 'fe_search_ai_system_log_forbidden_keys', $forbidden_keys, $level, $message, $data );
 		foreach ( $forbidden_keys as $key ) {
@@ -108,7 +106,6 @@ class FE_Search_AI_Logger {
 			}
 		}
 
-		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		// Hook name is properly prefixed with fe_search_ai_.
 		$data = apply_filters( 'fe_search_ai_system_log_payload', $data, $level, $message );
 
@@ -220,7 +217,6 @@ class FE_Search_AI_Logger {
 		}
 
 		// Default retention period: 30 days
-		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		// Hook name is properly prefixed with fe_search_ai_.
 		$retention_days = apply_filters( 'fe_search_ai_log_retention_days', 30 );
 		$cutoff_ts      = time() - ( (int) $retention_days * DAY_IN_SECONDS );
@@ -260,7 +256,6 @@ class FE_Search_AI_Logger {
 		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) !== $table_name ) {
 			return;
 		}
-		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		// Hook name is properly prefixed with fe_search_ai_.
 		$retention_days = apply_filters( 'fe_search_ai_conversation_log_retention_days', 7 );
 		$cutoff_ts      = time() - ( (int) $retention_days * DAY_IN_SECONDS );

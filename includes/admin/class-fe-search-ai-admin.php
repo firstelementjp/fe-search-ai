@@ -156,7 +156,6 @@ class FE_Search_AI_Admin {
 		$allowed_hooks = [
 			'toplevel_page_fe-search-ai',
 		];
-		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		// Hook name is properly prefixed with fe_search_ai_.
 		$allowed_hooks = apply_filters( 'fe_search_ai_admin_allowed_hooks', $allowed_hooks );
 

@@ -133,7 +133,6 @@ class FE_Search_AI_Assets {
 		 * Allows external code (themes/plugins) to adjust the rate limit settings
 		 * using $default_limits as the base configuration.
 		 */
-		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		// Hook name is properly prefixed with fe_search_ai_.
 		$rate_limit_config = apply_filters( 'fe_search_ai_rate_limit_settings', $default_limits );
 
@@ -252,7 +251,6 @@ class FE_Search_AI_Assets {
 		);
 
 		// Pass data to JavaScript.
-		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		// Hook name is properly prefixed with fe_search_ai_.
 		$rate_limit_message = apply_filters(
 			'fe_search_ai_rate_limit_message',

@@ -105,7 +105,6 @@ class FE_Search_AI_Sync_Hooks {
 			$lang_code = pll_get_post_language( $post_id, 'slug' );
 		} elseif ( function_exists( 'wpml_get_language_information' ) ) {
 			// WPML support: Get the language code using WPML filter.
-			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 			// phpcs:ignore PluginCheck.PluginTheme.NonPrefixedHooknameFound
 			// This is a third-party WPML plugin hook, not our own.
 			$lang_details = apply_filters( 'wpml_post_language_details', null, $post_id );
@@ -130,7 +129,6 @@ class FE_Search_AI_Sync_Hooks {
 		 * @param  int     $post_id   The ID of the post being indexed.
 		 * @param  WP_Post $post      The post object.
 		 */
-		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		// Hook name is properly prefixed with fe_search_ai_.
 		$lang_code = apply_filters( 'fe_search_ai_post_language_code', $lang_code, $post_id, $post );
 

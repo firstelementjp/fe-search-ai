@@ -208,7 +208,6 @@ class FE_Search_AI_Chat_UI {
 		 * @param bool $should_display Whether the chat UI should be displayed.
 		 */
 		// Temporary force display for debugging.
-		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		// Hook name is properly prefixed with fe_search_ai_.
 		if ( apply_filters( 'fe_search_ai_should_display_chat', $should_display ) ) {
 			self::$is_rendered = true;
@@ -389,7 +388,6 @@ class FE_Search_AI_Chat_UI {
 		 * @param array  $args         An associative array of data used to build the HTML
 		 * (e.g., 'window_title', 'greeting_message', etc.).
 		 */
-		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		// Hook name is properly prefixed with fe_search_ai_.
 		return apply_filters( 'fe_search_ai_chat_ui_html', $default_html, $args );
 	}
@@ -439,7 +437,6 @@ class FE_Search_AI_Chat_UI {
 		 * @param string $default_css The default CSS string, including the <style> tags.
 		 * @param string $key_color   The key color selected by the user in the settings.
 		 */
-		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		// Hook name is properly prefixed with fe_search_ai_.
 		$styles_css = apply_filters( 'fe_search_ai_dynamic_styles_css', $default_css, $key_color );
 		echo wp_kses(

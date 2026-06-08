@@ -237,7 +237,6 @@ class FE_Search_AI_Sync_Handler {
 						)
 					)
 					);
-					// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 					// Hook name is properly prefixed with fe_search_ai_.
 					$has_any_snippet = (bool) apply_filters( 'fe_search_ai_sync_target_has_snippet', $has_any_snippet, $pt_options, $pt_slug );
 					if ( $has_any_snippet ) {
@@ -352,7 +351,6 @@ class FE_Search_AI_Sync_Handler {
 						)
 					)
 					);
-					// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 					// Hook name is properly prefixed with fe_search_ai_.
 					$has_any_snippet = (bool) apply_filters( 'fe_search_ai_sync_target_has_snippet', $has_any_snippet, $pt_options, $pt_slug );
 					if ( $has_any_snippet ) {

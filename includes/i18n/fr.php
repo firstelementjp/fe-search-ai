@@ -17,7 +17,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // French Language Data.
-// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
 // phpcs:ignore PluginCheck.PluginTheme.NonPrefixedVariableFound
 // Local variable for language-specific stop words.
 $base_stop_words = [
@@ -32,7 +31,6 @@ $base_stop_words = [
 ];
 
 // Stop words used only for system-prompt / label phrases.
-// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
 // phpcs:ignore PluginCheck.PluginTheme.NonPrefixedVariableFound
 // Local variable for language-specific stop words.
 $prompt_label_stop_words = [

@@ -755,7 +755,6 @@ class FE_Search_AI_Settings {
 		 * where the key is the provider slug (e.g., 'openai')
 		 * and the value is the display name (e.g., 'OpenAI (GPT-4o)').
 		 */
-		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		// Hook name is properly prefixed with fe_search_ai_.
 		$providers = apply_filters( 'fe_search_ai_chat_providers', $providers );
 
@@ -801,7 +800,6 @@ class FE_Search_AI_Settings {
 		 * where the key is the provider slug (e.g., 'cohere')
 		 * and the value is the display name (e.g., 'Cohere (Rerank)').
 		 */
-		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		// Hook name is properly prefixed with fe_search_ai_.
 		$providers = apply_filters( 'fe_search_ai_rerank_providers', $providers );
 
@@ -849,7 +847,6 @@ class FE_Search_AI_Settings {
 		 * where the key is the provider slug (e.g., 'google')
 		 * and the value is the display name (e.g., 'Google (text-embedding-004)').
 		 */
-		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		// Hook name is properly prefixed with fe_search_ai_.
 		$providers = apply_filters( 'fe_search_ai_embedding_providers', $providers );
 
@@ -1048,7 +1045,6 @@ class FE_Search_AI_Settings {
 		<?php endif; ?>
 		
 		<?php
-		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		// Hook name is properly prefixed with fe_search_ai_.
 		// Allow Pro version to add additional provider rows
 		do_action( 'fe_search_ai_after_api_key_fields', $this );
@@ -2830,7 +2826,6 @@ class FE_Search_AI_Settings {
 		$new_input['display_rules']['include_ids']        = $this->sanitize_numeric_string( $rules['include_ids'] ?? '' );
 		$new_input['display_rules']['exclude_ids']        = $this->sanitize_numeric_string( $rules['exclude_ids'] ?? '' );
 
-		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		// Hook name is properly prefixed with fe_search_ai_.
 		$new_input = apply_filters( 'fe_search_ai_sanitize_display_floating', $new_input, $input );
 

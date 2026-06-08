@@ -124,7 +124,6 @@ class FE_Search_AI_Chat_Handler {
 		 *
 		 * @param array $default_limits The default hardcoded limits.
 		 */
-		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		// Hook name is properly prefixed with fe_search_ai_.
 		$rate_limit_options = apply_filters( 'fe_search_ai_rate_limit_settings', $default_limits );
 		$rate_limit_options = wp_parse_args( $rate_limit_options, $default_limits );
@@ -1692,7 +1691,6 @@ class FE_Search_AI_Chat_Handler {
 		 * @param string $system_prompt The system prompt string to be sent to the AI model.
 		 * @param string $provider      The slug of the current AI provider (e.g., 'openai', 'google').
 		 */
-		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		// Hook name is properly prefixed with fe_search_ai_.
 		$system_prompt = apply_filters( 'fe_search_ai_system_prompt', $system_prompt, $provider );
 
@@ -1823,7 +1821,6 @@ class FE_Search_AI_Chat_Handler {
 		 * @param string $system_prompt The complete system prompt with all placeholders replaced.
 		 * @param string $provider      The AI provider being used (openai, google, anthropic).
 		 */
-		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		// Hook name is properly prefixed with fe_search_ai_.
 		$system_prompt = apply_filters( 'fe_search_ai_final_system_prompt', $system_prompt, $provider );
 
@@ -1997,13 +1994,10 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 		$question_len  = isset( $_POST['question_length'] ) ? intval( $_POST['question_length'] ) : 0;
 		$log_id        = 0;
 
-		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		// Hook name is properly prefixed with fe_search_ai_.
 		$enable_question_logging = apply_filters( 'fe_search_ai_allow_conversation_log_question_text', false, $session_id );
-		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		// Hook name is properly prefixed with fe_search_ai_.
 		$enable_answer_logging = apply_filters( 'fe_search_ai_allow_conversation_log_answer_text', false, $session_id );
-		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		// Hook name is properly prefixed with fe_search_ai_.
 		$allow_pii_logging = apply_filters( 'fe_search_ai_allow_conversation_log_pii', false, $session_id );
 		if ( $pii_suspected && ! $allow_pii_logging ) {
@@ -2214,7 +2208,6 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 		 * @param string     $provider The provider slug being tested.
 		 * @param string     $api_key  The API key being tested.
 		 */
-		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		// Hook name is properly prefixed with fe_search_ai_.
 		$result = apply_filters( 'fe_search_ai_handle_custom_api_test', $result, $provider, $api_key );
 
@@ -2492,7 +2485,6 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 		 *
 		 * @param array $patterns Default regex patterns for personal data.
 		 */
-		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		// Hook name is properly prefixed with fe_search_ai_.
 		$patterns = apply_filters( 'fe_search_ai_personal_data_patterns', $patterns );
 
