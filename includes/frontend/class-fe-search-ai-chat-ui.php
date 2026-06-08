@@ -212,7 +212,7 @@ class FE_Search_AI_Chat_UI {
 			self::$is_rendered = true;
 			$this->assets_handler->enqueue_assets();
 			$html = $this->get_chat_ui_html( 'float' );
-			echo $html;
+			echo wp_kses_post( $html );
 		}
 	}
 
