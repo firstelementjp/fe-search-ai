@@ -1254,6 +1254,7 @@ class FE_Search_AI_Settings {
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+			// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter
 			// Table name is interpolated but controlled internally.
 			$indexed_post_count = $wpdb->get_var( "SELECT COUNT(DISTINCT post_id) FROM `{$vectors_table}`" );
 		}
@@ -1450,6 +1451,7 @@ class FE_Search_AI_Settings {
 
 		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) === $table_name ) {
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter
 			// Table name is interpolated but controlled internally.
 			$wpdb->query( "TRUNCATE TABLE `{$table_name}`" );
 		}
