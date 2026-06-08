@@ -139,7 +139,7 @@ class FE_Search_AI_Chat_Handler {
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			// REMOTE_ADDR is server-provided, used for rate limiting only.
-			$ip_address = isset( $_SERVER['REMOTE_ADDR'] ) ? wp_unslash( $_SERVER['REMOTE_ADDR'] ) : '';
+			$ip_address       = isset( $_SERVER['REMOTE_ADDR'] ) ? wp_unslash( $_SERVER['REMOTE_ADDR'] ) : '';
 			$ip_transient_key = 'fe_search_ai_rl_ip_' . md5( $ip_address );
 			$ip_request_count = get_transient( $ip_transient_key );
 
@@ -527,7 +527,7 @@ class FE_Search_AI_Chat_Handler {
 				$model = $pro_settings['model']['openai_compatible_model']['custom'] ?? $model;
 			} else {
 				$openai_model = $pro_settings['model']['openai_model'] ?? [ 'type' => $model, 'custom' => '' ];
-				$model = ( 'custom' === $openai_model['type'] ) ? $openai_model['custom'] : $openai_model['type'];
+				$model        = ( 'custom' === $openai_model['type'] ) ? $openai_model['custom'] : $openai_model['type'];
 			}
 		}
 
@@ -661,13 +661,10 @@ class FE_Search_AI_Chat_Handler {
 
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_init
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_getinfo
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_errno
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_error
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_exec
 		// cURL is required for Server-Sent Events (SSE) streaming which wp_remote_get() does not support.
 		$ch = curl_init();
 		curl_setopt( $ch, CURLOPT_URL, $api_url );
@@ -721,7 +718,7 @@ class FE_Search_AI_Chat_Handler {
 						 */
 						// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 						// Hook name is properly prefixed with fe_search_ai_.
-						$content = apply_filters( 'fe_search_ai_preprocess_model_response', $chunk['choices'][0]['delta']['content'] );
+						$content       = apply_filters( 'fe_search_ai_preprocess_model_response', $chunk['choices'][0]['delta']['content'] );
 						$received_text = true;
 						echo 'data: ' . json_encode( [ 'text' => $content ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 						if ( ob_get_level() > 0 ) {
@@ -1305,11 +1302,10 @@ class FE_Search_AI_Chat_Handler {
 
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_init
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_getinfo
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_errno
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_error
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_exec
 		// cURL is required for Server-Sent Events (SSE) streaming which wp_remote_get() does not support.
 		$ch = curl_init();
 		curl_setopt( $ch, CURLOPT_URL, $api_url );
@@ -1444,9 +1440,9 @@ class FE_Search_AI_Chat_Handler {
 		$model = 'claude-haiku-4-5-20251001'; // Default
 		if ( $this->is_license_active ) {
 			// Read Pro settings for model selection.
-			$pro_settings = get_option( 'fe_search_ai_pro_settings', [] );
+			$pro_settings    = get_option( 'fe_search_ai_pro_settings', [] );
 			$anthropic_model = $pro_settings['model']['anthropic_model'] ?? [ 'type' => $model, 'custom' => '' ];
-			$model = ( 'custom' === $anthropic_model['type'] ) ? $anthropic_model['custom'] : $anthropic_model['type'];
+			$model           = ( 'custom' === $anthropic_model['type'] ) ? $anthropic_model['custom'] : $anthropic_model['type'];
 		}
 
 		// INFO: Log the start of the API call.
@@ -1494,11 +1490,10 @@ class FE_Search_AI_Chat_Handler {
 
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_init
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_getinfo
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_errno
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_error
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_exec
 		// cURL is required for Server-Sent Events (SSE) streaming which wp_remote_get() does not support.
 		$ch = curl_init();
 		curl_setopt( $ch, CURLOPT_URL, 'https://api.anthropic.com/v1/messages' );
@@ -1992,7 +1987,7 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 		$question_raw = isset( $_POST['question'] ) ? sanitize_text_field( wp_unslash( $_POST['question'] ) ) : '';
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 		// Input is sanitized after unslashing.
-		$answer_raw   = isset( $_POST['answer'] ) ? wp_kses_post( wp_unslash( $_POST['answer'] ) ) : '';
+		$answer_raw = isset( $_POST['answer'] ) ? wp_kses_post( wp_unslash( $_POST['answer'] ) ) : '';
 
 		$question      = $this->filter_personal_data( $question_raw );
 		$answer        = $this->filter_personal_data( $answer_raw );
@@ -2023,7 +2018,7 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 			$answer_length = strlen( wp_strip_all_tags( $answer ) );
 			$answer_text   = $enable_answer_logging ? $answer : sprintf( 'AI answer is not logged. (length: %d chars)', max( 0, $answer_length ) );
 
-			$log_row                  = [
+			$log_row = [
 				'session_id'    => $session_id,
 				'question'      => $question_text,
 				'answer'        => $answer_text,
@@ -2032,7 +2027,7 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 			];
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 			// Hook name is properly prefixed with fe_search_ai_.
-			$log_row = apply_filters( 'fe_search_ai_conversation_log_payload', $log_row, $session_id );
+			$log_row                  = apply_filters( 'fe_search_ai_conversation_log_payload', $log_row, $session_id );
 			$allowed_keys             = [
 				'session_id'    => true,
 				'question'      => true,
@@ -2191,7 +2186,9 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 	public function ajax_test_api_key() {
 		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
 		$provider = isset( $_POST['provider'] ) ? sanitize_key( $_POST['provider'] ) : '';
-		$api_key  = isset( $_POST['api_key'] ) ? sanitize_text_field( $_POST['api_key'] ) : '';
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		// Input is sanitized with sanitize_text_field().
+		$api_key = isset( $_POST['api_key'] ) ? sanitize_text_field( $_POST['api_key'] ) : '';
 
 		if ( empty( $provider ) ) {
 			wp_send_json_error( __( 'Provider missing.', 'fe-search-ai' ) );
@@ -2317,7 +2314,7 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 						$error_message = __( 'API key is missing.', 'fe-search-ai' );
 						break;
 					}
-					$model = 'claude-haiku-4-5-20251001';
+					$model    = 'claude-haiku-4-5-20251001';
 					$response = wp_remote_post(
 						'https://api.anthropic.com/v1/messages',
 						[
@@ -2522,7 +2519,7 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 		$license_key = isset( $_POST['license_key'] ) ? sanitize_text_field( wp_unslash( $_POST['license_key'] ) ) : '';
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 		// Input is sanitized after unslashing.
-		$action      = isset( $_POST['license_action'] ) ? sanitize_key( wp_unslash( $_POST['license_action'] ) ) : '';
+		$action = isset( $_POST['license_action'] ) ? sanitize_key( wp_unslash( $_POST['license_action'] ) ) : '';
 
 		if ( empty( $license_key ) || empty( $action ) ) {
 			wp_send_json_error( [ 'message' => 'Missing key or action.' ] );
