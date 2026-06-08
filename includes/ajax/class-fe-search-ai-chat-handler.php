@@ -133,7 +133,12 @@ class FE_Search_AI_Chat_Handler {
 		$notify_email       = $rate_limit_options['notify_email'];
 
 		if ( $ip_limit_count >= 0 ) {
-			$ip_transient_key = 'fe_search_ai_rl_ip_' . md5( $_SERVER['REMOTE_ADDR'] );
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			// REMOTE_ADDR is server-provided, used for rate limiting only.
+			$ip_address = isset( $_SERVER['REMOTE_ADDR'] ) ? wp_unslash( $_SERVER['REMOTE_ADDR'] ) : '';
+			$ip_transient_key = 'fe_search_ai_rl_ip_' . md5( $ip_address );
 			$ip_request_count = get_transient( $ip_transient_key );
 
 			if ( $ip_request_count > $ip_limit_count ) {
@@ -171,9 +176,14 @@ class FE_Search_AI_Chat_Handler {
 		}
 
 		// Disable server buffering
+		// phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged
+		// Required for SSE streaming to work properly.
 		@ini_set( 'output_buffering', 'off' );
+		// phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged
 		@ini_set( 'zlib.output_compression', 0 );
+		// phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged
 		@ini_set( 'implicit_flush', 1 );
+		// phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged
 		@ini_set( 'default_charset', 'UTF-8' );
 		ob_implicit_flush( 1 );
 
@@ -565,7 +575,8 @@ class FE_Search_AI_Chat_Handler {
 		if ( 'openai_compatible' === $provider ) {
 			$body['stream'] = false;
 
-			// ローカルLLM用に実行時間制限を延長
+			// phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged
+			// Required for local LLM processing which may take longer.
 			set_time_limit( 300 ); // 5分
 
 			$response = wp_remote_post(
@@ -640,6 +651,16 @@ class FE_Search_AI_Chat_Handler {
 			return;
 		}
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_init
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+		// cURL is required for Server-Sent Events (SSE) streaming which wp_remote_get() does not support.
 		$ch = curl_init();
 		curl_setopt( $ch, CURLOPT_URL, $api_url );
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, false );
@@ -706,8 +727,12 @@ class FE_Search_AI_Chat_Handler {
 		// Execute the request.
 		echo 'data: ' . wp_json_encode( [ 'debug' => [ 'step' => 'before_curl_exec' ] ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 		flush();
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_exec
 		$result = curl_exec( $ch );
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_getinfo
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_errno
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_error
 		$http_status  = (int) curl_getinfo( $ch, CURLINFO_HTTP_CODE );
 		$curl_errno   = curl_errno( $ch );
 		$curl_error   = curl_error( $ch );
@@ -777,6 +802,8 @@ class FE_Search_AI_Chat_Handler {
 		}
 
 		// Check for cURL errors after execution.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_errno
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_error
 		if ( curl_errno( $ch ) ) {
 			// ERROR: Log the cURL (connection) failure.
 			\FESearchAI\Core\FE_Search_AI_Logger::log(
@@ -804,6 +831,7 @@ class FE_Search_AI_Chat_Handler {
 			);
 		}
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_close
 		curl_close( $ch );
 	}
 
@@ -977,6 +1005,7 @@ class FE_Search_AI_Chat_Handler {
 			],
 		];
 
+		// phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged
 		// Extend timeout for non-streaming requests.
 		set_time_limit( 300 );
 
@@ -1264,6 +1293,14 @@ class FE_Search_AI_Chat_Handler {
 			],
 		];
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_init
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+		// cURL is required for Server-Sent Events (SSE) streaming which wp_remote_get() does not support.
 		$ch = curl_init();
 		curl_setopt( $ch, CURLOPT_URL, $api_url );
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
@@ -1312,6 +1349,7 @@ class FE_Search_AI_Chat_Handler {
 		);
 
 		// Execute the request.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_exec
 		curl_exec( $ch );
 		echo "data: [DONE]\n\n";
 		flush();
@@ -1320,6 +1358,8 @@ class FE_Search_AI_Chat_Handler {
 		$duration = round( ( microtime( true ) - $start_time ) * 1000 );
 
 		// Check for cURL errors after execution.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_errno
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_error
 		if ( curl_errno( $ch ) ) {
 			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'ERROR',
@@ -1343,6 +1383,7 @@ class FE_Search_AI_Chat_Handler {
 			);
 		}
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_close
 		curl_close( $ch );
 	}
 
@@ -1439,6 +1480,14 @@ class FE_Search_AI_Chat_Handler {
 			'temperature' => 0.1, // RAG用に低い温度を設定
 		];
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_init
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+		// cURL is required for Server-Sent Events (SSE) streaming which wp_remote_get() does not support.
 		$ch = curl_init();
 		curl_setopt( $ch, CURLOPT_URL, 'https://api.anthropic.com/v1/messages' );
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
@@ -1498,6 +1547,7 @@ class FE_Search_AI_Chat_Handler {
 			}
 		);
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_exec
 		curl_exec( $ch );
 		echo "data: [DONE]\n\n";
 		flush();
@@ -1505,6 +1555,8 @@ class FE_Search_AI_Chat_Handler {
 		// Calculate the total duration.
 		$duration = round( ( microtime( true ) - $start_time ) * 1000 );
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_errno
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_error
 		if ( curl_errno( $ch ) ) {
 			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'ERROR',
@@ -1528,6 +1580,7 @@ class FE_Search_AI_Chat_Handler {
 			);
 		}
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_close
 		curl_close( $ch );
 	}
 
@@ -1667,7 +1720,7 @@ class FE_Search_AI_Chat_Handler {
 				if ( $post_id > 0 ) {
 					$post = get_post( $post_id );
 					if ( $post ) {
-						$post_date = date( 'Y-m-d', strtotime( $post->post_date ) );
+						$post_date = gmdate( 'Y-m-d', strtotime( $post->post_date ) );
 
 						// Get taxonomy metadata
 						$taxonomies = get_object_taxonomies( $post->post_type, 'objects' );
@@ -1914,8 +1967,12 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 		global $wpdb;
 		$logs_table = $wpdb->prefix . 'fe_search_ai_logs';
 
-		$question_raw = isset( $_POST['question'] ) ? sanitize_text_field( $_POST['question'] ) : '';
-		$answer_raw   = isset( $_POST['answer'] ) ? wp_kses_post( $_POST['answer'] ) : '';
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		// Input is sanitized after unslashing.
+		$question_raw = isset( $_POST['question'] ) ? sanitize_text_field( wp_unslash( $_POST['question'] ) ) : '';
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		// Input is sanitized after unslashing.
+		$answer_raw   = isset( $_POST['answer'] ) ? wp_kses_post( wp_unslash( $_POST['answer'] ) ) : '';
 
 		$question      = $this->filter_personal_data( $question_raw );
 		$answer        = $this->filter_personal_data( $answer_raw );
@@ -2019,11 +2076,13 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 		$logs_table = $wpdb->prefix . 'fe_search_ai_logs';
 
 		// Get logs for this session with rating information
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// Table name is interpolated but controlled internally, session_id is prepared.
 		$logs = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT id, question, answer, rating, created_at 
-			 FROM {$logs_table} 
-			 WHERE session_id = %s 
+				"SELECT id, question, answer, rating, created_at
+			 FROM {$logs_table}
+			 WHERE session_id = %s
 			 ORDER BY created_at ASC",
 				$session_id
 			)
@@ -2041,7 +2100,11 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 	public function ajax_rate_answer() {
 		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
 
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		// Input is cast to int, no sanitization needed.
 		$log_id = isset( $_POST['log_id'] ) ? absint( $_POST['log_id'] ) : 0;
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		// Input is cast to int, no sanitization needed.
 		$rating = isset( $_POST['rating'] ) ? (int) $_POST['rating'] : 0;
 
 		if ( $log_id <= 0 ) {
@@ -2414,8 +2477,12 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 			wp_send_json_error( [ 'message' => 'Permission denied.' ] );
 		}
 
-		$license_key = isset( $_POST['license_key'] ) ? sanitize_text_field( $_POST['license_key'] ) : '';
-		$action      = isset( $_POST['license_action'] ) ? sanitize_key( $_POST['license_action'] ) : '';
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		// Input is sanitized after unslashing.
+		$license_key = isset( $_POST['license_key'] ) ? sanitize_text_field( wp_unslash( $_POST['license_key'] ) ) : '';
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		// Input is sanitized after unslashing.
+		$action      = isset( $_POST['license_action'] ) ? sanitize_key( wp_unslash( $_POST['license_action'] ) ) : '';
 
 		if ( empty( $license_key ) || empty( $action ) ) {
 			wp_send_json_error( [ 'message' => 'Missing key or action.' ] );
