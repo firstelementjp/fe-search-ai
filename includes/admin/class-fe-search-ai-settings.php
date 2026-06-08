@@ -2314,6 +2314,10 @@ class FE_Search_AI_Settings {
 	public function batch_size_field_html() {
 		$options    = $this->options['sync'] ?? [];
 		$batch_size = $options['batch_size'] ?? 10;
+		// Ensure batch_size is a valid positive integer, default to 10 if empty or invalid.
+		if ( empty( $batch_size ) || ! is_numeric( $batch_size ) ) {
+			$batch_size = 10;
+		}
 		?>
 		<input
 			type="number"
