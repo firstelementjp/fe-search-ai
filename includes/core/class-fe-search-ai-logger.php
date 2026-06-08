@@ -168,6 +168,8 @@ class FE_Search_AI_Logger {
 		}
 
 		// Use TRUNCATE to efficiently delete all rows.
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// Table name is interpolated but controlled internally.
 		$wpdb->query( "TRUNCATE TABLE `{$table_name}`" );
 	}
 

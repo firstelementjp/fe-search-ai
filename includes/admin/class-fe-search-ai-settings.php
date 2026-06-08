@@ -1206,6 +1206,8 @@ class FE_Search_AI_Settings {
 		$table_exists       = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $vectors_table ) ) === $vectors_table;
 		$indexed_post_count = 0;
 		if ( $table_exists ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			// Table name is interpolated but controlled internally.
 			$indexed_post_count = $wpdb->get_var( "SELECT COUNT(DISTINCT post_id) FROM `{$vectors_table}`" );
 		}
 
@@ -1398,6 +1400,8 @@ class FE_Search_AI_Settings {
 		$table_name = $wpdb->prefix . 'fe_search_ai_logs';
 
 		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) === $table_name ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			// Table name is interpolated but controlled internally.
 			$wpdb->query( "TRUNCATE TABLE `{$table_name}`" );
 		}
 
