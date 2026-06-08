@@ -27,6 +27,7 @@ phpcs.xml.dist export-ignore
 
 # Exclude documentation (keep LICENSE for release, use readme.txt for WordPress.org)
 README.md export-ignore
+AGENT.md export-ignore
 
 # Exclude temporary and cache files
 *.log export-ignore
