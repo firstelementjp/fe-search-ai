@@ -91,8 +91,6 @@ class FE_Search_AI_Sync_Handler {
 		// Active when the status is "active" and the product ID matches the Pro add-on.
 		$this->is_license_active = ( 'active' === $status && 65 === $product_id );
 
-		// $this->is_license_active = true; // Debug override
-
 		add_filter( 'fe_search_ai_tokenizer_status', [ $this, 'add_japanese_tokenizer_status' ] );
 		add_action( 'wp_ajax_fe_search_ai_start_sync', [ $this, 'ajax_start_sync' ] );
 		add_action( 'wp_ajax_fe_search_ai_process_batch', [ $this, 'ajax_process_batch' ] );
@@ -284,9 +282,10 @@ class FE_Search_AI_Sync_Handler {
 		$all_post_ids = get_posts( $args );
 		$total_posts  = count( $all_post_ids );
 
-		$sync_options = isset( $this->options['sync'] ) && is_array( $this->options['sync'] ) ? $this->options['sync'] : [];
-		$batch_size   = (int) ( $sync_options['batch_size'] ?? 10 );
-		$total_pages  = ceil( $total_posts / $batch_size );
+		$sync_options   = isset( $this->options['sync'] ) && is_array( $this->options['sync'] ) ? $this->options['sync'] : [];
+		$raw_batch_size = isset( $sync_options['batch_size'] ) ? (int) $sync_options['batch_size'] : 10;
+		$batch_size     = max( 1, $raw_batch_size );
+		$total_pages    = ( $total_posts > 0 ) ? ceil( $total_posts / $batch_size ) : 0;
 
 		wp_send_json_success(
 			[
@@ -373,7 +372,7 @@ class FE_Search_AI_Sync_Handler {
 		// removing any runtime fields before hashing.
 		$settings_root = $sync_root;
 		unset( $settings_root['status'], $settings_root['settings'] );
-		$current_settings_hash = md5( serialize( $settings_root ) );
+		$current_settings_hash = md5( wp_json_encode( $settings_root ) );
 		$last_settings_hash    = $state_settings['hash'] ?? '';
 		$last_sync_timestamp   = (int) ( $state_settings['last_sync_timestamp'] ?? 0 );
 
@@ -424,10 +423,8 @@ class FE_Search_AI_Sync_Handler {
 				]
 			);
 		}
-		// Convert the stored local timestamp to a GMT datetime string for post_modified_gmt.
-		$last_sync_local_datetime = gmdate( 'Y-m-d H:i:s', $last_sync );
-		$last_sync_gmt_timestamp  = get_gmt_from_date( $last_sync_local_datetime, 'U' );
-		$last_sync_gmt_datetime   = gmdate( 'Y-m-d H:i:s', $last_sync_gmt_timestamp );
+		// Convert the stored Unix timestamp to a GMT datetime string for post_modified_gmt.
+		$last_sync_gmt_datetime = gmdate( 'Y-m-d H:i:s', $last_sync );
 
 		$updated_post_ids = get_posts(
 			[
@@ -484,7 +481,7 @@ class FE_Search_AI_Sync_Handler {
 		// removing runtime/state fields before hashing.
 		$settings_root = $sync_root;
 		unset( $settings_root['status'], $settings_root['settings'] );
-		$current_settings_hash = md5( serialize( $settings_root ) );
+		$current_settings_hash = md5( wp_json_encode( $settings_root ) );
 
 		// Runtime state (status/settings) is stored in a dedicated option so that
 		// it is not affected by settings sanitization or other writers.
@@ -499,7 +496,7 @@ class FE_Search_AI_Sync_Handler {
 			$state['status'] = [];
 		}
 
-		$now = current_time( 'timestamp' );
+		$now = time();
 		if ( empty( $state['status']['last_sync_timestamp'] ) ) {
 			$state['status']['last_sync_timestamp'] = $now;
 		}
@@ -531,16 +528,14 @@ class FE_Search_AI_Sync_Handler {
 
 			// Process input data
 			$page = isset( $_POST['page'] ) ? absint( $_POST['page'] ) : 1;
-			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
-			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			// Input is JSON string, validated by json_decode().
-			$post_ids_json = isset( $_POST['post_ids'] ) ? wp_unslash( $_POST['post_ids'] ) : '[]';
-			$post_ids      = json_decode( $post_ids_json, true );
-			$sync_options  = isset( $this->options['sync'] ) && is_array( $this->options['sync'] ) ? $this->options['sync'] : [];
-			$batch_conf    = isset( $sync_options['options'] ) && is_array( $sync_options['options'] ) ? $sync_options['options'] : [];
-			$batch_size    = (int) ( $batch_conf['batch_size'] ?? 10 );
-			$offset        = ( $page - 1 ) * $batch_size;
-			$batch_ids     = array_slice( $post_ids, $offset, $batch_size );
+			$post_ids_json  = isset( $_POST['post_ids'] ) ? sanitize_text_field( wp_unslash( $_POST['post_ids'] ) ) : '[]';
+			$post_ids       = json_decode( $post_ids_json, true );
+			$sync_options   = isset( $this->options['sync'] ) && is_array( $this->options['sync'] ) ? $this->options['sync'] : [];
+			$raw_batch_size = isset( $sync_options['batch_size'] ) ? (int) $sync_options['batch_size'] : 10;
+			$batch_size     = max( 1, $raw_batch_size );
+			$offset         = ( $page - 1 ) * $batch_size;
+			$batch_ids      = array_slice( $post_ids, $offset, $batch_size );
 
 			if ( empty( $batch_ids ) ) {
 				ob_end_clean();
@@ -562,7 +557,10 @@ class FE_Search_AI_Sync_Handler {
 
 			// Determine language code once per batch.
 			$locale    = get_locale();
-			$lang_code = strstr( $locale, '_', true ) ?: $locale;
+			$lang_code = strstr( $locale, '_', true );
+			if ( false === $lang_code ) {
+				$lang_code = $locale;
+			}
 
 			// Read vector store configuration to determine if Qdrant is enabled.
 			$settings      = get_option( 'fe_search_ai_settings', [] );
@@ -675,7 +673,6 @@ class FE_Search_AI_Sync_Handler {
 					if ( $qdrant_enabled ) {
 						$this->upsert_vectors_to_qdrant( $post, $lang_code, $chunks_with_meta, $vectors_data, $qdrant_config );
 					}
-				} else {
 				}
 			}
 
@@ -702,7 +699,7 @@ class FE_Search_AI_Sync_Handler {
 	public function ajax_update_sync_timestamp() {
 		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
 
-		$now = current_time( 'timestamp' );
+		$now = time();
 
 		// Runtime state is stored in a dedicated option to avoid interference
 		// from settings sanitization or other writers of fe_search_ai_settings.
@@ -915,6 +912,8 @@ class FE_Search_AI_Sync_Handler {
 	}
 
 	/**
+	 * Builds summary prompt context from a chunk.
+	 *
 	 * @since 1.1.0
 	 * @param array    $chunk_item Chunk item.
 	 * @param \WP_Post $post      The post.
@@ -922,6 +921,8 @@ class FE_Search_AI_Sync_Handler {
 	 * @return array{attr:string, content:string}
 	 */
 	private function build_summary_prompt_context( $chunk_item, $post, $lang_code ) {
+		unset( $lang_code );
+
 		$raw_chunk = isset( $chunk_item['content_chunk'] ) ? (string) $chunk_item['content_chunk'] : '';
 		$lines     = preg_split( '/\r\n|\r|\n/u', $raw_chunk );
 		$attr      = [];
@@ -958,6 +959,8 @@ class FE_Search_AI_Sync_Handler {
 	}
 
 	/**
+	 * Builds the default summary prompt.
+	 *
 	 * @since 1.1.0
 	 * @param array  $context  Prompt context.
 	 * @param string $lang_code Language code.
@@ -994,6 +997,8 @@ class FE_Search_AI_Sync_Handler {
 	}
 
 	/**
+	 * Requests a chat completion for summary generation.
+	 *
 	 * @since 1.1.0
 	 * @param string $prompt Prompt.
 	 * @return string|WP_Error
@@ -1018,6 +1023,8 @@ class FE_Search_AI_Sync_Handler {
 	}
 
 	/**
+	 * Requests a summary from OpenAI.
+	 *
 	 * @since 1.1.0
 	 * @param string $prompt Prompt.
 	 * @return string|WP_Error
@@ -1061,6 +1068,8 @@ class FE_Search_AI_Sync_Handler {
 	}
 
 	/**
+	 * Requests a summary from Gemini.
+	 *
 	 * @since 1.1.0
 	 * @param string $prompt Prompt.
 	 * @return string|WP_Error
@@ -1100,6 +1109,8 @@ class FE_Search_AI_Sync_Handler {
 	}
 
 	/**
+	 * Requests a summary from Claude.
+	 *
 	 * @since 1.1.0
 	 * @param string $prompt Prompt.
 	 * @return string|WP_Error
@@ -1288,7 +1299,7 @@ class FE_Search_AI_Sync_Handler {
 			}
 
 			// If we don't have post_id or title from payload, try to extract them
-			if ( $post_id === 0 ) {
+			if ( 0 === $post_id ) {
 				$url_parts = wp_parse_url( $permalink );
 				if ( isset( $url_parts['path'] ) ) {
 					$path_parts = explode( '/', trim( $url_parts['path'], '/' ) );
@@ -1310,7 +1321,7 @@ class FE_Search_AI_Sync_Handler {
 				'content_chunk' => $content_snippet,
 				'permalink'     => $permalink,
 				'post_id'       => $post_id,
-				'title'         => $title ?: 'Untitled',
+				'title'         => $title ? $title : 'Untitled',
 				'source'        => 'qdrant',
 				'score'         => isset( $point['score'] ) ? (float) $point['score'] : 0.0,
 			];
@@ -1448,14 +1459,16 @@ class FE_Search_AI_Sync_Handler {
 			$max_chunks = 100;
 		}
 		$placeholders = implode( ', ', array_fill( 0, count( $valid_keywords ), '%s' ) );
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
 		// Table name is interpolated but controlled internally, keywords are prepared.
-		$sql = "SELECT DISTINCT `vector_id` FROM `{$index_table}` WHERE `keyword` IN ( {$placeholders} ) LIMIT {$max_chunks}";
-		// SQL is constructed with controlled table names and prepared placeholders.
-		$vector_ids = $wpdb->get_col( $wpdb->prepare( $sql, $valid_keywords ) );
+		$vector_ids = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT DISTINCT `vector_id` FROM `{$index_table}` WHERE `keyword` IN ( {$placeholders} ) LIMIT %d",
+				array_merge( $valid_keywords, [ $max_chunks ] )
+			)
+		);
 
 		// DEBUG: Log index search results.
 		\FESearchAI\Core\FE_Search_AI_Logger::log(
@@ -1475,14 +1488,18 @@ class FE_Search_AI_Sync_Handler {
 		// Retrieve the full content chunks for the found vector IDs.
 		// Order by newest post date to keep UX stable when reranking is disabled.
 		$placeholders = implode( ', ', array_fill( 0, count( $vector_ids ), '%d' ) );
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
 		// Table names are interpolated but controlled internally, vector_ids are prepared.
-		$sql = "SELECT v.`content_chunk`, v.`summary_text`, v.`post_id` FROM `{$vectors_table}` v INNER JOIN `{$wpdb->posts}` p ON p.ID = v.post_id WHERE v.`id` IN ( {$placeholders} ) ORDER BY p.post_date DESC";
-		// SQL is constructed with controlled table names and prepared placeholders.
-		$chunks_data = $wpdb->get_results( $wpdb->prepare( $sql, $vector_ids ), ARRAY_A );
+		$chunks_data = $wpdb->get_results(
+			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+				"SELECT v.`content_chunk`, v.`summary_text`, v.`post_id` FROM `{$vectors_table}` v INNER JOIN `{$wpdb->posts}` p ON p.ID = v.post_id WHERE v.`id` IN ( {$placeholders} ) ORDER BY p.post_date DESC",
+				$vector_ids
+			),
+			ARRAY_A
+		);
 
 		// Add permalink and additional data to the results.
 		$results = [];
@@ -1853,7 +1870,8 @@ class FE_Search_AI_Sync_Handler {
 	 * Allows third parties to override the result via a filter hook
 	 * before falling back to built-in providers.
 	 *
-	 * @param array $texts List of text chunks to embed.
+	 * @param array  $texts List of text chunks to embed.
+	 * @param string $sequence_id Log sequence ID.
 	 * @return array|WP_Error Embedding response or error object.
 	 */
 	public function get_embeddings_via_selected_provider( $texts, $sequence_id = '' ) {
@@ -1900,7 +1918,8 @@ class FE_Search_AI_Sync_Handler {
 	 * Uses the configured API key and endpoint and logs failures
 	 * and performance metrics.
 	 *
-	 * @param array $texts Text chunks to embed.
+	 * @param array  $texts Text chunks to embed.
+	 * @param string $sequence_id Log sequence ID.
 	 * @return array|WP_Error API response body or error object.
 	 */
 	public function fetch_embeddings_for_openai( $texts, $sequence_id = '' ) {
@@ -1963,7 +1982,7 @@ class FE_Search_AI_Sync_Handler {
 		$response_code = wp_remote_retrieve_response_code( $response );
 		$response_body = json_decode( wp_remote_retrieve_body( $response ), true );
 
-		if ( $response_code !== 200 ) {
+		if ( 200 !== $response_code ) {
 			$error_message = isset( $response_body['error']['message'] )
 				? $response_body['error']['message']
 				: __( 'Unknown API Error', 'fe-search-ai' );
@@ -2077,7 +2096,7 @@ class FE_Search_AI_Sync_Handler {
 		$response_code = wp_remote_retrieve_response_code( $response );
 		$response_body = json_decode( wp_remote_retrieve_body( $response ), true );
 
-		if ( $response_code !== 200 ) {
+		if ( 200 !== $response_code ) {
 			$error_message = isset( $response_body['error']['message'] )
 				? $response_body['error']['message']
 				: __( 'Unknown API Error', 'fe-search-ai' );
@@ -2156,8 +2175,11 @@ class FE_Search_AI_Sync_Handler {
 		// Remove all symbols (including asterisk, which was causing issues)
 		$text_normalized = preg_replace( '/[^\p{L}\p{N}\s]/u', ' ', $text_normalized );
 
-		$locale     = get_locale();
-		$lang_code  = strstr( $locale, '_', true ) ?: $locale;
+		$locale    = get_locale();
+		$lang_code = strstr( $locale, '_', true );
+		if ( false === $lang_code ) {
+			$lang_code = $locale;
+		}
 		$stop_words = [];
 		// Load stop words
 		// Use the correct plugin directory constant for locating i18n files.
@@ -2204,14 +2226,12 @@ class FE_Search_AI_Sync_Handler {
 						$words = preg_split( '/\s+/', $text_normalized, -1, PREG_SPLIT_NO_EMPTY );
 					}
 				}
-			} else {
+			} elseif ( null !== $this->segmenter ) {
 				// Use TinySegmenter if available (PHP >= 8.0).
-				if ( null !== $this->segmenter ) {
-					$words = $this->segmenter->segment( $text_normalized );
-				} else {
-					// TinySegmenter not available, fall back to simple split.
-					$words = preg_split( '/\s+/', $text_normalized, -1, PREG_SPLIT_NO_EMPTY );
-				}
+				$words = $this->segmenter->segment( $text_normalized );
+			} else {
+				// TinySegmenter not available, fall back to simple split.
+				$words = preg_split( '/\s+/', $text_normalized, -1, PREG_SPLIT_NO_EMPTY );
 			}
 		} else {
 			$words = preg_split( '/\s+/', $text_normalized, -1, PREG_SPLIT_NO_EMPTY );
@@ -2240,9 +2260,9 @@ class FE_Search_AI_Sync_Handler {
 		// Stemming for non-Japanese languages
 		if ( 'ja' !== $lang_code ) {
 			try {
-				$stemmerManager = new \Wamania\Snowball\StemmerManager();
-				if ( in_array( $lang_code, $stemmerManager->getAvailableLanguages() ) ) {
-					$stemmer       = $stemmerManager->create( $lang_code );
+				$stemmer_manager = new \Wamania\Snowball\StemmerManager();
+				if ( in_array( $lang_code, $stemmer_manager->getAvailableLanguages(), true ) ) {
+					$stemmer       = $stemmer_manager->create( $lang_code );
 					$stemmed_words = [];
 					foreach ( $words_after_diff as $word ) {
 						$stemmed_words[] = $stemmer->stem( $word );
@@ -2250,6 +2270,8 @@ class FE_Search_AI_Sync_Handler {
 					$words_after_diff = $stemmed_words;
 				}
 			} catch ( \Throwable $t ) {
+				// Ignore stemming errors and continue with unstemmed words.
+				unset( $t );
 			}
 		}
 
@@ -2286,6 +2308,11 @@ class FE_Search_AI_Sync_Handler {
 		return $final_words;
 	}
 
+	/**
+	 * Gets the Japanese tokenizer engine.
+	 *
+	 * @return string Tokenizer engine name.
+	 */
 	private function get_japanese_tokenizer_engine() {
 		$tokenizer_root = $this->options['tokenizer'] ?? [];
 		if ( ! is_array( $tokenizer_root ) ) {
@@ -2302,6 +2329,11 @@ class FE_Search_AI_Sync_Handler {
 		return $engine;
 	}
 
+	/**
+	 * Gets the Yahoo application ID.
+	 *
+	 * @return string Yahoo application ID.
+	 */
 	private function get_yahoo_app_id() {
 		if ( defined( 'FEAS_YAHOO_APP_ID' ) && FEAS_YAHOO_APP_ID ) {
 			return FEAS_YAHOO_APP_ID;
@@ -2322,6 +2354,12 @@ class FE_Search_AI_Sync_Handler {
 		return (string) $yahoo_id;
 	}
 
+	/**
+	 * Tokenizes Japanese text with the Yahoo API.
+	 *
+	 * @param string $text_normalized Normalized text.
+	 * @return array|WP_Error Tokenized words or error object.
+	 */
 	private function tokenize_with_yahoo_api( $text_normalized ) {
 		$app_id = $this->get_yahoo_app_id();
 		if ( empty( $app_id ) ) {
@@ -2420,7 +2458,7 @@ class FE_Search_AI_Sync_Handler {
 			// According to API docs: [surface, reading, baseform, pos, ...]
 			$surface  = $token_row[0] ?? '';
 			$baseform = $token_row[2] ?? '';
-			$word     = $baseform ?: $surface;
+			$word     = $baseform ? $baseform : $surface;
 			$word     = (string) $word;
 			if ( '' !== $word ) {
 				$words[] = $word;
@@ -2456,7 +2494,10 @@ class FE_Search_AI_Sync_Handler {
 		// Only show the notice when there is no bundled i18n file
 		// for the current locale or its language code.
 		$locale    = get_locale();
-		$lang_code = strstr( $locale, '_', true ) ?: $locale;
+		$lang_code = strstr( $locale, '_', true );
+		if ( false === $lang_code ) {
+			$lang_code = $locale;
+		}
 		$lang_file = FE_SEARCH_AI_PLUGIN_DIR . "includes/i18n/{$locale}.php";
 		if ( ! file_exists( $lang_file ) ) {
 			$lang_file = FE_SEARCH_AI_PLUGIN_DIR . "includes/i18n/{$lang_code}.php";
@@ -2465,23 +2506,23 @@ class FE_Search_AI_Sync_Handler {
 			return;
 		}
 
-		// What happens when a user clicks on a "hidden" link?
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		// This is a dismiss action, not a form submission.
-		if ( isset( $_GET['fe-search-ai-dismiss-i18n-notice'] ) ) {
+		if (
+			isset( $_GET['fe-search-ai-dismiss-i18n-notice'], $_GET['_wpnonce'] )
+			&& wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'fe_search_ai_dismiss_i18n_notice' )
+		) {
 			// Flag to hide this notification for one week
 			set_transient( 'fe_search_ai_i18n_notice_dismissed', true, WEEK_IN_SECONDS );
 			return;
 		}
 		?>
-		<div class="notice notice-info is-dismissible" data-dismiss-url="<?php echo esc_url( add_query_arg( 'fe-search-ai-dismiss-i18n-notice', '1' ) ); ?>">
+		<div class="notice notice-info is-dismissible" data-dismiss-url="<?php echo esc_url( wp_nonce_url( add_query_arg( 'fe-search-ai-dismiss-i18n-notice', '1' ), 'fe_search_ai_dismiss_i18n_notice' ) ); ?>">
 			<p>
 				<b>FE Search AI:</b> <?php esc_html_e( 'Your site language is not fully optimized for keyword search. We welcome contributions for new languages!', 'fe-search-ai' ); ?>
 				<a href="https://github.com/firstelementjp/fe-search-ai" target="_blank" style="margin-left: 10px;"><?php esc_html_e( 'Contribute on GitHub', 'fe-search-ai' ); ?></a>
 			</p>
 		</div>
 		<script>
-			// Handle dismissing the notice and flagging it via AJAX without reloading the page.
+			// Handle dismissing the notice and flagging it without reloading the page.
 			document.addEventListener('DOMContentLoaded', function () {
 				var notice = document.querySelector('div[data-dismiss-url]');
 				if (!notice) {
@@ -2494,14 +2535,11 @@ class FE_Search_AI_Sync_Handler {
 				dismissButton.addEventListener('click', function (e) {
 					e.preventDefault();
 					try {
-						var formData = new (window['FormData'])();
-						formData.append('action', 'dismiss-wp-pointer');
-						formData.append('pointer', 'fe_search_ai_i18n_notice_dismissed');
-						if (typeof ajaxurl !== 'undefined') {
-							fetch(ajaxurl, {
-								method: 'POST',
-								body: formData
-								// No need to await; fire-and-forget is fine for this notification.
+						var dismissUrl = notice.getAttribute('data-dismiss-url');
+						if (dismissUrl) {
+							fetch(dismissUrl, {
+								method: 'GET',
+								credentials: 'same-origin'
 							});
 						}
 					} catch (error) {

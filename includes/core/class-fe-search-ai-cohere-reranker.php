@@ -1,4 +1,14 @@
 <?php
+/**
+ * Cohere reranker implementation.
+ *
+ * This class plugs into the retrieved-chunks filter and optionally reranks
+ * the candidate chunks using Cohere's Rerank API before the chunks are
+ * injected into the LLM prompt.
+ *
+ * @package    fe-search-ai
+ * @subpackage Core
+ */
 
 namespace FESearchAI\Core;
 

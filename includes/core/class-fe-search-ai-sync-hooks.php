@@ -255,18 +255,22 @@ class FE_Search_AI_Sync_Hooks {
 			$placeholders = implode( ', ', array_fill( 0, count( $vector_ids ), '%d' ) );
 			// Delete keyword index entries.
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
 			// Table name is interpolated but controlled internally, placeholders are for IN clause, vector_ids are prepared.
-			$wpdb->query( $wpdb->prepare( "DELETE FROM `{$index_table}` WHERE `vector_id` IN ( {$placeholders} )", $vector_ids ) );
+			$wpdb->query(
+				// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+				$wpdb->prepare( "DELETE FROM `{$index_table}` WHERE `vector_id` IN ( {$placeholders} )", $vector_ids )
+			);
 			// Delete vectors.
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
 			// Table name is interpolated but controlled internally, placeholders are for IN clause, vector_ids are prepared.
-			$wpdb->query( $wpdb->prepare( "DELETE FROM `{$vectors_table}` WHERE `id` IN ( {$placeholders} )", $vector_ids ) );
+			$wpdb->query(
+				// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+				$wpdb->prepare( "DELETE FROM `{$vectors_table}` WHERE `id` IN ( {$placeholders} )", $vector_ids )
+			);
 		}
 	}
 }

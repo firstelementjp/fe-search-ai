@@ -34,6 +34,11 @@ use FESearchAI\Admin\FE_Search_AI_Settings;
  */
 class FE_Search_AI_Admin {
 
+	/**
+	 * Constructor.
+	 *
+	 * Initializes the admin class and hooks into WordPress.
+	 */
 	public function __construct() {
 
 		new FE_Search_AI_Settings();
@@ -50,6 +55,8 @@ class FE_Search_AI_Admin {
 	 * @return void
 	 */
 	public static function render_plugin_header( $is_pro = false ) {
+		unset( $is_pro );
+
 		$current_locale = function_exists( 'determine_locale' ) ? determine_locale() : get_locale();
 
 		$docs_url    = 'https://firstelementjp.github.io/fe-search-ai/#/';
@@ -151,6 +158,8 @@ class FE_Search_AI_Admin {
 
 	/**
 	 * Load scripts and styles for the admin panel.
+	 *
+	 * @param string $hook_suffix The current admin page hook suffix.
 	 */
 	public function enqueue_admin_assets( $hook_suffix ) {
 		$allowed_hooks = [
@@ -159,7 +168,7 @@ class FE_Search_AI_Admin {
 		// Hook name is properly prefixed with fe_search_ai_.
 		$allowed_hooks = apply_filters( 'fe_search_ai_admin_allowed_hooks', $allowed_hooks );
 
-		if ( ! in_array( $hook_suffix, $allowed_hooks ) ) {
+		if ( ! in_array( $hook_suffix, $allowed_hooks, true ) ) {
 			return;
 		}
 

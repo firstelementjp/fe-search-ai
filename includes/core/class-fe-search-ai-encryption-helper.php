@@ -89,6 +89,7 @@ class FE_Search_AI_Encryption_Helper {
 		$iv             = openssl_random_pseudo_bytes( $ivlen );
 		$ciphertext_raw = openssl_encrypt( $plaintext, self::CIPHER, $key, OPENSSL_RAW_DATA, $iv );
 
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 		return base64_encode( $iv . $ciphertext_raw );
 	}
 
@@ -114,6 +115,7 @@ class FE_Search_AI_Encryption_Helper {
 
 		$value = $ciphertext;
 		for ( $i = 0; $i < 3; $i++ ) {
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
 			$c = base64_decode( $value, true );
 			if ( false === $c ) {
 				return $value; // Return current value if not valid base64.

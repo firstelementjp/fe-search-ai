@@ -241,6 +241,9 @@ class FE_Search_AI_License_Settings {
 		<?php
 	}
 
+	/**
+	 * Register license settings.
+	 */
 	public function register_settings() {
 		$settings_group = 'fe-search-ai-settings-group';
 
@@ -332,7 +335,7 @@ class FE_Search_AI_License_Settings {
 					/* translators: 1: expiration date, 2: remaining days */
 					__( 'License expiration date: %1$s (remaining %2$s days)', 'fe-search-ai' ),
 					esc_html( date_i18n( 'Y-m-d', strtotime( $expires_at ) ) ),
-					$remaining_days !== '' ? esc_html( (string) $remaining_days ) : '600'
+					'' !== $remaining_days ? esc_html( (string) $remaining_days ) : '600'
 				);
 			}
 

@@ -37,8 +37,25 @@ use FESearchAI\Core\FE_Search_AI_License;
  */
 class FE_Search_AI_Chat_Handler {
 
-	private $options           = [];
+	/**
+	 * Plugin options.
+	 *
+	 * @var array
+	 */
+	private $options = [];
+
+	/**
+	 * Whether the license is active.
+	 *
+	 * @var bool
+	 */
 	private $is_license_active = '';
+
+	/**
+	 * Sync handler instance.
+	 *
+	 * @var FE_Search_AI_Sync_Handler
+	 */
 	private $sync_handler;
 
 	/**
@@ -106,6 +123,7 @@ class FE_Search_AI_Chat_Handler {
 	 * @param \WP_REST_Request $request The incoming REST API request containing
 	 *                                  the user's question, chat history, and
 	 *                                  provider settings.
+	 * @throws \Exception When rate limit notification fails.
 	 * @return void Outputs streamed response directly and terminates.
 	 */
 	public function stream_handler( \WP_REST_Request $request ) {
@@ -136,9 +154,8 @@ class FE_Search_AI_Chat_Handler {
 		if ( $ip_limit_count >= 0 ) {
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
-			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			// REMOTE_ADDR is server-provided, used for rate limiting only.
-			$ip_address       = isset( $_SERVER['REMOTE_ADDR'] ) ? wp_unslash( $_SERVER['REMOTE_ADDR'] ) : '';
+			$ip_address       = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
 			$ip_transient_key = 'fe_search_ai_rl_ip_' . md5( $ip_address );
 			$ip_request_count = get_transient( $ip_transient_key );
 
@@ -176,16 +193,16 @@ class FE_Search_AI_Chat_Handler {
 			}
 		}
 
-		// Disable server buffering
-		// phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged
+		// Disable server buffering.
 		// Required for SSE streaming to work properly.
-		@ini_set( 'output_buffering', 'off' );
-		// phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged
-		@ini_set( 'zlib.output_compression', 0 );
-		// phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged
-		@ini_set( 'implicit_flush', 1 );
-		// phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged
-		@ini_set( 'default_charset', 'UTF-8' );
+		// phpcs:ignore WordPress.PHP.IniSet.Risky
+		ini_set( 'output_buffering', 'off' );
+		// phpcs:ignore WordPress.PHP.IniSet.Risky
+		ini_set( 'zlib.output_compression', 0 );
+		// phpcs:ignore WordPress.PHP.IniSet.Risky
+		ini_set( 'implicit_flush', 1 );
+		// phpcs:ignore WordPress.PHP.IniSet.Risky
+		ini_set( 'default_charset', 'UTF-8' );
 		ob_implicit_flush( 1 );
 
 		// Clear all existing output buffers.
@@ -389,8 +406,9 @@ class FE_Search_AI_Chat_Handler {
 	 * @since 0.9.0
 	 * @param string $question       User's question text.
 	 * @param array  $context_chunks Relevant context chunks for the AI.
-	 * @param array  $history        Chat history for conversation context.
 	 * @param string $provider       The AI provider to use.
+	 * @param array  $history        Chat history for conversation context.
+	 * @param string $sequence_id    Log sequence ID.
 	 * @return void Outputs streamed response directly.
 	 */
 	public function stream_chat_completion( $question, $context_chunks, $provider, $history = [], $sequence_id = '' ) {
@@ -1157,10 +1175,6 @@ class FE_Search_AI_Chat_Handler {
 		echo 'data: ' . wp_json_encode( [ 'debug' => [ 'step' => 'inside_stream_completion_for_gemini', 'provider' => $provider ] ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 		flush();
 
-		// DEBUG: Basic Gemini state for troubleshooting.
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-		}
-
 		// Admin UI stores the key at provider.google_key.
 		$encrypted_key = $this->options['provider']['google_key'] ?? '';
 		$api_key       = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
@@ -1191,10 +1205,6 @@ class FE_Search_AI_Chat_Handler {
 					$model = $type;
 				}
 			}
-		}
-
-		// DEBUG: Log the resolved Gemini model once per request for troubleshooting.
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 		}
 
 		// INFO: Log the start of the API call.
@@ -1269,7 +1279,7 @@ class FE_Search_AI_Chat_Handler {
 
 		$gemini_contents = [];
 		foreach ( $messages as $message ) {
-			$role = ( $message['role'] === 'assistant' ) ? 'model' : 'user';
+			$role = ( 'assistant' === $message['role'] ) ? 'model' : 'user';
 			if ( ! empty( $gemini_contents ) && end( $gemini_contents )['role'] === $role ) {
 				continue;
 			}
@@ -1523,8 +1533,8 @@ class FE_Search_AI_Chat_Handler {
 						$chunk     = json_decode( $json_data, true );
 
 						if ( isset( $chunk['type'] )
-						&& $chunk['type'] === 'content_block_delta'
-						&& isset( $chunk['delta']['type'] ) && $chunk['delta']['type'] === 'text_delta' ) {
+						&& 'content_block_delta' === $chunk['type']
+						&& isset( $chunk['delta']['type'] ) && 'text_delta' === $chunk['delta']['type'] ) {
 
 							$content = $chunk['delta']['text'];
 
@@ -1660,7 +1670,12 @@ class FE_Search_AI_Chat_Handler {
 			}
 		}
 
-		$answer_lang_code = strstr( $answer_locale, '_', true ) ?: $answer_locale; // e.g. ja_JP -> ja
+		$answer_lang_code_extracted = strstr( $answer_locale, '_', true );
+		if ( false !== $answer_lang_code_extracted ) {
+			$answer_lang_code = $answer_lang_code_extracted;
+		} else {
+			$answer_lang_code = $answer_locale;
+		}
 
 		// Append a language rule so the model knows which language to use
 		// for this particular request.
@@ -1669,7 +1684,10 @@ class FE_Search_AI_Chat_Handler {
 
 		// Add Gemini-specific constraints to prevent hallucination
 		// @TODO: Temporarily commented out for testing
+
 		/*
+		Gemini-specific constraints are temporarily disabled for testing.
+
 		if ( $provider === 'google' ) {
 			$system_prompt .= "\n\nGEMINI INSTRUCTIONS:\n" .
 				"You MUST only use the job postings listed under 'REAL JOB POSTINGS FROM THE WEBSITE'.\n" .
@@ -1776,9 +1794,9 @@ class FE_Search_AI_Chat_Handler {
 						}
 
 						// Start collecting content after "Content:" line
-						if ( $line === 'Content:' || $in_content_section ) {
+						if ( 'Content:' === $line || $in_content_section ) {
 							$in_content_section = true;
-							if ( $line !== 'Content:' ) {
+							if ( 'Content:' !== $line ) {
 								$clean_content[] = $line;
 							}
 						}
@@ -1850,7 +1868,7 @@ class FE_Search_AI_Chat_Handler {
 		$messages = array_filter(
 			$history,
 			function ( $msg ) {
-				return ! ( isset( $msg['role'] ) && $msg['role'] === 'assistant' && empty( trim( $msg['content'] ) ) );
+				return ! ( isset( $msg['role'] ) && 'assistant' === $msg['role'] && empty( trim( $msg['content'] ) ) );
 			}
 		);
 
@@ -2180,10 +2198,8 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 	 */
 	public function ajax_test_api_key() {
 		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
-		$provider = isset( $_POST['provider'] ) ? sanitize_key( $_POST['provider'] ) : '';
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
-		// Input is sanitized with sanitize_text_field().
-		$api_key = isset( $_POST['api_key'] ) ? sanitize_text_field( $_POST['api_key'] ) : '';
+		$provider = isset( $_POST['provider'] ) ? sanitize_key( wp_unslash( $_POST['provider'] ) ) : '';
+		$api_key  = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
 
 		if ( empty( $provider ) ) {
 			wp_send_json_error( __( 'Provider missing.', 'fe-search-ai' ) );

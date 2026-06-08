@@ -33,8 +33,18 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class FE_Search_AI_Assets {
 
+	/**
+	 * Plugin options.
+	 *
+	 * @var array
+	 */
 	private $options = [];
 
+	/**
+	 * Constructor.
+	 *
+	 * Initializes the assets class and hooks into WordPress.
+	 */
 	public function __construct() {
 		$this->options = get_option( 'fe_search_ai_settings', [] );
 
@@ -59,26 +69,29 @@ class FE_Search_AI_Assets {
 		}
 
 		// UI settings values
-		$ui_options        = $this->options['display']['ui'] ?? [];
-		$enable_css        = $ui_options['enable_css'] ?? true;
-		$enable_js         = $ui_options['enable_js'] ?? true;
-		$animation_speed   = $ui_options['animation_speed'] ?? 3;
-		$send_mode         = $ui_options['send_mode'] ?? 'enter';
-		$key_color         = $ui_options['key_color'] ?? '#cee8ff';
-		$background_color  = $ui_options['background_color'] ?? '#f5f5f5';
-		$text_color        = $ui_options['text_color'] ?? '#3a424f';
-		$use_gradient      = isset( $ui_options['use_gradient'] ) ? (bool) $ui_options['use_gradient'] : true;
-		$key_color         = sanitize_hex_color( $key_color ) ?: '#0073aa';
-		$background_color  = sanitize_hex_color( $background_color ) ?: '#f5f5f5';
-		$text_color        = sanitize_hex_color( $text_color ) ?: '#111111';
-		$colors            = $this->compute_chat_colors( $key_color, $background_color, $text_color, $use_gradient );
-		$border_color      = $colors['border'];
-		$input_bg_hex      = $colors['input_bg'];
-		$user_bubble_hex   = $colors['user_bubble'];
-		$bg_top_hex        = $colors['bg_top'];
-		$bg_bottom_hex     = $colors['bg_bottom'];
-		$accent_top_hex    = $colors['accent_top'];
-		$accent_bottom_hex = $colors['accent_bottom'];
+		$ui_options                 = $this->options['display']['ui'] ?? [];
+		$enable_css                 = $ui_options['enable_css'] ?? true;
+		$enable_js                  = $ui_options['enable_js'] ?? true;
+		$animation_speed            = $ui_options['animation_speed'] ?? 3;
+		$send_mode                  = $ui_options['send_mode'] ?? 'enter';
+		$key_color                  = $ui_options['key_color'] ?? '#cee8ff';
+		$background_color           = $ui_options['background_color'] ?? '#f5f5f5';
+		$text_color                 = $ui_options['text_color'] ?? '#3a424f';
+		$use_gradient               = isset( $ui_options['use_gradient'] ) ? (bool) $ui_options['use_gradient'] : true;
+		$key_color_sanitized        = sanitize_hex_color( $key_color );
+		$key_color                  = ! empty( $key_color_sanitized ) ? $key_color_sanitized : '#0073aa';
+		$background_color_sanitized = sanitize_hex_color( $background_color );
+		$background_color           = ! empty( $background_color_sanitized ) ? $background_color_sanitized : '#f5f5f5';
+		$text_color_sanitized       = sanitize_hex_color( $text_color );
+		$text_color                 = ! empty( $text_color_sanitized ) ? $text_color_sanitized : '#111111';
+		$colors                     = $this->compute_chat_colors( $key_color, $background_color, $text_color, $use_gradient );
+		$border_color               = $colors['border'];
+		$input_bg_hex               = $colors['input_bg'];
+		$user_bubble_hex            = $colors['user_bubble'];
+		$bg_top_hex                 = $colors['bg_top'];
+		$bg_bottom_hex              = $colors['bg_bottom'];
+		$accent_top_hex             = $colors['accent_top'];
+		$accent_bottom_hex          = $colors['accent_bottom'];
 
 		// Prepare initial defaults for privacy consent banner.
 		$privacy_config = [
@@ -314,17 +327,19 @@ class FE_Search_AI_Assets {
 		list( $accent_r, $accent_g, $accent_b ) = $accent_rgb;
 
 		// Calculate the input field background color by making the background color about 10% lighter.
-		$input_bg_r   = (int) round( $bg_r + ( 255 - $bg_r ) * 0.1 );
-		$input_bg_g   = (int) round( $bg_g + ( 255 - $bg_g ) * 0.1 );
-		$input_bg_b   = (int) round( $bg_b + ( 255 - $bg_b ) * 0.1 );
-		$input_bg_hex = sanitize_hex_color( sprintf( '#%02x%02x%02x', $input_bg_r, $input_bg_g, $input_bg_b ) ) ?: $background_color;
+		$input_bg_r             = (int) round( $bg_r + ( 255 - $bg_r ) * 0.1 );
+		$input_bg_g             = (int) round( $bg_g + ( 255 - $bg_g ) * 0.1 );
+		$input_bg_b             = (int) round( $bg_b + ( 255 - $bg_b ) * 0.1 );
+		$input_bg_hex_sanitized = sanitize_hex_color( sprintf( '#%02x%02x%02x', $input_bg_r, $input_bg_g, $input_bg_b ) );
+		$input_bg_hex           = ! empty( $input_bg_hex_sanitized ) ? $input_bg_hex_sanitized : $background_color;
 
 		// Calculate the user chat bubble color by mixing a small amount (5%) of the accent color into the input color.
-		$user_bubble_mix = 0.05;
-		$user_bubble_r   = (int) round( $input_bg_r * ( 1 - $user_bubble_mix ) + $accent_r * $user_bubble_mix );
-		$user_bubble_g   = (int) round( $input_bg_g * ( 1 - $user_bubble_mix ) + $accent_g * $user_bubble_mix );
-		$user_bubble_b   = (int) round( $input_bg_b * ( 1 - $user_bubble_mix ) + $accent_b * $user_bubble_mix );
-		$user_bubble_hex = sanitize_hex_color( sprintf( '#%02x%02x%02x', $user_bubble_r, $user_bubble_g, $user_bubble_b ) ) ?: $key_color;
+		$user_bubble_mix           = 0.05;
+		$user_bubble_r             = (int) round( $input_bg_r * ( 1 - $user_bubble_mix ) + $accent_r * $user_bubble_mix );
+		$user_bubble_g             = (int) round( $input_bg_g * ( 1 - $user_bubble_mix ) + $accent_g * $user_bubble_mix );
+		$user_bubble_b             = (int) round( $input_bg_b * ( 1 - $user_bubble_mix ) + $accent_b * $user_bubble_mix );
+		$user_bubble_hex_sanitized = sanitize_hex_color( sprintf( '#%02x%02x%02x', $user_bubble_r, $user_bubble_g, $user_bubble_b ) );
+		$user_bubble_hex           = ! empty( $user_bubble_hex_sanitized ) ? $user_bubble_hex_sanitized : $key_color;
 
 		$bg_factor_light     = 0.1;
 		$bg_factor_dark      = 0.05;
@@ -356,10 +371,14 @@ class FE_Search_AI_Assets {
 		$accent_bot_g = (int) round( $accent_g + ( 255 - $accent_g ) * $accent_factor_light );
 		$accent_bot_b = (int) round( $accent_b + ( 255 - $accent_b ) * $accent_factor_light );
 
-		$bg_top_hex        = sanitize_hex_color( sprintf( '#%02x%02x%02x', $bg_top_r, $bg_top_g, $bg_top_b ) ) ?: $background_color;
-		$bg_bottom_hex     = sanitize_hex_color( sprintf( '#%02x%02x%02x', $bg_bot_r, $bg_bot_g, $bg_bot_b ) ) ?: $background_color;
-		$accent_top_hex    = sanitize_hex_color( sprintf( '#%02x%02x%02x', $accent_top_r, $accent_top_g, $accent_top_b ) ) ?: $key_color;
-		$accent_bottom_hex = sanitize_hex_color( sprintf( '#%02x%02x%02x', $accent_bot_r, $accent_bot_g, $accent_bot_b ) ) ?: $key_color;
+		$bg_top_hex_sanitized        = sanitize_hex_color( sprintf( '#%02x%02x%02x', $bg_top_r, $bg_top_g, $bg_top_b ) );
+		$bg_top_hex                  = ! empty( $bg_top_hex_sanitized ) ? $bg_top_hex_sanitized : $background_color;
+		$bg_bottom_hex_sanitized     = sanitize_hex_color( sprintf( '#%02x%02x%02x', $bg_bot_r, $bg_bot_g, $bg_bot_b ) );
+		$bg_bottom_hex               = ! empty( $bg_bottom_hex_sanitized ) ? $bg_bottom_hex_sanitized : $background_color;
+		$accent_top_hex_sanitized    = sanitize_hex_color( sprintf( '#%02x%02x%02x', $accent_top_r, $accent_top_g, $accent_top_b ) );
+		$accent_top_hex              = ! empty( $accent_top_hex_sanitized ) ? $accent_top_hex_sanitized : $key_color;
+		$accent_bottom_hex_sanitized = sanitize_hex_color( sprintf( '#%02x%02x%02x', $accent_bot_r, $accent_bot_g, $accent_bot_b ) );
+		$accent_bottom_hex           = ! empty( $accent_bottom_hex_sanitized ) ? $accent_bottom_hex_sanitized : $key_color;
 
 		if ( ! $use_gradient ) {
 			$bg_top_hex        = $background_color;
@@ -501,7 +520,10 @@ class FE_Search_AI_Assets {
 		$h /= 360.0;
 
 		if ( 0.0 === $s ) {
-			$r = $g = $b = (int) round( $l * 255 );
+			$value = (int) round( $l * 255 );
+			$r     = $value;
+			$g     = $value;
+			$b     = $value;
 			return [ $r, $g, $b ];
 		}
 
@@ -512,9 +534,9 @@ class FE_Search_AI_Assets {
 		$rgb = [];
 		foreach ( $h_k as $hk ) {
 			if ( $hk < 0 ) {
-				$hk += 1;
+				++$hk;
 			} elseif ( $hk > 1 ) {
-				$hk -= 1;
+				--$hk;
 			}
 
 			if ( $hk < 1 / 6 ) {

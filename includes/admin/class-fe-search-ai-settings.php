@@ -36,10 +36,32 @@ use FESearchAI\Core\FE_Search_AI_License;
  */
 class FE_Search_AI_Settings {
 
-	private $options            = [];
-	private $is_license_active  = false;
+	/**
+	 * Plugin options.
+	 *
+	 * @var array
+	 */
+	private $options = [];
+
+	/**
+	 * Whether the license is active.
+	 *
+	 * @var bool
+	 */
+	private $is_license_active = false;
+
+	/**
+	 * License alert icon.
+	 *
+	 * @var string
+	 */
 	private $license_alert_icon = '';
 
+	/**
+	 * Constructor.
+	 *
+	 * Initializes the settings class and hooks into WordPress.
+	 */
 	public function __construct() {
 
 		// Retrieve all configuration data
@@ -928,11 +950,8 @@ class FE_Search_AI_Settings {
 				</ul>
 				<p>
 					<?php
-						/*
-						translators: 1: opening code tag, 2: closing code tag, 3: opening link tag, 4: closing link tag */
-						// phpcs:ignore WordPress.WP.I18n.MissingTranslatorsComment
-						// Translators comment is present above.
 						printf(
+							/* translators: 1: opening code tag, 2: closing code tag, 3: opening link tag, 4: closing link tag. */
 							esc_html__( 'You can change these limits from your theme or another plugin using the %1$sfe_search_ai_rate_limit_settings%2$s filter hook. For full sample code, please refer to the %3$sdocumentation%4$s.', 'fe-search-ai' ),
 							'<code>',
 							'</code>',
@@ -1006,8 +1025,8 @@ class FE_Search_AI_Settings {
 							<?php if ( class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) ) : ?>
 								<br><small>
 									<?php
-									// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 									// HTML is generated internally with proper escaping.
+									// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 									echo $this->license_alert_icon;
 									?>
 									<a href="#tab_models" class="fe-search-ai-change-model-link">
@@ -1197,7 +1216,6 @@ class FE_Search_AI_Settings {
 																value="1"
 																<?php checked( $snippet_tax_enabled ); ?>
 															>
-															<?php // esc_html_e( 'Include this taxonomy in chunk data', 'fe-search-ai' ); ?>
 														</label>
 													</div>
 													<div class="<?php echo esc_attr( $tax_config_wrapper_class ); ?> fe-search-ai-tax-config-wrapper" style="<?php echo $snippet_tax_enabled ? '' : 'display: none;'; ?>">
@@ -2154,7 +2172,7 @@ class FE_Search_AI_Settings {
 		// Static HTML string, no user input.
 		echo '<fieldset>';
 		foreach ( $post_types as $post_type ) {
-			if ( in_array( $post_type->name, $excluded_post_types ) ) {
+			if ( in_array( $post_type->name, $excluded_post_types, true ) ) {
 				continue;
 			}
 			?>
@@ -2163,14 +2181,14 @@ class FE_Search_AI_Settings {
 					type="checkbox"
 					name="fe_search_ai_settings[sync][targets][post_types][]"
 					value="<?php echo esc_attr( $post_type->name ); ?>"
-					<?php checked( in_array( $post_type->name, $saved_post_types ) ); ?>
+					<?php checked( in_array( $post_type->name, $saved_post_types, true ) ); ?>
 				/>
 				<?php echo esc_html( $post_type->label ); ?> (<code><?php echo esc_html( $post_type->name ); ?></code>)
 			</label><br>
 			<?php
 		}
 		echo '</fieldset>';
-		echo '<p class="description">' . __( 'Select the post types you want to include in AI search.', 'fe-search-ai' ) . '</p>';
+		echo '<p class="description">' . esc_html__( 'Select the post types you want to include in AI search.', 'fe-search-ai' ) . '</p>';
 	}
 
 	/**
@@ -2358,7 +2376,11 @@ class FE_Search_AI_Settings {
 			<label>
 				<input type="checkbox" name="fe_search_ai_settings[advanced][debug_mode]" value="1" <?php checked( $is_enabled ); ?>>
 				<?php esc_html_e( 'Enable Debug Mode', 'fe-search-ai' ); ?>
-				<?php echo $this->license_alert_icon; ?>
+				<?php
+				// HTML is generated internally with proper escaping.
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				echo $this->license_alert_icon;
+				?>
 			</label>
 			<p class="description">
 				<?php esc_html_e( 'When enabled, detailed operational logs will be saved to the `{prefix}fe_search_ai_system_logs` table (e.g. wp_fe_search_ai_system_logs if your table prefix is wp_). Only enable this when troubleshooting issues, as it can impact performance.', 'fe-search-ai' ); ?>
@@ -2486,7 +2508,7 @@ class FE_Search_AI_Settings {
 		if ( ! is_array( $raw_exclude ) ) {
 			$raw_exclude = [ 'ids' => $raw_exclude ];
 		}
-		// Include / Exclude IDs are stored under sync['include']['ids'] / sync['exclude']['ids'].
+		// Include and exclude IDs are stored in the sync settings.
 		$new_input['sync']['include']['ids'] = $this->sanitize_numeric_string( $raw_include['ids'] ?? '' );
 		$new_input['sync']['exclude']['ids'] = $this->sanitize_numeric_string( $raw_exclude['ids'] ?? '' );
 
@@ -2893,10 +2915,10 @@ class FE_Search_AI_Settings {
 					'name'              => 'fe_search_ai_settings[display][links][terms_page_id]',
 					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 					// Value is an integer from options, handled by wp_dropdown_pages.
-					'selected'          => $links_options['terms_page_id'] ?? 0,
+					'selected'          => (int) ( $links_options['terms_page_id'] ?? 0 ),
 					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 					// Translation string is handled by wp_dropdown_pages.
-					'show_option_none'  => '— ' . __( 'Not selected', 'fe-search-ai' ) . ' —',
+					'show_option_none'  => '— ' . esc_html__( 'Not selected', 'fe-search-ai' ) . ' —',
 					'option_none_value' => '0',
 				]
 			);
@@ -2911,10 +2933,10 @@ class FE_Search_AI_Settings {
 					'name'              => 'fe_search_ai_settings[display][links][privacy_page_id]',
 					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 					// Value is an integer from options, handled by wp_dropdown_pages.
-					'selected'          => $links_options['privacy_page_id'] ?? 0,
+					'selected'          => (int) ( $links_options['privacy_page_id'] ?? 0 ),
 					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 					// Translation string is handled by wp_dropdown_pages.
-					'show_option_none'  => '— ' . __( 'Not selected', 'fe-search-ai' ) . ' —',
+					'show_option_none'  => '— ' . esc_html__( 'Not selected', 'fe-search-ai' ) . ' —',
 					'option_none_value' => '0',
 				]
 			);

@@ -27,8 +27,8 @@ if ( get_option( 'fe_search_ai_delete_on_uninstall' ) ) {
 
 	foreach ( $table_names as $table_name ) {
 		// Local variable, not global.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange
 		// Table name is interpolated but controlled internally.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange
 		$wpdb->query( "DROP TABLE IF EXISTS `{$table_name}`" );
 	}
 

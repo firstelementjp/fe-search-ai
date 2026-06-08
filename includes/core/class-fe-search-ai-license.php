@@ -12,6 +12,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * License helper for FE AI Search.
+ *
+ * Handles license validation and product ID management for paid add-ons.
+ */
 class FE_Search_AI_License {
 	/**
 	 * Product IDs for each paid add-on.

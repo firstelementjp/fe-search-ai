@@ -213,8 +213,8 @@ class FE_Search_AI_Chat_UI {
 			self::$is_rendered = true;
 			$this->assets_handler->enqueue_assets();
 			$html = $this->get_chat_ui_html( 'float' );
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			// HTML is generated internally with all user input properly escaped via esc_html(), esc_url(), esc_attr().
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			echo $html;
 		}
 	}

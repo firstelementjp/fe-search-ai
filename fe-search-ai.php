@@ -10,6 +10,8 @@
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: fe-search-ai
  * Domain Path: /languages/
+ *
+ * @package fe-search-ai
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -25,7 +27,7 @@ define( 'FE_SEARCH_AI_PRO_URL', 'https://www.firstelement.co.jp/en/products/fe-s
  *  Custom Autoloader
  */
 spl_autoload_register(
-	function ( $class ) {
+	function ( $class_name ) {
 		$prefixes = [
 			'FESearchAI\\',
 			'FESearchAI\\',
@@ -35,7 +37,7 @@ spl_autoload_register(
 		$matched_prefix = null;
 		foreach ( $prefixes as $prefix ) {
 			$len = strlen( $prefix );
-			if ( strncmp( $prefix, $class, $len ) === 0 ) {
+			if ( strncmp( $prefix, $class_name, $len ) === 0 ) {
 				$matched_prefix = $prefix;
 				break;
 			}
@@ -44,7 +46,7 @@ spl_autoload_register(
 			return;
 		}
 
-		$relative_class = substr( $class, strlen( $matched_prefix ) );
+		$relative_class = substr( $class_name, strlen( $matched_prefix ) );
 
 		$psr4_file = $base_dir . str_replace( '\\', '/', $relative_class ) . '.php';
 		if ( file_exists( $psr4_file ) ) {
@@ -52,9 +54,9 @@ spl_autoload_register(
 			return;
 		}
 
-		$parts        = explode( '\\', $relative_class );
-		$class_name   = array_pop( $parts );
-		$wp_file_name = 'class-' . str_replace( '_', '-', strtolower( $class_name ) ) . '.php';
+		$parts            = explode( '\\', $relative_class );
+		$short_class_name = array_pop( $parts );
+		$wp_file_name     = 'class-' . str_replace( '_', '-', strtolower( $short_class_name ) ) . '.php';
 
 		$wp_file_path = $base_dir . strtolower( implode( '/', $parts ) );
 		if ( ! empty( $parts ) ) {
