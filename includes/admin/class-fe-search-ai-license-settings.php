@@ -225,7 +225,14 @@ class FE_Search_AI_License_Settings {
 							</ul>
 						</li>
 					</ul>
-					<a href="https://www.firstelement.co.jp/products/fe-search-ai-pro/" target="_blank" class="button button-primary button-hero">
+					<?php
+					$current_locale = function_exists( 'determine_locale' ) ? determine_locale() : get_locale();
+					$is_japanese    = is_string( $current_locale ) && 0 === strpos( strtolower( $current_locale ), 'ja' );
+					$pro_url        = $is_japanese
+						? 'https://www.firstelement.co.jp/products/fe-search-ai-plugin/'
+						: 'https://www.firstelement.co.jp/en/products/fe-search-ai-plugin/';
+					?>
+					<a href="<?php echo esc_url( $pro_url ); ?>" target="_blank" class="button button-primary button-hero">
 						<?php esc_html_e( 'View FE Search AI Pro Details', 'fe-search-ai' ); ?>
 					</a>
 				</div>
