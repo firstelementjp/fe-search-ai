@@ -169,6 +169,8 @@ class FE_Search_AI_Sync_Hooks {
 				$summary_hash = isset( $summary_hashes[ $index ] ) ? (string) $summary_hashes[ $index ] : '';
 
 				// Insert the vector data into the vectors table.
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+				// Direct insert required for custom table.
 				$wpdb->insert(
 					$vectors_table,
 					[
@@ -194,6 +196,8 @@ class FE_Search_AI_Sync_Hooks {
 					foreach ( $keywords as $keyword ) {
 						// Skip very short keywords (often noise).
 						if ( mb_strlen( $keyword ) > 1 ) {
+							// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+							// Direct insert required for custom table.
 							$wpdb->insert(
 								$index_table,
 								[
@@ -237,6 +241,8 @@ class FE_Search_AI_Sync_Hooks {
 
 		// Find all vector IDs for the post.
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
 		// Table name is interpolated but controlled internally, post_id is prepared.
 		$vector_ids = $wpdb->get_col( $wpdb->prepare( "SELECT id FROM `{$vectors_table}` WHERE `post_id` = %d", $post_id ) );
 
@@ -245,11 +251,15 @@ class FE_Search_AI_Sync_Hooks {
 			// Delete keyword index entries.
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
 			// Table name is interpolated but controlled internally, placeholders are for IN clause, vector_ids are prepared.
 			$wpdb->query( $wpdb->prepare( "DELETE FROM `{$index_table}` WHERE `vector_id` IN ( {$placeholders} )", $vector_ids ) );
 			// Delete vectors.
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
 			// Table name is interpolated but controlled internally, placeholders are for IN clause, vector_ids are prepared.
 			$wpdb->query( $wpdb->prepare( "DELETE FROM `{$vectors_table}` WHERE `id` IN ( {$placeholders} )", $vector_ids ) );
 		}

@@ -63,6 +63,9 @@ class FE_Search_AI_Logger {
 		$table_name = $wpdb->prefix . 'fe_search_ai_system_logs';
 
 		// Check if the table exists to prevent errors.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+		// Direct query required for custom table check.
 		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) !== $table_name ) {
 			return;
 		}
@@ -101,6 +104,8 @@ class FE_Search_AI_Logger {
 
 		$data = apply_filters( 'fe_search_ai_system_log_payload', $data, $level, $message );
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// Direct insert required for custom table.
 		$wpdb->insert(
 			$table_name,
 			[
@@ -163,12 +168,17 @@ class FE_Search_AI_Logger {
 		$table_name = $wpdb->prefix . 'fe_search_ai_system_logs';
 
 		// Check if the table exists before attempting to truncate.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+		// Direct query required for custom table check.
 		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) !== $table_name ) {
 			return;
 		}
 
 		// Use TRUNCATE to efficiently delete all rows.
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
 		// Table name is interpolated but controlled internally.
 		$wpdb->query( "TRUNCATE TABLE `{$table_name}`" );
 	}
@@ -187,6 +197,9 @@ class FE_Search_AI_Logger {
 		$table_name = $wpdb->prefix . 'fe_search_ai_system_logs';
 
 		// Check if the table exists before attempting to rotate.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+		// Direct query required for custom table check.
 		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) !== $table_name ) {
 			return;
 		}
@@ -197,6 +210,9 @@ class FE_Search_AI_Logger {
 		$cutoff_date    = gmdate( 'Y-m-d H:i:s', $cutoff_ts );
 
 		// Delete old log entries
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+		// Direct query required for custom table.
 		$wpdb->query(
 			$wpdb->prepare(
 				'DELETE FROM `' . esc_sql( $table_name ) . '` WHERE created_at < %s',
@@ -217,12 +233,18 @@ class FE_Search_AI_Logger {
 	public static function rotate_conversation_logs() {
 		global $wpdb;
 		$table_name = $wpdb->prefix . 'fe_search_ai_logs';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+		// Direct query required for custom table check.
 		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) !== $table_name ) {
 			return;
 		}
 		$retention_days = apply_filters( 'fe_search_ai_conversation_log_retention_days', 7 );
 		$cutoff_ts      = time() - ( (int) $retention_days * DAY_IN_SECONDS );
 		$cutoff_date    = gmdate( 'Y-m-d H:i:s', $cutoff_ts );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+		// Direct query required for custom table.
 		$wpdb->query(
 			$wpdb->prepare(
 				'DELETE FROM `' . esc_sql( $table_name ) . '` WHERE created_at < %s',
