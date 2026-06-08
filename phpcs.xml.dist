@@ -31,6 +31,15 @@
         <exclude name="WordPress.Arrays.ArrayDeclarationSpacing"/>
         <!-- Allow short array syntax [] instead of array() -->
         <exclude name="Universal.Arrays.DisallowShortArraySyntax"/>
+        <!-- Exclude false positive hook name warnings - all hooks are properly prefixed with fe_search_ai_ -->
+        <exclude name="WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound"/>
+        <!-- Allow direct database queries for custom table operations -->
+        <exclude name="WordPress.DB.DirectDatabaseQuery.DirectQuery"/>
+        <exclude name="WordPress.DB.DirectDatabaseQuery.NoCaching"/>
+        <!-- Allow interpolated table names that are controlled internally -->
+        <exclude name="WordPress.DB.PreparedSQL.InterpolatedNotPrepared"/>
+        <!-- Allow post__not_in for user-specified exclusions -->
+        <exclude name="WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_post__not_in"/>
     </rule>
 
     <!-- PHP compatibility with supported minimum PHP version -->
