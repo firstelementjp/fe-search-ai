@@ -43,6 +43,17 @@ _test-*.php export-ignore
 _debug_prompt.txt export-ignore
 _license_db_format.txt export-ignore
 _chunk-sample.txt export-ignore
+tests/ export-ignore
+wp-tests-config.php export-ignore
+wp-tests-config.php.example export-ignore
+phpunit.xml export-ignore
+
+# Exclude documentation (keep LICENSE for release, use readme.txt for WordPress.org)
+README.md export-ignore
+AGENT.md export-ignore
+docs/ export-ignore
+SECURITY.md export-ignore
+CONTRIBUTING.md export-ignore
 
 # Exclude build artifacts
 *.zip export-ignore

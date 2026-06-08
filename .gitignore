@@ -36,6 +36,13 @@ tests/coverage/
 tests/results/
 phpunit-coverage/
 wp-tests-config.php
+wp-tests-config.php.example
+phpunit.xml
+
+# Documentation and contribution files (excluded from release)
+docs/
+SECURITY.md
+CONTRIBUTING.md
 
 # OS files
 .DS_Store

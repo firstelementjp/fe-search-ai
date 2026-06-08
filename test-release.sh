@@ -29,6 +29,15 @@ npm run build --silent
 echo "=== Create release tree from git archive ==="
 git archive --format=tar --prefix=fe-search-ai/ --worktree-attributes HEAD | tar -x -C "$TMPDIR"
 
+# Remove development files explicitly (additional safety)
+echo "=== Remove development files ==="
+rm -rf "$TMPDIR/fe-search-ai/tests"
+rm -rf "$TMPDIR/fe-search-ai/docs"
+rm -f "$TMPDIR/fe-search-ai/SECURITY.md"
+rm -f "$TMPDIR/fe-search-ai/CONTRIBUTING.md"
+rm -f "$TMPDIR/fe-search-ai/wp-tests-config.php.example"
+rm -f "$TMPDIR/fe-search-ai/phpunit.xml"
+
 # Inject vendor directory (required for WordPress plugin)
 echo "=== Inject vendor directory ==="
 cp -r vendor "$TMPDIR/fe-search-ai/"
