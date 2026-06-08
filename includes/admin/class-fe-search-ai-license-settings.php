@@ -169,7 +169,6 @@ class FE_Search_AI_License_Settings {
 						<li>
 							<h4><?php esc_html_e( 'Display', 'fe-search-ai' ); ?></h4>
 							<ul>
-								<li><?php esc_html_e( 'Configure detailed display rules for the chat window (by post type, page type, etc.)', 'fe-search-ai' ); ?></li>
 								<li><?php esc_html_e( 'Configure a dedicated page for full-screen chat view', 'fe-search-ai' ); ?></li>
 								<li>
 									<?php esc_html_e( 'User consent opt-in feature', 'fe-search-ai' ); ?>
@@ -194,11 +193,6 @@ class FE_Search_AI_License_Settings {
 									<ul>
 										<li><?php esc_html_e( 'Limit the number of requests per IP address per hour', 'fe-search-ai' ); ?></li>
 										<li><?php esc_html_e( 'Limit the total number of requests per site per day', 'fe-search-ai' ); ?></li>
-									</ul>
-								</li>
-								<li>
-									<?php esc_html_e( 'Notification settings', 'fe-search-ai' ); ?>
-									<ul>
 										<li><?php esc_html_e( 'Configure thresholds for sending notifications to administrators', 'fe-search-ai' ); ?></li>
 										<li><?php esc_html_e( 'Configure notification email addresses', 'fe-search-ai' ); ?></li>
 									</ul>
