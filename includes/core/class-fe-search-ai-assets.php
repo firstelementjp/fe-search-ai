@@ -219,6 +219,8 @@ class FE_Search_AI_Assets {
 			return;
 		}
 
+		// phpcs:ignore PluginCheck.CodeAnalysis.EnqueuedResourceOffloading.OffloadedContent
+		// External CDN resource used for markdown parsing.
 		wp_enqueue_script(
 			'fe-search-ai-marked',
 			'https://cdn.jsdelivr.net/npm/marked/marked.min.js',

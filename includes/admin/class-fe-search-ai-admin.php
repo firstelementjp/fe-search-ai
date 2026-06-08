@@ -167,6 +167,8 @@ class FE_Search_AI_Admin {
 		$admin_js       = 'assets/js/admin-scripts.js';
 
 		// Color picker (Pickr) styles.
+		// phpcs:ignore PluginCheck.CodeAnalysis.EnqueuedResourceOffloading.OffloadedContent
+		// External CDN resource used for Pickr color picker theme.
 		wp_enqueue_style(
 			'fe-search-ai-pickr',
 			'https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/classic.min.css',
@@ -180,9 +182,13 @@ class FE_Search_AI_Admin {
 			FE_SEARCH_AI_VERSION,
 			true
 		);
+		// phpcs:ignore PluginCheck.CodeAnalysis.EnqueuedResourceOffloading.OffloadedContent
+		// External CDN resource used for CodeMirror editor styles.
 		wp_enqueue_style(
 			'codemirror-css',
-			'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.css'
+			'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.css',
+			[],
+			FE_SEARCH_AI_VERSION
 		);
 		wp_enqueue_style(
 			'fe-search-ai-admin-style',
@@ -191,18 +197,22 @@ class FE_Search_AI_Admin {
 			FE_SEARCH_AI_VERSION
 		);
 
+		// phpcs:ignore PluginCheck.CodeAnalysis.EnqueuedResourceOffloading.OffloadedContent
+		// External CDN resource used for CodeMirror editor.
 		wp_enqueue_script(
 			'codemirror-js',
 			'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.js',
 			[],
-			false,
+			FE_SEARCH_AI_VERSION,
 			true
 		);
+		// phpcs:ignore PluginCheck.CodeAnalysis.EnqueuedResourceOffloading.OffloadedContent
+		// External CDN resource used for CodeMirror markdown mode.
 		wp_enqueue_script(
 			'codemirror-markdown',
 			'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/mode/markdown/markdown.min.js',
 			[ 'codemirror-js' ],
-			false,
+			FE_SEARCH_AI_VERSION,
 			true
 		);
 		wp_enqueue_script(
