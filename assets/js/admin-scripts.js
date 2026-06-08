@@ -549,6 +549,20 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	});
 
+	// Tab Link Handler (for in-page tab navigation links)
+	document.querySelectorAll('.fe-search-ai-tab-link').forEach(link => {
+		link.addEventListener('click', e => {
+			e.preventDefault();
+			const targetTabId = link.getAttribute('href');
+			const targetTab = document.querySelector(
+				`.nav-tab-wrapper a.nav-tab[href="${targetTabId}"]`
+			);
+			if (targetTab) {
+				targetTab.click();
+			}
+		});
+	});
+
 	// --- Animation Speed Slider UI ---
 	const animationSpeedSlider = document.querySelector('#fe_search_ai_animation_speed_slider');
 	if (animationSpeedSlider) {

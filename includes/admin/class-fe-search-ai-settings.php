@@ -447,7 +447,7 @@ class FE_Search_AI_Settings {
 					printf(
 						/* translators: 1: opening link tag, 2: closing link tag */
 						esc_html__( 'Please configure the Cohere API key in the %1$sAPI Keys section%2$s.', 'fe-search-ai' ),
-						'<a href="#tab_provider">',
+						'<a href="#tab_provider" class="fe-search-ai-tab-link">',
 						'</a>'
 					);
 					?>
@@ -556,7 +556,7 @@ class FE_Search_AI_Settings {
 					printf(
 						/* translators: 1: opening link tag, 2: closing link tag */
 						esc_html__( 'Please configure the Qdrant endpoint, API key, and collection in the %1$sAdvanced settings tab%2$s.', 'fe-search-ai' ),
-						'<a href="#tab_advanced">',
+						'<a href="#tab_advanced" class="fe-search-ai-tab-link">',
 						'</a>'
 					);
 					?>
