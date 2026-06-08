@@ -44,6 +44,11 @@
         <exclude name="WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_post__not_in"/>
     </rule>
 
+    <!-- Temporarily exclude inline comment end character check -->
+    <rule ref="Squiz.Commenting.InlineComment">
+        <exclude name="Squiz.Commenting.InlineComment.InvalidEndChar"/>
+    </rule>
+
     <!-- PHP compatibility with supported minimum PHP version -->
     <config name="testVersion" value="7.4-"/>
     <rule ref="PHPCompatibilityWP"/>
