@@ -236,13 +236,21 @@ class FE_Search_AI_Sync_Hooks {
 		$index_table   = $wpdb->prefix . 'fe_search_ai_keyword_index';
 
 		// Find all vector IDs for the post.
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// Table name is interpolated but controlled internally, post_id is prepared.
 		$vector_ids = $wpdb->get_col( $wpdb->prepare( "SELECT id FROM `{$vectors_table}` WHERE `post_id` = %d", $post_id ) );
 
 		if ( ! empty( $vector_ids ) ) {
 			$placeholders = implode( ', ', array_fill( 0, count( $vector_ids ), '%d' ) );
 			// Delete keyword index entries.
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+			// Table name is interpolated but controlled internally, placeholders are for IN clause, vector_ids are prepared.
 			$wpdb->query( $wpdb->prepare( "DELETE FROM `{$index_table}` WHERE `vector_id` IN ( {$placeholders} )", $vector_ids ) );
 			// Delete vectors.
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+			// Table name is interpolated but controlled internally, placeholders are for IN clause, vector_ids are prepared.
 			$wpdb->query( $wpdb->prepare( "DELETE FROM `{$vectors_table}` WHERE `id` IN ( {$placeholders} )", $vector_ids ) );
 		}
 	}
