@@ -221,10 +221,20 @@ class FE_Search_AI_Chat_UI {
 				'width'   => true,
 				'height'  => true,
 				'id'      => true,
+				'class'   => true,
+				'style'   => true,
 			];
 			$allowed_html['path'] = [
-				'd' => true,
+				'd'     => true,
+				'class' => true,
+				'style' => true,
 			];
+			// Allow style attribute on all elements for chat UI styling.
+			foreach ( $allowed_html as $tag => $attributes ) {
+				if ( is_array( $attributes ) ) {
+					$allowed_html[ $tag ]['style'] = true;
+				}
+			}
 			echo wp_kses( $html, $allowed_html );
 		}
 	}
