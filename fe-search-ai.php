@@ -6,6 +6,8 @@
  * Version:     0.9.0
  * Author:      FirstElement K.K., Daijiro Miyazawa
  * Author URI:  https://www.firstelement.co.jp/
+ * License:     GPLv2 or later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: fe-search-ai
  * Domain Path: /languages/
  */
