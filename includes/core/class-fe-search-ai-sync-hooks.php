@@ -106,6 +106,7 @@ class FE_Search_AI_Sync_Hooks {
 		} elseif ( function_exists( 'wpml_get_language_information' ) ) {
 			// WPML support: Get the language code using WPML filter.
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+			// phpcs:ignore PluginCheck.PluginTheme.NonPrefixedHooknameFound
 			// This is a third-party WPML plugin hook, not our own.
 			$lang_details = apply_filters( 'wpml_post_language_details', null, $post_id );
 			$lang_code    = $lang_details['language_code'] ?? ''; // e.g., 'en', 'ja'

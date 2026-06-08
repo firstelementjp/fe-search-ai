@@ -264,6 +264,7 @@ class FE_Search_AI_Sync_Handler {
 		} else {
 			$args['post_type'] = empty( $post_types_to_sync ) ? [ 'post', 'page' ] : $post_types_to_sync;
 			// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_post__not_in
+			// phpcs:ignore PluginCheck.Performance.PostNotIn
 			// Exclusion is necessary for user-specified post IDs to exclude from sync.
 			if ( ! empty( $exclude_ids ) ) {
 				$args['post__not_in'] = $exclude_ids;
