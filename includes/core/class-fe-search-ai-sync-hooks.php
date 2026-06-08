@@ -107,9 +107,9 @@ class FE_Search_AI_Sync_Hooks {
 			// WPML support: Get the language code using WPML filter.
 			// This is a third-party WPML plugin hook, not our own.
 			$lang_details = apply_filters( 'wpml_post_language_details', null, $post_id );
-			$lang_code    = $lang_details['language_code'] ?? ''; // e.g., 'en', 'ja'
+			$lang_code    = $lang_details['language_code'] ?? ''; // e.g., 'en', 'ja'.
 		} elseif ( function_exists( 'bogo_get_post_language' ) ) {
-			// Bogo stores language in post meta using the locale code
+			// Bogo stores language in post meta using the locale code.
 			$lang_code = get_post_meta( $post_id, '_locale', true );
 		}
 
@@ -117,7 +117,10 @@ class FE_Search_AI_Sync_Hooks {
 			$lang_code = get_locale();
 		}
 
-		$lang_code = strstr( $lang_code, '_', true ) ?: $lang_code;
+		$lang_code_extracted = strstr( $lang_code, '_', true );
+		if ( false !== $lang_code_extracted ) {
+			$lang_code = $lang_code_extracted;
+		}
 
 		/**
 		 * Filters the detected language code for a post being indexed.
@@ -133,7 +136,7 @@ class FE_Search_AI_Sync_Hooks {
 
 		$this->delete_post_from_index( $post_id );
 
-		// Returns array like: [['content_chunk' => '...', 'permalink' => '...'], ...]
+		// Returns array of chunks with metadata including content and permalink.
 		$chunks_with_meta = $this->sync_handler->create_chunks_from_post( $post );
 		if ( empty( $chunks_with_meta ) ) {
 			return;
@@ -222,7 +225,7 @@ class FE_Search_AI_Sync_Hooks {
 			if ( ! isset( $state['status'] ) || ! is_array( $state['status'] ) ) {
 				$state['status'] = [];
 			}
-			$state['status']['last_sync_timestamp'] = current_time( 'timestamp' );
+			$state['status']['last_sync_timestamp'] = current_time( 'mysql' );
 			update_option( 'fe_search_ai_sync_state', $state );
 		}
 	}
