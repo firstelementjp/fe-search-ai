@@ -932,6 +932,8 @@ class FE_Search_AI_Settings {
 				<p>
 					<?php
 						/* translators: 1: opening code tag, 2: closing code tag, 3: opening link tag, 4: closing link tag */
+						// phpcs:ignore WordPress.WP.I18n.MissingTranslatorsComment
+						// Translators comment is present above.
 						printf(
 							esc_html__( 'You can change these limits from your theme or another plugin using the %1$sfe_search_ai_rate_limit_settings%2$s filter hook. For full sample code, please refer to the %3$sdocumentation%4$s.', 'fe-search-ai' ),
 							'<code>',
