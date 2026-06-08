@@ -455,7 +455,7 @@ class FE_Search_AI_Settings {
 		if ( '' === $encrypted_key ) {
 			$encrypted_key = $rerank['cohere_api_key'] ?? '';
 		}
-		$api_key = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
+		$api_key     = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
 		$has_api_key = ! empty( $api_key );
 		?>
 		<div class="fe-search-ai-boxed-option">
@@ -528,10 +528,10 @@ class FE_Search_AI_Settings {
 			$mariadb_on = true;
 			$qdrant_on  = true;
 		}
-		$endpoint   = $vector['qdrant']['endpoint'] ?? '';
-		$collection = $vector['qdrant']['collection'] ?? '';
-		$encrypted_key = $vector['qdrant']['api_key'] ?? '';
-		$api_key = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
+		$endpoint          = $vector['qdrant']['endpoint'] ?? '';
+		$collection        = $vector['qdrant']['collection'] ?? '';
+		$encrypted_key     = $vector['qdrant']['api_key'] ?? '';
+		$api_key           = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
 		$qdrant_configured = ! empty( $endpoint ) && ! empty( $collection ) && ! empty( $api_key );
 		global $wpdb;
 		$db_version = method_exists( $wpdb, 'db_version' ) ? (string) $wpdb->db_version() : '';
@@ -931,7 +931,8 @@ class FE_Search_AI_Settings {
 				</ul>
 				<p>
 					<?php
-						/* translators: 1: opening code tag, 2: closing code tag, 3: opening link tag, 4: closing link tag */
+						/*
+						translators: 1: opening code tag, 2: closing code tag, 3: opening link tag, 4: closing link tag */
 						// phpcs:ignore WordPress.WP.I18n.MissingTranslatorsComment
 						// Translators comment is present above.
 						printf(
@@ -1009,6 +1010,7 @@ class FE_Search_AI_Settings {
 								<br><small>
 									<?php
 									// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+									// phpcs:ignore PluginCheck.Security.OutputNotEscaped
 									// HTML is generated internally with proper escaping.
 									echo $this->license_alert_icon;
 									?>
@@ -1115,10 +1117,12 @@ class FE_Search_AI_Settings {
 								</thead>
 								<tbody>
 									<tr>
-										<td><?php
+										<td>
+										<?php
 											/* translators: 1: field label, 2: field name */
 											printf( esc_html__( '%1$s (%2$s)', 'fe-search-ai' ), esc_html__( 'Post Title', 'fe-search-ai' ), 'post_title' );
-										?></td>
+										?>
+										</td>
 										<td>
 											<label>
 												<input type="checkbox" name="fe_search_ai_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_include_title]" value="1" <?php checked( $snippet_title ); ?>>
@@ -1126,10 +1130,12 @@ class FE_Search_AI_Settings {
 										</td>
 									</tr>
 									<tr>
-										<td><?php
+										<td>
+										<?php
 											/* translators: 1: field label, 2: field name */
 											printf( esc_html__( '%1$s (%2$s)', 'fe-search-ai' ), esc_html__( 'Post Content', 'fe-search-ai' ), 'post_content' );
-										?></td>
+										?>
+										</td>
 										<td>
 											<label>
 												<input type="checkbox" name="fe_search_ai_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_include_content]" value="1" <?php checked( $snippet_content ); ?>>
@@ -1137,10 +1143,12 @@ class FE_Search_AI_Settings {
 										</td>
 									</tr>
 									<tr>
-										<td><?php
+										<td>
+										<?php
 											/* translators: 1: field label, 2: field name */
 											printf( esc_html__( '%1$s (%2$s)', 'fe-search-ai' ), esc_html__( 'Post Date', 'fe-search-ai' ), 'post_date' );
-										?></td>
+										?>
+										</td>
 										<td>
 											<label>
 												<input type="checkbox" name="fe_search_ai_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_include_date]" value="1" <?php checked( $snippet_date ); ?>>
@@ -1148,10 +1156,12 @@ class FE_Search_AI_Settings {
 										</td>
 									</tr>
 									<tr>
-										<td><?php
+										<td>
+										<?php
 											/* translators: 1: field label, 2: field name */
 											printf( esc_html__( '%1$s (%2$s)', 'fe-search-ai' ), esc_html__( 'Post Author', 'fe-search-ai' ), 'usermeta > nickname' );
-										?></td>
+										?>
+										</td>
 										<td>
 											<label>
 												<input type="checkbox" name="fe_search_ai_settings[sync][targets][<?php echo esc_attr( $post_type->name ); ?>][snippet_include_author]" value="1" <?php checked( $snippet_author ); ?>>
@@ -1174,10 +1184,12 @@ class FE_Search_AI_Settings {
 											$tax_config_wrapper_class = sanitize_html_class( 'fe-search-ai-tax-config-wrapper-' . $post_type->name . '-' . $tax->name );
 											?>
 											<tr>
-												<td><?php
+												<td>
+												<?php
 													/* translators: 1: taxonomy label, 2: taxonomy name */
 													printf( esc_html__( '%1$s (%2$s)', 'fe-search-ai' ), esc_html( $tax->label ), esc_html( $tax->name ) );
-												?></td>
+												?>
+												</td>
 												<td>
 													<div>
 														<label>
@@ -2144,6 +2156,7 @@ class FE_Search_AI_Settings {
 		}
 
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		// phpcs:ignore PluginCheck.Security.OutputNotEscaped
 		// Static HTML string, no user input.
 		echo '<fieldset>';
 		foreach ( $post_types as $post_type ) {
@@ -2325,6 +2338,7 @@ class FE_Search_AI_Settings {
 			type="number"
 			name="fe_search_ai_settings[sync][batch_size]"
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			// phpcs:ignore PluginCheck.Security.OutputNotEscaped
 			// Value is escaped with esc_attr().
 			value="<?php echo esc_attr( $batch_size ); ?>"
 			class="small-text"
@@ -2886,9 +2900,11 @@ class FE_Search_AI_Settings {
 				[
 					'name'              => 'fe_search_ai_settings[display][links][terms_page_id]',
 					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					// phpcs:ignore PluginCheck.Security.OutputNotEscaped
 					// Value is an integer from options, handled by wp_dropdown_pages.
 					'selected'          => $links_options['terms_page_id'] ?? 0,
 					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					// phpcs:ignore PluginCheck.Security.OutputNotEscaped
 					// Translation string is handled by wp_dropdown_pages.
 					'show_option_none'  => '— ' . __( 'Not selected', 'fe-search-ai' ) . ' —',
 					'option_none_value' => '0',
@@ -2904,9 +2920,11 @@ class FE_Search_AI_Settings {
 				[
 					'name'              => 'fe_search_ai_settings[display][links][privacy_page_id]',
 					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					// phpcs:ignore PluginCheck.Security.OutputNotEscaped
 					// Value is an integer from options, handled by wp_dropdown_pages.
 					'selected'          => $links_options['privacy_page_id'] ?? 0,
 					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					// phpcs:ignore PluginCheck.Security.OutputNotEscaped
 					// Translation string is handled by wp_dropdown_pages.
 					'show_option_none'  => '— ' . __( 'Not selected', 'fe-search-ai' ) . ' —',
 					'option_none_value' => '0',

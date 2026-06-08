@@ -387,13 +387,13 @@ class FE_Search_AI_Sync_Handler {
 
 		// Find deleted posts
 		global $wpdb;
-		$vectors_table         = $wpdb->prefix . 'fe_search_ai_vectors';
+		$vectors_table = $wpdb->prefix . 'fe_search_ai_vectors';
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
 		// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter
 		// Table name is interpolated but controlled internally.
-		$indexed_post_ids = array_map( 'intval', $wpdb->get_col( "SELECT DISTINCT post_id FROM {$vectors_table}" ) );
+		$indexed_post_ids      = array_map( 'intval', $wpdb->get_col( "SELECT DISTINCT post_id FROM {$vectors_table}" ) );
 		$all_existing_post_ids = array_map(
 			'intval',
 			get_posts(
@@ -535,7 +535,7 @@ class FE_Search_AI_Sync_Handler {
 			check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
 
 			// Process input data
-			$page          = isset( $_POST['page'] ) ? absint( $_POST['page'] ) : 1;
+			$page = isset( $_POST['page'] ) ? absint( $_POST['page'] ) : 1;
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			// Input is JSON string, validated by json_decode().
@@ -799,8 +799,8 @@ class FE_Search_AI_Sync_Handler {
 				continue;
 			}
 
-			$chunk          = $chunks_with_meta[ $index ];
-			$summary_text   = isset( $chunk['summary_text'] ) ? (string) $chunk['summary_text'] : '';
+			$chunk        = $chunks_with_meta[ $index ];
+			$summary_text = isset( $chunk['summary_text'] ) ? (string) $chunk['summary_text'] : '';
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 			// Hook name is properly prefixed with fe_search_ai_.
 			$snippet_length = (int) apply_filters( 'fe_search_ai_qdrant_snippet_length', 1000, $post, $chunk );
@@ -910,8 +910,8 @@ class FE_Search_AI_Sync_Handler {
 		$prompt  = $this->build_default_summary_prompt( $context, $lang_code );
 		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		// Hook name is properly prefixed with fe_search_ai_.
-		$prompt  = apply_filters( 'fe_search_ai_chunk_summary_generation_prompt', $prompt, $context, $chunk_item, $post, $lang_code );
-		$result  = $this->request_chat_completion_for_summary( $prompt );
+		$prompt = apply_filters( 'fe_search_ai_chunk_summary_generation_prompt', $prompt, $context, $chunk_item, $post, $lang_code );
+		$result = $this->request_chat_completion_for_summary( $prompt );
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
@@ -1521,7 +1521,7 @@ class FE_Search_AI_Sync_Handler {
 	private function merge_hybrid_search_results( $qdrant_results, $keyword_results, $question, $sequence_id = '' ) {
 		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		// Hook name is properly prefixed with fe_search_ai_.
-		$rrf_k       = (int) apply_filters( 'fe_search_ai_hybrid_rrf_k', 60, $question );
+		$rrf_k = (int) apply_filters( 'fe_search_ai_hybrid_rrf_k', 60, $question );
 		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		// Hook name is properly prefixed with fe_search_ai_.
 		$max_results = (int) apply_filters( 'fe_search_ai_hybrid_search_limit', 100, $question );
@@ -2474,6 +2474,8 @@ class FE_Search_AI_Sync_Handler {
 		}
 
 		// What happens when a user clicks on a "hidden" link?
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		// This is a dismiss action, not a form submission.
 		if ( isset( $_GET['fe-search-ai-dismiss-i18n-notice'] ) ) {
 			// Flag to hide this notification for one week
 			set_transient( 'fe_search_ai_i18n_notice_dismissed', true, WEEK_IN_SECONDS );
