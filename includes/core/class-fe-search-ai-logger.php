@@ -67,6 +67,8 @@ class FE_Search_AI_Logger {
 		// Check if the table exists to prevent errors.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore PluginCheck.Security.DirectDatabaseQuery
+		// phpcs:ignore PluginCheck.Security.NoCaching
 		// Direct query required for custom table check.
 		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) !== $table_name ) {
 			return;
@@ -111,6 +113,7 @@ class FE_Search_AI_Logger {
 		$data = apply_filters( 'fe_search_ai_system_log_payload', $data, $level, $message );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:ignore PluginCheck.Security.DirectDatabaseQuery
 		// Direct insert required for custom table.
 		$wpdb->insert(
 			$table_name,
@@ -176,6 +179,8 @@ class FE_Search_AI_Logger {
 		// Check if the table exists before attempting to truncate.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore PluginCheck.Security.DirectDatabaseQuery
+		// phpcs:ignore PluginCheck.Security.NoCaching
 		// Direct query required for custom table check.
 		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) !== $table_name ) {
 			return;
@@ -207,6 +212,8 @@ class FE_Search_AI_Logger {
 		// Check if the table exists before attempting to rotate.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore PluginCheck.Security.DirectDatabaseQuery
+		// phpcs:ignore PluginCheck.Security.NoCaching
 		// Direct query required for custom table check.
 		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) !== $table_name ) {
 			return;
@@ -222,6 +229,8 @@ class FE_Search_AI_Logger {
 		// Delete old log entries
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore PluginCheck.Security.DirectDatabaseQuery
+		// phpcs:ignore PluginCheck.Security.NoCaching
 		// Direct query required for custom table.
 		$wpdb->query(
 			$wpdb->prepare(
@@ -245,6 +254,8 @@ class FE_Search_AI_Logger {
 		$table_name = $wpdb->prefix . 'fe_search_ai_logs';
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore PluginCheck.Security.DirectDatabaseQuery
+		// phpcs:ignore PluginCheck.Security.NoCaching
 		// Direct query required for custom table check.
 		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) !== $table_name ) {
 			return;
@@ -256,6 +267,8 @@ class FE_Search_AI_Logger {
 		$cutoff_date    = gmdate( 'Y-m-d H:i:s', $cutoff_ts );
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore PluginCheck.Security.DirectDatabaseQuery
+		// phpcs:ignore PluginCheck.Security.NoCaching
 		// Direct query required for custom table.
 		$wpdb->query(
 			$wpdb->prepare(
