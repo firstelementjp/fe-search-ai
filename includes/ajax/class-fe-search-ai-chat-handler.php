@@ -1964,6 +1964,8 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 
 		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// Direct query required for custom table.
 		global $wpdb;
 		$logs_table = $wpdb->prefix . 'fe_search_ai_logs';
 
@@ -2019,6 +2021,9 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 			$log_row['question']      = $enable_question_logging ? (string) ( $log_row['question'] ?? '' ) : sprintf( 'User question is not logged. (length: %d chars)', max( 0, $question_len ) );
 			$log_row['answer']        = $enable_answer_logging ? (string) ( $log_row['answer'] ?? '' ) : sprintf( 'AI answer is not logged. (length: %d chars)', max( 0, $answer_length ) );
 
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+			// Direct insert required for custom table.
 			$wpdb->insert( $logs_table, $log_row );
 			$log_id = $wpdb->insert_id;
 		}
@@ -2072,11 +2077,15 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 			return;
 		}
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// Direct query required for custom table.
 		global $wpdb;
 		$logs_table = $wpdb->prefix . 'fe_search_ai_logs';
 
 		// Get logs for this session with rating information
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
 		// Table name is interpolated but controlled internally, session_id is prepared.
 		$logs = $wpdb->get_results(
 			$wpdb->prepare(
