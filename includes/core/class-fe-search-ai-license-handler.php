@@ -86,6 +86,8 @@ class FE_Search_AI_License_Handler {
 			'site_url'          => $site_url,
 			'product_id'        => $product_id,
 			'productId'         => $product_id,
+			'product_ids'       => implode( ',', FE_Search_AI_License::get_paid_product_ids() ),
+			'productIds'        => wp_json_encode( FE_Search_AI_License::get_paid_product_ids() ),
 			'environment_type'  => $environment_type,
 			'is_non_production' => $is_non_production ? '1' : '0',
 		];

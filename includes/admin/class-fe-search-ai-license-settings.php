@@ -270,14 +270,12 @@ class FE_Search_AI_License_Settings {
 	 */
 	public function field_html() {
 		$license_data = get_option( 'fe_search_ai_license', [] );
-		$products     = $license_data['products'] ?? [];
-		$product_id   = \FESearchAI\Core\FE_Search_AI_License::PRODUCT_ID_PRO;
+		$paid_entry   = \FESearchAI\Core\FE_Search_AI_License::get_paid_product_entry();
 
 		// Get and decrypt the Pro license key.
 		$license_key = '';
-		if ( isset( $products[ $product_id ]['key'] ) ) {
-			$encrypted_key = $products[ $product_id ]['key'];
-			$license_key   = \FESearchAI\Core\FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
+		if ( ! empty( $paid_entry['key'] ) ) {
+			$license_key = \FESearchAI\Core\FE_Search_AI_Encryption_Helper::decrypt( $paid_entry['key'] );
 		}
 
 		$license_status = \FESearchAI\Core\FE_Search_AI_License::is_pro_active() ? 'active' : 'inactive';
@@ -307,9 +305,7 @@ class FE_Search_AI_License_Settings {
 				<?php esc_html_e( 'The license is valid.', 'fe-search-ai' ); ?>
 			</p>
 			<?php
-				// Get license data from the correct structure.
-				$products = $license_data['products'] ?? [];
-				$pro_data = $products[ $product_id ]['data'] ?? [];
+				$pro_data = $paid_entry['data'] ?? [];
 
 				$expires_at          = $pro_data['expiresAt'] ?? '';
 				$times_activated     = $pro_data['timesActivated'] ?? null;
