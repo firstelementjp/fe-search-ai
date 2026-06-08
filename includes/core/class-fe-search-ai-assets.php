@@ -55,12 +55,7 @@ class FE_Search_AI_Assets {
 	 * Load scripts and styles for the front end.
 	 */
 	public function enqueue_assets() {
-		// License settings values
-		$license_data      = get_option( 'fe_search_ai_license', [] );
-		$status            = $license_data['status'] ?? 'inactive';
-		$data              = $license_data['data'] ?? [];
-		$product_id        = isset( $data['productId'] ) ? (int) $data['productId'] : 0;
-		$is_license_active = ( 'active' === $status && 65 === $product_id ); // 65 is the product ID for the Pro add-on.
+		$is_license_active = FE_Search_AI_License::is_pro_active();
 
 		// Pro settings (used for rate limiting and privacy configuration).
 		$pro_options = [];

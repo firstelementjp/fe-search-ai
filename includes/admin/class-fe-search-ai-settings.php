@@ -67,8 +67,6 @@ class FE_Search_AI_Settings {
 		// Retrieve all configuration data
 		$this->options = get_option( 'fe_search_ai_settings', [] );
 
-		// Treat the license as active when the status is "active" and the product ID
-		// matches the Pro add-on (productId = 65 in License Manager for WooCommerce).
 		$this->is_license_active = FE_Search_AI_License::is_pro_active();
 
 		if ( class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) && ! $this->is_license_active ) {

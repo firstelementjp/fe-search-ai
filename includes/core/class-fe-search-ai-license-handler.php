@@ -66,7 +66,11 @@ class FE_Search_AI_License_Handler {
 			return [ 'success' => false, 'message' => __( 'The license key has not been entered.', 'fe-search-ai' ) ];
 		}
 
-		$product_id = (int) FE_Search_AI_License::PRODUCT_ID_PRO;
+		$product_id        = (int) FE_Search_AI_License::PRODUCT_ID_PRO;
+		$home_url          = home_url();
+		$site_url          = site_url();
+		$environment_type  = function_exists( 'wp_get_environment_type' ) ? wp_get_environment_type() : 'production';
+		$is_non_production = $this->is_non_production_environment( $environment_type, [ $home_url, $site_url ] );
 
 		// Call the vendor's proxy API instead of the LMFWC REST API directly so that
 		// sensitive consumer keys remain on the server side only.
@@ -75,12 +79,15 @@ class FE_Search_AI_License_Handler {
 		}
 
 		$request_body = [
-			'action'      => $action,
-			'license_key' => $license_key,
-			'instance'    => home_url(),
-			'site_url'    => home_url(),
-			'product_id'  => $product_id,
-			'productId'   => $product_id,
+			'action'            => $action,
+			'license_key'       => $license_key,
+			'instance'          => $home_url,
+			'home_url'          => $home_url,
+			'site_url'          => $site_url,
+			'product_id'        => $product_id,
+			'productId'         => $product_id,
+			'environment_type'  => $environment_type,
+			'is_non_production' => $is_non_production ? '1' : '0',
 		];
 
 		$response = wp_remote_post(
@@ -126,5 +133,40 @@ class FE_Search_AI_License_Handler {
 			'status'  => $license_status,
 			'data'    => $data['data'] ?? [],
 		];
+	}
+
+	/**
+	 * Determines whether the current site appears to be non-production.
+	 *
+	 * @param string $environment_type WordPress environment type.
+	 * @param array  $urls             URLs to inspect.
+	 * @return bool
+	 */
+	private function is_non_production_environment( string $environment_type, array $urls ): bool {
+		if ( 'production' !== $environment_type ) {
+			return true;
+		}
+
+		foreach ( $urls as $url ) {
+			$host = wp_parse_url( (string) $url, PHP_URL_HOST );
+			if ( ! is_string( $host ) || '' === $host ) {
+				continue;
+			}
+
+			$host = strtolower( $host );
+			if ( in_array( $host, [ 'localhost', '127.0.0.1' ], true ) ) {
+				return true;
+			}
+
+			if ( preg_match( '/(^|[.\\-])(staging|stage|test|dev|development|local)([.\\-]|$)/', $host ) ) {
+				return true;
+			}
+
+			if ( preg_match( '/\\.(local|test|dev)$/', $host ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 }

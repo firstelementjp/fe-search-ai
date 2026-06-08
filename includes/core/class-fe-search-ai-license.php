@@ -24,7 +24,7 @@ class FE_Search_AI_License {
 	 * These IDs are provisional and should be kept in sync with the
 	 * WooCommerce products used by the license server.
 	 */
-	public const PRODUCT_ID_PRO = 65;
+	public const PRODUCT_ID_PRO = 4328;
 
 	/**
 	 * Returns all product license entries indexed by productId.

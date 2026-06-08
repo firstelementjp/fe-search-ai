@@ -271,11 +271,12 @@ class FE_Search_AI_License_Settings {
 	public function field_html() {
 		$license_data = get_option( 'fe_search_ai_license', [] );
 		$products     = $license_data['products'] ?? [];
+		$product_id   = \FESearchAI\Core\FE_Search_AI_License::PRODUCT_ID_PRO;
 
-		// Get and decrypt the Pro license key (product ID 65)
+		// Get and decrypt the Pro license key.
 		$license_key = '';
-		if ( isset( $products[65]['key'] ) ) {
-			$encrypted_key = $products[65]['key'];
+		if ( isset( $products[ $product_id ]['key'] ) ) {
+			$encrypted_key = $products[ $product_id ]['key'];
 			$license_key   = \FESearchAI\Core\FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
 		}
 
@@ -306,14 +307,15 @@ class FE_Search_AI_License_Settings {
 				<?php esc_html_e( 'The license is valid.', 'fe-search-ai' ); ?>
 			</p>
 			<?php
-				// Get license data from the correct structure
+				// Get license data from the correct structure.
 				$products = $license_data['products'] ?? [];
-				$pro_data = $products[65]['data'] ?? [];
+				$pro_data = $products[ $product_id ]['data'] ?? [];
 
 				$expires_at          = $pro_data['expiresAt'] ?? '';
 				$times_activated     = $pro_data['timesActivated'] ?? null;
 				$times_activated_max = $pro_data['timesActivatedMax'] ?? null;
 				$remaining_days      = '';
+				$is_non_production   = ! empty( $pro_data['non_production'] );
 
 			if ( ! empty( $expires_at ) ) {
 				try {
@@ -356,6 +358,11 @@ class FE_Search_AI_License_Settings {
 				);
 				?>
 			</p>
+			<?php if ( $is_non_production ) : ?>
+				<p class="description">
+					<?php esc_html_e( 'This site is detected as a non-production environment and does not count toward your activation limit.', 'fe-search-ai' ); ?>
+				</p>
+			<?php endif; ?>
 
 		<?php else : ?>
 
