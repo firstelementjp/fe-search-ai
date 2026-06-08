@@ -125,7 +125,9 @@ class FE_Search_AI_License_Handler {
 		}
 
 		$license_status = 'inactive';
-		if ( ! empty( $data['success'] ) && ! empty( $data['data'] ) && isset( $data['data']['status'] ) ) {
+		if ( ! empty( $data['success'] ) && isset( $data['status'] ) && in_array( $data['status'], [ 'active', 'inactive' ], true ) ) {
+			$license_status = (string) $data['status'];
+		} elseif ( ! empty( $data['success'] ) && ! empty( $data['data'] ) && isset( $data['data']['status'] ) ) {
 			$license_status = ( 2 === (int) $data['data']['status'] ) ? 'active' : 'inactive';
 		}
 

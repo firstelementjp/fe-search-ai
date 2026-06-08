@@ -2538,17 +2538,6 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 		$handler = new \FESearchAI\Core\FE_Search_AI_License_Handler();
 		$result  = ( 'activate' === $action ) ? $handler->activate( $license_key ) : $handler->deactivate( $license_key );
 
-		// Determine the product ID from the remote response. If it's missing,
-		// fall back to the main Pro product ID.
-		$product_id = 0;
-		if ( isset( $result['data']['data']['productId'] ) ) {
-			$product_id = (int) $result['data']['data']['productId'];
-		} elseif ( isset( $result['data']['productId'] ) ) {
-			$product_id = (int) $result['data']['productId'];
-		} elseif ( class_exists( '\\FESearchAI\\Core\\FE_Search_AI_License' ) ) {
-			$product_id = \FESearchAI\Core\FE_Search_AI_License::PRODUCT_ID_PRO;
-		}
-
 		$all_licenses = get_option( 'fe_search_ai_license', [] );
 
 		// Ensure we have a proper array, handle legacy string format
@@ -2564,7 +2553,41 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 			$all_licenses['products'] = [];
 		}
 
+		$license_data = [];
+		if ( isset( $result['data']['data'] ) && is_array( $result['data']['data'] ) ) {
+			$license_data = $result['data']['data'];
+			foreach ( [ 'non_production', 'environment_type', 'home_url', 'site_url' ] as $metadata_key ) {
+				if ( array_key_exists( $metadata_key, $result['data'] ) ) {
+					$license_data[ $metadata_key ] = $result['data'][ $metadata_key ];
+				}
+			}
+		} elseif ( isset( $result['data'] ) && is_array( $result['data'] ) ) {
+			$license_data = $result['data'];
+		}
+
+		// Determine the product ID from the remote response. If it is missing,
+		// fall back to the currently stored paid product entry.
+		$product_id = 0;
+		if ( isset( $license_data['productId'] ) ) {
+			$product_id = (int) $license_data['productId'];
+		} elseif ( class_exists( '\\FESearchAI\\Core\\FE_Search_AI_License' ) ) {
+			$paid_entry = \FESearchAI\Core\FE_Search_AI_License::get_paid_product_entry();
+			$product_id = (int) ( $paid_entry['product_id'] ?? \FESearchAI\Core\FE_Search_AI_License::PRODUCT_ID_PRO );
+		}
+
 		if ( $result && $result['success'] ) {
+			if ( 'deactivate' === $action && class_exists( '\\FESearchAI\\Core\\FE_Search_AI_License' ) ) {
+				foreach ( \FESearchAI\Core\FE_Search_AI_License::get_paid_product_ids() as $paid_product_id ) {
+					if ( isset( $all_licenses['products'][ $paid_product_id ] ) && is_array( $all_licenses['products'][ $paid_product_id ] ) ) {
+						$all_licenses['products'][ $paid_product_id ]['status'] = 'inactive';
+					}
+				}
+
+				update_option( 'fe_search_ai_license', $all_licenses );
+				delete_transient( 'fe_search_ai_license_error' );
+				wp_send_json_success( [ 'message' => $result['message'] ] );
+			}
+
 			// Determine the local license status based on the requested action.
 			// For this site, a successful deactivation should always be treated as inactive,
 			// even if the remote license itself remains valid for other activations.
@@ -2581,7 +2604,7 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 				$all_licenses['products'][ $product_id ] = [
 					'key'    => $encrypted_key,
 					'status' => $local_status,
-					'data'   => $result['data'] ?? [],
+					'data'   => $license_data,
 				];
 			}
 
@@ -2594,7 +2617,7 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 				$all_licenses['products'][ $product_id ] = [
 					'key'    => \FESearchAI\Core\FE_Search_AI_Encryption_Helper::encrypt( $license_key ),
 					'status' => 'inactive',
-					'data'   => $result['data'] ?? [],
+					'data'   => $license_data,
 				];
 			}
 

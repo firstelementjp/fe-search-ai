@@ -309,7 +309,8 @@ class FE_Search_AI_License_Settings {
 
 				$expires_at          = $pro_data['expiresAt'] ?? '';
 				$times_activated     = $pro_data['timesActivated'] ?? null;
-				$times_activated_max = $pro_data['timesActivatedMax'] ?? null;
+				$has_activation_max  = array_key_exists( 'timesActivatedMax', $pro_data );
+				$times_activated_max = $has_activation_max ? $pro_data['timesActivatedMax'] : null;
 				$remaining_days      = '';
 				$is_non_production   = ! empty( $pro_data['non_production'] );
 
@@ -337,7 +338,11 @@ class FE_Search_AI_License_Settings {
 				);
 			}
 
+			if ( $has_activation_max ) {
 				$max_text = is_null( $times_activated_max ) ? __( 'Unlimited', 'fe-search-ai' ) : (string) (int) $times_activated_max;
+			} else {
+				$max_text = __( 'Unknown', 'fe-search-ai' );
+			}
 			?>
 			<?php if ( ! empty( $expires_text ) ) : ?>
 				<p class="description">
@@ -355,7 +360,7 @@ class FE_Search_AI_License_Settings {
 				?>
 			</p>
 			<?php if ( $is_non_production ) : ?>
-				<p class="description">
+				<p class="description" style="color: green; font-weight: bold;">
 					<?php esc_html_e( 'This site is detected as a non-production environment and does not count toward your activation limit.', 'fe-search-ai' ); ?>
 				</p>
 			<?php endif; ?>

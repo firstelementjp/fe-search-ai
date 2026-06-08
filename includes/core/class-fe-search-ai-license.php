@@ -94,8 +94,15 @@ class FE_Search_AI_License {
 			];
 		}
 
-		$paid_product_ids = self::get_paid_product_ids();
-		foreach ( $paid_product_ids as $paid_product_id ) {
+		foreach ( self::get_paid_product_ids() as $paid_product_id ) {
+			if ( isset( $products[ $paid_product_id ] ) && isset( $products[ $paid_product_id ]['status'] ) && 'active' === (string) $products[ $paid_product_id ]['status'] ) {
+				$entry      = $products[ $paid_product_id ];
+				$product_id = $paid_product_id;
+				break;
+			}
+		}
+
+		foreach ( self::get_paid_product_ids() as $paid_product_id ) {
 			if ( isset( $products[ $paid_product_id ] ) ) {
 				$entry      = $products[ $paid_product_id ];
 				$product_id = $paid_product_id;
@@ -163,6 +170,25 @@ class FE_Search_AI_License {
 	 */
 	public static function get_paid_product_entry() {
 		$products = self::get_products();
+
+		foreach ( self::get_paid_product_ids() as $product_id ) {
+			if ( ! isset( $products[ $product_id ] ) || ! is_array( $products[ $product_id ] ) ) {
+				continue;
+			}
+
+			$entry  = $products[ $product_id ];
+			$status = isset( $entry['status'] ) ? (string) $entry['status'] : 'inactive';
+			if ( 'active' !== $status ) {
+				continue;
+			}
+
+			return [
+				'product_id' => $product_id,
+				'key'        => isset( $entry['key'] ) ? (string) $entry['key'] : '',
+				'status'     => $status,
+				'data'       => isset( $entry['data'] ) && is_array( $entry['data'] ) ? $entry['data'] : [],
+			];
+		}
 
 		foreach ( self::get_paid_product_ids() as $product_id ) {
 			if ( ! isset( $products[ $product_id ] ) || ! is_array( $products[ $product_id ] ) ) {
