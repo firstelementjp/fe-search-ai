@@ -212,7 +212,20 @@ class FE_Search_AI_Chat_UI {
 			self::$is_rendered = true;
 			$this->assets_handler->enqueue_assets();
 			$html = $this->get_chat_ui_html( 'float' );
-			echo wp_kses_post( $html );
+			// Allow SVG and common HTML tags for chat UI.
+			$allowed_html = wp_kses_allowed_html( 'post' );
+			$allowed_html['svg'] = [
+				'xmlns'   => true,
+				'viewBox' => true,
+				'fill'    => true,
+				'width'   => true,
+				'height'  => true,
+				'id'      => true,
+			];
+			$allowed_html['path'] = [
+				'd' => true,
+			];
+			echo wp_kses( $html, $allowed_html );
 		}
 	}
 
