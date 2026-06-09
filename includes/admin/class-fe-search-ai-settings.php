@@ -1845,7 +1845,7 @@ class FE_Search_AI_Settings {
 	 *
 	 * This method outputs input fields for chat UI customization including
 	 * window title, greeting message, placeholder text, submit button text,
-	 * and color pickers for key color, background color, and text color.
+	 * and color pickers for bubble color, background color, and text color.
 	 * It also includes the gradient toggle option for visual styling.
 	 *
 	 * @since 0.9.0
@@ -1934,8 +1934,8 @@ class FE_Search_AI_Settings {
 					></div>
 				</div>
 				<div class="color-picker-box-right">
-					<label for="fe_search_ai_key_color"><?php esc_html_e( 'Key Color', 'fe-search-ai' ); ?></label>
-					<span class="description"><?php esc_html_e( 'Select the basic colors for chat bubbles and user speech balloons.', 'fe-search-ai' ); ?></span>
+					<label for="fe_search_ai_key_color"><?php esc_html_e( 'Bubble Color', 'fe-search-ai' ); ?></label>
+					<span class="description"><?php esc_html_e( 'Select the basic color for user speech balloons.', 'fe-search-ai' ); ?></span>
 				</div>
 			</div>
 
@@ -1993,7 +1993,7 @@ class FE_Search_AI_Settings {
 						value="1"
 						<?php checked( (bool) $use_gradient ); ?>
 					>
-					<?php esc_html_e( 'Display chat background and key color with gradients', 'fe-search-ai' ); ?>
+					<?php esc_html_e( 'Display chat background and bubble color with gradients', 'fe-search-ai' ); ?>
 				</label>
 				<span class="description"><?php esc_html_e( 'When unchecked, the chat UI will use flat colors without gradients.', 'fe-search-ai' ); ?></span>
 			</div>
@@ -2896,7 +2896,7 @@ class FE_Search_AI_Settings {
 	 */
 	public function display_interaction_field_html() {
 		$ui_options      = $this->options['display']['ui'] ?? [];
-		$animation_speed = $ui_options['animation_speed'] ?? 5;
+		$animation_speed = $ui_options['animation_speed'] ?? 7;
 		$send_mode       = $ui_options['send_mode'] ?? 'enter';
 		?>
 		<div>
