@@ -453,7 +453,9 @@ class FE_Search_AI_Settings {
 		add_settings_section( 'fe_search_ai_data_section', __( 'Data Management', 'fe-search-ai' ), null, $page_slug );
 		add_settings_field( 'fe_search_ai_delete_vectors_ui', __( 'Delete Synced Data', 'fe-search-ai' ), [ $this, 'delete_vectors_ui_field_html' ], $page_slug, 'fe_search_ai_data_section' );
 		add_settings_field( 'fe_search_ai_delete_system_logs_ui', __( 'Delete System Logs', 'fe-search-ai' ), [ $this, 'delete_system_logs_ui_field_html' ], $page_slug, 'fe_search_ai_data_section' );
-		add_settings_field( 'fe_search_ai_delete_conversation_logs_ui', __( 'Delete Conversation Logs', 'fe-search-ai' ), [ $this, 'delete_conversation_logs_ui_field_html' ], $page_slug, 'fe_search_ai_data_section' );
+		if ( class_exists( 'FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) ) {
+			add_settings_field( 'fe_search_ai_delete_conversation_logs_ui', __( 'Delete Conversation Logs', 'fe-search-ai' ), [ $this, 'delete_conversation_logs_ui_field_html' ], $page_slug, 'fe_search_ai_data_section' );
+		}
 		add_settings_field( 'fe_search_ai_delete_on_uninstall', __( 'Delete Data on Uninstall', 'fe-search-ai' ), [ $this, 'delete_on_uninstall_field_html' ], $page_slug, 'fe_search_ai_data_section' );
 	}
 

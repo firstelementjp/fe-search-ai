@@ -158,22 +158,6 @@ class FE_Search_AI_Activator {
 			KEY `sequence` (`sequence_id`, `sequence_order`)
 		) $charset_collate;";
 		dbDelta( $sql );
-
-		// Conversation Logs Table.
-		$table_name_logs = $wpdb->prefix . 'fe_search_ai_logs';
-		$sql_logs        = "CREATE TABLE {$table_name_logs} (
-			`id` bigint(20) NOT NULL AUTO_INCREMENT,
-			`session_id` varchar(64) NOT NULL DEFAULT '',
-			`question` text NOT NULL,
-			`answer` longtext NOT NULL,
-			`context_found` tinyint(1) NOT NULL DEFAULT 0,
-			`rating` smallint(3) NOT NULL DEFAULT 0,
-			`created_at` datetime NOT NULL,
-			PRIMARY KEY (`id`),
-			KEY `session_id` (`session_id`),
-			KEY `rating` (`rating`)
-		) {$charset_collate};";
-		dbDelta( $sql_logs );
 	}
 
 	/**

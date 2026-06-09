@@ -108,7 +108,6 @@ add_action(
 	'fe_search_ai_daily_log_rotation_event',
 	static function () {
 		\FESearchAI\Core\FE_Search_AI_Logger::rotate_logs();
-		\FESearchAI\Core\FE_Search_AI_Logger::rotate_conversation_logs();
 	}
 );
 

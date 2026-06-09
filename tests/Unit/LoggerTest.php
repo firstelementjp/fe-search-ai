@@ -358,6 +358,11 @@ class LoggerTest extends TestCase {
 	 * @return void
 	 */
 	public function test_rotate_conversation_logs() {
+		// Conversation logs table is only created by Pro version.
+		if ( ! class_exists( 'FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) ) {
+			$this->markTestSkipped( 'Conversation logs table is only available in Pro version.' );
+		}
+
 		global $wpdb;
 		$table_name = $wpdb->prefix . 'fe_search_ai_logs';
 

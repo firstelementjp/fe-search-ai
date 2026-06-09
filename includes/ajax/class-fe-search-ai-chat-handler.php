@@ -1996,6 +1996,10 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 		// Direct query required for custom table.
 		global $wpdb;
 		$logs_table = $wpdb->prefix . 'fe_search_ai_logs';
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $logs_table ) ) !== $logs_table ) {
+			wp_send_json_success( [ 'log_id' => 0 ] );
+			return;
+		}
 
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 		// Input is sanitized after unslashing.
@@ -2114,8 +2118,12 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 		// Direct query required for custom table.
 		global $wpdb;
 		$logs_table = $wpdb->prefix . 'fe_search_ai_logs';
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $logs_table ) ) !== $logs_table ) {
+			wp_send_json_success( [ 'logs' => [] ] );
+			return;
+		}
 
-		// Get logs for this session with rating information
+		// Get logs for this session with rating information.
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -2161,6 +2169,10 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 
 		global $wpdb;
 		$logs_table = $wpdb->prefix . 'fe_search_ai_logs';
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $logs_table ) ) !== $logs_table ) {
+			wp_send_json_error( [ 'message' => __( 'Conversation log table is not available.', 'fe-search-ai' ) ] );
+			return;
+		}
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		// Direct update required for custom table. Table name is controlled internally.
