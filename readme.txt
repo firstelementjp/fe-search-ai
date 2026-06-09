@@ -12,34 +12,89 @@ AI-powered, conversational search for your WordPress site.
 
 == Description ==
 
-FE Search AI replaces your standard WordPress search with a smart, conversational AI chat. It uses a RAG (Retrieval-Augmented Generation) model to provide accurate answers based only on your website's content, preventing hallucinations.
+FE Search AI transforms your WordPress site into an intelligent conversational experience. Replace traditional search with a smart AI chat that understands your content and provides accurate, context-aware answers.
 
-This plugin indexes your posts, pages, and custom post types into a custom database table, creating vector embeddings and keyword indexes. When a user asks a question, it finds the most relevant content from your site and uses it to generate a precise, helpful answer.
+Built on RAG (Retrieval-Augmented Generation) architecture, this plugin ensures responses are grounded in your actual website content—eliminating AI hallucinations while delivering helpful, precise answers to your visitors' questions.
+
+**Key capabilities:**
+
+* Indexes posts, pages, and custom post types with vector embeddings and keyword search
+* Retrieves relevant content in real-time to generate accurate answers
+* Supports multiple AI providers (OpenAI, Google, Anthropic) for flexibility
+* Advanced Japanese language support with built-in tokenization
+* Privacy-focused with optional debug logging and rate limiting
+* Fully customizable via extensive filter hooks
+
+Perfect for knowledge bases, documentation sites, e-commerce support, and any WordPress site where visitors need quick, accurate answers from your content.
 
 == Features ==
 
-* **Conversational AI Chat UI**: Adds a customizable chat bubble and window (via Shortcode, Block, or PHP function)
-* **Multiple AI Providers**: Supports major Generation Models (LLMs) out of the box
+* **RAG-Powered Search**: Uses Retrieval-Augmented Generation to provide accurate answers based only on your website's content, preventing AI hallucinations
+* **Conversational AI Chat UI**: Customizable chat bubble and window (via Shortcode, Block, or PHP function)
+* **Multiple AI Providers**: Supports major LLMs out of the box
   * OpenAI (GPT-4o mini, etc.)
   * Google (Gemini)
   * Anthropic (Claude)
 * **Multiple Embedding Models**: Supports major vectorization models
   * OpenAI (text-embedding-3-small)
   * Google (text-embedding-004)
+* **Hybrid Search**: Combines keyword search with vector search for optimal results
 * **Content Synchronization**:
-  * **Manual Sync**: A dashboard to build or rebuild the entire search index
+  * **Manual Sync**: Dashboard to build or rebuild the entire search index
   * **Smart Sync**: Processes only new, updated, or deleted content to save time and API costs
-  * **Real-time Sync**: Automatically indexes new or updated posts the moment they are published
+  * **Real-time Sync**: Automatically indexes new or updated posts when published
 * **Advanced Japanese Support**:
-  * Includes the lightweight TinySegmenter for Japanese word segmentation
-  * Optional Yahoo! Japanese Morphological Analysis API integration for higher-accuracy tokenization
-* **Developer Friendly**: Packed with filter hooks to customize everything from the UI to the tokenizer
+  * Built-in TinySegmenter for Japanese word segmentation
+  * Optional Yahoo! Japanese MA API for higher-accuracy tokenization
+* **Privacy & Security**:
+  * Debug mode with privacy-protected logging (no sensitive data by default)
+  * Rate limiting (IP-based and global)
+  * PII filtering for conversation logs
+* **Developer Friendly**: Extensive filter hooks for customization
+* **Prompt Customization**: Adjustable system prompts for fine-tuned responses
 
 == Installation ==
 
 1. Download the latest stable release from the WordPress.org Plugin Directory
 2. Go to your WordPress Admin > Plugins > Add New > Upload Plugin
 3. Upload the .zip file, install, and activate
+
+== External Services ==
+
+FE Search AI communicates with the following external services to provide AI-powered search functionality:
+
+= AI Providers =
+
+The plugin sends user questions and relevant content chunks to your chosen AI provider for answer generation. No data is stored on AI provider servers.
+
+* **OpenAI** - Used for chat completions (GPT models) and text embeddings
+* **Google** - Used for chat completions (Gemini models) and text embeddings
+* **Anthropic** - Used for chat completions (Claude models)
+
+= Vector Database =
+
+* **Qdrant** - Used for storing and retrieving vector embeddings. Can be self-hosted or use Qdrant Cloud. When using Qdrant Cloud, vector data is stored on their servers.
+
+= Japanese Morphological Analysis =
+
+* **Yahoo! Japanese MA API** - Optional service for Japanese word segmentation. Only used when explicitly configured for Japanese sites. Query text is sent to Yahoo! for tokenization.
+
+= Reranking Service =
+
+* **Cohere** - Optional service for reranking search results to improve answer quality. Content chunks are sent to Cohere for reranking when enabled.
+
+= License Validation (Pro Version) =
+
+FE Search AI Pro uses an external license API service for license validation and activation. This service is used solely for:
+
+* License key validation
+* License activation and deactivation
+* License status checks
+
+[Privacy Policy](https://www.firstelement.co.jp/en/legal/privacy-policy/privacy-statement-eu/)
+[Terms of Service](https://www.firstelement.co.jp/en/legal/terms-of-use/fe-search-ai-pro/)
+
+The license API service is operated by FirstElement K.K. and is used exclusively for license management purposes. No content data is transmitted to this service.
 
 == Frequently Asked Questions ==
 
@@ -53,7 +108,7 @@ Yes, you need an API key from at least one of the supported AI providers (OpenAI
 
 = Is my data sent to third-party services? =
 
-Only the content you want to search and user questions are sent to your chosen AI provider for processing. No data is stored on third-party servers.
+Yes, this plugin communicates with external services to provide AI-powered search functionality. Please see the "External Services" section below for detailed information about which services are used and what data is transmitted.
 
 = Can I customize the chat interface? =
 
