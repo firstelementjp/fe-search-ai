@@ -77,7 +77,6 @@ class FE_Search_AI_Settings {
 
 		add_action( 'admin_init', [ $this, 'settings_init' ] );
 		add_action( 'wp_ajax_fe_search_ai_delete_system_logs', [ $this, 'ajax_delete_system_logs' ] );
-		add_action( 'wp_ajax_fe_search_ai_delete_conversation_logs', [ $this, 'ajax_delete_conversation_logs' ] );
 	}
 
 	/**
@@ -265,6 +264,11 @@ class FE_Search_AI_Settings {
 						<?php do_settings_sections( 'fe_search_ai_data_section' ); ?>
 						<table class="form-table">
 							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_data_section' ); ?>
+							<?php
+							// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+							// Hook name is properly prefixed with fe_search_ai_.
+							do_action( 'fe_search_ai_after_data_management_settings_fields', $is_pro );
+							?>
 						</table>
 						<?php
 						// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
@@ -453,9 +457,6 @@ class FE_Search_AI_Settings {
 		add_settings_section( 'fe_search_ai_data_section', __( 'Data Management', 'fe-search-ai' ), null, $page_slug );
 		add_settings_field( 'fe_search_ai_delete_vectors_ui', __( 'Delete Synced Data', 'fe-search-ai' ), [ $this, 'delete_vectors_ui_field_html' ], $page_slug, 'fe_search_ai_data_section' );
 		add_settings_field( 'fe_search_ai_delete_system_logs_ui', __( 'Delete System Logs', 'fe-search-ai' ), [ $this, 'delete_system_logs_ui_field_html' ], $page_slug, 'fe_search_ai_data_section' );
-		if ( class_exists( 'FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) ) {
-			add_settings_field( 'fe_search_ai_delete_conversation_logs_ui', __( 'Delete Conversation Logs', 'fe-search-ai' ), [ $this, 'delete_conversation_logs_ui_field_html' ], $page_slug, 'fe_search_ai_data_section' );
-		}
 		add_settings_field( 'fe_search_ai_delete_on_uninstall', __( 'Delete Data on Uninstall', 'fe-search-ai' ), [ $this, 'delete_on_uninstall_field_html' ], $page_slug, 'fe_search_ai_data_section' );
 	}
 
@@ -588,7 +589,7 @@ class FE_Search_AI_Settings {
 					<?php echo esc_html( $engine_label ); ?>
 					<br>
 					<span style="display:inline-block; margin-left:24px; color:#666; font-size:11px;">
-						<?php esc_html_e( 'It performs keyword index search based on chunk data. Search accuracy may be lower compared to vector-based search.', 'fe-search-ai' ); ?>
+						<?php esc_html_e( 'Performs simple and fast keyword search. No vector database required, easy to deploy and operate.', 'fe-search-ai' ); ?>
 					</span>
 				</label>
 				<label>
@@ -1426,34 +1427,6 @@ class FE_Search_AI_Settings {
 	}
 
 	/**
-	 * Renders the UI for deleting all conversation logs.
-	 *
-	 * Placed next to the system log delete control so that each log type can
-	 * be purged independently.
-	 *
-	 * @since 0.9.0
-	 * @return void
-	 */
-	public function delete_conversation_logs_ui_field_html() {
-		?>
-		<div class="notice notice-warning inline" style="margin-bottom: 1em;">
-			<p>
-				<strong><?php esc_html_e( 'Privacy Notice:', 'fe-search-ai' ); ?></strong><br>
-				<?php esc_html_e( 'Conversation logs are only recorded when Debug Mode is enabled. These logs may contain user questions and AI responses. Handle with care and delete regularly.', 'fe-search-ai' ); ?>
-			</p>
-		</div>
-		<p class="description">
-			<?php esc_html_e( 'This will delete all conversation logs stored in the `{prefix}fe_search_ai_logs` table. Use this if conversations have grown unexpectedly large or contain information you no longer wish to keep.', 'fe-search-ai' ); ?>
-		</p>
-		<button type="button" id="fe_search_ai_delete_conversation_logs_button" class="button button-secondary">
-			<?php esc_html_e( 'Delete all conversation logs', 'fe-search-ai' ); ?>
-		</button>
-		<span class="spinner"></span>
-		<p id="fe_search_ai_delete_conversation_logs_status"></p>
-		<?php
-	}
-
-	/**
 	 * Handles the AJAX request to delete all system logs.
 	 *
 	 * @since 0.9.0
@@ -1469,37 +1442,6 @@ class FE_Search_AI_Settings {
 		\FESearchAI\Core\FE_Search_AI_Logger::clear_logs();
 
 		wp_send_json_success( __( 'All system logs have been deleted.', 'fe-search-ai' ) );
-	}
-
-	/**
-	 * Handles the AJAX request to delete all conversation logs.
-	 *
-	 * @since 0.9.0
-	 * @return void
-	 */
-	public function ajax_delete_conversation_logs() {
-		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
-
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error(
-				[
-					'message' => __( 'You do not have permission to perform this action.', 'fe-search-ai' ),
-				]
-			);
-		}
-
-		global $wpdb;
-		$table_name = $wpdb->prefix . 'fe_search_ai_logs';
-
-		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) === $table_name ) {
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
-			// Table name is interpolated but controlled internally.
-			$wpdb->query( "TRUNCATE TABLE `{$table_name}`" );
-		}
-
-		wp_send_json_success( __( 'All conversation logs have been deleted.', 'fe-search-ai' ) );
 	}
 
 	/**
