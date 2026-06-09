@@ -96,6 +96,28 @@ FE Search AI Pro uses an external license API service for license validation and
 
 The license API service is operated by FirstElement K.K. and is used exclusively for license management purposes. No content data is transmitted to this service.
 
+== Pro Version ==
+
+FE Search AI works completely on its own with the free version and provides sufficient functionality, but when used with the Pro version, you can access these advanced features:
+
+* **Advanced Model Selection** - Access to premium AI models including GPT-5.4, Claude Sonnet 4.6, Gemini 2.5 Pro, and Rerank 4.0 with per-model custom system prompts
+* **Custom OpenAI-Compatible Endpoints** - Support for self-hosted solutions including Ollama, LocalAI, and other OpenAI-compatible API endpoints
+* **Additional AI Providers** - Support for DeepSeek and Mistral (planned)
+* **AI Provider Failover** - Automatic failover to backup AI providers when primary provider fails (planned)
+* **Custom Field Indexing** - Include custom fields in sync targets for comprehensive search coverage
+* **Fullscreen Chat Mode** - Fullscreen chat interface for immersive user experience
+* **User Consent (Opt-in)** - Privacy-compliant user consent functionality for conversation logging
+* **Enhanced API Management** - Advanced rate limiting, cost tracking and notifications, usage analytics and reporting
+* **Security Features** - Securely encrypted "Forbidden Words" list, enhanced content filtering, and advanced access controls
+* **MCP Server Integration** - Act as a tool for external AI agents
+* **API Token Management** - Generate and manage API tokens for using site search from headless CMSs and external applications
+* **Advanced Logging** - Detailed communication logs in dedicated log table with view and download functionality. Conversation logs can be exported for evaluation purposes
+* **User Feedback System** - End-user feedback functionality for AI responses to improve answer quality
+* **Priority Support** - Dedicated technical assistance from the development team
+* **Automatic Updates** - Seamless updates from our update server
+
+[Pro Version](https://www.firstelement.co.jp/en/products/fe-search-ai-plugin/)
+
 == Frequently Asked Questions ==
 
 = Does this plugin work with any WordPress theme? =
