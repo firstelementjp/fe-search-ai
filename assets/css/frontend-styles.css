@@ -412,13 +412,6 @@
 	border-top-left-radius: 4px;
 }
 
-.fe-search-ai-message-ai p::before {
-	display: block;
-	content: '';
-	border-left: 2px;
-	background: black;
-}
-
 .fe-search-ai-message-user {
 	align-self: flex-end;
 	justify-content: flex-end;
