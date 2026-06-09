@@ -1795,7 +1795,10 @@ class FE_Search_AI_Settings {
 					class="regular-text"
 				>
 				<p class="description">
-					<?php esc_html_e( 'Used when the Yahoo! Japanese MA API is selected. This value is stored in the plugin settings.', 'fe-search-ai' ); ?><br>
+					<?php esc_html_e( 'Used when the Yahoo! Japanese MA API is selected. This value is stored in the plugin settings.', 'fe-search-ai' ); ?>
+					<a href="https://developer.yahoo.co.jp/sitemap/" target="_blank" rel="noopener noreferrer">
+						<?php esc_html_e( 'Get your App ID', 'fe-search-ai' ); ?> &raquo;
+					</a><br>
 					<?php if ( $has_constant ) : ?>
 						<?php
 							printf(
@@ -2434,11 +2437,27 @@ class FE_Search_AI_Settings {
 	 */
 	public function site_purpose_field_html() {
 		$site_info    = get_option( 'fe_search_ai_site_info', [] );
-		$site_purpose = $site_info['site_purpose'] ?? get_bloginfo( 'description' );
+		$site_purpose = $site_info['site_purpose'] ?? '';
+		$placeholder  = implode(
+			"\n",
+			[
+				__( 'Example:', 'fe-search-ai' ),
+				__( 'This website provides [type of content or service].', 'fe-search-ai' ),
+				__( 'The main content consists of [articles, products, job listings, FAQs, documentation, etc.].', 'fe-search-ai' ),
+				'',
+				__( 'Each item may include metadata such as:', 'fe-search-ai' ),
+				__( '- [Metadata field 1]', 'fe-search-ai' ),
+				__( '- [Metadata field 2]', 'fe-search-ai' ),
+				__( '- [Metadata field 3]', 'fe-search-ai' ),
+				'',
+				__( 'Users typically ask questions to [main user intent].', 'fe-search-ai' ),
+				__( 'When relevant, use the metadata to filter, compare, and summarize the results.', 'fe-search-ai' ),
+			]
+		);
 
 		?>
-		<textarea name="fe_search_ai_site_info[site_purpose]" rows="3" class="large-text"><?php echo esc_textarea( $site_purpose ); ?></textarea>
-		<p class="description"><?php esc_html_e( 'Briefly explain the purpose of this site to the AI. If left blank, the site\'s tagline will be used.', 'fe-search-ai' ); ?></p>
+		<textarea name="fe_search_ai_site_info[site_purpose]" rows="8" class="large-text" placeholder="<?php echo esc_attr( $placeholder ); ?>"><?php echo esc_textarea( $site_purpose ); ?></textarea>
+		<p class="description"><?php esc_html_e( 'Describe what this site provides, what kind of content is searchable, which metadata fields are important, and what users are usually trying to find. If left blank, the site tagline will be used.', 'fe-search-ai' ); ?></p>
 		<?php
 	}
 
