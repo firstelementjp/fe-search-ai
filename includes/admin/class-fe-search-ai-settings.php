@@ -1430,6 +1430,12 @@ class FE_Search_AI_Settings {
 	 */
 	public function delete_conversation_logs_ui_field_html() {
 		?>
+		<div class="notice notice-warning inline" style="margin-bottom: 1em;">
+			<p>
+				<strong><?php esc_html_e( 'Privacy Notice:', 'fe-search-ai' ); ?></strong><br>
+				<?php esc_html_e( 'Conversation logs are only recorded when Debug Mode is enabled. These logs may contain user questions and AI responses. Handle with care and delete regularly.', 'fe-search-ai' ); ?>
+			</p>
+		</div>
 		<p class="description">
 			<?php esc_html_e( 'This will delete all conversation logs stored in the `{prefix}fe_search_ai_logs` table. Use this if conversations have grown unexpectedly large or contain information you no longer wish to keep.', 'fe-search-ai' ); ?>
 		</p>
