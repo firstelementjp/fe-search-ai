@@ -1859,8 +1859,8 @@ class FE_Search_AI_Settings {
 		$defaults = \FESearchAI\Core\FE_Search_AI_Defaults::get_display_text_defaults();
 		// Add legacy color defaults for this settings section.
 		$defaults += [
-			'key_color'        => '#0073aa',
-			'background_color' => '#f5f5f5',
+			'key_color'        => '#E9E9E9',
+			'background_color' => '#FFFFFF',
 			'text_color'       => '#111111',
 		];
 
@@ -2807,8 +2807,8 @@ class FE_Search_AI_Settings {
 	 */
 	private function sanitize_display_ui( $input ) {
 		$new_input                     = [];
-		$new_input['key_color']        = sanitize_hex_color( $input['key_color'] ?? '#0073aa' );
-		$new_input['background_color'] = sanitize_hex_color( $input['background_color'] ?? '#f5f5f5' );
+		$new_input['key_color']        = sanitize_hex_color( $input['key_color'] ?? '#E9E9E9' );
+		$new_input['background_color'] = sanitize_hex_color( $input['background_color'] ?? '#FFFFFF' );
 		$new_input['text_color']       = sanitize_hex_color( $input['text_color'] ?? '#111111' );
 		$new_input['animation_speed']  = absint( $input['animation_speed'] ?? 3 );
 		// Validate send_mode string (enter / shift_enter / cmd_enter).
