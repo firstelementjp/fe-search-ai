@@ -2244,6 +2244,15 @@ class FE_Search_AI_Settings {
 			}
 		}
 
+		// Sanitize batch_size.
+		if ( isset( $input['batch_size'] ) ) {
+			$batch_size = absint( $input['batch_size'] );
+			// Ensure batch_size is between 1 and 100.
+			$new_input['batch_size'] = ( $batch_size > 0 && $batch_size <= 100 ) ? $batch_size : 10;
+		} else {
+			$new_input['batch_size'] = 10;
+		}
+
 		return $new_input;
 	}
 
