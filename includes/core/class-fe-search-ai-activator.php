@@ -212,6 +212,13 @@ class FE_Search_AI_Activator {
 			];
 		}
 
+		if ( ! isset( $options['sync'] ) || ! is_array( $options['sync'] ) ) {
+			$options['sync'] = [];
+		}
+		if ( empty( $options['sync']['batch_size'] ) || ! is_numeric( $options['sync']['batch_size'] ) || 1 > (int) $options['sync']['batch_size'] || 100 < (int) $options['sync']['batch_size'] ) {
+			$options['sync']['batch_size'] = 10;
+		}
+
 		update_option( 'fe_search_ai_settings', $options );
 	}
 }

@@ -2369,8 +2369,7 @@ class FE_Search_AI_Settings {
 	public function batch_size_field_html() {
 		$options    = $this->options['sync'] ?? [];
 		$batch_size = $options['batch_size'] ?? 10;
-		// Ensure batch_size is a valid positive integer, default to 10 if empty or invalid.
-		if ( empty( $batch_size ) || ! is_numeric( $batch_size ) ) {
+		if ( ! is_numeric( $batch_size ) || 1 > (int) $batch_size || 100 < (int) $batch_size ) {
 			$batch_size = 10;
 		}
 		?>
@@ -2535,7 +2534,8 @@ class FE_Search_AI_Settings {
 			$sync_input = [];
 		}
 		$new_input['sync']['limit']      = intval( $sync_input['limit'] ?? -1 );
-		$new_input['sync']['batch_size'] = absint( $sync_input['batch_size'] ?? 10 );
+		$batch_size                      = absint( $sync_input['batch_size'] ?? 10 );
+		$new_input['sync']['batch_size'] = ( $batch_size > 0 && $batch_size <= 100 ) ? $batch_size : 10;
 		if ( array_key_exists( 'use_summary_for_embedding', $sync_input ) ) {
 			$new_input['sync']['use_summary_for_embedding'] = ! empty( $sync_input['use_summary_for_embedding'] );
 		} else {
