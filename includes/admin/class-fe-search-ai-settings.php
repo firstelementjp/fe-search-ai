@@ -2330,7 +2330,7 @@ class FE_Search_AI_Settings {
 	 */
 	public function structured_output_field_html() {
 		$prompt     = get_option( 'fe_search_ai_custom_prompts', [] );
-		$is_enabled = isset( $prompt['structured_output'] ) ? ! empty( $prompt['structured_output'] ) : true;
+		$is_enabled = isset( $prompt['structured_output'] ) ? ! empty( $prompt['structured_output'] ) : false;
 		?>
 		<input type="hidden" name="fe_search_ai_custom_prompts[structured_output]" value="0">
 		<label>
