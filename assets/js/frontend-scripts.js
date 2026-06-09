@@ -597,12 +597,67 @@ function initFEAIChat() {
 		})
 			.then(response => {
 				if (!response.ok) {
-					// Handle HTTP errors explicitly so the UI is not stuck.
+					clearInterval(renderInterval);
 					if (response.status === FE_SEARCH_AI_CONFIG.CHAT.HTTP_STATUS.RATE_LIMIT) {
 						handleError(new Error('rate_limit'));
 					} else {
 						handleError(new Error('network_error'));
 					}
+					enableForm();
+					return;
+				}
+				if (!response.body || typeof response.body.getReader !== 'function') {
+					response
+						.text()
+						.then(text => {
+							text.split('\n\n').forEach(line => {
+								if (line.startsWith('data: ')) {
+									const dataContent = line
+										.substring(FE_SEARCH_AI_CONFIG.STREAM.DATA_PREFIX_LENGTH)
+										.trim();
+									if (dataContent === '[DONE]') return;
+									try {
+										const jsonData = JSON.parse(dataContent);
+										if (jsonData.meta) {
+											contextFound = jsonData.meta.context_found;
+										}
+										if (jsonData.text) {
+											if (isFirstChunk) {
+												characterQueue = [];
+												isFirstChunk = false;
+											}
+											characterQueue.push(jsonData.text);
+										}
+										if (jsonData.references) {
+											references = jsonData.references;
+										}
+									} catch (parseError) {
+										handleError(parseError, 'stream_fallback_parse', false);
+									}
+								}
+							});
+							waitForQueueToEmpty().then(() => {
+								clearInterval(renderInterval);
+								aiMessageWrapperForFeedback.innerHTML = marked.parse(fullResponse);
+								appendReferences(aiMessageWrapperForFeedback, references);
+								sessionHistory.push({
+									role: 'assistant',
+									content: fullResponse,
+									references: Array.isArray(references) ? references : [],
+								});
+								references = null;
+								sessionStorage.setItem(
+									FE_SEARCH_AI_CONFIG.STORAGE.CHAT_HISTORY,
+									JSON.stringify(sessionHistory)
+								);
+								enableForm();
+							});
+						})
+						.catch(error => {
+							clearInterval(renderInterval);
+							handleError(error, 'stream_fallback');
+							enableForm();
+						});
 					return;
 				}
 				const reader = response.body.getReader();
