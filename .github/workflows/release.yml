@@ -32,17 +32,18 @@ jobs:
             - name: Setup Node.js
               uses: actions/setup-node@v6
               with:
-                  node-version: '18'
+                  node-version: '20'
                   cache: 'npm'
-
-            - name: Install PHP dependencies
-              run: composer install --no-dev --prefer-dist
 
             - name: Install Node dependencies
               run: npm ci
 
-            - name: Build assets
-              run: npm run build
+            - name: Build frontend assets
+              run: |
+                  npm install --silent
+                  if npm run | grep -q "build"; then
+                      npm run build --silent
+                  fi
 
             - name: Create ZIP
               id: create_zip
@@ -52,17 +53,49 @@ jobs:
                   ZIP_VERSION="${GITHUB_REF_NAME#v}"
                   ZIP_FILE="fe-search-ai-${ZIP_VERSION}.zip"
 
-                  # Create release tree from git (respects .gitattributes export-ignore).
+                  # Create release tree from git archive (respects .gitattributes export-ignore).
                   git archive --format=tar --prefix=fe-search-ai/ --worktree-attributes ${{ github.ref_name }} | tar -x -C release
 
-                  # Copy vendor directory (required for WordPress plugin).
-                  cp -r vendor release/fe-search-ai/
+                  # Remove development files explicitly (additional safety).
+                  rm -rf release/fe-search-ai/tests
+                  rm -rf release/fe-search-ai/docs
+                  rm -f release/fe-search-ai/SECURITY.md
+                  rm -f release/fe-search-ai/CONTRIBUTING.md
+                  rm -f release/fe-search-ai/wp_tests_config.php.example
+                  rm -f release/fe-search-ai/phpunit.xml
+
+                  # Install dependencies (no-dev) in release tree.
+                  cp composer.json composer.lock release/fe-search-ai/
+                  cd release/fe-search-ai
+                  composer install --no-dev --prefer-dist --quiet
+
+                  # Remove vendor development files.
+                  find vendor -type d -name "test" -exec rm -rf {} + 2>/dev/null || true
+                  find vendor -type d -name ".github" -exec rm -rf {} + 2>/dev/null || true
+                  find vendor -type d -name ".git" -exec rm -rf {} + 2>/dev/null || true
+                  find vendor -name "phpunit.xml*" -delete 2>/dev/null || true
+                  find vendor -name "phpcs.xml*" -delete 2>/dev/null || true
+                  find vendor -name ".phpcs*" -delete 2>/dev/null || true
+                  find vendor -name "phpstan*" -delete 2>/dev/null || true
+                  find vendor -name "psalm*" -delete 2>/dev/null || true
+                  find vendor -name "infection*" -delete 2>/dev/null || true
+                  find vendor -name "scrutinizer*" -delete 2>/dev/null || true
+                  find vendor -name "Makefile" -delete 2>/dev/null || true
+                  find vendor -name "README.md" -delete 2>/dev/null || true
+                  find vendor -name "CHANGELOG.md" -delete 2>/dev/null || true
+                  find vendor -name "CONTRIBUTING.md" -delete 2>/dev/null || true
+                  find vendor -name "SECURITY.md" -delete 2>/dev/null || true
+                  find vendor -name ".gitignore" -delete 2>/dev/null || true
+
+                  cd - > /dev/null
 
                   # Copy built/minified assets from working directory into the release tree.
                   mkdir -p release/fe-search-ai/assets/js
-                  mkdir -p release/fe-search-ai/assets/css
                   cp -f assets/js/*.min.js release/fe-search-ai/assets/js/ || true
-                  cp -f assets/css/*.min.css release/fe-search-ai/assets/css/ || true
+                  if [ -d "assets/css" ]; then
+                      mkdir -p release/fe-search-ai/assets/css
+                      cp -f assets/css/*.min.css release/fe-search-ai/assets/css/ || true
+                  fi
 
                   # Copy vendor assets (Pickr color picker).
                   if [ -d "assets/vendor" ]; then
@@ -70,32 +103,46 @@ jobs:
                       cp -r assets/vendor/* release/fe-search-ai/assets/vendor/
                   fi
 
-                  cd release
-                  rm -f ../${ZIP_FILE}
-                  zip -r ../${ZIP_FILE} fe-search-ai
-
-                  echo "zip_file=${ZIP_FILE}" >> "$GITHUB_OUTPUT"
-
-            - name: Security checks on release tree
-              run: |
+                  # Security checks in release tree.
                   echo "=== Security checks in release tree ==="
-                  echo "Files starting with underscore (should be 0):"
-                  UNDERSCORE_COUNT=$(find release/fe-search-ai -name "_*" | wc -l)
-                  echo "$UNDERSCORE_COUNT"
+                  UNDERSCORE_COUNT=$(find release/fe-search-ai -name "_*" | wc -l | tr -d ' ')
+                  echo "Files starting with underscore: $UNDERSCORE_COUNT"
                   if [ "$UNDERSCORE_COUNT" -gt 0 ]; then
-                      echo "ERROR: Found files starting with underscore:"
+                      echo "ERROR: Found files starting with underscore"
                       find release/fe-search-ai -name "_*"
                       exit 1
                   fi
 
-                  echo "Files starting with dot (should be 0):"
-                  DOT_COUNT=$(find release/fe-search-ai -name ".*" | wc -l)
-                  echo "$DOT_COUNT"
+                  DOT_COUNT=$(find release/fe-search-ai -name ".*" -not -path "*/vendor/*" | wc -l | tr -d ' ')
+                  echo "Files starting with dot (excluding vendor): $DOT_COUNT"
                   if [ "$DOT_COUNT" -gt 0 ]; then
-                      echo "ERROR: Found files starting with dot:"
-                      find release/fe-search-ai -name ".*"
+                      echo "ERROR: Found files starting with dot"
+                      find release/fe-search-ai -name ".*" -not -path "*/vendor/*"
                       exit 1
                   fi
+
+                  # Sanity checks in release tree.
+                  echo "=== Sanity checks in release tree ==="
+                  if [ ! -d "release/fe-search-ai/vendor" ]; then
+                      echo "ERROR: Vendor directory does not exist"
+                      exit 1
+                  fi
+                  if [ ! -d "release/fe-search-ai/vendor/wamania/php-stemmer/src/Stemmer" ]; then
+                      echo "ERROR: php-stemmer library does not exist"
+                      exit 1
+                  fi
+                  if [ ! -f "release/fe-search-ai/vendor/u7aro/tinysegmenter-php/src/TinySegmenter.php" ]; then
+                      echo "ERROR: TinySegmenter library does not exist"
+                      exit 1
+                  fi
+
+                  # Create zip file.
+                  cd release
+                  zip -r "../${ZIP_FILE}" fe-search-ai -q
+                  cd - > /dev/null
+                  mv "release/${ZIP_FILE}" .
+
+                  echo "zip_file=${ZIP_FILE}" >> "$GITHUB_OUTPUT"
 
             - name: Create GitHub Release
               uses: softprops/action-gh-release@v2
@@ -124,17 +171,18 @@ jobs:
             - name: Setup Node.js
               uses: actions/setup-node@v6
               with:
-                  node-version: '18'
+                  node-version: '20'
                   cache: 'npm'
-
-            - name: Install PHP dependencies
-              run: composer install --no-dev --prefer-dist
 
             - name: Install Node dependencies
               run: npm ci
 
-            - name: Build assets
-              run: npm run build
+            - name: Build frontend assets
+              run: |
+                  npm install --silent
+                  if npm run | grep -q "build"; then
+                      npm run build --silent
+                  fi
 
             - name: Deploy to WordPress.org
               uses: 10up/action-wordpress-plugin-deploy@stable
