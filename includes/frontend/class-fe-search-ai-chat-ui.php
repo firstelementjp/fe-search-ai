@@ -338,7 +338,7 @@ class FE_Search_AI_Chat_UI {
 								echo '<p>';
 								printf(
 									/* translators: %s: Links to terms of service and privacy policy. */
-									wp_kses_post( __( 'By using this chat, you agree to our %s.', 'fe-search-ai' ) ),
+									wp_kses_post( __( 'Please review our %s when using this chat.', 'fe-search-ai' ) ),
 									wp_kses_post( implode( ' ' . esc_html__( 'and', 'fe-search-ai' ) . ' ', $links ) )
 								);
 								echo '</p>';
