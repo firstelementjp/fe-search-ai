@@ -468,7 +468,7 @@ function initFEAIChat() {
 	// Typing animation configuration, derived from PHP setting animation_speed (1-10).
 	let typingCharsPerTick = 3;
 	let typingInterval = 50;
-	let typingImmediate = false; // true の場合、チャンク到着時に即レンダリングを試みる
+	let typingImmediate = false; // If true, attempt immediate rendering when chunks arrive.
 	const privacyConfig = fe_search_ai_ajax_obj.privacy || {};
 	const consentStorageKey = FE_SEARCH_AI_CONFIG.STORAGE.USER_CONSENT;
 

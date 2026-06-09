@@ -592,7 +592,7 @@ class FE_Search_AI_Chat_Handler {
 			'model'       => $model,
 			'messages'    => $messages,
 			'stream'      => true,
-			'temperature' => 0.1, // RAG用に低い温度を設定
+			'temperature' => 0.1, // Set low temperature for RAG.
 		];
 
 		if ( 'openai_compatible' === $provider ) {
@@ -600,7 +600,7 @@ class FE_Search_AI_Chat_Handler {
 
 			// phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged
 			// Required for local LLM processing which may take longer.
-			set_time_limit( 300 ); // 5分
+			set_time_limit( 300 ); // 5 minutes.
 
 			$response = wp_remote_post(
 				$api_url,
@@ -1494,7 +1494,7 @@ class FE_Search_AI_Chat_Handler {
 			'max_tokens'  => 4096,
 			'messages'    => $messages['messages'],
 			'stream'      => true,
-			'temperature' => 0.1, // RAG用に低い温度を設定
+			'temperature' => 0.1, // Set low temperature for RAG.
 		];
 
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_init
