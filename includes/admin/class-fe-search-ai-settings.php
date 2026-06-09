@@ -1872,7 +1872,7 @@ class FE_Search_AI_Settings {
 		$key_color        = $ui_options['key_color'] ?? $defaults['key_color'];
 		$background_color = $ui_options['background_color'] ?? $defaults['background_color'];
 		$text_color       = $ui_options['text_color'] ?? $defaults['text_color'];
-		$use_gradient     = $ui_options['use_gradient'] ?? true;
+		$use_gradient     = $ui_options['use_gradient'] ?? false;
 		?>
 		<p>
 			<label for="fe_search_ai_window_title"><?php esc_html_e( 'Chat window title', 'fe-search-ai' ); ?></label>
@@ -1985,6 +1985,10 @@ class FE_Search_AI_Settings {
 
 			<hr>
 
+			<?php
+			// Gradient feature temporarily disabled.
+			// TODO: Re-enable if gradient effects are improved.
+			/*
 			<div class="color-picker-text">
 				<label>
 					<input
@@ -1997,6 +2001,8 @@ class FE_Search_AI_Settings {
 				</label>
 				<span class="description"><?php esc_html_e( 'When unchecked, the chat UI will use flat colors without gradients.', 'fe-search-ai' ); ?></span>
 			</div>
+			*/
+			?>
 
 		</div>
 
