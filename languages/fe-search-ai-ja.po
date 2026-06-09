@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: FE AI Search\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-10-07 13:37+0000\n"
-"PO-Revision-Date: 2026-06-09 04:14+0000\n"
+"PO-Revision-Date: 2026-06-09 06:56+0000\n"
 "Last-Translator: \n"
 "Language-Team: 日本語\n"
 "Language: ja\n"
@@ -47,15 +47,15 @@ msgid ""
 ")"
 msgstr "（リクエストの上限に達しました。しばらくお待ちの上、再度お試しください。）"
 
-#: includes/admin/class-fe-search-ai-settings.php:2458
+#: includes/admin/class-fe-search-ai-settings.php:2457
 msgid "- [Metadata field 1]"
 msgstr "- [メタデータ項目1]"
 
-#: includes/admin/class-fe-search-ai-settings.php:2459
+#: includes/admin/class-fe-search-ai-settings.php:2458
 msgid "- [Metadata field 2]"
 msgstr "- [メタデータ項目2]"
 
-#: includes/admin/class-fe-search-ai-settings.php:2460
+#: includes/admin/class-fe-search-ai-settings.php:2459
 msgid "- [Metadata field 3]"
 msgstr "- [メタデータ項目3]"
 
@@ -218,6 +218,10 @@ msgstr "基本文字色"
 #: includes/admin/class-fe-search-ai-settings.php:397
 msgid "Batch Size"
 msgstr "バッチサイズ"
+
+#: includes/admin/class-fe-search-ai-settings.php:1937
+msgid "Bubble Color"
+msgstr "吹き出しの色"
 
 #: includes/admin/class-fe-search-ai-settings.php:1747
 #: includes/ajax/class-fe-search-ai-sync-handler.php:2574
@@ -429,7 +433,7 @@ msgstr "同期データの削除"
 msgid "Delete System Logs"
 msgstr "システムログの削除"
 
-#: includes/admin/class-fe-search-ai-settings.php:2469
+#: includes/admin/class-fe-search-ai-settings.php:2468
 msgid ""
 "Describe what this site provides, what kind of content is searchable, which "
 "metadata fields are important, and what users are usually trying to find. If "
@@ -447,8 +451,9 @@ msgid "Display"
 msgstr "表示"
 
 #: includes/admin/class-fe-search-ai-settings.php:1996
-msgid "Display chat background and key color with gradients"
-msgstr "チャットの背景とキーの色をグラデーションで表示する"
+#| msgid "Display chat background and key color with gradients"
+msgid "Display chat background and bubble color with gradients"
+msgstr "チャットの背景と吹き出しの色をグラデーションで表示する"
 
 #: includes/admin/class-fe-search-ai-settings.php:1575
 msgid "Display device"
@@ -476,7 +481,7 @@ msgstr "ドキュメント"
 msgid "e.g."
 msgstr "例："
 
-#: includes/admin/class-fe-search-ai-settings.php:2457
+#: includes/admin/class-fe-search-ai-settings.php:2456
 msgid "Each item may include metadata such as:"
 msgstr "各コンテンツには、以下のメタデータが含まれる場合があります："
 
@@ -496,7 +501,7 @@ msgstr "埋め込みモード"
 msgid "Embeddings from Summaries"
 msgstr "要約から埋め込みを生成"
 
-#: includes/admin/class-fe-search-ai-settings.php:2406
+#: includes/admin/class-fe-search-ai-settings.php:2405
 msgid "Enable Debug Mode"
 msgstr "デバッグモードを有効化"
 
@@ -538,7 +543,7 @@ msgid ""
 "\"Activate\" button."
 msgstr "ご購入時に受け取ったライセンスキーを入力し、「有効化」ボタンを押します。"
 
-#: includes/admin/class-fe-search-ai-settings.php:2389
+#: includes/admin/class-fe-search-ai-settings.php:2388
 msgid ""
 "Enter the number of posts to process in one batch during synchronization. A "
 "smaller number is less likely to cause timeouts on shared servers. (Default: "
@@ -599,7 +604,7 @@ msgstr "エラー:  Google の API キーが設定されていません。"
 msgid "Error: OpenAI API key not set."
 msgstr "エラー:  OpenAI の API キーが設定されていません。"
 
-#: includes/admin/class-fe-search-ai-settings.php:2453
+#: includes/admin/class-fe-search-ai-settings.php:2452
 msgid "Example:"
 msgstr "記述例:"
 
@@ -862,10 +867,6 @@ msgstr "日本語トークナイザー"
 msgid "Japanese Tokenizer Status"
 msgstr "現在の日本語トークナイザー"
 
-#: includes/admin/class-fe-search-ai-settings.php:1937
-msgid "Key Color"
-msgstr "キーカラー"
-
 #: includes/admin/class-fe-search-ai-settings.php:1310
 msgid "Last Sync"
 msgstr "最終同期"
@@ -1049,7 +1050,7 @@ msgstr "投稿タイトル"
 
 #: includes/admin/class-fe-search-ai-settings.php:1318
 #: includes/admin/class-fe-search-ai-settings.php:2124
-#: includes/admin/class-fe-search-ai-settings.php:2387
+#: includes/admin/class-fe-search-ai-settings.php:2386
 msgid "posts"
 msgstr "件"
 
@@ -1185,8 +1186,8 @@ msgid "Select the AI that reranks search results for improved relevance."
 msgstr "リランクを行うAIを選択してください。検索結果の関連性を高めるために使用されます。"
 
 #: includes/admin/class-fe-search-ai-settings.php:1938
-msgid "Select the basic colors for chat bubbles and user speech balloons."
-msgstr "チャットバブルやユーザーの吹き出しの基本色を選択します。"
+msgid "Select the basic color for user speech balloons."
+msgstr "ユーザーの吹き出しの基本色を選択します。"
 
 #: includes/admin/class-fe-search-ai-settings.php:901
 msgid ""
@@ -1374,13 +1375,13 @@ msgstr "ライセンスは有効です。"
 msgid "The license key has not been entered."
 msgstr "ライセンスキーが入力されていません。"
 
-#: includes/admin/class-fe-search-ai-settings.php:2455
+#: includes/admin/class-fe-search-ai-settings.php:2454
 msgid ""
 "The main content consists of [articles, products, job listings, FAQs, "
 "documentation, etc.]."
 msgstr "主なコンテンツは[記事、商品、求人、FAQ、ドキュメント等]です。"
 
-#: includes/admin/class-fe-search-ai-settings.php:2434
+#: includes/admin/class-fe-search-ai-settings.php:2433
 msgid ""
 "The name of the site you want the AI to recognize. If left blank, the site "
 "title will be used."
@@ -1419,7 +1420,7 @@ msgid ""
 "toward your activation limit."
 msgstr "このサイトは非本番環境として検出されており、アクティベーション数の制限にはカウントされません。"
 
-#: includes/admin/class-fe-search-ai-settings.php:2454
+#: includes/admin/class-fe-search-ai-settings.php:2453
 msgid "This website provides [type of content or service]."
 msgstr "このサイトは[サービス・コンテンツの種類]を提供するサイトです。"
 
@@ -1528,7 +1529,7 @@ msgstr "Yahoo! 日本語形態素解析 API を選択した場合に使用され
 msgid "User consent opt-in feature"
 msgstr "ユーザー同意のオプトイン機能"
 
-#: includes/admin/class-fe-search-ai-settings.php:2462
+#: includes/admin/class-fe-search-ai-settings.php:2461
 msgid "Users typically ask questions to [main user intent]."
 msgstr "ユーザーは主に[ユーザーの目的]のために質問します。"
 
@@ -1544,7 +1545,7 @@ msgstr "ベクトル化モデル"
 msgid "View FE Search AI Pro Details"
 msgstr "FE Search AI Pro を詳しくみる"
 
-#: includes/admin/class-fe-search-ai-settings.php:2414
+#: includes/admin/class-fe-search-ai-settings.php:2413
 #| msgid ""
 #| "When enabled, detailed operational logs will be saved to the `{prefix}"
 #| "fe_ai_search_system_logs` table (e.g. wp_fe_ai_search_system_logs if your "
@@ -1578,7 +1579,7 @@ msgstr ""
 "構造化出力（Structured "
 "Output）に対応しているプロバイダーに対して構造化されたデータ（JSON形式）で応答するよう要求します。対応していないプロバイダーやモデルは、標準のテキスト形式で応答するよう要求します。"
 
-#: includes/admin/class-fe-search-ai-settings.php:2463
+#: includes/admin/class-fe-search-ai-settings.php:2462
 msgid ""
 "When relevant, use the metadata to filter, compare, and summarize the "
 "results."
