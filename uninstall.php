@@ -21,9 +21,14 @@ if ( get_option( 'fe_search_ai_delete_on_uninstall' ) ) {
 	// Local variable, not global.
 	$table_names = [
 		$wpdb->prefix . 'fe_search_ai_vectors',
-		$wpdb->prefix . 'fe_search_ai_logs',
 		$wpdb->prefix . 'fe_search_ai_keyword_index',
+		$wpdb->prefix . 'fe_search_ai_system_logs',
 	];
+
+	// Conversation logs table is only created by Pro version.
+	if ( class_exists( 'FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) ) {
+		$table_names[] = $wpdb->prefix . 'fe_search_ai_logs';
+	}
 
 	foreach ( $table_names as $table_name ) {
 		// Local variable, not global.
