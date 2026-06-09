@@ -540,7 +540,8 @@
 	border: none;
 	color: #fff;
 	cursor: pointer;
-	background: var(--fe-search-ai-key-color);
+	background: #ccc;
+	transition: background 0.2s ease;
 }
 
 .fe-search-ai-consent-accept:hover {
