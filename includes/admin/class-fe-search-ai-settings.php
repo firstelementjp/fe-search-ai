@@ -482,6 +482,10 @@ class FE_Search_AI_Settings {
 			<p class="description">
 				<?php esc_html_e( 'Reranking improves answer quality and reduces the amount of context sent to the LLM by selecting the most relevant chunks.', 'fe-search-ai' ); ?>
 			</p>
+			<p class="description">
+				<strong><?php esc_html_e( 'Note:', 'fe-search-ai' ); ?></strong>
+				<?php esc_html_e( 'Free account Trial keys can be used for free but have rate limits and are not licensed for commercial use. Please obtain a Production key for commercial purposes.', 'fe-search-ai' ); ?>
+			</p>
 			<p>
 				<input type="hidden" name="fe_search_ai_settings[rerank][enabled]" value="0">
 				<label>
