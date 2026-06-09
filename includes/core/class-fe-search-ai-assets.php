@@ -72,7 +72,7 @@ class FE_Search_AI_Assets {
 		$key_color                  = $ui_options['key_color'] ?? '#cee8ff';
 		$background_color           = $ui_options['background_color'] ?? '#f5f5f5';
 		$text_color                 = $ui_options['text_color'] ?? '#3a424f';
-		$use_gradient               = isset( $ui_options['use_gradient'] ) ? (bool) $ui_options['use_gradient'] : true;
+		$use_gradient               = isset( $ui_options['use_gradient'] ) ? (bool) $ui_options['use_gradient'] : false;
 		$key_color_sanitized        = sanitize_hex_color( $key_color );
 		$key_color                  = ! empty( $key_color_sanitized ) ? $key_color_sanitized : '#0073aa';
 		$background_color_sanitized = sanitize_hex_color( $background_color );
