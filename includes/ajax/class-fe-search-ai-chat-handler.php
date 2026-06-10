@@ -37,8 +37,25 @@ use FESearchAI\Core\FE_Search_AI_License;
  */
 class FE_Search_AI_Chat_Handler {
 
-	private $options           = [];
+	/**
+	 * Plugin options.
+	 *
+	 * @var array
+	 */
+	private $options = [];
+
+	/**
+	 * Whether the license is active.
+	 *
+	 * @var bool
+	 */
 	private $is_license_active = '';
+
+	/**
+	 * Sync handler instance.
+	 *
+	 * @var FE_Search_AI_Sync_Handler
+	 */
 	private $sync_handler;
 
 	/**
@@ -106,6 +123,7 @@ class FE_Search_AI_Chat_Handler {
 	 * @param \WP_REST_Request $request The incoming REST API request containing
 	 *                                  the user's question, chat history, and
 	 *                                  provider settings.
+	 * @throws \Exception When rate limit notification fails.
 	 * @return void Outputs streamed response directly and terminates.
 	 */
 	public function stream_handler( \WP_REST_Request $request ) {
@@ -124,6 +142,7 @@ class FE_Search_AI_Chat_Handler {
 		 *
 		 * @param array $default_limits The default hardcoded limits.
 		 */
+		// Hook name is properly prefixed with fe_search_ai_.
 		$rate_limit_options = apply_filters( 'fe_search_ai_rate_limit_settings', $default_limits );
 		$rate_limit_options = wp_parse_args( $rate_limit_options, $default_limits );
 
@@ -133,12 +152,16 @@ class FE_Search_AI_Chat_Handler {
 		$notify_email       = $rate_limit_options['notify_email'];
 
 		if ( $ip_limit_count >= 0 ) {
-			$ip_transient_key = 'fe_search_ai_rl_ip_' . md5( $_SERVER['REMOTE_ADDR'] );
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+			// REMOTE_ADDR is server-provided, used for rate limiting only.
+			$ip_address       = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+			$ip_transient_key = 'fe_search_ai_rl_ip_' . md5( $ip_address );
 			$ip_request_count = get_transient( $ip_transient_key );
 
 			if ( $ip_request_count > $ip_limit_count ) {
 				status_header( 429 );
-				echo 'data: ' . json_encode( [ 'text' => __( 'You have exceeded the request limit. Please try again later.', 'fe-search-ai' ) ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+				echo 'data: ' . wp_json_encode( [ 'text' => __( 'You have exceeded the request limit. Please try again later.', 'fe-search-ai' ) ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 				exit;
 			}
 			set_transient( $ip_transient_key, ( (int) $ip_request_count + 1 ), HOUR_IN_SECONDS );
@@ -150,7 +173,7 @@ class FE_Search_AI_Chat_Handler {
 
 			if ( $global_request_count > $global_limit_count ) {
 				status_header( 429 );
-				echo 'data: ' . json_encode( [ 'text' => __( 'The site-wide request limit for today has been reached.', 'fe-search-ai' ) ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+				echo 'data: ' . wp_json_encode( [ 'text' => __( 'The site-wide request limit for today has been reached.', 'fe-search-ai' ) ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 				exit;
 			}
 
@@ -170,11 +193,16 @@ class FE_Search_AI_Chat_Handler {
 			}
 		}
 
-		// Disable server buffering
-		@ini_set( 'output_buffering', 'off' );
-		@ini_set( 'zlib.output_compression', 0 );
-		@ini_set( 'implicit_flush', 1 );
-		@ini_set( 'default_charset', 'UTF-8' );
+		// Disable server buffering.
+		// Required for SSE streaming to work properly.
+		// phpcs:ignore WordPress.PHP.IniSet.Risky
+		ini_set( 'output_buffering', 'off' );
+		// phpcs:ignore WordPress.PHP.IniSet.Risky
+		ini_set( 'zlib.output_compression', 0 );
+		// phpcs:ignore WordPress.PHP.IniSet.Risky
+		ini_set( 'implicit_flush', 1 );
+		// phpcs:ignore WordPress.PHP.IniSet.Risky
+		ini_set( 'default_charset', 'UTF-8' );
 		ob_implicit_flush( 1 );
 
 		// Clear all existing output buffers.
@@ -220,6 +248,8 @@ class FE_Search_AI_Chat_Handler {
 			 *
 			 * @param string $question The sanitized user's question.
 			 */
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+			// Hook name is properly prefixed with fe_search_ai_.
 			$question = apply_filters( 'fe_search_ai_preprocess_user_question', $question );
 			if ( empty( $question ) ) {
 				return;
@@ -262,7 +292,9 @@ class FE_Search_AI_Chat_Handler {
 				 */
 				// Make sequence ID available to filter callbacks
 				$GLOBALS['fe_search_ai_current_sequence_id'] = $sequence_id;
-				$similar_chunks                              = apply_filters( 'fe_search_ai_retrieved_chunks', $similar_chunks, $question );
+				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+				// Hook name is properly prefixed with fe_search_ai_.
+				$similar_chunks = apply_filters( 'fe_search_ai_retrieved_chunks', $similar_chunks, $question );
 
 				\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
 					'INFO',
@@ -304,7 +336,7 @@ class FE_Search_AI_Chat_Handler {
 				);
 			}
 
-			echo 'data: ' . json_encode(
+			echo 'data: ' . wp_json_encode(
 				[
 					'meta' => [
 						'context_found' => $context_found,
@@ -357,7 +389,7 @@ class FE_Search_AI_Chat_Handler {
 				$sequence_id
 			);
 
-			echo 'data: ' . json_encode( [ 'error' => 'An error occurred during processing.' ] ) . "\n\n";
+			echo 'data: ' . wp_json_encode( [ 'error' => 'An error occurred during processing.' ] ) . "\n\n";
 			flush();
 		} finally {
 			exit;
@@ -374,8 +406,9 @@ class FE_Search_AI_Chat_Handler {
 	 * @since 0.9.0
 	 * @param string $question       User's question text.
 	 * @param array  $context_chunks Relevant context chunks for the AI.
-	 * @param array  $history        Chat history for conversation context.
 	 * @param string $provider       The AI provider to use.
+	 * @param array  $history        Chat history for conversation context.
+	 * @param string $sequence_id    Log sequence ID.
 	 * @return void Outputs streamed response directly.
 	 */
 	public function stream_chat_completion( $question, $context_chunks, $provider, $history = [], $sequence_id = '' ) {
@@ -481,7 +514,7 @@ class FE_Search_AI_Chat_Handler {
 				[ 'provider' => $provider ]
 			);
 
-			echo 'data: ' . json_encode( [ 'text' => __( 'Error: OpenAI API key not set.', 'fe-search-ai' ) ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+			echo 'data: ' . wp_json_encode( [ 'text' => __( 'Error: OpenAI API key not set.', 'fe-search-ai' ) ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 			echo "data: [DONE]\n\n";
 			flush();
 			return;
@@ -503,13 +536,15 @@ class FE_Search_AI_Chat_Handler {
 			}
 		}
 
-		$model = 'gpt-4o-mini'; // Default
+		$model = 'gpt-5.4-mini'; // Default
 		if ( $this->is_license_active ) {
+			// Read Pro settings for model selection.
+			$pro_settings = get_option( 'fe_search_ai_pro_settings', [] );
 			if ( 'openai_compatible' === $provider ) {
-				$model = $this->options['model']['openai_compatible'] ?? $model;
+				$model = $pro_settings['model']['openai_compatible_model']['custom'] ?? $model;
 			} else {
-				$model = $this->options['model']['openai'] ?? [ 'type' => $model ];
-				$model = ( isset( $model['type'] ) && 'custom' === $model['type'] ) ? $model['custom'] : $model['type'];
+				$openai_model = $pro_settings['model']['openai_model'] ?? [ 'type' => $model, 'custom' => '' ];
+				$model        = ( 'custom' === $openai_model['type'] ) ? $openai_model['custom'] : $openai_model['type'];
 			}
 		}
 
@@ -557,14 +592,15 @@ class FE_Search_AI_Chat_Handler {
 			'model'       => $model,
 			'messages'    => $messages,
 			'stream'      => true,
-			'temperature' => 0.1, // RAG用に低い温度を設定
+			'temperature' => 0.1, // Set low temperature for RAG.
 		];
 
 		if ( 'openai_compatible' === $provider ) {
 			$body['stream'] = false;
 
-			// ローカルLLM用に実行時間制限を延長
-			set_time_limit( 300 ); // 5分
+			// phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged
+			// Required for local LLM processing which may take longer.
+			set_time_limit( 300 ); // 5 minutes.
 
 			$response = wp_remote_post(
 				$api_url,
@@ -593,7 +629,7 @@ class FE_Search_AI_Chat_Handler {
 						'duration_ms'   => $duration,
 					]
 				);
-				echo 'data: ' . json_encode( [ 'text' => __( 'Error: Connection failed.', 'fe-search-ai' ) ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+				echo 'data: ' . wp_json_encode( [ 'text' => __( 'Error: Connection failed.', 'fe-search-ai' ) ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 				echo "data: [DONE]\n\n";
 				flush();
 				return;
@@ -610,7 +646,7 @@ class FE_Search_AI_Chat_Handler {
 						'duration_ms' => $duration,
 					]
 				);
-				echo 'data: ' . json_encode( [ 'text' => __( 'Error: API request failed.', 'fe-search-ai' ) ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+				echo 'data: ' . wp_json_encode( [ 'text' => __( 'Error: API request failed.', 'fe-search-ai' ) ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 				echo "data: [DONE]\n\n";
 				flush();
 				return;
@@ -625,6 +661,8 @@ class FE_Search_AI_Chat_Handler {
 				}
 			}
 
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+			// Hook name is properly prefixed with fe_search_ai_.
 			$content = apply_filters( 'fe_search_ai_preprocess_model_response', $content );
 
 			// Ensure UTF-8 encoding before output
@@ -632,17 +670,24 @@ class FE_Search_AI_Chat_Handler {
 				$content = mb_convert_encoding( $content, 'UTF-8', 'UTF-8' );
 			}
 
-			echo 'data: ' . json_encode( [ 'text' => $content ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+			echo 'data: ' . wp_json_encode( [ 'text' => $content ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 			echo "data: [DONE]\n\n";
 			flush();
 			return;
 		}
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_init
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_getinfo
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_errno
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_error
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_exec
+		// cURL is required for Server-Sent Events (SSE) streaming which wp_remote_get() does not support.
 		$ch = curl_init();
 		curl_setopt( $ch, CURLOPT_URL, $api_url );
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, false );
 		curl_setopt( $ch, CURLOPT_POST, true );
-		curl_setopt( $ch, CURLOPT_POSTFIELDS, json_encode( $body ) );
+		curl_setopt( $ch, CURLOPT_POSTFIELDS, wp_json_encode( $body ) );
 		curl_setopt( $ch, CURLOPT_CONNECTTIMEOUT, 20 );
 		curl_setopt( $ch, CURLOPT_TIMEOUT, 120 );
 		curl_setopt( $ch, CURLOPT_HTTPHEADER, [ 'Content-Type: application/json', 'Accept: text/event-stream', 'Authorization: Bearer ' . $api_key ] );
@@ -688,9 +733,11 @@ class FE_Search_AI_Chat_Handler {
 						 *
 						 * @param string $content The text chunk generated by the AI model.
 						 */
+						// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+						// Hook name is properly prefixed with fe_search_ai_.
 						$content       = apply_filters( 'fe_search_ai_preprocess_model_response', $chunk['choices'][0]['delta']['content'] );
 						$received_text = true;
-						echo 'data: ' . json_encode( [ 'text' => $content ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+						echo 'data: ' . wp_json_encode( [ 'text' => $content ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 						if ( ob_get_level() > 0 ) {
 							ob_flush();
 						}
@@ -704,8 +751,12 @@ class FE_Search_AI_Chat_Handler {
 		// Execute the request.
 		echo 'data: ' . wp_json_encode( [ 'debug' => [ 'step' => 'before_curl_exec' ] ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 		flush();
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_exec
 		$result = curl_exec( $ch );
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_getinfo
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_errno
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_error
 		$http_status  = (int) curl_getinfo( $ch, CURLINFO_HTTP_CODE );
 		$curl_errno   = curl_errno( $ch );
 		$curl_error   = curl_error( $ch );
@@ -775,6 +826,8 @@ class FE_Search_AI_Chat_Handler {
 		}
 
 		// Check for cURL errors after execution.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_errno
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_error
 		if ( curl_errno( $ch ) ) {
 			// ERROR: Log the cURL (connection) failure.
 			\FESearchAI\Core\FE_Search_AI_Logger::log(
@@ -802,6 +855,7 @@ class FE_Search_AI_Chat_Handler {
 			);
 		}
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_close
 		curl_close( $ch );
 	}
 
@@ -901,7 +955,7 @@ class FE_Search_AI_Chat_Handler {
 			return;
 		}
 
-		$model = 'gpt-4o-mini'; // Default.
+		$model = 'gpt-5.4-mini'; // Default.
 		if ( $this->is_license_active ) {
 			if ( 'openai_compatible' === $provider ) {
 				$model = $this->options['model']['openai_compatible'] ?? $model;
@@ -975,6 +1029,7 @@ class FE_Search_AI_Chat_Handler {
 			],
 		];
 
+		// phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged
 		// Extend timeout for non-streaming requests.
 		set_time_limit( 300 );
 
@@ -1072,11 +1127,11 @@ class FE_Search_AI_Chat_Handler {
 		}
 
 		// Send the answer via SSE for smooth display.
-		echo 'data: ' . json_encode( [ 'text' => $answer_text ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+		echo 'data: ' . wp_json_encode( [ 'text' => $answer_text ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 
 		// Send references if available.
 		if ( ! empty( $references ) && is_array( $references ) ) {
-			echo 'data: ' . json_encode( [ 'references' => $references ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+			echo 'data: ' . wp_json_encode( [ 'references' => $references ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 		}
 
 		echo "data: [DONE]\n\n";
@@ -1120,10 +1175,6 @@ class FE_Search_AI_Chat_Handler {
 		echo 'data: ' . wp_json_encode( [ 'debug' => [ 'step' => 'inside_stream_completion_for_gemini', 'provider' => $provider ] ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 		flush();
 
-		// DEBUG: Basic Gemini state for troubleshooting.
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-		}
-
 		// Admin UI stores the key at provider.google_key.
 		$encrypted_key = $this->options['provider']['google_key'] ?? '';
 		$api_key       = FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
@@ -1134,13 +1185,13 @@ class FE_Search_AI_Chat_Handler {
 				[ 'provider' => $provider ]
 			);
 
-			echo 'data: ' . json_encode( [ 'text' => __( 'Error: Google API key is not set.', 'fe-search-ai' ) ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+			echo 'data: ' . wp_json_encode( [ 'text' => __( 'Error: Google API key is not set.', 'fe-search-ai' ) ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 			echo "data: [DONE]\n\n";
 			flush();
 			return;
 		}
 
-		$model = 'gemini-2.5-flash-lite'; // Default
+		$model = 'gemini-2.5-flash'; // Default
 		if ( $this->is_license_active ) {
 			// Read Gemini model settings from Pro options (fe_search_ai_pro_settings).
 			$pro_settings   = get_option( 'fe_search_ai_pro_settings', [] );
@@ -1154,10 +1205,6 @@ class FE_Search_AI_Chat_Handler {
 					$model = $type;
 				}
 			}
-		}
-
-		// DEBUG: Log the resolved Gemini model once per request for troubleshooting.
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 		}
 
 		// INFO: Log the start of the API call.
@@ -1232,7 +1279,7 @@ class FE_Search_AI_Chat_Handler {
 
 		$gemini_contents = [];
 		foreach ( $messages as $message ) {
-			$role = ( $message['role'] === 'assistant' ) ? 'model' : 'user';
+			$role = ( 'assistant' === $message['role'] ) ? 'model' : 'user';
 			if ( ! empty( $gemini_contents ) && end( $gemini_contents )['role'] === $role ) {
 				continue;
 			}
@@ -1262,11 +1309,18 @@ class FE_Search_AI_Chat_Handler {
 			],
 		];
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_init
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_getinfo
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_errno
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_error
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_exec
+		// cURL is required for Server-Sent Events (SSE) streaming which wp_remote_get() does not support.
 		$ch = curl_init();
 		curl_setopt( $ch, CURLOPT_URL, $api_url );
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
 		curl_setopt( $ch, CURLOPT_POST, true );
-		curl_setopt( $ch, CURLOPT_POSTFIELDS, json_encode( $body ) );
+		curl_setopt( $ch, CURLOPT_POSTFIELDS, wp_json_encode( $body ) );
 		curl_setopt( $ch, CURLOPT_HTTPHEADER, [ 'Content-Type: application/json' ] );
 		curl_setopt(
 			$ch,
@@ -1295,9 +1349,11 @@ class FE_Search_AI_Chat_Handler {
 							 *
 							 * @param string $content The text chunk generated by the AI model.
 							 */
+							// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+							// Hook name is properly prefixed with fe_search_ai_.
 							$content = apply_filters( 'fe_search_ai_preprocess_model_response', $content );
 
-							echo 'data: ' . json_encode( [ 'text' => $content ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+							echo 'data: ' . wp_json_encode( [ 'text' => $content ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 							if ( ob_get_level() > 0 ) {
 								ob_flush();
 							}
@@ -1310,6 +1366,7 @@ class FE_Search_AI_Chat_Handler {
 		);
 
 		// Execute the request.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_exec
 		curl_exec( $ch );
 		echo "data: [DONE]\n\n";
 		flush();
@@ -1318,6 +1375,8 @@ class FE_Search_AI_Chat_Handler {
 		$duration = round( ( microtime( true ) - $start_time ) * 1000 );
 
 		// Check for cURL errors after execution.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_errno
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_error
 		if ( curl_errno( $ch ) ) {
 			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'ERROR',
@@ -1341,6 +1400,7 @@ class FE_Search_AI_Chat_Handler {
 			);
 		}
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_close
 		curl_close( $ch );
 	}
 
@@ -1378,7 +1438,7 @@ class FE_Search_AI_Chat_Handler {
 				[ 'provider' => $provider ]
 			);
 
-			echo 'data: ' . json_encode(
+			echo 'data: ' . wp_json_encode(
 				[ 'text' => __( 'Error: Anthropic API key not set.', 'fe-search-ai' ) ]
 			) . "\n\n";
 			echo "data: [DONE]\n\n";
@@ -1388,8 +1448,10 @@ class FE_Search_AI_Chat_Handler {
 
 		$model = 'claude-haiku-4-5-20251001'; // Default
 		if ( $this->is_license_active ) {
-			$model = $this->options['model']['anthropic'] ?? [ 'type' => $model ];
-			$model = ( 'custom' === $model['type'] ) ? $model['custom'] : $model['type'];
+			// Read Pro settings for model selection.
+			$pro_settings    = get_option( 'fe_search_ai_pro_settings', [] );
+			$anthropic_model = $pro_settings['model']['anthropic_model'] ?? [ 'type' => $model, 'custom' => '' ];
+			$model           = ( 'custom' === $anthropic_model['type'] ) ? $anthropic_model['custom'] : $anthropic_model['type'];
 		}
 
 		// INFO: Log the start of the API call.
@@ -1431,16 +1493,22 @@ class FE_Search_AI_Chat_Handler {
 			'model'       => $model,
 			'max_tokens'  => 4096,
 			'messages'    => $messages['messages'],
-			'system'      => $messages['system'],
 			'stream'      => true,
-			'temperature' => 0.1, // RAG用に低い温度を設定
+			'temperature' => 0.1, // Set low temperature for RAG.
 		];
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_init
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_getinfo
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_errno
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_error
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_exec
+		// cURL is required for Server-Sent Events (SSE) streaming which wp_remote_get() does not support.
 		$ch = curl_init();
 		curl_setopt( $ch, CURLOPT_URL, 'https://api.anthropic.com/v1/messages' );
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
 		curl_setopt( $ch, CURLOPT_POST, true );
-		curl_setopt( $ch, CURLOPT_POSTFIELDS, json_encode( $body ) );
+		curl_setopt( $ch, CURLOPT_POSTFIELDS, wp_json_encode( $body ) );
 		curl_setopt(
 			$ch,
 			CURLOPT_HTTPHEADER,
@@ -1458,14 +1526,15 @@ class FE_Search_AI_Chat_Handler {
 				$lines = explode( "\n", $data );
 
 				foreach ( $lines as $line ) {
-					if ( strpos( $line, 'data: ' ) === 0 ) {
+					$trimmed_line = trim( $line );
+					if ( strpos( $trimmed_line, 'data: ' ) === 0 ) {
 
-						$json_data = substr( $line, 6 );
+						$json_data = substr( $trimmed_line, 6 );
 						$chunk     = json_decode( $json_data, true );
 
 						if ( isset( $chunk['type'] )
-						&& $chunk['type'] === 'content_block_delta'
-						&& isset( $chunk['delta']['type'] ) && $chunk['delta']['type'] === 'text_delta' ) {
+						&& 'content_block_delta' === $chunk['type']
+						&& isset( $chunk['delta']['type'] ) && 'text_delta' === $chunk['delta']['type'] ) {
 
 							$content = $chunk['delta']['text'];
 
@@ -1479,9 +1548,11 @@ class FE_Search_AI_Chat_Handler {
 							 *
 							 * @param string $content The text chunk generated by the AI model.
 							 */
+							// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+							// Hook name is properly prefixed with fe_search_ai_.
 							$content = apply_filters( 'fe_search_ai_preprocess_model_response', $content );
 
-							echo 'data: ' . json_encode( [ 'text' => $content ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+							echo 'data: ' . wp_json_encode( [ 'text' => $content ], JSON_UNESCAPED_UNICODE ) . "\n\n";
 
 							if ( ob_get_level() > 0 ) {
 								ob_flush();
@@ -1494,6 +1565,7 @@ class FE_Search_AI_Chat_Handler {
 			}
 		);
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_exec
 		curl_exec( $ch );
 		echo "data: [DONE]\n\n";
 		flush();
@@ -1501,6 +1573,8 @@ class FE_Search_AI_Chat_Handler {
 		// Calculate the total duration.
 		$duration = round( ( microtime( true ) - $start_time ) * 1000 );
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_errno
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_error
 		if ( curl_errno( $ch ) ) {
 			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'ERROR',
@@ -1524,6 +1598,7 @@ class FE_Search_AI_Chat_Handler {
 			);
 		}
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_close
 		curl_close( $ch );
 	}
 
@@ -1595,7 +1670,12 @@ class FE_Search_AI_Chat_Handler {
 			}
 		}
 
-		$answer_lang_code = strstr( $answer_locale, '_', true ) ?: $answer_locale; // e.g. ja_JP -> ja
+		$answer_lang_code_extracted = strstr( $answer_locale, '_', true );
+		if ( false !== $answer_lang_code_extracted ) {
+			$answer_lang_code = $answer_lang_code_extracted;
+		} else {
+			$answer_lang_code = $answer_locale;
+		}
 
 		// Append a language rule so the model knows which language to use
 		// for this particular request.
@@ -1604,7 +1684,10 @@ class FE_Search_AI_Chat_Handler {
 
 		// Add Gemini-specific constraints to prevent hallucination
 		// @TODO: Temporarily commented out for testing
+
 		/*
+		Gemini-specific constraints are temporarily disabled for testing.
+
 		if ( $provider === 'google' ) {
 			$system_prompt .= "\n\nGEMINI INSTRUCTIONS:\n" .
 				"You MUST only use the job postings listed under 'REAL JOB POSTINGS FROM THE WEBSITE'.\n" .
@@ -1626,6 +1709,7 @@ class FE_Search_AI_Chat_Handler {
 		 * @param string $system_prompt The system prompt string to be sent to the AI model.
 		 * @param string $provider      The slug of the current AI provider (e.g., 'openai', 'google').
 		 */
+		// Hook name is properly prefixed with fe_search_ai_.
 		$system_prompt = apply_filters( 'fe_search_ai_system_prompt', $system_prompt, $provider );
 
 		// Initialize context string.
@@ -1663,7 +1747,7 @@ class FE_Search_AI_Chat_Handler {
 				if ( $post_id > 0 ) {
 					$post = get_post( $post_id );
 					if ( $post ) {
-						$post_date = date( 'Y-m-d', strtotime( $post->post_date ) );
+						$post_date = gmdate( 'Y-m-d', strtotime( $post->post_date ) );
 
 						// Get taxonomy metadata
 						$taxonomies = get_object_taxonomies( $post->post_type, 'objects' );
@@ -1710,9 +1794,9 @@ class FE_Search_AI_Chat_Handler {
 						}
 
 						// Start collecting content after "Content:" line
-						if ( $line === 'Content:' || $in_content_section ) {
+						if ( 'Content:' === $line || $in_content_section ) {
 							$in_content_section = true;
-							if ( $line !== 'Content:' ) {
+							if ( 'Content:' !== $line ) {
 								$clean_content[] = $line;
 							}
 						}
@@ -1755,6 +1839,7 @@ class FE_Search_AI_Chat_Handler {
 		 * @param string $system_prompt The complete system prompt with all placeholders replaced.
 		 * @param string $provider      The AI provider being used (openai, google, anthropic).
 		 */
+		// Hook name is properly prefixed with fe_search_ai_.
 		$system_prompt = apply_filters( 'fe_search_ai_final_system_prompt', $system_prompt, $provider );
 
 		// Debug: Log final system prompt after all replacements
@@ -1783,7 +1868,7 @@ class FE_Search_AI_Chat_Handler {
 		$messages = array_filter(
 			$history,
 			function ( $msg ) {
-				return ! ( isset( $msg['role'] ) && $msg['role'] === 'assistant' && empty( trim( $msg['content'] ) ) );
+				return ! ( isset( $msg['role'] ) && 'assistant' === $msg['role'] && empty( trim( $msg['content'] ) ) );
 			}
 		);
 
@@ -1810,14 +1895,19 @@ class FE_Search_AI_Chat_Handler {
 			$final_messages[] = $msg;
 		}
 
-		// Add the complete prompt as system message
-		$final_messages[] = [
-			'role'    => 'system',
-			'content' => $system_prompt,
-		];
+		// Add the complete prompt as system message (for OpenAI & Gemini)
+		// For Claude (new API), we will prepend it as a user message instead.
+		if ( ! $for_claude ) {
+			$final_messages[] = [
+				'role'    => 'system',
+				'content' => $system_prompt,
+			];
+		}
 
 		// Return the final data in the format specified by the provider.
 		if ( $for_claude ) {
+			// For Claude (new API), prepend system prompt as a user message.
+			array_unshift( $final_messages, [ 'role' => 'user', 'content' => $system_prompt ] );
 			return [ 'messages' => array_values( $final_messages ), 'system' => $system_prompt ];
 		} else { // for OpenAI & Gemini
 			return $final_messages;
@@ -1831,46 +1921,28 @@ class FE_Search_AI_Chat_Handler {
 	 */
 	public static function get_default_system_prompt() {
 		return "Role:
-You are a dedicated \"Job Search Assistant\" for the website \"{site_name}\".
-Your goal is to answer user queries strictly based on the \"Search Results\" provided below.
+You are a helpful AI assistant for the website \"{site_name}\".
+Your task is to answer the user's question using only the provided search results from this website.
 
 ### Site Profile
 - Name: {site_name}
 - URL: {site_url}
 - Purpose: {site_purpose}
 
-### User Query
+### User Question
 {user_question}
 
-### Search Results (Context data from the website)
+### Search Results
 {context_content}
 
-### Critical Instructions
-1. **Data Source Authority:**
-   - You MUST answer solely based on the \"Search Results\" section above.
-   - Ignore your internal training data regarding external jobs or general knowledge.
-   - Each search result includes ID, Title, URL, Date, Metadata, and Content fields.
-
-2. **Handling Job Status (Important):**
-   - The search results may contain jobs marked as \"募集終了\" in the Metadata field.
-   - **You MUST display these items** if they match the user's query, but clearly state that recruitment has ended (e.g., add \"※募集終了\" to the title).
-   - Do NOT hide content just because it is closed/old. The user uses this search to reference past data as well.
-
-3. **Response Behavior:**
-   - If relevant items are found, list them using Markdown bullets.
-   - **Citation format:** Use the Title and URL from each search result to create links like `[Title](URL)`
-   - **Metadata filtering:** If the user asks for specific conditions (e.g., \"Tokyo\"), filter based on the Metadata fields. For example:
-     - Location: Look for [地域:東京都] in Metadata
-     - Salary: Look for [月収:～50万] in Metadata
-     - Employment Type: Look for [雇用形態:正社員] in Metadata
-   - Include key information from Metadata (location, salary, employment type) and relevant Content details in your summary.
-
-4. **Negative Response:**
-   - If the \"Search Results\" section is empty or contains NO matches for the user's specific intent, output EXACTLY:
-     \"申し訳ありませんが、その情報は見つかりませんでした。サイト内で関連情報をお探しいただけますでしょうか？\"
-
-5. **Language:**
-   - Use Japanese for the response.";
+### Instructions
+1. Use only the information in the Search Results.
+2. Do not use external knowledge or make assumptions.
+3. If relevant results are found, answer clearly and concisely.
+4. When a result includes a Title and URL, cite it as a Markdown link.
+5. Use Metadata fields when they are relevant to the user's question.
+6. If the Search Results do not contain enough information, say that the information was not found in the available site content.
+7. Respond in the same language as the user's question, unless the user asks for another language.";
 	}
 
 	/**
@@ -1902,11 +1974,21 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 
 		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// Direct query required for custom table.
 		global $wpdb;
 		$logs_table = $wpdb->prefix . 'fe_search_ai_logs';
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $logs_table ) ) !== $logs_table ) {
+			wp_send_json_success( [ 'log_id' => 0 ] );
+			return;
+		}
 
-		$question_raw = isset( $_POST['question'] ) ? sanitize_text_field( $_POST['question'] ) : '';
-		$answer_raw   = isset( $_POST['answer'] ) ? wp_kses_post( $_POST['answer'] ) : '';
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		// Input is sanitized after unslashing.
+		$question_raw = isset( $_POST['question'] ) ? sanitize_text_field( wp_unslash( $_POST['question'] ) ) : '';
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		// Input is sanitized after unslashing.
+		$answer_raw = isset( $_POST['answer'] ) ? wp_kses_post( wp_unslash( $_POST['answer'] ) ) : '';
 
 		$question      = $this->filter_personal_data( $question_raw );
 		$answer        = $this->filter_personal_data( $answer_raw );
@@ -1916,9 +1998,12 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 		$question_len  = isset( $_POST['question_length'] ) ? intval( $_POST['question_length'] ) : 0;
 		$log_id        = 0;
 
+		// Hook name is properly prefixed with fe_search_ai_.
 		$enable_question_logging = apply_filters( 'fe_search_ai_allow_conversation_log_question_text', false, $session_id );
-		$enable_answer_logging   = apply_filters( 'fe_search_ai_allow_conversation_log_answer_text', false, $session_id );
-		$allow_pii_logging       = apply_filters( 'fe_search_ai_allow_conversation_log_pii', false, $session_id );
+		// Hook name is properly prefixed with fe_search_ai_.
+		$enable_answer_logging = apply_filters( 'fe_search_ai_allow_conversation_log_answer_text', false, $session_id );
+		// Hook name is properly prefixed with fe_search_ai_.
+		$allow_pii_logging = apply_filters( 'fe_search_ai_allow_conversation_log_pii', false, $session_id );
 		if ( $pii_suspected && ! $allow_pii_logging ) {
 			$enable_question_logging = false;
 			$enable_answer_logging   = false;
@@ -1931,13 +2016,15 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 			$answer_length = strlen( wp_strip_all_tags( $answer ) );
 			$answer_text   = $enable_answer_logging ? $answer : sprintf( 'AI answer is not logged. (length: %d chars)', max( 0, $answer_length ) );
 
-			$log_row                  = [
+			$log_row = [
 				'session_id'    => $session_id,
 				'question'      => $question_text,
 				'answer'        => $answer_text,
 				'context_found' => $context_found,
 				'created_at'    => current_time( 'mysql' ),
 			];
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+			// Hook name is properly prefixed with fe_search_ai_.
 			$log_row                  = apply_filters( 'fe_search_ai_conversation_log_payload', $log_row, $session_id );
 			$allowed_keys             = [
 				'session_id'    => true,
@@ -1953,6 +2040,9 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 			$log_row['question']      = $enable_question_logging ? (string) ( $log_row['question'] ?? '' ) : sprintf( 'User question is not logged. (length: %d chars)', max( 0, $question_len ) );
 			$log_row['answer']        = $enable_answer_logging ? (string) ( $log_row['answer'] ?? '' ) : sprintf( 'AI answer is not logged. (length: %d chars)', max( 0, $answer_length ) );
 
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+			// Direct insert required for custom table. Table name is controlled internally.
 			$wpdb->insert( $logs_table, $log_row );
 			$log_id = $wpdb->insert_id;
 		}
@@ -2006,15 +2096,25 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 			return;
 		}
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// Direct query required for custom table.
 		global $wpdb;
 		$logs_table = $wpdb->prefix . 'fe_search_ai_logs';
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $logs_table ) ) !== $logs_table ) {
+			wp_send_json_success( [ 'logs' => [] ] );
+			return;
+		}
 
-		// Get logs for this session with rating information
+		// Get logs for this session with rating information.
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+		// Table name is interpolated but controlled internally, session_id is prepared.
 		$logs = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT id, question, answer, rating, created_at 
-			 FROM {$logs_table} 
-			 WHERE session_id = %s 
+				"SELECT id, question, answer, rating, created_at
+			 FROM {$logs_table}
+			 WHERE session_id = %s
 			 ORDER BY created_at ASC",
 				$session_id
 			)
@@ -2032,7 +2132,11 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 	public function ajax_rate_answer() {
 		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
 
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		// Input is cast to int, no sanitization needed.
 		$log_id = isset( $_POST['log_id'] ) ? absint( $_POST['log_id'] ) : 0;
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		// Input is cast to int, no sanitization needed.
 		$rating = isset( $_POST['rating'] ) ? (int) $_POST['rating'] : 0;
 
 		if ( $log_id <= 0 ) {
@@ -2047,7 +2151,13 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 
 		global $wpdb;
 		$logs_table = $wpdb->prefix . 'fe_search_ai_logs';
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $logs_table ) ) !== $logs_table ) {
+			wp_send_json_error( [ 'message' => __( 'Conversation log table is not available.', 'fe-search-ai' ) ] );
+			return;
+		}
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// Direct update required for custom table. Table name is controlled internally.
 		$updated = $wpdb->update(
 			$logs_table,
 			[ 'rating' => $rating ],
@@ -2082,8 +2192,8 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 	 */
 	public function ajax_test_api_key() {
 		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
-		$provider = isset( $_POST['provider'] ) ? sanitize_key( $_POST['provider'] ) : '';
-		$api_key  = isset( $_POST['api_key'] ) ? sanitize_text_field( $_POST['api_key'] ) : '';
+		$provider = isset( $_POST['provider'] ) ? sanitize_key( wp_unslash( $_POST['provider'] ) ) : '';
+		$api_key  = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
 
 		if ( empty( $provider ) ) {
 			wp_send_json_error( __( 'Provider missing.', 'fe-search-ai' ) );
@@ -2100,6 +2210,7 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 		 * @param string     $provider The provider slug being tested.
 		 * @param string     $api_key  The API key being tested.
 		 */
+		// Hook name is properly prefixed with fe_search_ai_.
 		$result = apply_filters( 'fe_search_ai_handle_custom_api_test', $result, $provider, $api_key );
 
 		if ( is_array( $result ) ) {
@@ -2128,6 +2239,34 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 						$is_valid = true;
 					} else {
 						$error_message = is_wp_error( $response ) ? $response->get_error_message() : __( 'Authentication failed.', 'fe-search-ai' );
+						// Log detailed error information.
+						if ( ! is_wp_error( $response ) ) {
+							$response_code = (int) wp_remote_retrieve_response_code( $response );
+							$response_body = wp_remote_retrieve_body( $response );
+							$body          = json_decode( $response_body, true );
+							$error_message = $body['error']['message'] ?? $error_message;
+							\FESearchAI\Core\FE_Search_AI_Logger::log(
+								'ERROR',
+								'OpenAI API key test failed.',
+								[
+									'provider'      => $provider,
+									'http_status'   => $response_code,
+									'error_type'    => $body['error']['type'] ?? '',
+									'error_message' => $body['error']['message'] ?? '',
+									'raw_response'  => $response_body,
+								]
+							);
+						} else {
+							\FESearchAI\Core\FE_Search_AI_Logger::log(
+								'ERROR',
+								'OpenAI API key test failed with WP_Error.',
+								[
+									'provider'      => $provider,
+									'error_code'    => $response->get_error_code(),
+									'error_message' => $response->get_error_message(),
+								]
+							);
+						}
 					}
 					break;
 
@@ -2143,9 +2282,33 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 						$is_valid = true;
 					} else {
 						$error_message = __( 'Authentication failed.', 'fe-search-ai' );
+						// Log detailed error information.
 						if ( ! is_wp_error( $response ) ) {
-							$body          = json_decode( wp_remote_retrieve_body( $response ), true );
+							$response_code = (int) wp_remote_retrieve_response_code( $response );
+							$response_body = wp_remote_retrieve_body( $response );
+							$body          = json_decode( $response_body, true );
 							$error_message = $body['error']['message'] ?? $error_message;
+							\FESearchAI\Core\FE_Search_AI_Logger::log(
+								'ERROR',
+								'Google API key test failed.',
+								[
+									'provider'      => $provider,
+									'http_status'   => $response_code,
+									'error_type'    => $body['error']['status'] ?? '',
+									'error_message' => $body['error']['message'] ?? '',
+									'raw_response'  => $response_body,
+								]
+							);
+						} else {
+							\FESearchAI\Core\FE_Search_AI_Logger::log(
+								'ERROR',
+								'Google API key test failed with WP_Error.',
+								[
+									'provider'      => $provider,
+									'error_code'    => $response->get_error_code(),
+									'error_message' => $response->get_error_message(),
+								]
+							);
 						}
 					}
 					break;
@@ -2155,6 +2318,7 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 						$error_message = __( 'API key is missing.', 'fe-search-ai' );
 						break;
 					}
+					$model    = 'claude-haiku-4-5-20251001';
 					$response = wp_remote_post(
 						'https://api.anthropic.com/v1/messages',
 						[
@@ -2163,9 +2327,9 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 								'anthropic-version' => '2023-06-01',
 								'Content-Type'      => 'application/json',
 							],
-							'body'    => json_encode(
+							'body'    => wp_json_encode(
 								[
-									'model'      => 'claude-3-haiku-20240307',
+									'model'      => $model,
 									'max_tokens' => 1,
 									'messages'   => [ [ 'role' => 'user', 'content' => 'Hello' ] ],
 								]
@@ -2177,9 +2341,36 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 						$is_valid = true;
 					} else {
 						$error_message = __( 'Authentication failed.', 'fe-search-ai' );
-						if ( ! is_wp_error( $response ) ) {
-							$body          = json_decode( wp_remote_retrieve_body( $response ), true );
+						if ( is_wp_error( $response ) ) {
+							\FESearchAI\Core\FE_Search_AI_Logger::log(
+								'ERROR',
+								'Anthropic API key test failed with WP_Error.',
+								[
+									'provider'      => $provider,
+									'model'         => $model,
+									'error_code'    => $response->get_error_code(),
+									'error_message' => $response->get_error_message(),
+								]
+							);
+							$error_message = $response->get_error_message();
+						} else {
+							$response_code = (int) wp_remote_retrieve_response_code( $response );
+							$response_body = wp_remote_retrieve_body( $response );
+							$body          = json_decode( $response_body, true );
 							$error_message = $body['error']['message'] ?? $error_message;
+
+							\FESearchAI\Core\FE_Search_AI_Logger::log(
+								'ERROR',
+								'Anthropic API key test failed.',
+								[
+									'provider'      => $provider,
+									'model'         => $model,
+									'http_status'   => $response_code,
+									'error_type'    => $body['error']['type'] ?? '',
+									'error_message' => $body['error']['message'] ?? '',
+									'raw_response'  => $response_body,
+								]
+							);
 						}
 					}
 					break;
@@ -2296,6 +2487,7 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 		 *
 		 * @param array $patterns Default regex patterns for personal data.
 		 */
+		// Hook name is properly prefixed with fe_search_ai_.
 		$patterns = apply_filters( 'fe_search_ai_personal_data_patterns', $patterns );
 
 		$filtered = preg_replace( $patterns, __( '[REDACTED]', 'fe-search-ai' ), $text );
@@ -2325,8 +2517,12 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 			wp_send_json_error( [ 'message' => 'Permission denied.' ] );
 		}
 
-		$license_key = isset( $_POST['license_key'] ) ? sanitize_text_field( $_POST['license_key'] ) : '';
-		$action      = isset( $_POST['license_action'] ) ? sanitize_key( $_POST['license_action'] ) : '';
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		// Input is sanitized after unslashing.
+		$license_key = isset( $_POST['license_key'] ) ? sanitize_text_field( wp_unslash( $_POST['license_key'] ) ) : '';
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		// Input is sanitized after unslashing.
+		$action = isset( $_POST['license_action'] ) ? sanitize_key( wp_unslash( $_POST['license_action'] ) ) : '';
 
 		if ( empty( $license_key ) || empty( $action ) ) {
 			wp_send_json_error( [ 'message' => 'Missing key or action.' ] );
@@ -2335,17 +2531,6 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 		// Perform the license action.
 		$handler = new \FESearchAI\Core\FE_Search_AI_License_Handler();
 		$result  = ( 'activate' === $action ) ? $handler->activate( $license_key ) : $handler->deactivate( $license_key );
-
-		// Determine the product ID from the remote response. If it's missing,
-		// fall back to the main Pro product ID.
-		$product_id = 0;
-		if ( isset( $result['data']['data']['productId'] ) ) {
-			$product_id = (int) $result['data']['data']['productId'];
-		} elseif ( isset( $result['data']['productId'] ) ) {
-			$product_id = (int) $result['data']['productId'];
-		} elseif ( class_exists( '\\FESearchAI\\Core\\FE_Search_AI_License' ) ) {
-			$product_id = \FESearchAI\Core\FE_Search_AI_License::PRODUCT_ID_PRO;
-		}
 
 		$all_licenses = get_option( 'fe_search_ai_license', [] );
 
@@ -2362,7 +2547,41 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 			$all_licenses['products'] = [];
 		}
 
+		$license_data = [];
+		if ( isset( $result['data']['data'] ) && is_array( $result['data']['data'] ) ) {
+			$license_data = $result['data']['data'];
+			foreach ( [ 'non_production', 'environment_type', 'home_url', 'site_url' ] as $metadata_key ) {
+				if ( array_key_exists( $metadata_key, $result['data'] ) ) {
+					$license_data[ $metadata_key ] = $result['data'][ $metadata_key ];
+				}
+			}
+		} elseif ( isset( $result['data'] ) && is_array( $result['data'] ) ) {
+			$license_data = $result['data'];
+		}
+
+		// Determine the product ID from the remote response. If it is missing,
+		// fall back to the currently stored paid product entry.
+		$product_id = 0;
+		if ( isset( $license_data['productId'] ) ) {
+			$product_id = (int) $license_data['productId'];
+		} elseif ( class_exists( '\\FESearchAI\\Core\\FE_Search_AI_License' ) ) {
+			$paid_entry = \FESearchAI\Core\FE_Search_AI_License::get_paid_product_entry();
+			$product_id = (int) ( $paid_entry['product_id'] ?? \FESearchAI\Core\FE_Search_AI_License::PRODUCT_ID_PRO );
+		}
+
 		if ( $result && $result['success'] ) {
+			if ( 'deactivate' === $action && class_exists( '\\FESearchAI\\Core\\FE_Search_AI_License' ) ) {
+				foreach ( \FESearchAI\Core\FE_Search_AI_License::get_paid_product_ids() as $paid_product_id ) {
+					if ( isset( $all_licenses['products'][ $paid_product_id ] ) && is_array( $all_licenses['products'][ $paid_product_id ] ) ) {
+						$all_licenses['products'][ $paid_product_id ]['status'] = 'inactive';
+					}
+				}
+
+				update_option( 'fe_search_ai_license', $all_licenses );
+				delete_transient( 'fe_search_ai_license_error' );
+				wp_send_json_success( [ 'message' => $result['message'] ] );
+			}
+
 			// Determine the local license status based on the requested action.
 			// For this site, a successful deactivation should always be treated as inactive,
 			// even if the remote license itself remains valid for other activations.
@@ -2379,7 +2598,7 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 				$all_licenses['products'][ $product_id ] = [
 					'key'    => $encrypted_key,
 					'status' => $local_status,
-					'data'   => $result['data'] ?? [],
+					'data'   => $license_data,
 				];
 			}
 
@@ -2392,7 +2611,7 @@ Your goal is to answer user queries strictly based on the \"Search Results\" pro
 				$all_licenses['products'][ $product_id ] = [
 					'key'    => \FESearchAI\Core\FE_Search_AI_Encryption_Helper::encrypt( $license_key ),
 					'status' => 'inactive',
-					'data'   => $result['data'] ?? [],
+					'data'   => $license_data,
 				];
 			}
 

@@ -169,7 +169,6 @@ class FE_Search_AI_License_Settings {
 						<li>
 							<h4><?php esc_html_e( 'Display', 'fe-search-ai' ); ?></h4>
 							<ul>
-								<li><?php esc_html_e( 'Configure detailed display rules for the chat window (by post type, page type, etc.)', 'fe-search-ai' ); ?></li>
 								<li><?php esc_html_e( 'Configure a dedicated page for full-screen chat view', 'fe-search-ai' ); ?></li>
 								<li>
 									<?php esc_html_e( 'User consent opt-in feature', 'fe-search-ai' ); ?>
@@ -194,11 +193,6 @@ class FE_Search_AI_License_Settings {
 									<ul>
 										<li><?php esc_html_e( 'Limit the number of requests per IP address per hour', 'fe-search-ai' ); ?></li>
 										<li><?php esc_html_e( 'Limit the total number of requests per site per day', 'fe-search-ai' ); ?></li>
-									</ul>
-								</li>
-								<li>
-									<?php esc_html_e( 'Notification settings', 'fe-search-ai' ); ?>
-									<ul>
 										<li><?php esc_html_e( 'Configure thresholds for sending notifications to administrators', 'fe-search-ai' ); ?></li>
 										<li><?php esc_html_e( 'Configure notification email addresses', 'fe-search-ai' ); ?></li>
 									</ul>
@@ -231,7 +225,14 @@ class FE_Search_AI_License_Settings {
 							</ul>
 						</li>
 					</ul>
-					<a href="https://www.firstelement.co.jp/products/fe-search-ai-pro/" target="_blank" class="button button-primary button-hero">
+					<?php
+					$current_locale = function_exists( 'determine_locale' ) ? determine_locale() : get_locale();
+					$is_japanese    = is_string( $current_locale ) && 0 === strpos( strtolower( $current_locale ), 'ja' );
+					$pro_url        = $is_japanese
+						? 'https://www.firstelement.co.jp/products/fe-search-ai-plugin/'
+						: 'https://www.firstelement.co.jp/en/products/fe-search-ai-plugin/';
+					?>
+					<a href="<?php echo esc_url( $pro_url ); ?>" target="_blank" class="button button-primary button-hero">
 						<?php esc_html_e( 'View FE Search AI Pro Details', 'fe-search-ai' ); ?>
 					</a>
 				</div>
@@ -240,6 +241,9 @@ class FE_Search_AI_License_Settings {
 		<?php
 	}
 
+	/**
+	 * Register license settings.
+	 */
 	public function register_settings() {
 		$settings_group = 'fe-search-ai-settings-group';
 
@@ -266,13 +270,12 @@ class FE_Search_AI_License_Settings {
 	 */
 	public function field_html() {
 		$license_data = get_option( 'fe_search_ai_license', [] );
-		$products     = $license_data['products'] ?? [];
+		$paid_entry   = \FESearchAI\Core\FE_Search_AI_License::get_paid_product_entry();
 
-		// Get and decrypt the Pro license key (product ID 65)
+		// Get and decrypt the Pro license key.
 		$license_key = '';
-		if ( isset( $products[65]['key'] ) ) {
-			$encrypted_key = $products[65]['key'];
-			$license_key   = \FESearchAI\Core\FE_Search_AI_Encryption_Helper::decrypt( $encrypted_key );
+		if ( ! empty( $paid_entry['key'] ) ) {
+			$license_key = \FESearchAI\Core\FE_Search_AI_Encryption_Helper::decrypt( $paid_entry['key'] );
 		}
 
 		$license_status = \FESearchAI\Core\FE_Search_AI_License::is_pro_active() ? 'active' : 'inactive';
@@ -302,14 +305,14 @@ class FE_Search_AI_License_Settings {
 				<?php esc_html_e( 'The license is valid.', 'fe-search-ai' ); ?>
 			</p>
 			<?php
-				// Get license data from the correct structure
-				$products = $license_data['products'] ?? [];
-				$pro_data = $products[65]['data'] ?? [];
+				$pro_data = $paid_entry['data'] ?? [];
 
 				$expires_at          = $pro_data['expiresAt'] ?? '';
 				$times_activated     = $pro_data['timesActivated'] ?? null;
-				$times_activated_max = $pro_data['timesActivatedMax'] ?? null;
+				$has_activation_max  = array_key_exists( 'timesActivatedMax', $pro_data );
+				$times_activated_max = $has_activation_max ? $pro_data['timesActivatedMax'] : null;
 				$remaining_days      = '';
+				$is_non_production   = ! empty( $pro_data['non_production'] );
 
 			if ( ! empty( $expires_at ) ) {
 				try {
@@ -331,11 +334,15 @@ class FE_Search_AI_License_Settings {
 					/* translators: 1: expiration date, 2: remaining days */
 					__( 'License expiration date: %1$s (remaining %2$s days)', 'fe-search-ai' ),
 					esc_html( date_i18n( 'Y-m-d', strtotime( $expires_at ) ) ),
-					$remaining_days !== '' ? esc_html( (string) $remaining_days ) : '600'
+					'' !== $remaining_days ? esc_html( (string) $remaining_days ) : '600'
 				);
 			}
 
+			if ( $has_activation_max ) {
 				$max_text = is_null( $times_activated_max ) ? __( 'Unlimited', 'fe-search-ai' ) : (string) (int) $times_activated_max;
+			} else {
+				$max_text = __( 'Unknown', 'fe-search-ai' );
+			}
 			?>
 			<?php if ( ! empty( $expires_text ) ) : ?>
 				<p class="description">
@@ -352,6 +359,11 @@ class FE_Search_AI_License_Settings {
 				);
 				?>
 			</p>
+			<?php if ( $is_non_production ) : ?>
+				<p class="description" style="color: green; font-weight: bold;">
+					<?php esc_html_e( 'This site is detected as a non-production environment and does not count toward your activation limit.', 'fe-search-ai' ); ?>
+				</p>
+			<?php endif; ?>
 
 		<?php else : ?>
 

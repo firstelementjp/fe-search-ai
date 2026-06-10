@@ -11,6 +11,12 @@
 
 namespace FESearchAI\Core;
 
+/**
+ * Shared default values used across the FE AI Search plugin.
+ *
+ * Centralizes default text for the chat UI so that the admin settings
+ * placeholders and the frontend chat UI always stay in sync.
+ */
 class FE_Search_AI_Defaults {
 	/**
 	 * Returns the default display text values for the chat UI.

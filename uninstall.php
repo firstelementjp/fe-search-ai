@@ -18,18 +18,27 @@ if ( get_option( 'fe_search_ai_delete_on_uninstall' ) ) {
 	global $wpdb;
 
 	// Delete custom table.
+	// Local variable, not global.
 	$table_names = [
 		$wpdb->prefix . 'fe_search_ai_vectors',
-		$wpdb->prefix . 'fe_search_ai_logs',
 		$wpdb->prefix . 'fe_search_ai_keyword_index',
+		$wpdb->prefix . 'fe_search_ai_system_logs',
 	];
 
+	// Conversation logs table is only created by Pro version.
+	if ( class_exists( 'FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) ) {
+		$table_names[] = $wpdb->prefix . 'fe_search_ai_logs';
+	}
+
 	foreach ( $table_names as $table_name ) {
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange
+		// Local variable, not global.
+		// Table name is interpolated but controlled internally.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange
 		$wpdb->query( "DROP TABLE IF EXISTS `{$table_name}`" );
 	}
 
 	// Delete option.
+	// Local variable, not global.
 	$option_names = [
 		'fe_search_ai_chat_provider',
 		'fe_search_ai_embedding_provider',
@@ -44,6 +53,7 @@ if ( get_option( 'fe_search_ai_delete_on_uninstall' ) ) {
 	];
 
 	foreach ( $option_names as $option_name ) {
+		// Local variable, not global.
 		delete_option( $option_name );
 	}
 	delete_option( 'fe_search_ai_delete_on_uninstall' );

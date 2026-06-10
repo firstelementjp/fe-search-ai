@@ -105,10 +105,11 @@ class FE_Search_AI_Sync_Hooks {
 			$lang_code = pll_get_post_language( $post_id, 'slug' );
 		} elseif ( function_exists( 'wpml_get_language_information' ) ) {
 			// WPML support: Get the language code using WPML filter.
+			// This is a third-party WPML plugin hook, not our own.
 			$lang_details = apply_filters( 'wpml_post_language_details', null, $post_id );
-			$lang_code    = $lang_details['language_code'] ?? ''; // e.g., 'en', 'ja'
+			$lang_code    = $lang_details['language_code'] ?? ''; // e.g., 'en', 'ja'.
 		} elseif ( function_exists( 'bogo_get_post_language' ) ) {
-			// Bogo stores language in post meta using the locale code
+			// Bogo stores language in post meta using the locale code.
 			$lang_code = get_post_meta( $post_id, '_locale', true );
 		}
 
@@ -116,7 +117,10 @@ class FE_Search_AI_Sync_Hooks {
 			$lang_code = get_locale();
 		}
 
-		$lang_code = strstr( $lang_code, '_', true ) ?: $lang_code;
+		$lang_code_extracted = strstr( $lang_code, '_', true );
+		if ( false !== $lang_code_extracted ) {
+			$lang_code = $lang_code_extracted;
+		}
 
 		/**
 		 * Filters the detected language code for a post being indexed.
@@ -127,11 +131,12 @@ class FE_Search_AI_Sync_Hooks {
 		 * @param  int     $post_id   The ID of the post being indexed.
 		 * @param  WP_Post $post      The post object.
 		 */
+		// Hook name is properly prefixed with fe_search_ai_.
 		$lang_code = apply_filters( 'fe_search_ai_post_language_code', $lang_code, $post_id, $post );
 
 		$this->delete_post_from_index( $post_id );
 
-		// Returns array like: [['content_chunk' => '...', 'permalink' => '...'], ...]
+		// Returns array of chunks with metadata including content and permalink.
 		$chunks_with_meta = $this->sync_handler->create_chunks_from_post( $post );
 		if ( empty( $chunks_with_meta ) ) {
 			return;
@@ -169,6 +174,8 @@ class FE_Search_AI_Sync_Hooks {
 				$summary_hash = isset( $summary_hashes[ $index ] ) ? (string) $summary_hashes[ $index ] : '';
 
 				// Insert the vector data into the vectors table.
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+				// Direct insert required for custom table.
 				$wpdb->insert(
 					$vectors_table,
 					[
@@ -194,6 +201,8 @@ class FE_Search_AI_Sync_Hooks {
 					foreach ( $keywords as $keyword ) {
 						// Skip very short keywords (often noise).
 						if ( mb_strlen( $keyword ) > 1 ) {
+							// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+							// Direct insert required for custom table.
 							$wpdb->insert(
 								$index_table,
 								[
@@ -216,7 +225,7 @@ class FE_Search_AI_Sync_Hooks {
 			if ( ! isset( $state['status'] ) || ! is_array( $state['status'] ) ) {
 				$state['status'] = [];
 			}
-			$state['status']['last_sync_timestamp'] = current_time( 'timestamp' );
+			$state['status']['last_sync_timestamp'] = current_time( 'mysql' );
 			update_option( 'fe_search_ai_sync_state', $state );
 		}
 	}
@@ -236,14 +245,32 @@ class FE_Search_AI_Sync_Hooks {
 		$index_table   = $wpdb->prefix . 'fe_search_ai_keyword_index';
 
 		// Find all vector IDs for the post.
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+		// Table name is interpolated but controlled internally, post_id is prepared.
 		$vector_ids = $wpdb->get_col( $wpdb->prepare( "SELECT id FROM `{$vectors_table}` WHERE `post_id` = %d", $post_id ) );
 
 		if ( ! empty( $vector_ids ) ) {
 			$placeholders = implode( ', ', array_fill( 0, count( $vector_ids ), '%d' ) );
 			// Delete keyword index entries.
-			$wpdb->query( $wpdb->prepare( "DELETE FROM `{$index_table}` WHERE `vector_id` IN ( {$placeholders} )", $vector_ids ) );
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+			// Table name is interpolated but controlled internally, placeholders are for IN clause, vector_ids are prepared.
+			$wpdb->query(
+				// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+				$wpdb->prepare( "DELETE FROM `{$index_table}` WHERE `vector_id` IN ( {$placeholders} )", $vector_ids )
+			);
 			// Delete vectors.
-			$wpdb->query( $wpdb->prepare( "DELETE FROM `{$vectors_table}` WHERE `id` IN ( {$placeholders} )", $vector_ids ) );
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+			// Table name is interpolated but controlled internally, placeholders are for IN clause, vector_ids are prepared.
+			$wpdb->query(
+				// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+				$wpdb->prepare( "DELETE FROM `{$vectors_table}` WHERE `id` IN ( {$placeholders} )", $vector_ids )
+			);
 		}
 	}
 }

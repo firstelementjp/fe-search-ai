@@ -17,6 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // German Language Data.
+// Local variable for language-specific stop words.
 $base_stop_words = [
 	'a', 'aber', 'als', 'am', 'an', 'auch', 'auf', 'aus', 'bei', 'bin',
 	'bis', 'bist', 'da', 'das', 'dass', 'dein', 'deine', 'dem', 'den',
@@ -29,6 +30,7 @@ $base_stop_words = [
 ];
 
 // Stop words used only for system-prompt / label phrases.
+// Local variable for language-specific stop words.
 $prompt_label_stop_words = [
 	'the', 'this', 'is', 'are', 'was',
 	'article', 'content', 'keywords', 'title', 'main', 'related',

@@ -16,10 +16,6 @@ echo "Testing release process for branch: $BRANCH (version: $VERSION)"
 TMPDIR=$(mktemp -d)
 trap "rm -rf $TMPDIR" EXIT
 
-# Install dependencies (no-dev)
-echo "=== Install dependencies (no-dev) ==="
-composer install --no-dev --prefer-dist
-
 # Build frontend assets in current directory
 echo "=== Build frontend assets ==="
 npm install --silent
@@ -29,9 +25,21 @@ npm run build --silent
 echo "=== Create release tree from git archive ==="
 git archive --format=tar --prefix=fe-search-ai/ --worktree-attributes HEAD | tar -x -C "$TMPDIR"
 
-# Inject vendor directory (required for WordPress plugin)
-echo "=== Inject vendor directory ==="
-cp -r vendor "$TMPDIR/fe-search-ai/"
+# Remove development files explicitly (additional safety)
+echo "=== Remove development files ==="
+rm -rf "$TMPDIR/fe-search-ai/tests"
+rm -rf "$TMPDIR/fe-search-ai/docs"
+rm -f "$TMPDIR/fe-search-ai/SECURITY.md"
+rm -f "$TMPDIR/fe-search-ai/CONTRIBUTING.md"
+rm -f "$TMPDIR/fe-search-ai/wp-tests-config.php.example"
+rm -f "$TMPDIR/fe-search-ai/phpunit.xml"
+
+# Install dependencies (no-dev) in release tree
+echo "=== Install dependencies (no-dev) in release tree ==="
+cp composer.json composer.lock "$TMPDIR/fe-search-ai/"
+cd "$TMPDIR/fe-search-ai"
+composer install --no-dev --prefer-dist --quiet
+cd - > /dev/null
 
 # Copy built/minified assets from working directory into the release tree
 echo "=== Copy minified assets ==="
@@ -39,6 +47,13 @@ mkdir -p "$TMPDIR/fe-search-ai/assets/js"
 mkdir -p "$TMPDIR/fe-search-ai/assets/css"
 cp -f assets/js/*.min.js "$TMPDIR/fe-search-ai/assets/js/" || true
 cp -f assets/css/*.min.css "$TMPDIR/fe-search-ai/assets/css/" || true
+
+# Copy vendor assets (Pickr color picker)
+echo "=== Copy vendor assets ==="
+if [ -d "assets/vendor" ]; then
+    mkdir -p "$TMPDIR/fe-search-ai/assets/vendor"
+    cp -r assets/vendor/* "$TMPDIR/fe-search-ai/assets/vendor/"
+fi
 
 # Security checks in release tree
 echo "=== Security checks in release tree ==="

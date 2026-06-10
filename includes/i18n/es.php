@@ -17,6 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Spanish Language Data.
+// Local variable for language-specific stop words.
 $base_stop_words = [
 	'a', 'al', 'algo', 'algunas', 'algunos', 'ante', 'antes', 'como',
 	'con', 'contra', 'cual', 'cuando', 'de', 'del', 'desde', 'donde',
@@ -30,6 +31,7 @@ $base_stop_words = [
 ];
 
 // Stop words used only for system-prompt / label phrases.
+// Local variable for language-specific stop words.
 $prompt_label_stop_words = [
 	'the', 'this', 'is', 'are', 'was',
 	'article', 'content', 'keywords', 'title', 'main', 'related',

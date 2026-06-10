@@ -74,7 +74,6 @@ class ActivatorTest extends TestCase {
 			$wpdb->prefix . 'fe_search_ai_vectors',
 			$wpdb->prefix . 'fe_search_ai_keyword_index',
 			$wpdb->prefix . 'fe_search_ai_system_logs',
-			$wpdb->prefix . 'fe_search_ai_logs',
 		];
 
 		foreach ( $tables as $table ) {

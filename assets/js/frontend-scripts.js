@@ -468,7 +468,7 @@ function initFEAIChat() {
 	// Typing animation configuration, derived from PHP setting animation_speed (1-10).
 	let typingCharsPerTick = 3;
 	let typingInterval = 50;
-	let typingImmediate = false; // true の場合、チャンク到着時に即レンダリングを試みる
+	let typingImmediate = false; // If true, attempt immediate rendering when chunks arrive.
 	const privacyConfig = fe_search_ai_ajax_obj.privacy || {};
 	const consentStorageKey = FE_SEARCH_AI_CONFIG.STORAGE.USER_CONSENT;
 
@@ -490,10 +490,16 @@ function initFEAIChat() {
 	}
 
 	/**
-	 * Ensure consent UI guidance is shown.
+	 * Stores the user's consent decision.
 	 *
-	 * This is a minimal fallback to avoid breaking the UI when the Pro consent
-	 * overlay is not present.
+	 * @return {void}
+	 */
+	function setUserConsented() {
+		safeExecute(() => localStorage.setItem(consentStorageKey, '1'), 'setUserConsented.set');
+	}
+
+	/**
+	 * Ensure consent UI is shown.
 	 *
 	 * @return {void}
 	 */
@@ -501,15 +507,64 @@ function initFEAIChat() {
 		if (!privacyConfig.enable_consent || hasUserConsented()) {
 			return;
 		}
-		if (typeof window.addMessage === 'function') {
-			window.addMessage(
-				`<p><strong>${__('Notice', 'fe-search-ai')}:</strong> ${__(
-					'Please agree to the Terms of Service and Privacy Policy to start the chat.',
-					'fe-search-ai'
-				)}</p>`,
-				'system'
-			);
+
+		// Lock the form until consent is given.
+		disableForm();
+
+		// Avoid duplicating the consent UI.
+		if (container.querySelector('.fe-search-ai-consent')) {
+			return;
 		}
+
+		const consentWrapper = document.createElement('div');
+		consentWrapper.className = 'fe-search-ai-consent';
+		consentWrapper.innerHTML = `
+			<div class="fe-search-ai-consent-message">
+				${privacyConfig.consent_message || ''}
+			</div>
+			<label class="fe-search-ai-consent-check">
+				<input type="checkbox" class="fe-search-ai-consent-checkbox">
+				<span>${__('I agree to the Terms of Service and Privacy Policy.', 'fe-search-ai')}</span>
+			</label>
+			<button type="button" class="fe-search-ai-consent-accept">
+				${__('Start chat', 'fe-search-ai')}
+			</button>
+		`;
+
+		chatWindowElement.appendChild(consentWrapper);
+
+		const checkbox = consentWrapper.querySelector('.fe-search-ai-consent-checkbox');
+		const acceptBtn = consentWrapper.querySelector('.fe-search-ai-consent-accept');
+
+		// Update button color based on checkbox state.
+		checkbox.addEventListener('change', () => {
+			if (checkbox.checked) {
+				acceptBtn.style.background = '#3b82f6';
+			} else {
+				acceptBtn.style.background = '#ccc';
+			}
+		});
+
+		acceptBtn.addEventListener('click', () => {
+			if (!checkbox.checked) {
+				checkbox.focus();
+				return;
+			}
+
+			setUserConsented();
+			safeExecuteAsync(
+				() =>
+					wpPost('fe_search_ai_log_consent', {
+						nonce: fe_search_ai_ajax_obj.nonce,
+						session_id: sessionId,
+						source: 'chat_overlay',
+					}),
+				'ensureConsentUI.log_consent'
+			);
+
+			consentWrapper.remove();
+			enableForm();
+		});
 	}
 
 	// Initialize Settings
@@ -597,12 +652,67 @@ function initFEAIChat() {
 		})
 			.then(response => {
 				if (!response.ok) {
-					// Handle HTTP errors explicitly so the UI is not stuck.
+					clearInterval(renderInterval);
 					if (response.status === FE_SEARCH_AI_CONFIG.CHAT.HTTP_STATUS.RATE_LIMIT) {
 						handleError(new Error('rate_limit'));
 					} else {
 						handleError(new Error('network_error'));
 					}
+					enableForm();
+					return;
+				}
+				if (!response.body || typeof response.body.getReader !== 'function') {
+					response
+						.text()
+						.then(text => {
+							text.split('\n\n').forEach(line => {
+								if (line.startsWith('data: ')) {
+									const dataContent = line
+										.substring(FE_SEARCH_AI_CONFIG.STREAM.DATA_PREFIX_LENGTH)
+										.trim();
+									if (dataContent === '[DONE]') return;
+									try {
+										const jsonData = JSON.parse(dataContent);
+										if (jsonData.meta) {
+											contextFound = jsonData.meta.context_found;
+										}
+										if (jsonData.text) {
+											if (isFirstChunk) {
+												characterQueue = [];
+												isFirstChunk = false;
+											}
+											characterQueue.push(jsonData.text);
+										}
+										if (jsonData.references) {
+											references = jsonData.references;
+										}
+									} catch (parseError) {
+										handleError(parseError, 'stream_fallback_parse', false);
+									}
+								}
+							});
+							waitForQueueToEmpty().then(() => {
+								clearInterval(renderInterval);
+								aiMessageWrapperForFeedback.innerHTML = marked.parse(fullResponse);
+								appendReferences(aiMessageWrapperForFeedback, references);
+								sessionHistory.push({
+									role: 'assistant',
+									content: fullResponse,
+									references: Array.isArray(references) ? references : [],
+								});
+								references = null;
+								sessionStorage.setItem(
+									FE_SEARCH_AI_CONFIG.STORAGE.CHAT_HISTORY,
+									JSON.stringify(sessionHistory)
+								);
+								enableForm();
+							});
+						})
+						.catch(error => {
+							clearInterval(renderInterval);
+							handleError(error, 'stream_fallback');
+							enableForm();
+						});
 					return;
 				}
 				const reader = response.body.getReader();

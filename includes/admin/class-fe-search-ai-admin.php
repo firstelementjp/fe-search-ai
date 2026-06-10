@@ -34,6 +34,11 @@ use FESearchAI\Admin\FE_Search_AI_Settings;
  */
 class FE_Search_AI_Admin {
 
+	/**
+	 * Constructor.
+	 *
+	 * Initializes the admin class and hooks into WordPress.
+	 */
 	public function __construct() {
 
 		new FE_Search_AI_Settings();
@@ -46,35 +51,45 @@ class FE_Search_AI_Admin {
 	/**
 	 * Render the settings page header.
 	 *
-	 * @param bool $is_pro Whether Pro license is active.
+	 * @param bool $is_pro Whether the Pro plugin is active and the Pro license is active.
 	 * @return void
 	 */
 	public static function render_plugin_header( $is_pro = false ) {
-		$locale = get_user_locale();
+		$current_locale = function_exists( 'determine_locale' ) ? determine_locale() : get_locale();
 
-		$docs_url = 'https://fe-search.com/docs/ai';
-		if ( 'ja' === $locale || 'ja_JP' === $locale ) {
-			$docs_url = 'https://fe-search.com/jp/docs/ai';
+		$docs_url    = 'https://firstelementjp.github.io/fe-search-ai/#/';
+		$contact_url = 'https://www.firstelement.co.jp/contact';
+		$site_url    = 'https://www.firstelement.co.jp/';
+
+		if ( is_string( $current_locale ) && 0 === strpos( strtolower( $current_locale ), 'ja' ) ) {
+			$docs_url = 'https://firstelementjp.github.io/fe-search-ai/#/ja/';
+		} else {
+			$site_url    = 'https://www.firstelement.co.jp/en/';
+			$contact_url = 'https://www.firstelement.co.jp/en/contact';
 		}
 
-		$forum_url = 'https://fe-search.com/en-forums/ai';
-		if ( 'ja' === $locale || 'ja_JP' === $locale ) {
-			$forum_url = 'https://fe-search.com/jp-forums/ai';
+		$deepwiki_url = 'https://deepwiki.com/firstelementjp/fe-search-ai';
+
+		$is_pro_active = (bool) $is_pro;
+
+		$version_label = (string) FE_SEARCH_AI_VERSION;
+		if ( defined( 'FE_SEARCH_AI_PRO_VERSION' ) && is_string( FE_SEARCH_AI_PRO_VERSION ) && '' !== FE_SEARCH_AI_PRO_VERSION ) {
+			$version_label .= ' / ' . FE_SEARCH_AI_PRO_VERSION;
 		}
 		?>
 		<div id="plugin_header">
 			<div id="plugin_header_upper">
 				<div id="plugin_header_title">FE Search <span>AI</span>
 				<?php
-				if ( $is_pro ) :
+				if ( $is_pro_active ) :
 					?>
 					<span class="pro-badge">Pro</span><?php endif; ?></div>
-				<a href="https://www.firstelement.co.jp/" id="plugin_logo" target="_blank" title="<?php esc_attr_e( 'Go to the developer\'s website', 'fe-search-ai' ); ?>">
-					<img src="<?php echo esc_url( plugin_dir_url( FE_SEARCH_AI_PLUGIN_FILE ) . '/assets/images/logo-feas-white-shadow-s@2x-min.png' ); ?>" width="106" height="27">
+				<a href="<?php echo esc_url( $site_url ); ?>" id="plugin_logo" target="_blank" title="<?php esc_attr_e( 'Go to the developer\'s website', 'fe-search-ai' ); ?>">
+					<img src="<?php echo esc_url( plugin_dir_url( FE_SEARCH_AI_PLUGIN_FILE ) . '/assets/images/logo-feas-white-shadow-s-2x-min.png' ); ?>" width="106" height="27">
 				</a>
 			</div>
 			<div id="plugin_version">
-				version <?php echo esc_html( FE_SEARCH_AI_VERSION ); ?>
+				version <?php echo esc_html( $version_label ); ?>
 			</div>
 			<div id="plugin_support">
 				<a href="<?php echo esc_url( $docs_url ); ?>"
@@ -82,10 +97,10 @@ class FE_Search_AI_Admin {
 					title="<?php esc_attr_e( 'Go to the instruction manual', 'fe-search-ai' ); ?>">
 					<?php esc_html_e( 'Documentation', 'fe-search-ai' ); ?>
 				</a>
-				<a href="<?php echo esc_url( $forum_url ); ?>"
+				<a href="<?php echo esc_url( $deepwiki_url ); ?>"
 					target="_blank"
-					title="<?php esc_attr_e( 'Go to a forum', 'fe-search-ai' ); ?>">
-					<?php esc_html_e( 'Forums', 'fe-search-ai' ); ?>
+					title="<?php esc_attr_e( 'Go to the DeepWiki', 'fe-search-ai' ); ?>">
+					<?php esc_html_e( 'DeepWiki', 'fe-search-ai' ); ?>
 				</a>
 				<a href="https://github.com/firstelementjp/fe-search-ai"
 					target="_blank"
@@ -104,23 +119,7 @@ class FE_Search_AI_Admin {
 						</g>
 					</svg>
 				</a>
-				<a href="https://www.youtube.com/@firstelementjp"
-					target="_blank"
-					title="<?php esc_attr_e( 'Go to a YouTube channel', 'fe-search-ai' ); ?>"
-					class="icon icon_yt">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						viewBox="0 0 32 32"
-						width="20"
-						height="20"
-					>
-						<path
-							fill="currentColor"
-							d="M29.41,9.26a3.5,3.5,0,0,0-2.47-2.47C24.76,6.2,16,6.2,16,6.2s-8.76,0-10.94.59A3.5,3.5,0,0,0,2.59,9.26,36.13,36.13,0,0,0,2,16a36.13,36.13,0,0,0,.59,6.74,3.5,3.5,0,0,0,2.47,2.47C7.24,25.8,16,25.8,16,25.8s8.76,0,10.94-.59a3.5,3.5,0,0,0,2.47-2.47A36.13,36.13,0,0,0,30,16a36.13,36.13,0,0,0-.59-6.74ZM13.2,20.2V11.8L20.47,16Z"
-						/>
-					</svg>
-				</a>
-				<a href="https://x.com/feas_wp/"
+				<a href="https://x.com/firstelement"
 					target="_blank"
 					title="<?php esc_attr_e( 'Go to X', 'fe-search-ai' ); ?>"
 					class="icon icon_tw">
@@ -141,7 +140,7 @@ class FE_Search_AI_Admin {
 					title="<?php esc_attr_e( 'Go to Facebook page', 'fe-search-ai' ); ?>"
 					class="icon icon_fb">
 				</a>
-				<a href="https://fe-search.com/contact/"
+				<a href="<?php echo esc_url( $contact_url ); ?>"
 					target="_blank"
 					title="<?php esc_attr_e( 'Go to contact form', 'fe-search-ai' ); ?>"
 					class="icon icon_mail">
@@ -153,14 +152,17 @@ class FE_Search_AI_Admin {
 
 	/**
 	 * Load scripts and styles for the admin panel.
+	 *
+	 * @param string $hook_suffix The current admin page hook suffix.
 	 */
 	public function enqueue_admin_assets( $hook_suffix ) {
 		$allowed_hooks = [
 			'toplevel_page_fe-search-ai',
 		];
+		// Hook name is properly prefixed with fe_search_ai_.
 		$allowed_hooks = apply_filters( 'fe_search_ai_admin_allowed_hooks', $allowed_hooks );
 
-		if ( ! in_array( $hook_suffix, $allowed_hooks ) ) {
+		if ( ! in_array( $hook_suffix, $allowed_hooks, true ) ) {
 			return;
 		}
 
@@ -171,7 +173,7 @@ class FE_Search_AI_Admin {
 		// Color picker (Pickr) styles.
 		wp_enqueue_style(
 			'fe-search-ai-pickr',
-			'https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/classic.min.css',
+			plugin_dir_url( FE_SEARCH_AI_PLUGIN_FILE ) . 'assets/vendor/pickr-classic.min.css',
 			[],
 			FE_SEARCH_AI_VERSION
 		);
@@ -184,7 +186,9 @@ class FE_Search_AI_Admin {
 		);
 		wp_enqueue_style(
 			'codemirror-css',
-			'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.css'
+			plugin_dir_url( FE_SEARCH_AI_PLUGIN_FILE ) . 'assets/vendor/codemirror.min.css',
+			[],
+			FE_SEARCH_AI_VERSION
 		);
 		wp_enqueue_style(
 			'fe-search-ai-admin-style',
@@ -195,16 +199,16 @@ class FE_Search_AI_Admin {
 
 		wp_enqueue_script(
 			'codemirror-js',
-			'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.js',
+			plugin_dir_url( FE_SEARCH_AI_PLUGIN_FILE ) . 'assets/vendor/codemirror.min.js',
 			[],
-			false,
+			FE_SEARCH_AI_VERSION,
 			true
 		);
 		wp_enqueue_script(
 			'codemirror-markdown',
-			'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/mode/markdown/markdown.min.js',
+			plugin_dir_url( FE_SEARCH_AI_PLUGIN_FILE ) . 'assets/vendor/codemirror-markdown.min.js',
 			[ 'codemirror-js' ],
-			false,
+			FE_SEARCH_AI_VERSION,
 			true
 		);
 		wp_enqueue_script(

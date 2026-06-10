@@ -208,10 +208,13 @@ class FE_Search_AI_Chat_UI {
 		 * @param bool $should_display Whether the chat UI should be displayed.
 		 */
 		// Temporary force display for debugging.
+		// Hook name is properly prefixed with fe_search_ai_.
 		if ( apply_filters( 'fe_search_ai_should_display_chat', $should_display ) ) {
 			self::$is_rendered = true;
 			$this->assets_handler->enqueue_assets();
 			$html = $this->get_chat_ui_html( 'float' );
+			// HTML is generated internally with all user input properly escaped via esc_html(), esc_url(), esc_attr().
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			echo $html;
 		}
 	}
@@ -335,7 +338,7 @@ class FE_Search_AI_Chat_UI {
 								echo '<p>';
 								printf(
 									/* translators: %s: Links to terms of service and privacy policy. */
-									wp_kses_post( __( 'By using this chat, you agree to our %s.', 'fe-search-ai' ) ),
+									wp_kses_post( __( 'Please review our %s when using this chat.', 'fe-search-ai' ) ),
 									wp_kses_post( implode( ' ' . esc_html__( 'and', 'fe-search-ai' ) . ' ', $links ) )
 								);
 								echo '</p>';
@@ -384,6 +387,7 @@ class FE_Search_AI_Chat_UI {
 		 * @param array  $args         An associative array of data used to build the HTML
 		 * (e.g., 'window_title', 'greeting_message', etc.).
 		 */
+		// Hook name is properly prefixed with fe_search_ai_.
 		return apply_filters( 'fe_search_ai_chat_ui_html', $default_html, $args );
 	}
 
@@ -432,6 +436,7 @@ class FE_Search_AI_Chat_UI {
 		 * @param string $default_css The default CSS string, including the <style> tags.
 		 * @param string $key_color   The key color selected by the user in the settings.
 		 */
+		// Hook name is properly prefixed with fe_search_ai_.
 		$styles_css = apply_filters( 'fe_search_ai_dynamic_styles_css', $default_css, $key_color );
 		echo wp_kses(
 			$styles_css,

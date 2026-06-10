@@ -17,6 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Portuguese (Brazil) Language Data.
+// Local variable for language-specific stop words.
 $base_stop_words = [
 	'a', 'à', 'adeus', 'agora', 'ainda', 'além', 'algo', 'algumas',
 	'alguns', 'com', 'como', 'contra', 'contudo', 'da', 'daquele',
@@ -33,6 +34,7 @@ $base_stop_words = [
 ];
 
 // Stop words used only for system-prompt / label phrases.
+// Local variable for language-specific stop words.
 $prompt_label_stop_words = [
 	'the', 'this', 'is', 'are', 'was',
 	'article', 'content', 'keywords', 'title', 'main', 'related',

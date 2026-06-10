@@ -1,4 +1,14 @@
 <?php
+/**
+ * Cohere reranker implementation.
+ *
+ * This class plugs into the retrieved-chunks filter and optionally reranks
+ * the candidate chunks using Cohere's Rerank API before the chunks are
+ * injected into the LLM prompt.
+ *
+ * @package    fe-search-ai
+ * @subpackage Core
+ */
 
 namespace FESearchAI\Core;
 
@@ -128,7 +138,7 @@ class FE_Search_AI_Cohere_Reranker {
 		if ( $timeout <= 0 ) {
 			$timeout = 15;
 		}
-		$model = 'rerank-v3.0';
+		$model = 'rerank-v3.5';
 		if ( class_exists( '\\FESearchAI\\Core\\FE_Search_AI_License' ) && FE_Search_AI_License::is_pro_active() ) {
 			$pro_settings   = get_option( 'fe_search_ai_pro_settings', [] );
 			$model_settings = $pro_settings['model']['cohere_model'] ?? [];

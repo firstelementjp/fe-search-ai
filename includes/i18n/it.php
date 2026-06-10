@@ -17,6 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Italian Language Data.
+// Local variable for language-specific stop words.
 $base_stop_words = [
 	'a', 'ad', 'al', 'allo', 'ai', 'agli', 'alla', 'alle', 'con', 'col',
 	'coi', 'da', 'dal', 'dallo', 'dai', 'dagli', 'dalla', 'dalle', 'di',
@@ -28,6 +29,7 @@ $base_stop_words = [
 ];
 
 // Stop words used only for system-prompt / label phrases.
+// Local variable for language-specific stop words.
 $prompt_label_stop_words = [
 	'the', 'this', 'is', 'are', 'was',
 	'article', 'content', 'keywords', 'title', 'main', 'related',

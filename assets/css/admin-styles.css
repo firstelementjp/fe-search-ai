@@ -82,7 +82,7 @@ textarea {
 	display: grid;
 	grid-template: 60px 2.5rem / 1fr 1fr;
 	align-items: center;
-	background-image: url(../images/bg-feas-header5@2x-min.jpg);
+	background-image: url(../images/bg-feas-header5-2x-min.jpg);
 	background-position: right top;
 	background-repeat: no-repeat;
 	background-size: 27%;
@@ -118,13 +118,13 @@ textarea {
 	height: 2.5rem;
 	background-color: white;
 	display: grid;
-	grid-template: 100% / 7em 4em 22px 20px 20px 17px 17px;
+	grid-template: 100% / 7em 4em 22px 20px 20px 17px;
 	grid-gap: 1.5em;
 	justify-content: end;
 	align-items: center;
 }
 .locale-ja #plugin_support {
-	grid-template: 100% / 6em 5em 22px 20px 20px 17px 17px;
+	grid-template: 100% / 6em 5em 22px 20px 20px 17px;
 }
 #plugin_support a {
 	text-align: right;
@@ -351,7 +351,6 @@ a.nav-tab:last-of-type {
 
 .fe-search-ai-api-keys-table input[type='password'] {
 	font-family: monospace;
-	font-size: 13px;
 	margin: 0;
 }
 
@@ -630,11 +629,11 @@ a:has(.dashicons-warning) span {
 	margin-bottom: 1em;
 }
 
-#tab_provider details strong {
+/* #tab_provider details strong {
 	color: #0071a1;
-}
+} */
 
-#tab_provider details summary {
+details summary {
 	cursor: pointer;
 	color: #0071a1;
 }
@@ -790,22 +789,28 @@ a:has(.dashicons-warning) span {
 	margin: 1em 0;
 }
 
-#fe_search_ai_tool_manifest,
+/* #fe_search_ai_tool_manifest,
 #fe_search_ai_api_guide {
+	margin: 1em 0;
+	cursor: pointer;
+} */
+#tab_advanced details {
 	margin: 1em 0;
 	cursor: pointer;
 }
 
-#fe_search_ai_tool_manifest summary,
+/* #fe_search_ai_tool_manifest summary,
 #fe_search_ai_api_guide summary {
 	margin: 2em 0 1em;
-}
+} */
 
-#fe_search_ai_api_guide h4 {
+#fe_search_ai_api_guide h4,
+#fe_search_ai_mcp_guide h4 {
 	margin: 2em 0 1em;
 }
 
-#fe_search_ai_api_guide li {
+#fe_search_ai_api_guide li,
+#fe_search_ai_mcp_guide li {
 	margin: 0 0 1em;
 }
 
