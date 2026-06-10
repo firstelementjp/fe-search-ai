@@ -225,7 +225,7 @@ class FE_Search_AI_Sync_Hooks {
 			if ( ! isset( $state['status'] ) || ! is_array( $state['status'] ) ) {
 				$state['status'] = [];
 			}
-			$state['status']['last_sync_timestamp'] = current_time( 'mysql' );
+			$state['status']['last_sync_timestamp'] = time();
 			update_option( 'fe_search_ai_sync_state', $state );
 		}
 	}
