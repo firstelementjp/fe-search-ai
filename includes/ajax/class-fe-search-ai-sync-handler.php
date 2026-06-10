@@ -490,7 +490,7 @@ class FE_Search_AI_Sync_Handler {
 			$state['status'] = [];
 		}
 
-		$now = time();
+		$now = current_time( 'timestamp', true );
 		if ( empty( $state['status']['last_sync_timestamp'] ) ) {
 			$state['status']['last_sync_timestamp'] = $now;
 		}
@@ -693,7 +693,7 @@ class FE_Search_AI_Sync_Handler {
 	public function ajax_update_sync_timestamp() {
 		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
 
-		$now = time();
+		$now = current_time( 'timestamp', true );
 
 		// Runtime state is stored in a dedicated option to avoid interference
 		// from settings sanitization or other writers of fe_search_ai_settings.
