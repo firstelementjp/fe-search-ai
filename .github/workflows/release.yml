@@ -140,7 +140,6 @@ jobs:
                   cd release
                   zip -r "../${ZIP_FILE}" fe-search-ai -q
                   cd - > /dev/null
-                  mv "release/${ZIP_FILE}" .
 
                   echo "zip_file=${ZIP_FILE}" >> "$GITHUB_OUTPUT"
 
