@@ -10,7 +10,7 @@ _*
 
 # Dependencies
 node_modules
-vendor/
+vendor/*
 !assets/vendor/
 
 # Environment files

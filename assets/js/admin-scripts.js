@@ -358,12 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			if ('0' === termsVal || '0' === privacyVal) {
 				e.preventDefault();
 				// eslint-disable-next-line no-alert
-				alert(
-					__(
-						'To enable user consent (opt-in), please select both the Terms of Service Page and Privacy Policy Page in the Display > Text/Links settings.',
-						'fe-search-ai'
-					)
-				);
+				alert(fe_search_ai_sync_obj.i18n.consent_pages_required);
 			}
 		});
 	}
