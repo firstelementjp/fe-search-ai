@@ -1,163 +1,77 @@
 # FE Search AI Documentation
 
-> AI-powered semantic search for WordPress
+> AI-powered natural language search and chat for WordPress
 
-FE Search AI is a WordPress plugin that provides intelligent semantic search using vector embeddings and AI reranking. It goes beyond traditional keyword matching to understand the meaning behind queries.
+FE Search AI adds a conversational AI search experience to WordPress. It indexes your site content, retrieves relevant context with hybrid search, and generates natural language answers grounded in your own posts, pages, and custom post types.
 
-## Features
+![FE Search AI](assets/images/img-sns-banner-100.jpg)
 
-- **Semantic Search**: Understands the meaning behind queries, not just keywords
-- **Vector Embeddings**: Converts content to vector representations for better matching
-- **AI Reranking**: Uses Cohere API to improve search result relevance
-- **Multi-language Support**: Japanese (TinySegmenter) and other languages (php-stemmer)
-- **Sync System**: Automatically syncs WordPress content to vector database
-- **Real-time Search**: Fast and accurate search results
+## What FE Search AI does
 
-## Installation
+FE Search AI is designed for WordPress sites where visitors need quick, accurate answers from existing content.
 
-### From WordPress.org
+- **Conversational AI search**: Answer visitor questions in natural language.
+- **RAG architecture**: Retrieve relevant content before generating answers.
+- **Hybrid search**: Combine vector search and keyword search for better recall.
+- **Multiple AI providers**: Use OpenAI, Google Gemini, or Anthropic Claude.
+- **Embedding support**: Generate vectors with OpenAI or Google embedding models.
+- **Qdrant integration**: Store and retrieve vectors with Qdrant Cloud or self-hosted Qdrant.
+- **Japanese support**: Use TinySegmenter or Yahoo! JAPAN Japanese MA API.
+- **Customizable chat UI**: Embed a floating or inline chat interface with a shortcode.
+- **Developer hooks**: Extend providers, prompts, sync behavior, and frontend output.
 
-1. Go to **Plugins → Add New**
-2. Search for "FE Search AI"
-3. Click **Install Now**
-4. Activate the plugin
+## Recommended reading
 
-### Manual Installation
+- [Getting Started](start.md): Understand the basic setup flow.
+- [Installation](install.md): Install the plugin and confirm requirements.
+- [Configuration](config.md): Configure providers, Qdrant, sync, and chat UI.
+- [Search Integration](search.md): Add the chat/search UI to your site.
+- [Sync System](sync.md): Build and maintain the content index.
+- [Troubleshooting](help.md): Resolve common setup and API issues.
 
-1. Download the latest [release](https://github.com/firstelementjp/fe-search-ai/releases)
-2. Upload to `/wp-content/plugins/`
-3. Activate the plugin
+## Basic workflow
 
-## Quick Start
+1. Install and activate FE Search AI.
+2. Configure API keys for chat, embedding, and optional reranking.
+3. Connect Qdrant for vector storage.
+4. Select content types and build the initial index.
+5. Add `[fe-search-ai]` to a page or enable the floating chat UI.
+6. Test visitor questions and adjust prompts, colors, and sync settings.
 
-### 1. Configure API Keys
+## External services
 
-Go to **FE Search AI → Settings** and configure your AI provider API keys:
+FE Search AI communicates with external services selected by the site administrator.
 
-- **Cohere API Key**: For AI reranking (optional but recommended)
-- **OpenAI API Key**: For embedding generation (if using OpenAI)
+| Service                      | Purpose                                |
+| ---------------------------- | -------------------------------------- |
+| OpenAI                       | Chat completions and embeddings        |
+| Google                       | Gemini chat completions and embeddings |
+| Anthropic                    | Claude chat completions                |
+| Qdrant                       | Vector storage and retrieval           |
+| Cohere                       | Optional reranking                     |
+| Yahoo! JAPAN Japanese MA API | Optional Japanese tokenization         |
 
-### 2. Sync Your Content
+Review each provider's terms and privacy policy before enabling it.
 
-Go to **FE Search AI → Sync** and click **Start Sync** to index your WordPress content:
+## Pro version
 
-- Posts
-- Pages
-- Custom post types
-- Custom fields
-- Taxonomies
+FE Search AI works as a free plugin, and FE Search AI Pro adds advanced features for production and business use.
 
-### 3. Add Search to Your Site
+- Advanced model selection and model-specific prompts
+- Custom OpenAI-compatible endpoints
+- Custom field indexing
+- Fullscreen chat mode
+- User consent and enhanced privacy controls
+- External API token management
+- MCP server integration for AI agents
+- Advanced logging and export features
+- Priority support and automatic updates
 
-Use the shortcode or PHP function to add search to your site:
-
-```php
-// Shortcode
-[fe_search_ai]
-
-// PHP function
-<?php echo fe_search_ai_search_form(); ?>
-```
-
-## Configuration
-
-### General Settings
-
-- **Search Results per Page**: Number of results to display
-- **Enable AI Reranking**: Use Cohere API for better results
-- **Minimum Score Threshold**: Filter low-confidence results
-
-### Sync Settings
-
-- **Post Types**: Select which post types to sync
-- **Sync Frequency**: Automatic sync schedule
-- **Batch Size**: Number of items per sync batch
-
-### License Settings
-
-- **License Key**: Enter your Pro license key
-- **Auto-updates**: Enable automatic plugin updates
-
-## API Integration
-
-### Cohere Reranking
-
-FE Search AI uses Cohere's reranking API to improve search result relevance:
-
-```php
-// Example: Enable reranking in settings
-add_filter('fe_search_ai_enable_reranking', function() {
-    return true;
-});
-```
-
-### Custom Embedding Providers
-
-You can integrate custom embedding providers:
-
-```php
-add_filter('fe_search_ai_embedding_provider', function($text) {
-    // Custom embedding logic
-    return $embedding;
-});
-```
-
-## Troubleshooting
-
-### Search Not Working
-
-1. Check that content has been synced (FE Search AI → Sync)
-2. Verify API keys are configured correctly
-3. Check error logs in WordPress debug log
-
-### Sync Fails
-
-1. Check PHP memory limits
-2. Verify database connection
-3. Check for timeout issues in server configuration
-
-### API Errors
-
-1. Verify API key is valid
-2. Check API quota limits
-3. Review error logs for specific error messages
-
-## Developer Guide
-
-### Contributing
-
-See [CONTRIBUTING.md](../CONTRIBUTING.md) for contribution guidelines.
-
-### Code Standards
-
-- Follow WordPress Coding Standards (WPCS)
-- Add PHPDoc to all classes and methods
-- Comments in English
-- Use Yoda conditions where appropriate
-
-### Testing
-
-```bash
-# Run PHP CodeSniffer
-composer phpcs
-
-# Build assets
-npm run build
-
-# Test release
-./test-release.sh
-```
+[Learn more about FE Search AI Pro](https://www.firstelement.co.jp/en/products/fe-search-ai-plugin/)
 
 ## Support
 
-- **Documentation**: [https://github.com/firstelementjp/fe-search-ai](https://github.com/firstelementjp/fe-search-ai)
-- **Issues**: [GitHub Issues](https://github.com/firstelementjp/fe-search-ai/issues)
-- **Security**: See [SECURITY.md](../SECURITY.md) for security reporting
-
-## License
-
-GPL-2.0 or later
-
-## Changelog
-
-See [GitHub Releases](https://github.com/firstelementjp/fe-search-ai/releases) for version history.
+- [GitHub Repository](https://github.com/firstelementjp/fe-search-ai)
+- [GitHub Issues](https://github.com/firstelementjp/fe-search-ai/issues)
+- [Documentation](https://firstelementjp.github.io/fe-search-ai/#/)
+- [Support](https://www.firstelement.co.jp/en/contact)
