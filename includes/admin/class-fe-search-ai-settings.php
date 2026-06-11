@@ -2324,8 +2324,6 @@ class FE_Search_AI_Settings {
 		<input
 			type="number"
 			name="fe_search_ai_settings[sync][batch_size]"
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			// Value is escaped with esc_attr().
 			value="<?php echo esc_attr( $batch_size ); ?>"
 			class="small-text"
 			min="1"
