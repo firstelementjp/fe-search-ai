@@ -3,7 +3,7 @@
  * Plugin Name: FE Search AI
  * Plugin URI:  https://github.com/firstelementjp/fe-search-ai
  * Description: AI-powered search for WordPress.
- * Version:     0.9.0
+ * Version:     0.9.1
  * Author:      FirstElement K.K., Daijiro Miyazawa
  * Author URI:  https://www.firstelement.co.jp/
  * License:     GPLv2 or later
