@@ -1298,22 +1298,30 @@ class FE_Search_AI_Settings {
 
 		// Get sync status from the dedicated runtime state option so that it is
 		// not affected by settings sanitization.
-		$sync_state  = get_option( 'fe_search_ai_sync_state', [] );
-		$sync_status = $sync_state['status'] ?? [];
-		$last_sync   = $sync_status['last_sync_timestamp'] ?? 0;
+		$sync_state         = get_option( 'fe_search_ai_sync_state', [] );
+		$sync_status        = $sync_state['status'] ?? [];
+		$last_sync          = $sync_status['last_sync_timestamp'] ?? 0;
+		$last_realtime_sync = $sync_status['last_realtime_sync_timestamp'] ?? 0;
 		?>
 		<div>
 			<p class="sync-status">
 				<?php
 				if ( $last_sync ) {
 					printf(
-						'<strong>%s:</strong> %s',
-						esc_html__( 'Last Sync', 'fe-search-ai' ),
+						'<strong>%s:</strong> %s<br>',
+						esc_html__( 'Last Bulk Sync', 'fe-search-ai' ),
 						esc_html( date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $last_sync ) )
 					);
 				}
+				if ( $last_realtime_sync ) {
+					printf(
+						'<strong>%s:</strong> %s<br>',
+						esc_html__( 'Last Realtime Sync', 'fe-search-ai' ),
+						esc_html( date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $last_realtime_sync ) )
+					);
+				}
 				printf(
-					'&nbsp;&nbsp;<strong>%s:</strong> %s %s',
+					'<strong>%s:</strong> %s %s',
 					esc_html__( 'Indexed Posts', 'fe-search-ai' ),
 					esc_html( $indexed_post_count ),
 					esc_html__( 'posts', 'fe-search-ai' )
