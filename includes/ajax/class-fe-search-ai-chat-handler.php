@@ -522,8 +522,9 @@ class FE_Search_AI_Chat_Handler {
 
 		// DEBUG: Log context chunk statistics (count and first few permalinks).
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			$chunk_count = is_array( $context_chunks ) ? count( $context_chunks ) : 0;
-			$permalinks  = [];
+			$chunk_count    = is_array( $context_chunks ) ? count( $context_chunks ) : 0;
+			$permalinks     = [];
+			$chunk_contents = [];
 			if ( $chunk_count > 0 ) {
 				foreach ( $context_chunks as $idx => $chunk ) {
 					if ( $idx >= 3 ) {
@@ -532,8 +533,21 @@ class FE_Search_AI_Chat_Handler {
 					if ( isset( $chunk['permalink'] ) ) {
 						$permalinks[] = $chunk['permalink'];
 					}
+					if ( isset( $chunk['content_chunk'] ) ) {
+						$chunk_contents[] = mb_substr( $chunk['content_chunk'], 0, 100 ) . '...';
+					}
 				}
 			}
+			\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
+				'DEBUG',
+				'Context chunks prepared for LLM.',
+				[
+					'chunk_count'    => $chunk_count,
+					'permalinks'     => $permalinks,
+					'chunk_contents' => $chunk_contents,
+				],
+				$sequence_id
+			);
 		}
 
 		$model = 'gpt-5.4-mini'; // Default
