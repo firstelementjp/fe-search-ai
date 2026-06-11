@@ -490,7 +490,7 @@ class FE_Search_AI_Sync_Handler {
 			$state['status'] = [];
 		}
 
-		$now = current_time( 'timestamp', true );
+		$now = time();
 		if ( empty( $state['status']['last_sync_timestamp'] ) ) {
 			$state['status']['last_sync_timestamp'] = $now;
 		}
@@ -693,7 +693,7 @@ class FE_Search_AI_Sync_Handler {
 	public function ajax_update_sync_timestamp() {
 		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
 
-		$now = current_time( 'timestamp', true );
+		$now = time();
 
 		// Runtime state is stored in a dedicated option to avoid interference
 		// from settings sanitization or other writers of fe_search_ai_settings.
@@ -1378,8 +1378,12 @@ class FE_Search_AI_Sync_Handler {
 		if ( $hybrid_search && $qdrant_enabled ) {
 			$qdrant_results  = $this->find_similar_chunks_via_qdrant( $question, $qdrant_config );
 			$keyword_results = $this->find_similar_chunks_via_keyword_index( $question, $sequence_id );
-			if ( ! is_wp_error( $qdrant_results ) ) {
+			if ( ! is_wp_error( $qdrant_results ) && ! empty( $qdrant_results ) ) {
 				return $this->merge_hybrid_search_results( $qdrant_results, $keyword_results, $question, $sequence_id );
+			}
+			// If Qdrant search fails or returns empty results, fall back to keyword search results.
+			if ( ! is_wp_error( $keyword_results ) ) {
+				return $keyword_results;
 			}
 		}
 
