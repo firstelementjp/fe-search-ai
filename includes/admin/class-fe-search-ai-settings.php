@@ -1938,6 +1938,7 @@ class FE_Search_AI_Settings {
 			<?php
 			// Gradient feature temporarily disabled.
 			// TODO: Re-enable if gradient effects are improved.
+
 			/*
 			<div class="color-picker-text">
 				<label>
