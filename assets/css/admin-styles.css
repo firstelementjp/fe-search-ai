@@ -966,3 +966,51 @@ details summary {
 .form-table.widefat.striped fieldset label input[type='radio'] {
 	margin-right: 0.5em;
 }
+
+/* ==========================================================================
+	System Logs Table (Pro)
+	========================================================================== */
+
+.fe-search-ai-system-logs-wrap .fe-search-ai-system-logs-table {
+	table-layout: auto;
+}
+
+.fe-search-ai-system-logs-table .column-created_at {
+	width: 14%;
+}
+
+.fe-search-ai-system-logs-table .column-type {
+	width: 7%;
+}
+
+.fe-search-ai-system-logs-table .column-level {
+	width: 6%;
+}
+
+.fe-search-ai-system-logs-table .column-sequence {
+	width: 8%;
+}
+
+.fe-search-ai-system-logs-table .column-message {
+	width: 20%;
+}
+
+.fe-search-ai-system-logs-table .column-question {
+	width: 12%;
+}
+
+.fe-search-ai-system-logs-table .column-answer {
+	width: 15%;
+}
+
+.fe-search-ai-system-logs-table .column-context_found {
+	width: 5%;
+}
+
+.fe-search-ai-system-logs-table .column-session_id {
+	width: 8%;
+}
+
+.fe-search-ai-system-logs-table .column-rating {
+	width: 5%;
+}
