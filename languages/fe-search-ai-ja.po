@@ -645,11 +645,12 @@ msgstr "無料"
 
 #: includes/admin/class-fe-search-ai-settings.php:490
 msgid ""
-"Free account Trial keys can be used for free but have rate limits and are "
-"not licensed for commercial use. Please obtain a Production key for "
+"<a href=\"%s\" target=\"_blank\" rel=\"noopener\">Cohere Rerank</a> free "
+"account Trial keys can be used for free but have rate limits and are not "
+"licensed for commercial use. Please obtain a Production key for "
 "commercial purposes."
 msgstr ""
-"FreeアカウントのTrialキーは無料で使用できますが、レートリミットがあり商用利用は許可されていません。商用目的の場合はProductionキーを取得してください。"
+"<a href=\"%s\" target=\"_blank\" rel=\"noopener\">Cohere Rerank</a>のFreeアカウントのTrialキーは無料で使用できますが、レートリミットがあり商用利用は許可されていません。商用目的の場合はProductionキーを取得してください。"
 
 #: includes/admin/class-fe-search-ai-settings.php:955
 msgid ""
