@@ -38,6 +38,8 @@ class SyncHandlerTest extends TestCase {
 		$this->assertTrue( method_exists( $handler, 'find_similar_chunks' ), 'find_similar_chunks method should exist' );
 		$this->assertTrue( method_exists( $handler, 'create_chunks_from_post' ), 'create_chunks_from_post method should exist' );
 		$this->assertTrue( method_exists( $handler, 'tokenize_text' ), 'tokenize_text method should exist' );
+		$this->assertTrue( method_exists( $handler, 'build_keyword_index_data' ), 'build_keyword_index_data method should exist' );
+		$this->assertTrue( method_exists( $handler, 'insert_keyword_index_terms' ), 'insert_keyword_index_terms method should exist' );
 	}
 
 	/**
@@ -117,6 +119,34 @@ class SyncHandlerTest extends TestCase {
 		foreach ( $result as $token ) {
 			$this->assertEquals( mb_strtolower( $token ), $token, 'Token should be lowercase' );
 		}
+
+		remove_all_filters( 'locale' );
+	}
+
+	/**
+	 * Test BM25 keyword index data keeps duplicate token frequencies.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public function test_build_keyword_index_data_counts_term_frequencies() {
+		add_filter(
+			'locale',
+			function() {
+				return 'en_US';
+			}
+		);
+
+		$handler = new \FESearchAI\Ajax\FE_Search_AI_Sync_Handler();
+		$result  = $handler->build_keyword_index_data( 'Apple apple banana the' );
+
+		$this->assertIsArray( $result, 'Keyword index data should be an array' );
+		$this->assertArrayHasKey( 'token_count', $result, 'Keyword index data should include token_count' );
+		$this->assertArrayHasKey( 'term_frequencies', $result, 'Keyword index data should include term_frequencies' );
+		$this->assertEquals( 3, $result['token_count'], 'Stop words should be removed before counting tokens' );
+		$this->assertEquals( 2, $result['term_frequencies']['apple'], 'Duplicate terms should be counted' );
+		$this->assertEquals( 1, $result['term_frequencies']['banana'], 'Single terms should be counted' );
+		$this->assertArrayNotHasKey( 'the', $result['term_frequencies'], 'Stop words should not be indexed' );
 
 		remove_all_filters( 'locale' );
 	}
