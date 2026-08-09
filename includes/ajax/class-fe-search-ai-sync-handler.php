@@ -1481,12 +1481,13 @@ class FE_Search_AI_Sync_Handler {
 		// Table name is interpolated but controlled internally, keywords are prepared.
 		$document_frequency_rows = $wpdb->get_results(
 			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 				"SELECT `keyword`, COUNT(DISTINCT `vector_id`) AS document_frequency FROM `{$index_table}` WHERE `keyword` IN ( {$keyword_placeholders} ) GROUP BY `keyword`",
 				$valid_keywords
 			),
 			ARRAY_A
 		);
-		$document_frequencies    = [];
+		$document_frequencies = [];
 		foreach ( $document_frequency_rows as $row ) {
 			$document_frequencies[ (string) $row['keyword'] ] = max( 1, (int) $row['document_frequency'] );
 		}

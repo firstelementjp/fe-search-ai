@@ -3,7 +3,7 @@ Contributors: firstelementjp
 Tags: ai, search, chat, semantic, vector
 Requires at least: 6.6
 Tested up to: 7.0
-Stable tag: 0.9.1
+Stable tag: 1.0.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -55,7 +55,7 @@ Perfect for knowledge bases, documentation sites, e-commerce support, and any Wo
 
 == Installation ==
 
-1. Download the latest stable release from the WordPress.org Plugin Directory
+1. Download the latest stable release from the GitHub Releases page or the WordPress.org Plugin Directory when available
 2. Go to your WordPress Admin > Plugins > Add New > Upload Plugin
 3. Upload the .zip file, install, and activate
 
@@ -144,6 +144,21 @@ Yes, the plugin includes numerous customization options and filter hooks for dev
 
 == Changelog ==
 
+= 1.0.0 =
+* Added GitHub Releases-based automatic updates for installations distributed outside WordPress.org
+* Added BM25 keyword ranking with term frequency indexing for improved keyword search relevance
+* Improved sync status tracking by separating full sync and real-time sync timestamps
+* Added Cohere Rerank reference link to API key settings
+* Improved admin UI styling and header layout
+* Updated Japanese translations and POT files
+* Updated WordPress Coding Standards to 3.4.1 security release
+
+= 0.9.1 =
+* Fixed last sync timestamp display to show correct local time instead of UTC
+* Fixed missing vendor assets in release ZIP
+* Fixed JS translation for consent pages warning
+* Restructured documentation with focused guides and improved navigation
+
 = 0.9.0 =
 * Initial release
 * Core AI search functionality
@@ -152,6 +167,9 @@ Yes, the plugin includes numerous customization options and filter hooks for dev
 * Developer hooks and filters
 
 == Upgrade Notice ==
+
+= 1.0.0 =
+This release improves keyword relevance, sync status tracking, and GitHub-based automatic updates for non-WordPress.org installations.
 
 = 0.9.0 =
 Initial release of FE Search AI.
