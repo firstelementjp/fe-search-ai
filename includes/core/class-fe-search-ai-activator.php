@@ -44,7 +44,7 @@ class FE_Search_AI_Activator {
 	 *
 	 * @since 0.9.0
 	 */
-	const DB_VERSION = '1.2';
+	const DB_VERSION = '1.3';
 
 	/**
 	 * Fired when the plugin is activated.
@@ -125,6 +125,7 @@ class FE_Search_AI_Activator {
 			`vector_data` longtext NOT NULL,
 			`embedding_model` varchar(100) NOT NULL DEFAULT '',
 			`embedding_dim` smallint(5) UNSIGNED NOT NULL DEFAULT 0,
+			`keyword_token_count` int(11) UNSIGNED NOT NULL DEFAULT 0,
 			`created_at` datetime NOT NULL,
 			PRIMARY KEY (`id`),
 			KEY `post_id` (`post_id`)
@@ -137,6 +138,7 @@ class FE_Search_AI_Activator {
 			`keyword` varchar(100) NOT NULL,
 			`vector_id` mediumint(9) NOT NULL,
 			`lang` varchar(10) NOT NULL DEFAULT '',
+			`term_frequency` int(11) UNSIGNED NOT NULL DEFAULT 1,
 			PRIMARY KEY (`keyword`, `vector_id`),
 			KEY `keyword` (`keyword`),
 			KEY `vector_id` (`vector_id`)

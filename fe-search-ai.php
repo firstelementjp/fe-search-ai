@@ -3,7 +3,7 @@
  * Plugin Name: FE Search AI
  * Plugin URI:  https://github.com/firstelementjp/fe-search-ai
  * Description: AI-powered search for WordPress.
- * Version:     0.9.1
+ * Version:     1.0.0
  * Author:      FirstElement K.K., Daijiro Miyazawa
  * Author URI:  https://www.firstelement.co.jp/
  * License:     GPLv2 or later
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'FE_SEARCH_AI_VERSION', '0.9.1' );
+define( 'FE_SEARCH_AI_VERSION', '1.0.0' );
 define( 'FE_SEARCH_AI_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FE_SEARCH_AI_PLUGIN_FILE', __FILE__ );
 define( 'FE_SEARCH_AI_PRO_URL', 'https://www.firstelement.co.jp/en/products/fe-search-ai-plugin/' );
@@ -86,6 +86,11 @@ add_action(
 		$sync_handler   = new FESearchAI\Ajax\FE_Search_AI_Sync_Handler();
 
 		\FESearchAI\Core\FE_Search_AI_Cohere_Reranker::register();
+
+		if ( apply_filters( 'fe_search_ai_enable_github_updates', true ) ) {
+			$github_update_checker = new FESearchAI\Update\FE_Search_AI_GitHub_Update_Checker();
+			$github_update_checker->register_hooks();
+		}
 
 		add_filter(
 			'fe_search_ai_get_sync_handler_instance',

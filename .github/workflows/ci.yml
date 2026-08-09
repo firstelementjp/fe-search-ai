@@ -89,7 +89,13 @@ jobs:
 
             - name: Run security audit
               run: |
-                  composer audit
+                  for i in 1 2 3; do
+                    composer audit && break
+                    if [ "$i" -eq 3 ]; then
+                      exit 1
+                    fi
+                    sleep 20
+                  done
                   npm audit --audit-level high || true
 
     wordpress-plugin-check:

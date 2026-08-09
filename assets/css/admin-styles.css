@@ -87,7 +87,8 @@ textarea {
 	background-repeat: no-repeat;
 	background-size: 27%;
 	background-color: white;
-	margin-bottom: 15px;
+	margin: -1rem calc(-1rem - 4px) 1rem calc(-1rem - 5px);
+	box-shadow: 0 2px #e9e9e9;
 }
 
 #plugin_header_upper {
@@ -95,7 +96,7 @@ textarea {
 	display: grid;
 	grid-template: 60px / 1fr 1fr;
 	align-items: center;
-	padding: 0 1em;
+	padding: 0 1em 0 1.5em;
 }
 
 #plugin_header .plugin-title {
@@ -104,7 +105,7 @@ textarea {
 }
 
 #plugin_header #plugin_version {
-	padding: 0 1em;
+	padding: 0 1.5em;
 	background-color: white;
 	height: 2.5rem;
 	display: grid;
@@ -114,7 +115,7 @@ textarea {
 
 #plugin_support {
 	font-size: 12px;
-	padding: 0 1em;
+	padding: 0 1.5em 0 1em;
 	height: 2.5rem;
 	background-color: white;
 	display: grid;
@@ -149,7 +150,7 @@ textarea {
 #plugin_header .icon {
 	-webkit-font-smoothing: antialiased;
 	font: normal 17px / 1 'dashicons';
-	color: #46aae6;
+	color: var(--wp-admin-theme-color);
 	text-align: center;
 }
 
@@ -227,16 +228,21 @@ textarea {
 #fe_search_ai_settings_inner {
 	background: white;
 	padding: 1rem;
+	box-shadow: 0 2px #e9e9e9;
 }
 
 .wrap .nav-tab-wrapper {
 	border-bottom: none;
 }
 
+.wrap .nav-tab-wrapper a:first-child {
+	margin-left: 0;
+}
+
 .nav-tab {
 	border: none;
 	padding: 0.5em 1em;
-	color: #0071a1;
+	color: var(--wp-admin-theme-color);
 	margin-bottom: 2px;
 	background: #f9f9f9;
 	font-size: 13px;
@@ -635,7 +641,7 @@ a:has(.dashicons-warning) span {
 
 details summary {
 	cursor: pointer;
-	color: #0071a1;
+	color: var(--wp-admin-theme-color);
 }
 
 #tab_provider details > div {
@@ -965,4 +971,52 @@ details summary {
 
 .form-table.widefat.striped fieldset label input[type='radio'] {
 	margin-right: 0.5em;
+}
+
+/* ==========================================================================
+	System Logs Table (Pro)
+	========================================================================== */
+
+.fe-search-ai-system-logs-wrap .fe-search-ai-system-logs-table {
+	table-layout: auto;
+}
+
+.fe-search-ai-system-logs-table .column-created_at {
+	width: 14%;
+}
+
+.fe-search-ai-system-logs-table .column-type {
+	width: 7%;
+}
+
+.fe-search-ai-system-logs-table .column-level {
+	width: 6%;
+}
+
+.fe-search-ai-system-logs-table .column-sequence {
+	width: 8%;
+}
+
+.fe-search-ai-system-logs-table .column-message {
+	width: 20%;
+}
+
+.fe-search-ai-system-logs-table .column-question {
+	width: 12%;
+}
+
+.fe-search-ai-system-logs-table .column-answer {
+	width: 15%;
+}
+
+.fe-search-ai-system-logs-table .column-context_found {
+	width: 5%;
+}
+
+.fe-search-ai-system-logs-table .column-session_id {
+	width: 8%;
+}
+
+.fe-search-ai-system-logs-table .column-rating {
+	width: 5%;
 }

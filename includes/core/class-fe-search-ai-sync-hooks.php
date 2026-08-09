@@ -170,8 +170,11 @@ class FE_Search_AI_Sync_Hooks {
 				if ( empty( $chunk_content ) ) {
 					continue;
 				}
-				$summary_text = isset( $summaries[ $index ] ) ? (string) $summaries[ $index ] : '';
-				$summary_hash = isset( $summary_hashes[ $index ] ) ? (string) $summary_hashes[ $index ] : '';
+				$summary_text        = isset( $summaries[ $index ] ) ? (string) $summaries[ $index ] : '';
+				$summary_hash        = isset( $summary_hashes[ $index ] ) ? (string) $summary_hashes[ $index ] : '';
+				$keyword_index_data  = $this->sync_handler->build_keyword_index_data( $chunk_content );
+				$keyword_token_count = (int) ( $keyword_index_data['token_count'] ?? 0 );
+				$term_frequencies    = isset( $keyword_index_data['term_frequencies'] ) && is_array( $keyword_index_data['term_frequencies'] ) ? $keyword_index_data['term_frequencies'] : [];
 
 				// Insert the vector data into the vectors table.
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
@@ -179,40 +182,24 @@ class FE_Search_AI_Sync_Hooks {
 				$wpdb->insert(
 					$vectors_table,
 					[
-						'post_id'         => $post->ID,
-						'lang'            => $lang_code,
-						'chunk_index'     => $index,
-						'content_chunk'   => $chunk_content,
-						'summary_text'    => $summary_text,
-						'summary_hash'    => $summary_hash,
-						'vector_data'     => wp_json_encode( $vector_item['embedding'] ),
-						'embedding_model' => $embedding_model,
-						'embedding_dim'   => $embedding_dim,
-						'created_at'      => current_time( 'mysql' ),
+						'post_id'             => $post->ID,
+						'lang'                => $lang_code,
+						'chunk_index'         => $index,
+						'content_chunk'       => $chunk_content,
+						'summary_text'        => $summary_text,
+						'summary_hash'        => $summary_hash,
+						'vector_data'         => wp_json_encode( $vector_item['embedding'] ),
+						'embedding_model'     => $embedding_model,
+						'embedding_dim'       => $embedding_dim,
+						'keyword_token_count' => $keyword_token_count,
+						'created_at'          => current_time( 'mysql' ),
 					]
 				);
 
 				$vector_id = $wpdb->insert_id;
 
 				if ( $vector_id ) {
-					// Tokenize the text chunk into keywords.
-					$keywords = $this->sync_handler->tokenize_text( $chunk_content );
-
-					foreach ( $keywords as $keyword ) {
-						// Skip very short keywords (often noise).
-						if ( mb_strlen( $keyword ) > 1 ) {
-							// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-							// Direct insert required for custom table.
-							$wpdb->insert(
-								$index_table,
-								[
-									'keyword'   => $keyword,
-									'vector_id' => $vector_id,
-									'lang'      => $lang_code,
-								]
-							);
-						}
-					}
+					$this->sync_handler->insert_keyword_index_terms( $index_table, $vector_id, $lang_code, $term_frequencies );
 				}
 			}
 

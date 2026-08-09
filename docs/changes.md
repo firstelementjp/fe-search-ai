@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.0.0 (2026-08-10)
+
+### Search Relevance
+
+- Added BM25 keyword ranking with term frequency indexing to improve keyword-based search relevance
+- Stored keyword token counts and term frequencies during batch and real-time synchronization
+
+### Updates and Distribution
+
+- Added GitHub Releases-based automatic updates for installations distributed outside WordPress.org
+- Added `no_update` support so WordPress can recognize GitHub-distributed installs as update-supported
+- Added a filter to disable GitHub updates when switching to WordPress.org distribution
+
+### Sync and Admin Experience
+
+- Separated full sync and real-time sync timestamps for more accurate sync status tracking
+- Added a Cohere Rerank reference link to API key settings
+- Improved admin UI styling and header layout with WordPress theme colors
+
+### Maintenance
+
+- Updated Japanese translations and POT files
+- Updated WordPress Coding Standards to 3.4.1 security release
+- Added and updated unit tests for keyword indexing and database schema changes
+
 ## 0.9.1 (2026-06-11)
 
 ### Bug Fixes

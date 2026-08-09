@@ -615,51 +615,35 @@ class FE_Search_AI_Sync_Handler {
 							continue;
 						}
 
-						$chunk_item   = $chunks_with_meta[ $index ];
-						$summary_text = isset( $summaries[ $index ] ) ? (string) $summaries[ $index ] : '';
-						$summary_hash = isset( $summary_hashes[ $index ] ) ? (string) $summary_hashes[ $index ] : '';
+						$chunk_item          = $chunks_with_meta[ $index ];
+						$summary_text        = isset( $summaries[ $index ] ) ? (string) $summaries[ $index ] : '';
+						$summary_hash        = isset( $summary_hashes[ $index ] ) ? (string) $summary_hashes[ $index ] : '';
+						$keyword_index_data  = $this->build_keyword_index_data( $chunk_item['content_chunk'] );
+						$keyword_token_count = (int) ( $keyword_index_data['token_count'] ?? 0 );
+						$term_frequencies    = isset( $keyword_index_data['term_frequencies'] ) && is_array( $keyword_index_data['term_frequencies'] ) ? $keyword_index_data['term_frequencies'] : [];
 
 						// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 						// Direct insert required for custom table. Table name is controlled internally.
 						$wpdb->insert(
 							$vectors_table,
 							[
-								'post_id'         => $post->ID,
-								'lang'            => $lang_code,
-								'chunk_index'     => $index,
-								'content_chunk'   => $chunk_item['content_chunk'],
-								'summary_text'    => $summary_text,
-								'summary_hash'    => $summary_hash,
-								'vector_data'     => wp_json_encode( $vector_item['embedding'] ),
-								'embedding_model' => $embedding_model,
-								'embedding_dim'   => $embedding_dim,
-								'created_at'      => current_time( 'mysql' ),
+								'post_id'             => $post->ID,
+								'lang'                => $lang_code,
+								'chunk_index'         => $index,
+								'content_chunk'       => $chunk_item['content_chunk'],
+								'summary_text'        => $summary_text,
+								'summary_hash'        => $summary_hash,
+								'vector_data'         => wp_json_encode( $vector_item['embedding'] ),
+								'embedding_model'     => $embedding_model,
+								'embedding_dim'       => $embedding_dim,
+								'keyword_token_count' => $keyword_token_count,
+								'created_at'          => current_time( 'mysql' ),
 							]
 						);
 						$vector_id = $wpdb->insert_id;
 
 						if ( $vector_id ) {
-							$keywords        = $this->tokenize_text( $chunk_item['content_chunk'] );
-							$unique_keywords = array_unique( $keywords );
-
-							foreach ( $unique_keywords as $keyword ) {
-								if ( mb_strlen( $keyword ) > 1 ) {
-									// Use INSERT IGNORE semantics so that duplicate (keyword, vector_id)
-									// combinations do not trigger database errors during sync.
-									// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-									// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-									// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
-									// Table name is interpolated but controlled internally, values are prepared.
-									$wpdb->query(
-										$wpdb->prepare(
-											"INSERT IGNORE INTO `{$index_table}` (`keyword`, `vector_id`, `lang`) VALUES (%s, %d, %s)",
-											$keyword,
-											$vector_id,
-											$lang_code
-										)
-									);
-								}
-							}
+							$this->insert_keyword_index_terms( $index_table, $vector_id, $lang_code, $term_frequencies );
 						}
 					}
 
@@ -1398,7 +1382,7 @@ class FE_Search_AI_Sync_Handler {
 	}
 
 	/**
-	 * Retrieves similar chunks from the local keyword index.
+	 * Retrieves similar chunks from the local keyword index using BM25 ranking.
 	 *
 	 * @param string $question    The end user's question text.
 	 * @param string $sequence_id Optional log sequence ID.
@@ -1409,22 +1393,20 @@ class FE_Search_AI_Sync_Handler {
 		$vectors_table = $wpdb->prefix . 'fe_search_ai_vectors';
 		$index_table   = $wpdb->prefix . 'fe_search_ai_keyword_index';
 
-		// Use the finalized tokenize_text method to extract keywords from the question.
 		$keywords = array_unique( $this->tokenize_text( $question ) );
-
 		if ( empty( $keywords ) ) {
 			return [];
 		}
 
-		// Remove keywords that are too short to be meaningful.
-		$valid_keywords = array_filter(
-			$keywords,
-			function ( $kw ) {
-				return mb_strlen( $kw ) > 1;
-			}
+		$valid_keywords = array_values(
+			array_filter(
+				$keywords,
+				function ( $kw ) {
+					return mb_strlen( (string) $kw ) > 1;
+				}
+			)
 		);
 
-		// DEBUG: Log keyword extraction results.
 		\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
 			'DEBUG',
 			'Keyword extraction from user question.',
@@ -1440,12 +1422,8 @@ class FE_Search_AI_Sync_Handler {
 			return [];
 		}
 
-		// Find vector IDs that match the keywords.
 		/**
 		 * Filters the maximum number of chunks returned for use as LLM context.
-		 *
-		 * This controls how many of the most relevant text chunks are retrieved
-		 * from the keyword index and ultimately passed to the LLM as context.
 		 *
 		 * @param int    $max_chunks Default maximum number of chunks.
 		 * @param string $question   The end user's question text.
@@ -1456,52 +1434,143 @@ class FE_Search_AI_Sync_Handler {
 		if ( $max_chunks <= 0 ) {
 			$max_chunks = 100;
 		}
-		$placeholders = implode( ', ', array_fill( 0, count( $valid_keywords ), '%s' ) );
+
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		// Hook name is properly prefixed with fe_search_ai_.
+		$candidate_limit = (int) apply_filters( 'fe_search_ai_bm25_candidate_limit', max( 500, $max_chunks * 20 ), $question );
+		if ( $candidate_limit <= 0 ) {
+			$candidate_limit = max( 500, $max_chunks * 20 );
+		}
+
+		$keyword_placeholders = implode( ', ', array_fill( 0, count( $valid_keywords ), '%s' ) );
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+		// Table names are interpolated but controlled internally, keywords and limit are prepared.
+		$matched_rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT i.`keyword`, i.`vector_id`, i.`term_frequency`, v.`keyword_token_count` FROM `{$index_table}` i INNER JOIN `{$vectors_table}` v ON v.`id` = i.`vector_id` WHERE i.`keyword` IN ( {$keyword_placeholders} ) LIMIT %d",
+				array_merge( $valid_keywords, [ $candidate_limit ] )
+			),
+			ARRAY_A
+		);
+
+		if ( empty( $matched_rows ) ) {
+			return [];
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+		// Table name is interpolated but controlled internally.
+		$total_documents = (int) $wpdb->get_var( "SELECT COUNT(*) FROM `{$vectors_table}`" );
+		if ( $total_documents <= 0 ) {
+			return [];
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+		// Table name is interpolated but controlled internally.
+		$average_document_length = (float) $wpdb->get_var( "SELECT AVG(NULLIF(`keyword_token_count`, 0)) FROM `{$vectors_table}`" );
+		if ( $average_document_length <= 0 ) {
+			$average_document_length = 1.0;
+		}
+
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
 		// Table name is interpolated but controlled internally, keywords are prepared.
-		$vector_ids = $wpdb->get_col(
+		$document_frequency_rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT DISTINCT `vector_id` FROM `{$index_table}` WHERE `keyword` IN ( {$placeholders} ) LIMIT %d",
-				array_merge( $valid_keywords, [ $max_chunks ] )
-			)
+				// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+				"SELECT `keyword`, COUNT(DISTINCT `vector_id`) AS document_frequency FROM `{$index_table}` WHERE `keyword` IN ( {$keyword_placeholders} ) GROUP BY `keyword`",
+				$valid_keywords
+			),
+			ARRAY_A
 		);
+		$document_frequencies = [];
+		foreach ( $document_frequency_rows as $row ) {
+			$document_frequencies[ (string) $row['keyword'] ] = max( 1, (int) $row['document_frequency'] );
+		}
 
-		// DEBUG: Log index search results.
-		\FESearchAI\Core\FE_Search_AI_Logger::log(
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		// Hook name is properly prefixed with fe_search_ai_.
+		$k1 = (float) apply_filters( 'fe_search_ai_bm25_k1', 1.2, $question );
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		// Hook name is properly prefixed with fe_search_ai_.
+		$b = (float) apply_filters( 'fe_search_ai_bm25_b', 0.75, $question );
+		if ( $k1 <= 0 ) {
+			$k1 = 1.2;
+		}
+		if ( $b < 0 || $b > 1 ) {
+			$b = 0.75;
+		}
+
+		$vector_scores = [];
+		foreach ( $matched_rows as $row ) {
+			$keyword            = (string) $row['keyword'];
+			$vector_id          = (int) $row['vector_id'];
+			$term_frequency     = max( 1, (int) $row['term_frequency'] );
+			$document_length    = max( 1.0, (float) $row['keyword_token_count'] );
+			$document_frequency = $document_frequencies[ $keyword ] ?? 1;
+			$idf                = log( 1 + ( ( $total_documents - $document_frequency + 0.5 ) / ( $document_frequency + 0.5 ) ) );
+			$denominator        = $term_frequency + ( $k1 * ( 1 - $b + ( $b * ( $document_length / $average_document_length ) ) ) );
+			$score              = $denominator > 0 ? $idf * ( ( $term_frequency * ( $k1 + 1 ) ) / $denominator ) : 0;
+
+			if ( ! isset( $vector_scores[ $vector_id ] ) ) {
+				$vector_scores[ $vector_id ] = 0.0;
+			}
+			$vector_scores[ $vector_id ] += $score;
+		}
+
+		arsort( $vector_scores, SORT_NUMERIC );
+		$vector_scores = array_slice( $vector_scores, 0, $max_chunks, true );
+		$vector_ids    = array_map( 'intval', array_keys( $vector_scores ) );
+
+		\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
 			'DEBUG',
-			'Keyword index search completed.',
+			'BM25 keyword index search completed.',
 			[
 				'keywords_searched_count' => count( $valid_keywords ),
 				'keywords_hash'           => md5( wp_json_encode( array_values( $valid_keywords ) ) ),
+				'candidate_rows'          => count( $matched_rows ),
 				'matched_vector_ids'      => count( $vector_ids ),
-			]
+				'total_documents'         => $total_documents,
+				'average_document_length' => $average_document_length,
+				'k1'                      => $k1,
+				'b'                       => $b,
+			],
+			$sequence_id
 		);
 
 		if ( empty( $vector_ids ) ) {
 			return [];
 		}
 
-		// Retrieve the full content chunks for the found vector IDs.
-		// Order by newest post date to keep UX stable when reranking is disabled.
-		$placeholders = implode( ', ', array_fill( 0, count( $vector_ids ), '%d' ) );
+		$vector_placeholders = implode( ', ', array_fill( 0, count( $vector_ids ), '%d' ) );
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
-		// Table names are interpolated but controlled internally, vector_ids are prepared.
+		// Table names are interpolated but controlled internally, vector IDs are prepared.
 		$chunks_data = $wpdb->get_results(
 			$wpdb->prepare(
 				// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
-				"SELECT v.`content_chunk`, v.`summary_text`, v.`post_id` FROM `{$vectors_table}` v INNER JOIN `{$wpdb->posts}` p ON p.ID = v.post_id WHERE v.`id` IN ( {$placeholders} ) ORDER BY p.post_date DESC",
+				"SELECT v.`id`, v.`content_chunk`, v.`summary_text`, v.`post_id` FROM `{$vectors_table}` v WHERE v.`id` IN ( {$vector_placeholders} )",
 				$vector_ids
 			),
 			ARRAY_A
 		);
 
-		// Add permalink and additional data to the results.
-		$results = [];
+		$chunks_by_id = [];
 		foreach ( $chunks_data as $row ) {
+			$chunks_by_id[ (int) $row['id'] ] = $row;
+		}
+
+		$results = [];
+		foreach ( $vector_ids as $vector_id ) {
+			if ( ! isset( $chunks_by_id[ $vector_id ] ) ) {
+				continue;
+			}
+			$row       = $chunks_by_id[ $vector_id ];
 			$post      = get_post( $row['post_id'] );
 			$results[] = [
 				'content_chunk' => $row['content_chunk'],
@@ -1510,6 +1579,7 @@ class FE_Search_AI_Sync_Handler {
 				'post_id'       => $row['post_id'],
 				'title'         => $post ? $post->post_title : 'Untitled',
 				'source'        => 'keyword',
+				'bm25_score'    => $vector_scores[ $vector_id ] ?? 0,
 			];
 		}
 
@@ -2164,13 +2234,73 @@ class FE_Search_AI_Sync_Handler {
 	 * @return array  An array of keywords.
 	 */
 	public function tokenize_text( $text ) {
-		// Normalization
+		return $this->tokenize_text_tokens( $text, true );
+	}
+
+	/**
+	 * Builds keyword index data used by BM25 search.
+	 *
+	 * @param string $text The text to tokenize.
+	 * @return array Token count and term frequency map.
+	 */
+	public function build_keyword_index_data( $text ) {
+		$tokens = array_filter(
+			$this->tokenize_text_tokens( $text, false ),
+			function ( $word ) {
+				return mb_strlen( (string) $word ) > 1;
+			}
+		);
+		$tokens = array_values( $tokens );
+
+		return [
+			'token_count'      => count( $tokens ),
+			'term_frequencies' => array_count_values( $tokens ),
+		];
+	}
+
+	/**
+	 * Inserts BM25 keyword index rows for a stored vector.
+	 *
+	 * @param string $index_table      Keyword index table name.
+	 * @param int    $vector_id        Stored vector row ID.
+	 * @param string $lang_code        Language code for the indexed content.
+	 * @param array  $term_frequencies Keyword frequency map.
+	 * @return void
+	 */
+	public function insert_keyword_index_terms( $index_table, $vector_id, $lang_code, $term_frequencies ) {
+		global $wpdb;
+
+		foreach ( $term_frequencies as $keyword => $frequency ) {
+			if ( mb_strlen( (string) $keyword ) <= 1 ) {
+				continue;
+			}
+
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+			// Table name is interpolated but controlled internally, values are prepared.
+			$wpdb->query(
+				$wpdb->prepare(
+					"INSERT INTO `{$index_table}` (`keyword`, `vector_id`, `lang`, `term_frequency`) VALUES (%s, %d, %s, %d) ON DUPLICATE KEY UPDATE `term_frequency` = VALUES(`term_frequency`), `lang` = VALUES(`lang`)",
+					$keyword,
+					$vector_id,
+					$lang_code,
+					max( 1, (int) $frequency )
+				)
+			);
+		}
+	}
+
+	/**
+	 * Tokenizes text and optionally returns unique keywords.
+	 *
+	 * @param string $text        The text to split.
+	 * @param bool   $unique_only Whether duplicate tokens should be removed.
+	 * @return array Tokenized words.
+	 */
+	private function tokenize_text_tokens( $text, $unique_only ) {
 		$text_normalized = mb_strtolower( (string) $text, 'UTF-8' );
-
-		// Use 'asHc' to also convert full-width spaces
 		$text_normalized = mb_convert_kana( $text_normalized, 'as', 'UTF-8' );
-
-		// Remove all symbols (including asterisk, which was causing issues)
 		$text_normalized = preg_replace( '/[^\p{L}\p{N}\s]/u', ' ', $text_normalized );
 
 		$locale    = get_locale();
@@ -2179,9 +2309,7 @@ class FE_Search_AI_Sync_Handler {
 			$lang_code = $locale;
 		}
 		$stop_words = [];
-		// Load stop words
-		// Use the correct plugin directory constant for locating i18n files.
-		$lang_file = FE_SEARCH_AI_PLUGIN_DIR . "includes/i18n/{$locale}.php";
+		$lang_file  = FE_SEARCH_AI_PLUGIN_DIR . "includes/i18n/{$locale}.php";
 		if ( ! file_exists( $lang_file ) ) {
 			$lang_file = FE_SEARCH_AI_PLUGIN_DIR . "includes/i18n/{$lang_code}.php";
 		}
@@ -2190,25 +2318,12 @@ class FE_Search_AI_Sync_Handler {
 			$stop_words = $lang_data['stop_words'] ?? [];
 		}
 
-		/**
-		 * A filter hook for customizing the stop-word list used during tokenization.
-		 * Hook name: fe_search_ai_stop_words
-		 *
-		 * This allows site owners and developers to add or remove language-specific
-		 * stop words before keyword extraction.
-		 *
-		 * @param array  $stop_words The default stop-word list loaded for the locale.
-		 * @param string $locale     The full locale string (e.g. "en_US", "ja").
-		 */
 		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		// Hook name is properly prefixed with fe_search_ai_.
 		$stop_words = apply_filters( 'fe_search_ai_stop_words', $stop_words, $locale );
 
-		// Tokenize
 		if ( 'ja' === $lang_code ) {
 			$tokenizer_engine = $this->get_japanese_tokenizer_engine();
-
-			// Force Yahoo! MA API if PHP < 8.0 (TinySegmenter requires PHP >= 8.0).
 			if ( version_compare( PHP_VERSION, '8.0.0', '<' ) ) {
 				$tokenizer_engine = 'yahoo_ma';
 			}
@@ -2216,46 +2331,23 @@ class FE_Search_AI_Sync_Handler {
 			if ( 'yahoo_ma' === $tokenizer_engine && $this->get_yahoo_app_id() ) {
 				$words = $this->tokenize_with_yahoo_api( $text_normalized );
 				if ( is_wp_error( $words ) || empty( $words ) ) {
-					// Fallback to TinySegmenter if available (PHP >= 8.0).
-					if ( null !== $this->segmenter ) {
-						$words = $this->segmenter->segment( $text_normalized );
-					} else {
-						// No tokenizer available, fall back to simple split.
-						$words = preg_split( '/\s+/', $text_normalized, -1, PREG_SPLIT_NO_EMPTY );
-					}
+					$words = null !== $this->segmenter ? $this->segmenter->segment( $text_normalized ) : preg_split( '/\s+/', $text_normalized, -1, PREG_SPLIT_NO_EMPTY );
 				}
 			} elseif ( null !== $this->segmenter ) {
-				// Use TinySegmenter if available (PHP >= 8.0).
 				$words = $this->segmenter->segment( $text_normalized );
 			} else {
-				// TinySegmenter not available, fall back to simple split.
 				$words = preg_split( '/\s+/', $text_normalized, -1, PREG_SPLIT_NO_EMPTY );
 			}
 		} else {
 			$words = preg_split( '/\s+/', $text_normalized, -1, PREG_SPLIT_NO_EMPTY );
 		}
 
-		/**
-		 * A filter hook for customizing raw tokens per language before stop-word
-		 * removal and stemming.
-		 * Hook name: fe_search_ai_tokens_for_lang
-		 *
-		 * This allows developers to plug in their own tokenization logic for
-		 * languages that do not use whitespace-separated words (e.g. Chinese,
-		 * Korean), or to otherwise post-process the token list.
-		 *
-		 * @param array  $words           Raw tokens produced by the built-in tokenizer.
-		 * @param string $text_normalized The normalized input text.
-		 * @param string $lang_code       Two-letter language code (e.g. 'en', 'ja', 'zh', 'ko').
-		 */
 		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		// Hook name is properly prefixed with fe_search_ai_.
 		$words = apply_filters( 'fe_search_ai_tokens_for_lang', $words, $text_normalized, $lang_code );
 
-		// Remove stop words
 		$words_after_diff = array_diff( (array) $words, (array) $stop_words );
 
-		// Stemming for non-Japanese languages
 		if ( 'ja' !== $lang_code ) {
 			try {
 				$stemmer_manager = new \Wamania\Snowball\StemmerManager();
@@ -2268,37 +2360,19 @@ class FE_Search_AI_Sync_Handler {
 					$words_after_diff = $stemmed_words;
 				}
 			} catch ( \Throwable $t ) {
-				// Ignore stemming errors and continue with unstemmed words.
 				unset( $t );
 			}
 		}
 
-		// Final Cleanup
-		if ( ! empty( $words_after_diff ) ) {
-			// Use the correct variable '$word' in the anonymous function
-			$words_after_diff = array_filter(
-				$words_after_diff,
-				function ( $word ) {
-					return ! empty( trim( $word ) );
-				}
-			);
-		}
+		$words_after_diff = array_filter(
+			$words_after_diff,
+			function ( $word ) {
+				return ! empty( trim( (string) $word ) );
+			}
+		);
 
-		// Make sure keywords are unique before returning
-		$final_words = array_values( array_unique( $words_after_diff ) );
+		$final_words = array_values( $unique_only ? array_unique( $words_after_diff ) : $words_after_diff );
 
-		/**
-		 * A filter hook for customizing the final keyword list returned by tokenize_text.
-		 * Hook name: fe_search_ai_tokenize_text
-		 *
-		 * This allows site owners and developers to post-process or augment the
-		 * extracted keywords (for example, adding custom synonyms or removing
-		 * domain-specific terms) before they are used for indexing or search.
-		 *
-		 * @param array  $final_words     The final list of keywords.
-		 * @param string $text_normalized The normalized input text.
-		 * @param string $locale          The full locale string (e.g. "en_US", "ja").
-		 */
 		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		// Hook name is properly prefixed with fe_search_ai_.
 		$final_words = apply_filters( 'fe_search_ai_tokenize_text', $final_words, $text_normalized, $locale );

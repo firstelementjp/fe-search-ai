@@ -88,6 +88,15 @@ class ActivatorTest extends TestCase {
 			$result = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 			$this->assertEquals( $table, $result, "Table {$table} should be created" );
 		}
+
+		$vectors_table = $wpdb->prefix . 'fe_search_ai_vectors';
+		$index_table   = $wpdb->prefix . 'fe_search_ai_keyword_index';
+
+		$keyword_token_count_column = $wpdb->get_var( "SHOW COLUMNS FROM `{$vectors_table}` LIKE 'keyword_token_count'" );
+		$term_frequency_column      = $wpdb->get_var( "SHOW COLUMNS FROM `{$index_table}` LIKE 'term_frequency'" );
+
+		$this->assertEquals( 'keyword_token_count', $keyword_token_count_column, 'Vectors table should include keyword_token_count column' );
+		$this->assertEquals( 'term_frequency', $term_frequency_column, 'Keyword index table should include term_frequency column' );
 	}
 
 	/**

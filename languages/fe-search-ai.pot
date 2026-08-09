@@ -635,8 +635,9 @@ msgstr ""
 
 #: includes/admin/class-fe-search-ai-settings.php:490
 msgid ""
-"Free account Trial keys can be used for free but have rate limits and are "
-"not licensed for commercial use. Please obtain a Production key for "
+"<a href=\"%s\" target=\"_blank\" rel=\"noopener\">Cohere Rerank</a> free "
+"account Trial keys can be used for free but have rate limits and are not "
+"licensed for commercial use. Please obtain a Production key for "
 "commercial purposes."
 msgstr ""
 
