@@ -87,6 +87,11 @@ add_action(
 
 		\FESearchAI\Core\FE_Search_AI_Cohere_Reranker::register();
 
+		if ( apply_filters( 'fe_search_ai_enable_github_updates', true ) ) {
+			$github_update_checker = new FESearchAI\Update\FE_Search_AI_GitHub_Update_Checker();
+			$github_update_checker->register_hooks();
+		}
+
 		add_filter(
 			'fe_search_ai_get_sync_handler_instance',
 			function () use ( $sync_handler ) {
