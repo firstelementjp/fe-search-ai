@@ -9,13 +9,19 @@
 - 対応AIプロバイダーのAPIキー
 - Qdrant CloudまたはセルフホストQdrant
 
-## WordPress.orgからインストール
+## GitHub Releasesからインストール
 
-1. WordPress管理画面で **プラグイン → 新規追加** を開きます。
-2. **FE Search AI** を検索します。
-3. **今すぐインストール** をクリックします。
+1. [GitHub Releasesページ](https://github.com/firstelementjp/fe-search-ai/releases) から最新の安定版ZIPをダウンロードします。
+2. WordPress管理画面で **プラグイン → 新規追加 → プラグインのアップロード** を開きます。
+3. ZIPファイルをアップロードします。
 4. プラグインを有効化します。
 5. 管理メニューの **FE Search AI** を開きます。
+
+バージョン1.0.0では、WordPress.org外で配布されるインストール向けにGitHub Releasesベースの更新確認に対応しています。
+
+## WordPress.orgからインストール
+
+WordPress.org Plugin Directoryで公開された後は、**プラグイン → 新規追加** で **FE Search AI** を検索してインストールできます。
 
 ## 手動インストール
 

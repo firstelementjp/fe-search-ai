@@ -6,8 +6,8 @@
 
 ### Usage
 
-- [� Examples](example.md)
-- [�🔍 Search Integration](search.md)
+- [💡 Examples](example.md)
+- [🔍 Search Integration](search.md)
 - [🔄 Sync System](sync.md)
 - [🐛 Troubleshooting](help.md)
 

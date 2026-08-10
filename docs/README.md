@@ -12,13 +12,18 @@ FE Search AI is designed for WordPress sites where visitors need quick, accurate
 
 - **Conversational AI search**: Answer visitor questions in natural language.
 - **RAG architecture**: Retrieve relevant content before generating answers.
-- **Hybrid search**: Combine vector search and keyword search for better recall.
+- **Hybrid search**: Combine vector search with BM25 keyword ranking for better recall and keyword relevance.
 - **Multiple AI providers**: Use OpenAI, Google Gemini, or Anthropic Claude.
 - **Embedding support**: Generate vectors with OpenAI or Google embedding models.
 - **Qdrant integration**: Store and retrieve vectors with Qdrant Cloud or self-hosted Qdrant.
 - **Japanese support**: Use TinySegmenter or Yahoo! JAPAN Japanese MA API.
 - **Customizable chat UI**: Embed a floating or inline chat interface with a shortcode.
-- **Developer hooks**: Extend providers, prompts, sync behavior, and frontend output.
+- **GitHub Releases updates**: Receive updates from GitHub Releases while WordPress.org distribution is pending.
+- **Developer hooks**: Extend providers, prompts, sync behavior, frontend output, and GitHub update behavior.
+
+## Current release
+
+Version 1.0.0 adds BM25 keyword ranking, GitHub Releases-based updates, separate full sync and real-time sync status tracking, refreshed admin styling, and updated translations.
 
 ## Recommended reading
 
