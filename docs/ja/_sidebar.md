@@ -1,19 +1,19 @@
 ### はじめに
 
-- [🚀 はじめに](start.md)
-- [📦 インストール](install.md)
-- [🔧 設定](config.md)
+- [🚀 はじめに](ja/start.md)
+- [📦 インストール](ja/install.md)
+- [🔧 設定](ja/config.md)
 
 ### 使用方法
 
-- [💡 例](example.md)
-- [🔍 検索UIの設置](search.md)
-- [🔄 同期システム](sync.md)
-- [🐛 トラブルシューティング](help.md)
+- [💡 例](ja/example.md)
+- [🔍 検索UIの設置](ja/search.md)
+- [🔄 同期システム](ja/sync.md)
+- [🐛 トラブルシューティング](ja/help.md)
 
 ### 開発
 
-- [🪝 開発者向けフック](hooks.md)
-- [🤝 貢献](contribute.md)
-- [📋 変更履歴](changes.md)
-- [📄 ライセンス](legal.md)
+- [🪝 開発者向けフック](ja/hooks.md)
+- [🤝 貢献](ja/contribute.md)
+- [📋 変更履歴](ja/changes.md)
+- [📄 ライセンス](ja/legal.md)
