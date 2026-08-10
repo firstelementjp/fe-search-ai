@@ -6,6 +6,7 @@
 
 # Exclude hidden files and backup language files
 _*
+!docs/_sidebar.md
 *-backup-*.po~
 
 # Dependencies
