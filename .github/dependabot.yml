@@ -1,13 +1,17 @@
 version: 2
 updates:
-    # Composer dependencies
     - package-ecosystem: 'composer'
       directory: '/'
       schedule:
           interval: 'weekly'
           day: 'monday'
           time: '09:00'
-      open-pull-requests-limit: 5
+      open-pull-requests-limit: 3
+      groups:
+          composer-production:
+              dependency-type: 'production'
+          composer-development:
+              dependency-type: 'development'
       reviewers:
           - 'dxd5001'
       assignees:
@@ -16,11 +20,39 @@ updates:
           prefix: 'deps'
           include: 'scope'
 
-    # GitHub Actions (if added later)
+    - package-ecosystem: 'npm'
+      directory: '/'
+      schedule:
+          interval: 'weekly'
+          day: 'monday'
+          time: '09:15'
+      open-pull-requests-limit: 3
+      groups:
+          npm-development:
+              dependency-type: 'development'
+      reviewers:
+          - 'dxd5001'
+      assignees:
+          - 'dxd5001'
+      commit-message:
+          prefix: 'deps'
+          include: 'scope'
+
     - package-ecosystem: 'github-actions'
       directory: '/'
       schedule:
           interval: 'weekly'
           day: 'monday'
-          time: '09:00'
-      open-pull-requests-limit: 3
+          time: '09:30'
+      open-pull-requests-limit: 2
+      groups:
+          github-actions:
+              patterns:
+                  - '*'
+      reviewers:
+          - 'dxd5001'
+      assignees:
+          - 'dxd5001'
+      commit-message:
+          prefix: 'deps'
+          include: 'scope'
