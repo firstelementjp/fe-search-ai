@@ -44,7 +44,7 @@ class FE_Search_AI_Activator {
 	 *
 	 * @since 0.9.0
 	 */
-	const DB_VERSION = '1.3';
+	const DB_VERSION = '1.4';
 
 	/**
 	 * Fired when the plugin is activated.
@@ -144,6 +144,47 @@ class FE_Search_AI_Activator {
 			KEY `vector_id` (`vector_id`)
 		) {$charset_collate};";
 		dbDelta( $sql_index );
+
+		// Retrieval Trace Table.
+		$table_name_retrieval_traces = $wpdb->prefix . 'fe_search_ai_retrieval_traces';
+		$sql_retrieval_traces        = "CREATE TABLE `{$table_name_retrieval_traces}` (
+			`id` bigint(20) NOT NULL AUTO_INCREMENT,
+			`trace_id` varchar(80) NOT NULL DEFAULT '',
+			`sequence_id` varchar(64) NOT NULL DEFAULT '',
+			`query_hash` char(64) NOT NULL DEFAULT '',
+			`query_length` int(11) UNSIGNED NOT NULL DEFAULT 0,
+			`pipeline` longtext,
+			`candidate_count` int(11) UNSIGNED NOT NULL DEFAULT 0,
+			`payload` longtext,
+			`created_at` datetime NOT NULL,
+			PRIMARY KEY (`id`),
+			UNIQUE KEY `trace_id` (`trace_id`),
+			KEY `sequence_id` (`sequence_id`),
+			KEY `query_hash` (`query_hash`),
+			KEY `created_at` (`created_at`)
+		) {$charset_collate};";
+		dbDelta( $sql_retrieval_traces );
+
+		// Retrieval Trace Items Table.
+		$table_name_retrieval_trace_items = $wpdb->prefix . 'fe_search_ai_retrieval_trace_items';
+		$sql_retrieval_trace_items        = "CREATE TABLE `{$table_name_retrieval_trace_items}` (
+			`id` bigint(20) NOT NULL AUTO_INCREMENT,
+			`trace_id` varchar(80) NOT NULL DEFAULT '',
+			`final_rank` int(11) UNSIGNED NOT NULL DEFAULT 0,
+			`post_id` bigint(20) UNSIGNED NOT NULL DEFAULT 0,
+			`chunk_hash` char(64) NOT NULL DEFAULT '',
+			`source` varchar(40) NOT NULL DEFAULT '',
+			`scores` longtext,
+			`ranks` longtext,
+			`payload` longtext,
+			`created_at` datetime NOT NULL,
+			PRIMARY KEY (`id`),
+			KEY `trace_id` (`trace_id`),
+			KEY `post_id` (`post_id`),
+			KEY `chunk_hash` (`chunk_hash`),
+			KEY `created_at` (`created_at`)
+		) {$charset_collate};";
+		dbDelta( $sql_retrieval_trace_items );
 
 		// System Logs Table.
 		$table_name = $wpdb->prefix . 'fe_search_ai_system_logs';

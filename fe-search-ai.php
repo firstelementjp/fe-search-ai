@@ -86,6 +86,7 @@ add_action(
 		$sync_handler   = new FESearchAI\Ajax\FE_Search_AI_Sync_Handler();
 
 		\FESearchAI\Core\FE_Search_AI_Cohere_Reranker::register();
+		\FESearchAI\Core\FE_Search_AI_Retrieval_Trace_Recorder::register();
 
 		if ( apply_filters( 'fe_search_ai_enable_github_updates', true ) ) {
 			$github_update_checker = new FESearchAI\Update\FE_Search_AI_GitHub_Update_Checker();
