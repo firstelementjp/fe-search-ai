@@ -2,7 +2,7 @@ name: CI
 
 on:
     push:
-        branches: [main, develop]
+        branches: [main]
     pull_request:
         branches: [main, develop]
 
@@ -84,8 +84,17 @@ jobs:
                   php-version: '8.2'
                   coverage: none
 
-            - name: Install dependencies
+            - name: Setup Node.js
+              uses: actions/setup-node@v6
+              with:
+                  node-version: '20'
+                  cache: 'npm'
+
+            - name: Install Composer dependencies
               run: composer install --prefer-dist --no-progress
+
+            - name: Install npm dependencies
+              run: npm ci --omit=optional
 
             - name: Run security audit
               run: |
@@ -96,7 +105,7 @@ jobs:
                     fi
                     sleep 20
                   done
-                  npm audit --audit-level high || true
+                  npm audit --audit-level high
 
     wordpress-plugin-check:
         name: WordPress Plugin Check
