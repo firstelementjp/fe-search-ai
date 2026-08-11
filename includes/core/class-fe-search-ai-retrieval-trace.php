@@ -30,6 +30,11 @@ class FE_Search_AI_Retrieval_Trace {
 	 * @return array Safe trace payload.
 	 */
 	public static function build_payload( array $chunks, $question, $sequence_id = '', array $metadata = [] ) {
+		$metadata = array_merge(
+			self::sanitize_metadata( $metadata ),
+			self::build_metadata( $chunks )
+		);
+
 		$payload = [
 			'trace_id'        => self::generate_trace_id( $sequence_id, $question ),
 			'sequence_id'     => (string) $sequence_id,
@@ -41,7 +46,7 @@ class FE_Search_AI_Retrieval_Trace {
 		];
 
 		if ( ! empty( $metadata ) ) {
-			$payload['metadata'] = self::sanitize_metadata( $metadata );
+			$payload['metadata'] = $metadata;
 		}
 
 		/**
@@ -192,6 +197,57 @@ class FE_Search_AI_Retrieval_Trace {
 	}
 
 	/**
+	 * Build safe automatically generated trace metadata.
+	 *
+	 * @since 1.0.0
+	 * @param array $chunks Retrieved chunks.
+	 * @return array Trace metadata.
+	 */
+	private static function build_metadata( array $chunks ) {
+		return [
+			'source_counts' => self::build_source_counts( $chunks ),
+		];
+	}
+
+	/**
+	 * Count retrieval sources represented in the final trace items.
+	 *
+	 * @since 1.0.0
+	 * @param array $chunks Retrieved chunks.
+	 * @return array Source counts.
+	 */
+	private static function build_source_counts( array $chunks ) {
+		$counts = [
+			'qdrant'  => 0,
+			'keyword' => 0,
+			'both'    => 0,
+			'unknown' => 0,
+		];
+
+		foreach ( $chunks as $chunk ) {
+			if ( ! is_array( $chunk ) ) {
+				continue;
+			}
+
+			$hybrid_sources = self::extract_hybrid_sources( $chunk );
+			$has_qdrant     = ! empty( $hybrid_sources['qdrant'] ) || isset( $chunk['qdrant_score'] );
+			$has_keyword    = ! empty( $hybrid_sources['keyword'] ) || isset( $chunk['bm25_score'] );
+
+			if ( $has_qdrant && $has_keyword ) {
+				++$counts['both'];
+			} elseif ( $has_qdrant ) {
+				++$counts['qdrant'];
+			} elseif ( $has_keyword ) {
+				++$counts['keyword'];
+			} else {
+				++$counts['unknown'];
+			}
+		}
+
+		return $counts;
+	}
+
+	/**
 	 * Detect which retrieval stages contributed to the current result set.
 	 *
 	 * @since 1.0.0
@@ -235,6 +291,8 @@ class FE_Search_AI_Retrieval_Trace {
 			}
 			if ( is_scalar( $value ) || null === $value ) {
 				$safe[ $key ] = $value;
+			} elseif ( is_array( $value ) ) {
+				$safe[ $key ] = self::sanitize_metadata( $value );
 			}
 		}
 

@@ -1295,20 +1295,44 @@ class FE_Search_AI_Settings {
 	 */
 	public function sync_ui_field_html() {
 		global $wpdb;
-		$vectors_table = $wpdb->prefix . 'fe_search_ai_vectors';
+		$vectors_table       = $wpdb->prefix . 'fe_search_ai_vectors';
+		$keyword_index_table = $wpdb->prefix . 'fe_search_ai_keyword_index';
 
 		// Check if the table exists *before* querying it to prevent errors.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
 		// Direct query required for custom table check.
-		$table_exists       = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $vectors_table ) ) === $vectors_table;
-		$indexed_post_count = 0;
+		$table_exists            = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $vectors_table ) ) === $vectors_table;
+		$keyword_index_exists    = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $keyword_index_table ) ) === $keyword_index_table;
+		$indexed_post_count      = 0;
+		$total_vectors           = 0;
+		$zero_token_vectors      = 0;
+		$avg_keyword_token_count = 0.0;
+		$keyword_index_row_count = 0;
 		if ( $table_exists ) {
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
 			// Table name is interpolated but controlled internally.
-			$indexed_post_count = $wpdb->get_var( "SELECT COUNT(DISTINCT post_id) FROM `{$vectors_table}`" );
+			$indexed_post_count = (int) $wpdb->get_var( "SELECT COUNT(DISTINCT post_id) FROM `{$vectors_table}`" );
+
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+			// Table name is interpolated but controlled internally.
+			$index_health = $wpdb->get_row( "SELECT COUNT(*) AS total_vectors, SUM(keyword_token_count = 0) AS zero_token_vectors, AVG(NULLIF(keyword_token_count, 0)) AS avg_keyword_token_count FROM `{$vectors_table}`", ARRAY_A );
+			if ( is_array( $index_health ) ) {
+				$total_vectors           = (int) ( $index_health['total_vectors'] ?? 0 );
+				$zero_token_vectors      = (int) ( $index_health['zero_token_vectors'] ?? 0 );
+				$avg_keyword_token_count = isset( $index_health['avg_keyword_token_count'] ) ? (float) $index_health['avg_keyword_token_count'] : 0.0;
+			}
+		}
+		if ( $keyword_index_exists ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+			// Table name is interpolated but controlled internally.
+			$keyword_index_row_count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM `{$keyword_index_table}`" );
 		}
 
 		// Get sync status from the dedicated runtime state option so that it is
@@ -1336,10 +1360,30 @@ class FE_Search_AI_Settings {
 					);
 				}
 				printf(
-					'<strong>%s:</strong> %s %s',
+					'<strong>%s:</strong> %s %s<br>',
 					esc_html__( 'Indexed Posts', 'fe-search-ai' ),
 					esc_html( $indexed_post_count ),
 					esc_html__( 'posts', 'fe-search-ai' )
+				);
+				printf(
+					'<strong>%s:</strong> %s<br>',
+					esc_html__( 'Vectors', 'fe-search-ai' ),
+					esc_html( $total_vectors )
+				);
+				printf(
+					'<strong>%s:</strong> %s<br>',
+					esc_html__( 'Keyword Token Count Missing', 'fe-search-ai' ),
+					esc_html( $zero_token_vectors )
+				);
+				printf(
+					'<strong>%s:</strong> %s<br>',
+					esc_html__( 'Average Keyword Tokens', 'fe-search-ai' ),
+					esc_html( number_format_i18n( $avg_keyword_token_count, 2 ) )
+				);
+				printf(
+					'<strong>%s:</strong> %s',
+					esc_html__( 'Keyword Index Rows', 'fe-search-ai' ),
+					esc_html( $keyword_index_row_count )
 				);
 				?>
 			</p>

@@ -42,7 +42,7 @@ class RetrievalTraceTest extends TestCase {
 			],
 		];
 
-		$payload = \FESearchAI\Core\FE_Search_AI_Retrieval_Trace::build_payload( $chunks, 'Sensitive question', 'chat_test' );
+		$payload = \FESearchAI\Core\FE_Search_AI_Retrieval_Trace::build_payload( $chunks, 'Sensitive question', 'chat_test', [ 'provider' => 'openai' ] );
 
 		$this->assertArrayHasKey( 'trace_id', $payload, 'Trace ID should be included' );
 		$this->assertSame( 'chat_test', $payload['sequence_id'], 'Sequence ID should be preserved' );
@@ -57,6 +57,10 @@ class RetrievalTraceTest extends TestCase {
 		$this->assertSame( 0.98, $payload['items'][0]['scores']['cohere_relevance_score'], 'Cohere score should be included' );
 		$this->assertSame( 1, $payload['items'][0]['ranks']['cohere_rank'], 'Cohere rank should be included' );
 		$this->assertSame( 2, $payload['items'][0]['hybrid_rankings']['keyword'], 'Hybrid source ranking should be included' );
+		$this->assertSame( 'openai', $payload['metadata']['provider'], 'Caller metadata should be preserved' );
+		$this->assertSame( 1, $payload['metadata']['source_counts']['both'], 'Both-source count should be included' );
+		$this->assertSame( 0, $payload['metadata']['source_counts']['qdrant'], 'Qdrant-only count should be included' );
+		$this->assertSame( 0, $payload['metadata']['source_counts']['keyword'], 'Keyword-only count should be included' );
 	}
 
 	/**
