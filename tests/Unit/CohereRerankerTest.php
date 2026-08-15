@@ -196,6 +196,84 @@ class CohereRerankerTest extends TestCase {
 	}
 
 	/**
+	 * Test maybe_rerank_chunks attaches Cohere scores and ranks.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public function test_maybe_rerank_chunks_attaches_cohere_scores_and_ranks() {
+		update_option(
+			'fe_search_ai_settings',
+			[
+				'rerank'   => [
+					'enabled' => true,
+					'top_n'   => 2,
+				],
+				'provider' => [
+					'cohere_key' => 'test-key',
+				],
+			]
+		);
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) {
+				if ( 'https://api.cohere.com/v1/rerank' !== $url ) {
+					return $preempt;
+				}
+
+				return [
+					'headers'  => [],
+					'body'     => wp_json_encode(
+						[
+							'results' => [
+								[
+									'index'           => 1,
+									'relevance_score' => 0.91,
+								],
+								[
+									'index'           => 0,
+									'relevance_score' => 0.72,
+								],
+							],
+						]
+					),
+					'response' => [
+						'code'    => 200,
+						'message' => 'OK',
+					],
+					'cookies'  => [],
+				];
+			},
+			10,
+			3
+		);
+
+		$chunks = [
+			[
+				'content_chunk' => 'First chunk',
+				'post_id'       => 1,
+			],
+			[
+				'content_chunk' => 'Second chunk',
+				'post_id'       => 2,
+			],
+		];
+
+		$result = \FESearchAI\Core\FE_Search_AI_Cohere_Reranker::maybe_rerank_chunks( $chunks, 'test score question' );
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertCount( 2, $result, 'Should return reranked chunks' );
+		$this->assertSame( 2, $result[0]['post_id'], 'First result should be Cohere top-ranked chunk' );
+		$this->assertSame( 0.91, $result[0]['cohere_relevance_score'], 'First result should include Cohere score' );
+		$this->assertSame( 1, $result[0]['cohere_rank'], 'First result should include Cohere rank' );
+		$this->assertSame( 1, $result[1]['post_id'], 'Second result should be Cohere second-ranked chunk' );
+		$this->assertSame( 0.72, $result[1]['cohere_relevance_score'], 'Second result should include Cohere score' );
+		$this->assertSame( 2, $result[1]['cohere_rank'], 'Second result should include Cohere rank' );
+	}
+
+	/**
 	 * Test register method is callable
 	 *
 	 * @since 1.0.0

@@ -214,6 +214,7 @@ class FE_Search_AI_Cohere_Reranker {
 		}
 
 		$reranked_chunks = [];
+		$cohere_rank     = 0;
 		foreach ( $result as $item ) {
 			$rank_index = isset( $item['index'] ) ? (int) $item['index'] : -1;
 			if ( ! isset( $map[ $rank_index ] ) ) {
@@ -223,7 +224,11 @@ class FE_Search_AI_Cohere_Reranker {
 			if ( ! isset( $chunks[ $original_idx ] ) ) {
 				continue;
 			}
-			$reranked_chunks[] = $chunks[ $original_idx ];
+			++$cohere_rank;
+			$reranked_chunk                           = $chunks[ $original_idx ];
+			$reranked_chunk['cohere_relevance_score'] = isset( $item['score'] ) ? (float) $item['score'] : 0.0;
+			$reranked_chunk['cohere_rank']            = $cohere_rank;
+			$reranked_chunks[]                        = $reranked_chunk;
 			if ( count( $reranked_chunks ) >= $top_n ) {
 				break;
 			}

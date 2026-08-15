@@ -1261,7 +1261,8 @@ class FE_Search_AI_Sync_Handler {
 			return new WP_Error( 'qdrant_error', 'Qdrant response is invalid.' );
 		}
 
-		$results = [];
+		$results     = [];
+		$qdrant_rank = 0;
 		foreach ( $data['result'] as $point ) {
 			if ( empty( $point['payload'] ) || ! is_array( $point['payload'] ) ) {
 				continue;
@@ -1295,13 +1296,17 @@ class FE_Search_AI_Sync_Handler {
 				}
 			}
 
-			$results[] = [
+			++$qdrant_rank;
+			$qdrant_score = isset( $point['score'] ) ? (float) $point['score'] : 0.0;
+			$results[]    = [
 				'content_chunk' => $content_snippet,
 				'permalink'     => $permalink,
 				'post_id'       => $post_id,
 				'title'         => $title ? $title : 'Untitled',
 				'source'        => 'qdrant',
-				'score'         => isset( $point['score'] ) ? (float) $point['score'] : 0.0,
+				'score'         => $qdrant_score,
+				'qdrant_score'  => $qdrant_score,
+				'qdrant_rank'   => $qdrant_rank,
 			];
 		}
 
@@ -1565,13 +1570,15 @@ class FE_Search_AI_Sync_Handler {
 			$chunks_by_id[ (int) $row['id'] ] = $row;
 		}
 
-		$results = [];
+		$results   = [];
+		$bm25_rank = 0;
 		foreach ( $vector_ids as $vector_id ) {
 			if ( ! isset( $chunks_by_id[ $vector_id ] ) ) {
 				continue;
 			}
-			$row       = $chunks_by_id[ $vector_id ];
-			$post      = get_post( $row['post_id'] );
+			$row  = $chunks_by_id[ $vector_id ];
+			$post = get_post( $row['post_id'] );
+			++$bm25_rank;
 			$results[] = [
 				'content_chunk' => $row['content_chunk'],
 				'summary_text'  => isset( $row['summary_text'] ) ? (string) $row['summary_text'] : '',
@@ -1580,6 +1587,7 @@ class FE_Search_AI_Sync_Handler {
 				'title'         => $post ? $post->post_title : 'Untitled',
 				'source'        => 'keyword',
 				'bm25_score'    => $vector_scores[ $vector_id ] ?? 0,
+				'bm25_rank'     => $bm25_rank,
 			];
 		}
 
@@ -1644,6 +1652,9 @@ class FE_Search_AI_Sync_Handler {
 			}
 		);
 		$results = array_slice( $results, 0, $max_results );
+		foreach ( $results as $index => $result ) {
+			$results[ $index ]['hybrid_rank'] = $index + 1;
+		}
 
 		\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
 			'INFO',

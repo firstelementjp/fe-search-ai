@@ -73,6 +73,8 @@ class ActivatorTest extends TestCase {
 		$tables = [
 			$wpdb->prefix . 'fe_search_ai_vectors',
 			$wpdb->prefix . 'fe_search_ai_keyword_index',
+			$wpdb->prefix . 'fe_search_ai_retrieval_traces',
+			$wpdb->prefix . 'fe_search_ai_retrieval_trace_items',
 			$wpdb->prefix . 'fe_search_ai_system_logs',
 		];
 
@@ -89,14 +91,20 @@ class ActivatorTest extends TestCase {
 			$this->assertEquals( $table, $result, "Table {$table} should be created" );
 		}
 
-		$vectors_table = $wpdb->prefix . 'fe_search_ai_vectors';
-		$index_table   = $wpdb->prefix . 'fe_search_ai_keyword_index';
+		$vectors_table     = $wpdb->prefix . 'fe_search_ai_vectors';
+		$index_table       = $wpdb->prefix . 'fe_search_ai_keyword_index';
+		$trace_table       = $wpdb->prefix . 'fe_search_ai_retrieval_traces';
+		$trace_items_table = $wpdb->prefix . 'fe_search_ai_retrieval_trace_items';
 
 		$keyword_token_count_column = $wpdb->get_var( "SHOW COLUMNS FROM `{$vectors_table}` LIKE 'keyword_token_count'" );
 		$term_frequency_column      = $wpdb->get_var( "SHOW COLUMNS FROM `{$index_table}` LIKE 'term_frequency'" );
+		$trace_id_column            = $wpdb->get_var( "SHOW COLUMNS FROM `{$trace_table}` LIKE 'trace_id'" );
+		$final_rank_column          = $wpdb->get_var( "SHOW COLUMNS FROM `{$trace_items_table}` LIKE 'final_rank'" );
 
 		$this->assertEquals( 'keyword_token_count', $keyword_token_count_column, 'Vectors table should include keyword_token_count column' );
 		$this->assertEquals( 'term_frequency', $term_frequency_column, 'Keyword index table should include term_frequency column' );
+		$this->assertEquals( 'trace_id', $trace_id_column, 'Retrieval traces table should include trace_id column' );
+		$this->assertEquals( 'final_rank', $final_rank_column, 'Retrieval trace items table should include final_rank column' );
 	}
 
 	/**
