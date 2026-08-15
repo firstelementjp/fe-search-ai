@@ -28,25 +28,14 @@ define( 'FE_SEARCH_AI_PRO_URL', 'https://www.firstelement.co.jp/en/products/fe-s
  */
 spl_autoload_register(
 	function ( $class_name ) {
-		$prefixes = [
-			'FESearchAI\\',
-			'FESearchAI\\',
-		];
-		$base_dir = FE_SEARCH_AI_PLUGIN_DIR . 'includes/';
-
-		$matched_prefix = null;
-		foreach ( $prefixes as $prefix ) {
-			$len = strlen( $prefix );
-			if ( strncmp( $prefix, $class_name, $len ) === 0 ) {
-				$matched_prefix = $prefix;
-				break;
-			}
-		}
-		if ( null === $matched_prefix ) {
+		$prefix = 'FESearchAI\\';
+		$len    = strlen( $prefix );
+		if ( strncmp( $prefix, $class_name, $len ) !== 0 ) {
 			return;
 		}
 
-		$relative_class = substr( $class_name, strlen( $matched_prefix ) );
+		$base_dir       = FE_SEARCH_AI_PLUGIN_DIR . 'includes/';
+		$relative_class = substr( $class_name, $len );
 
 		$psr4_file = $base_dir . str_replace( '\\', '/', $relative_class ) . '.php';
 		if ( file_exists( $psr4_file ) ) {
