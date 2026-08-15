@@ -27,18 +27,18 @@ jobs:
 
         steps:
             - name: Checkout code
-              uses: actions/checkout@v6
+              uses: actions/checkout@v7
               with:
                   fetch-depth: 0
 
             - name: Setup PHP
-              uses: shivammathur/setup-php@2.37.1
+              uses: shivammathur/setup-php@2.37.2
               with:
                   php-version: '8.2'
                   coverage: none
 
             - name: Setup Node.js
-              uses: actions/setup-node@v6
+              uses: actions/setup-node@v7
               with:
                   node-version: '20'
                   cache: 'npm'
@@ -120,18 +120,18 @@ jobs:
 
         steps:
             - name: Checkout code
-              uses: actions/checkout@v6
+              uses: actions/checkout@v7
               with:
                   fetch-depth: 0
 
             - name: Setup PHP
-              uses: shivammathur/setup-php@2.37.1
+              uses: shivammathur/setup-php@2.37.2
               with:
                   php-version: '8.2'
                   coverage: none
 
             - name: Setup Node.js
-              uses: actions/setup-node@v6
+              uses: actions/setup-node@v7
               with:
                   node-version: '20'
                   cache: 'npm'
