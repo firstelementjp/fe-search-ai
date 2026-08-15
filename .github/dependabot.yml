@@ -34,6 +34,10 @@ updates:
           - 'dxd5001'
       assignees:
           - 'dxd5001'
+      ignore:
+          - dependency-name: 'eslint'
+            update-types:
+                - 'version-update:semver-major'
       commit-message:
           prefix: 'deps'
           include: 'scope'

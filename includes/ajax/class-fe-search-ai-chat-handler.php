@@ -305,6 +305,32 @@ class FE_Search_AI_Chat_Handler {
 					$sequence_id
 				);
 
+				$retrieval_trace = \FESearchAI\Core\FE_Search_AI_Retrieval_Trace::build_payload(
+					is_array( $similar_chunks ) ? $similar_chunks : [],
+					$question,
+					$sequence_id,
+					[
+						'provider' => $provider,
+					]
+				);
+
+				\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
+					'DEBUG',
+					'Retrieval trace scores captured.',
+					[ 'retrieval_trace' => $retrieval_trace ],
+					$sequence_id
+				);
+
+				/**
+				 * Fires after a safe retrieval trace payload is built.
+				 *
+				 * @since 1.0.0
+				 * @param array $retrieval_trace Safe retrieval trace payload.
+				 */
+				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+				// Hook name is properly prefixed with fe_search_ai_.
+				do_action( 'fe_search_ai_retrieval_trace', $retrieval_trace );
+
 			} catch ( \Throwable $t ) {
 				// Fail safely: log the error and continue without context.
 				\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
