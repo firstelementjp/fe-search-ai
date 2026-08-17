@@ -5,6 +5,34 @@
 
 ## Sync System
 
+### WordPress Timestamp Display
+
+**Problem**: Sync timestamps display 9 hours behind local time in Japan, such as a sync completed around 18:30 showing as 09:30.
+
+**Cause**:
+
+- `last_sync_timestamp` and similar fields store standard Unix timestamps from `time()`.
+- `date_i18n()` has legacy WordPress behavior and can display standard Unix timestamps as GMT instead of applying the site timezone correctly.
+- For regular Unix timestamps, use `wp_date()` for display.
+
+**Solution**:
+
+- Store sync baselines as standard Unix timestamps with `time()` when they are compared against GMT values such as `post_modified_gmt`.
+- Display timestamps with `wp_date()` and WordPress date/time formats.
+- Avoid `date_i18n()` for newly written timestamp display code unless intentionally handling legacy offset timestamps.
+
+**Code Pattern**:
+
+```php
+$timestamp = time();
+
+printf(
+    '<strong>%s:</strong> %s<br>',
+    esc_html__( 'Last Bulk Sync', 'fe-search-ai' ),
+    esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $timestamp ) )
+);
+```
+
 ### Sync Timeout Issues
 
 **Problem**: Large content sets cause sync to timeout.
