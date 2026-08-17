@@ -1357,14 +1357,14 @@ class FE_Search_AI_Settings {
 					printf(
 						'<strong>%s:</strong> %s<br>',
 						esc_html__( 'Last Bulk Sync', 'fe-search-ai' ),
-						esc_html( date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $last_sync ) )
+						esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $last_sync ) )
 					);
 				}
 				if ( $last_realtime_sync ) {
 					printf(
 						'<strong>%s:</strong> %s<br>',
 						esc_html__( 'Last Realtime Sync', 'fe-search-ai' ),
-						esc_html( date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $last_realtime_sync ) )
+						esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $last_realtime_sync ) )
 					);
 				}
 				printf(
