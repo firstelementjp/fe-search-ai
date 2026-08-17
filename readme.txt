@@ -3,7 +3,7 @@ Contributors: firstelementjp
 Tags: ai, search, chat, semantic, vector
 Requires at least: 6.6
 Tested up to: 7.0
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -143,6 +143,15 @@ Yes, the plugin includes numerous customization options and filter hooks for dev
 3. Configuration settings for AI providers
 
 == Changelog ==
+
+= 1.1.0 =
+* Added retrieval trace score details for BM25, Qdrant, RRF, and Cohere ranking diagnostics
+* Added sync index health metrics to help identify stale or incomplete keyword indexes
+* Added source count metadata to retrieval traces for easier search quality troubleshooting
+* Added a hybrid candidate limit setting for tuning rerank quality and performance
+* Improved autoloader compatibility and namespace matching
+* Improved documentation navigation and Japanese documentation updates
+* Updated CI dependency maintenance and audit behavior
 
 = 1.0.0 =
 * Added GitHub Releases-based automatic updates for installations distributed outside WordPress.org

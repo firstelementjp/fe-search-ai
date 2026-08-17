@@ -22,7 +22,8 @@ includes/
     class-fe-search-ai-settings.php                 # Plugin settings UI
     class-fe-search-ai-license-settings.php         # License management UI
   ajax/
-    class-fe-search-ai-ajax-handler.php             # AJAX request handler
+    class-fe-search-ai-chat-handler.php             # Chat AJAX request handling
+    class-fe-search-ai-sync-handler.php             # Sync AJAX request handling
   core/
     class-fe-search-ai-activator.php                # Plugin activation/deactivation
     class-fe-search-ai-assets.php                   # Script/style registration
@@ -32,11 +33,14 @@ includes/
     class-fe-search-ai-license-handler.php          # License validation
     class-fe-search-ai-license.php                  # License model
     class-fe-search-ai-logger.php                   # Logging utilities
+    class-fe-search-ai-retrieval-trace.php          # Retrieval trace data model
+    class-fe-search-ai-retrieval-trace-recorder.php # Retrieval trace recording
     class-fe-search-ai-sync-hooks.php               # Sync hooks and handlers
   frontend/
-    class-fe-search-ai-frontend.php                 # Frontend search integration
-  i18n/
-    class-fe-search-ai-i18n.php                      # Internationalization
+    class-fe-search-ai-chat-ui.php                  # Frontend chat UI rendering
+  i18n/                                             # Translation dictionaries
+  update/
+    class-fe-search-ai-github-update-checker.php    # GitHub Releases updater
 assets/
   js/
     admin-scripts.js                                 # Admin JavaScript
@@ -50,10 +54,12 @@ vendor/                                             # Composer dependencies (php
 
 ## Key Features
 
-- **Vector Search**: Semantic search using embeddings
+- **Hybrid Search**: Vector retrieval, BM25 keyword ranking, RRF fusion, and optional reranking
+- **Retrieval Trace**: Debug traces with BM25, Qdrant, RRF, and Cohere score metadata
 - **AI Reranking**: Cohere API for result reranking
 - **Multi-language Support**: Japanese (TinySegmenter) and other languages (php-stemmer)
-- **Sync System**: WordPress content synchronization to vector database
+- **Sync System**: WordPress content synchronization with index health metrics
+- **GitHub Updates**: GitHub Releases updater for non-WordPress.org distribution
 - **License Management**: Pro version with license validation
 
 ## Build & Dev Commands
