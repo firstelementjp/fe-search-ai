@@ -152,6 +152,46 @@ class SyncHandlerTest extends TestCase {
 	}
 
 	/**
+	 * Test hybrid candidate limit setting is resolved.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public function test_get_hybrid_candidate_limit_uses_setting() {
+		$handler = new \FESearchAI\Ajax\FE_Search_AI_Sync_Handler();
+		$method  = new ReflectionMethod( $handler, 'get_hybrid_candidate_limit' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke(
+			$handler,
+			[
+				'rerank' => [
+					'hybrid_candidate_limit' => 75,
+				],
+			],
+			'test question'
+		);
+
+		$this->assertSame( 75, $result, 'Hybrid candidate limit should come from settings' );
+	}
+
+	/**
+	 * Test hybrid candidate limit falls back to default.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public function test_get_hybrid_candidate_limit_defaults_to_50() {
+		$handler = new \FESearchAI\Ajax\FE_Search_AI_Sync_Handler();
+		$method  = new ReflectionMethod( $handler, 'get_hybrid_candidate_limit' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $handler, [ 'rerank' => [] ], 'test question' );
+
+		$this->assertSame( 50, $result, 'Hybrid candidate limit should default to 50' );
+	}
+
+	/**
 	 * Test prepare_embedding_texts_from_chunks method exists
 	 *
 	 * @since 1.0.0
