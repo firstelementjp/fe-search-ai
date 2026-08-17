@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.1.0 (2026-08-17)
+
+### Search Observability
+
+- Added retrieval trace score details for BM25, Qdrant, RRF, and Cohere ranking diagnostics
+- Added source count metadata to retrieval traces for easier search quality troubleshooting
+- Added sync index health metrics to help identify stale or incomplete keyword indexes
+
+### Search Tuning
+
+- Added a hybrid candidate limit setting for balancing rerank quality and performance
+
+### Maintenance
+
+- Improved autoloader compatibility and namespace matching
+- Improved documentation navigation and updated Japanese documentation
+- Updated CI dependency maintenance and audit behavior
+
 ## 1.0.0 (2026-08-10)
 
 ### Search Relevance

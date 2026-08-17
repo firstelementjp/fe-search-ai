@@ -242,6 +242,58 @@ class SettingsTest extends TestCase {
 	}
 
 	/**
+	 * Test sanitize_main_settings stores hybrid candidate limit.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public function test_sanitize_main_settings_hybrid_candidate_limit() {
+		$settings = new \FESearchAI\Admin\FE_Search_AI_Settings();
+
+		$result = $settings->sanitize_main_settings(
+			[
+				'provider' => [],
+				'rerank'   => [
+					'enabled'                => '1',
+					'top_n'                  => '5',
+					'initial_k'              => '50',
+					'hybrid_candidate_limit' => '75',
+					'timeout_sec'            => '15',
+				],
+				'sync'     => [],
+				'vector'   => [],
+				'display'  => [],
+			]
+		);
+
+		$this->assertSame( 75, $result['rerank']['hybrid_candidate_limit'], 'Hybrid candidate limit should be saved' );
+	}
+
+	/**
+	 * Test sanitize_main_settings clamps hybrid candidate limit.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public function test_sanitize_main_settings_clamps_hybrid_candidate_limit() {
+		$settings = new \FESearchAI\Admin\FE_Search_AI_Settings();
+
+		$result = $settings->sanitize_main_settings(
+			[
+				'provider' => [],
+				'rerank'   => [
+					'hybrid_candidate_limit' => '999',
+				],
+				'sync'     => [],
+				'vector'   => [],
+				'display'  => [],
+			]
+		);
+
+		$this->assertSame( 200, $result['rerank']['hybrid_candidate_limit'], 'Hybrid candidate limit should be capped at 200' );
+	}
+
+	/**
 	 * Test that key sanitization methods exist
 	 *
 	 * @since 1.0.0

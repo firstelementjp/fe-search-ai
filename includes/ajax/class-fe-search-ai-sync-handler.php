@@ -1140,11 +1140,12 @@ class FE_Search_AI_Sync_Handler {
 	 * a vector search against the configured Qdrant collection, and returns
 	 * an array compatible with the keyword-based find_similar_chunks method.
 	 *
-	 * @param string $question      The end user's question text.
-	 * @param array  $qdrant_config Qdrant configuration from Pro settings.
+	 * @param string   $question      The end user's question text.
+	 * @param array    $qdrant_config Qdrant configuration from Pro settings.
+	 * @param int|null $limit_override Optional search limit override.
 	 * @return array An array of the most relevant text chunks and their permalinks.
 	 */
-	private function find_similar_chunks_via_qdrant( $question, $qdrant_config ) {
+	private function find_similar_chunks_via_qdrant( $question, $qdrant_config, $limit_override = null ) {
 		// Get sequence ID from global context
 		$sequence_id = '';
 		if ( isset( $GLOBALS['fe_search_ai_current_sequence_id'] ) ) {
@@ -1200,9 +1201,13 @@ class FE_Search_AI_Sync_Handler {
 		if ( isset( $rerank['initial_k'] ) ) {
 			$default_limit = (int) $rerank['initial_k'];
 		}
-		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
-		// Hook name is properly prefixed with fe_search_ai_.
-		$limit = (int) apply_filters( 'fe_search_ai_qdrant_search_limit', $default_limit, $question );
+		if ( null !== $limit_override ) {
+			$limit = (int) $limit_override;
+		} else {
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+			// Hook name is properly prefixed with fe_search_ai_.
+			$limit = (int) apply_filters( 'fe_search_ai_qdrant_search_limit', $default_limit, $question );
+		}
 		if ( $limit <= 0 ) {
 			$limit = $default_limit;
 		}
@@ -1365,8 +1370,9 @@ class FE_Search_AI_Sync_Handler {
 
 		$hybrid_search = ! empty( $vector_config['hybrid_search'] );
 		if ( $hybrid_search && $qdrant_enabled ) {
-			$qdrant_results  = $this->find_similar_chunks_via_qdrant( $question, $qdrant_config );
-			$keyword_results = $this->find_similar_chunks_via_keyword_index( $question, $sequence_id );
+			$hybrid_candidate_limit = $this->get_hybrid_candidate_limit( $settings, $question );
+			$qdrant_results         = $this->find_similar_chunks_via_qdrant( $question, $qdrant_config, $hybrid_candidate_limit );
+			$keyword_results        = $this->find_similar_chunks_via_keyword_index( $question, $sequence_id, $hybrid_candidate_limit );
 			if ( ! is_wp_error( $qdrant_results ) && ! empty( $qdrant_results ) ) {
 				return $this->merge_hybrid_search_results( $qdrant_results, $keyword_results, $question, $sequence_id );
 			}
@@ -1389,11 +1395,12 @@ class FE_Search_AI_Sync_Handler {
 	/**
 	 * Retrieves similar chunks from the local keyword index using BM25 ranking.
 	 *
-	 * @param string $question    The end user's question text.
-	 * @param string $sequence_id Optional log sequence ID.
+	 * @param string   $question    The end user's question text.
+	 * @param string   $sequence_id Optional log sequence ID.
+	 * @param int|null $max_chunks_override Optional result limit override.
 	 * @return array An array of the most relevant text chunks and their permalinks.
 	 */
-	private function find_similar_chunks_via_keyword_index( $question, $sequence_id = '' ) {
+	private function find_similar_chunks_via_keyword_index( $question, $sequence_id = '', $max_chunks_override = null ) {
 		global $wpdb;
 		$vectors_table = $wpdb->prefix . 'fe_search_ai_vectors';
 		$index_table   = $wpdb->prefix . 'fe_search_ai_keyword_index';
@@ -1433,9 +1440,13 @@ class FE_Search_AI_Sync_Handler {
 		 * @param int    $max_chunks Default maximum number of chunks.
 		 * @param string $question   The end user's question text.
 		 */
-		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
-		// Hook name is properly prefixed with fe_search_ai_.
-		$max_chunks = (int) apply_filters( 'fe_search_ai_max_chunks_for_llm', 100, $question );
+		if ( null !== $max_chunks_override ) {
+			$max_chunks = (int) $max_chunks_override;
+		} else {
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+			// Hook name is properly prefixed with fe_search_ai_.
+			$max_chunks = (int) apply_filters( 'fe_search_ai_max_chunks_for_llm', 100, $question );
+		}
 		if ( $max_chunks <= 0 ) {
 			$max_chunks = 100;
 		}
@@ -1592,6 +1603,29 @@ class FE_Search_AI_Sync_Handler {
 		}
 
 		return $results;
+	}
+
+	/**
+	 * Gets the per-source candidate limit used before hybrid RRF.
+	 *
+	 * @param array  $settings Plugin settings.
+	 * @param string $question The end user's question text.
+	 * @return int Candidate limit.
+	 */
+	private function get_hybrid_candidate_limit( $settings, $question ) {
+		$rerank = isset( $settings['rerank'] ) && is_array( $settings['rerank'] ) ? $settings['rerank'] : [];
+		$limit  = isset( $rerank['hybrid_candidate_limit'] ) ? (int) $rerank['hybrid_candidate_limit'] : 50;
+		if ( $limit <= 0 ) {
+			$limit = 50;
+		}
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		// Hook name is properly prefixed with fe_search_ai_.
+		$limit = (int) apply_filters( 'fe_search_ai_hybrid_candidate_limit', $limit, $question );
+		if ( $limit <= 0 ) {
+			$limit = 50;
+		}
+
+		return $limit;
 	}
 
 	/**

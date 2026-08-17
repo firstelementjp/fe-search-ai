@@ -467,11 +467,12 @@ class FE_Search_AI_Settings {
 	 * @return void
 	 */
 	public function rerank_settings_field_html() {
-		$rerank      = $this->options['rerank'] ?? [];
-		$enabled     = isset( $rerank['enabled'] ) ? ! empty( $rerank['enabled'] ) : true;
-		$top_n       = isset( $rerank['top_n'] ) ? (int) $rerank['top_n'] : 5;
-		$initial_k   = isset( $rerank['initial_k'] ) ? (int) $rerank['initial_k'] : 50;
-		$timeout_sec = isset( $rerank['timeout_sec'] ) ? (int) $rerank['timeout_sec'] : 15;
+		$rerank                 = $this->options['rerank'] ?? [];
+		$enabled                = isset( $rerank['enabled'] ) ? ! empty( $rerank['enabled'] ) : true;
+		$top_n                  = isset( $rerank['top_n'] ) ? (int) $rerank['top_n'] : 5;
+		$initial_k              = isset( $rerank['initial_k'] ) ? (int) $rerank['initial_k'] : 50;
+		$hybrid_candidate_limit = isset( $rerank['hybrid_candidate_limit'] ) ? min( max( (int) $rerank['hybrid_candidate_limit'], 5 ), 200 ) : 50;
+		$timeout_sec            = isset( $rerank['timeout_sec'] ) ? (int) $rerank['timeout_sec'] : 15;
 
 		// Check if Cohere API key is configured for reranker.
 		$encrypted_key = $this->options['provider']['cohere_key'] ?? '';
@@ -536,6 +537,13 @@ class FE_Search_AI_Settings {
 					<td>
 						<input type="number" min="5" max="200" step="1" id="fe_search_ai_rerank_initial_k" name="fe_search_ai_settings[rerank][initial_k]" value="<?php echo esc_attr( $initial_k ); ?>" class="small-text">
 						<p class="description"><?php esc_html_e( 'How many candidates to retrieve from the vector search before reranking.', 'fe-search-ai' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="fe_search_ai_hybrid_candidate_limit"><?php esc_html_e( 'Hybrid candidate limit', 'fe-search-ai' ); ?></label></th>
+					<td>
+						<input type="number" min="5" max="200" step="1" id="fe_search_ai_hybrid_candidate_limit" name="fe_search_ai_settings[rerank][hybrid_candidate_limit]" value="<?php echo esc_attr( $hybrid_candidate_limit ); ?>" class="small-text">
+						<p class="description"><?php esc_html_e( 'When hybrid search is enabled, retrieve this many candidates from both vector and keyword search before RRF and reranking.', 'fe-search-ai' ); ?></p>
 					</td>
 				</tr>
 				<tr>
@@ -2519,11 +2527,19 @@ class FE_Search_AI_Settings {
 		if ( ! is_array( $rerank_input ) ) {
 			$rerank_input = [];
 		}
-		$new_input['rerank']['enabled']     = ! empty( $rerank_input['enabled'] );
-		$new_input['rerank']['top_n']       = absint( $rerank_input['top_n'] ?? ( $existing_rerank['top_n'] ?? 5 ) );
-		$new_input['rerank']['initial_k']   = absint( $rerank_input['initial_k'] ?? ( $existing_rerank['initial_k'] ?? 50 ) );
-		$new_input['rerank']['timeout_sec'] = absint( $rerank_input['timeout_sec'] ?? ( $existing_rerank['timeout_sec'] ?? 15 ) );
-		$new_input['rerank']['model']       = 'rerank-v3.5';
+		$hybrid_candidate_limit = absint( $rerank_input['hybrid_candidate_limit'] ?? ( $existing_rerank['hybrid_candidate_limit'] ?? 50 ) );
+		if ( $hybrid_candidate_limit < 5 ) {
+			$hybrid_candidate_limit = 5;
+		} elseif ( $hybrid_candidate_limit > 200 ) {
+			$hybrid_candidate_limit = 200;
+		}
+
+		$new_input['rerank']['enabled']                = ! empty( $rerank_input['enabled'] );
+		$new_input['rerank']['top_n']                  = absint( $rerank_input['top_n'] ?? ( $existing_rerank['top_n'] ?? 5 ) );
+		$new_input['rerank']['initial_k']              = absint( $rerank_input['initial_k'] ?? ( $existing_rerank['initial_k'] ?? 50 ) );
+		$new_input['rerank']['hybrid_candidate_limit'] = $hybrid_candidate_limit;
+		$new_input['rerank']['timeout_sec']            = absint( $rerank_input['timeout_sec'] ?? ( $existing_rerank['timeout_sec'] ?? 15 ) );
+		$new_input['rerank']['model']                  = 'rerank-v3.5';
 
 		// Prompt Tab - site_name and site_purpose are now saved separately in fe_search_ai_site_info option
 

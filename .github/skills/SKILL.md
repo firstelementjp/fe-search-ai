@@ -55,16 +55,30 @@ try {
 **Solution**:
 
 - Verify content has been synced
+- Check sync index health metrics for stale or incomplete keyword indexes
 - Check vector embeddings exist in database
 - Verify search query is not empty
 - Check minimum score threshold settings
 
 **Debug Steps**:
 
-1. Check sync status in admin
-2. Query database for embeddings: `SELECT * FROM wp_fe_search_ai_embeddings`
-3. Test with simple query
-4. Check error logs
+1. Check sync status and index health in admin
+2. Query database for embeddings and keyword token counts
+3. Enable retrieval trace logging and inspect BM25, Qdrant, RRF, and Cohere score metadata
+4. Test with simple query
+5. Check error logs
+
+### Retrieval Trace Ranking Diagnostics
+
+**Problem**: A specific result does not rank as expected.
+
+**Solution**:
+
+- Enable retrieval trace logging for the test query
+- Compare BM25, Qdrant, RRF, and Cohere score metadata
+- Check source count metadata to confirm which retrievers contributed candidates
+- Rebuild the index if keyword token counts are missing or stale
+- Tune the hybrid candidate limit when rerank needs a broader or narrower candidate set
 
 ### AI Reranking Errors
 
