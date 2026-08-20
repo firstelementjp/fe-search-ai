@@ -79,4 +79,5 @@ FE Search AIは無料版だけでも動作します。FE Search AI Proを追加�
 - [GitHub Repository](https://github.com/firstelementjp/fe-search-ai)
 - [GitHub Issues](https://github.com/firstelementjp/fe-search-ai/issues)
 - [Documentation](https://firstelementjp.github.io/fe-search-ai/#/ja/)
+- [AI-powered documentation & Q&A](https://deepwiki.com/firstelementjp/fe-search-ai/)
 - [Support](https://www.firstelement.co.jp/contact)

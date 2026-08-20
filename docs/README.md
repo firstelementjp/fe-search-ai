@@ -79,4 +79,5 @@ FE Search AI works as a free plugin, and FE Search AI Pro adds advanced features
 - [GitHub Repository](https://github.com/firstelementjp/fe-search-ai)
 - [GitHub Issues](https://github.com/firstelementjp/fe-search-ai/issues)
 - [Documentation](https://firstelementjp.github.io/fe-search-ai/#/)
+- [AI-powered documentation & Q&A](https://deepwiki.com/firstelementjp/fe-search-ai/)
 - [Support](https://www.firstelement.co.jp/en/contact)
