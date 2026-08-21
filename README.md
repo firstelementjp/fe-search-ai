@@ -34,6 +34,10 @@ This plugin is designed to be highly extensible and performant, running on stand
 - **Releases**: https://github.com/firstelementjp/fe-search-ai/releases
 - **Issues**: https://github.com/firstelementjp/fe-search-ai/issues
 
+or AI-powered documentation & Q&A:
+
+- **DeepWiki**: https://deepwiki.com/firstelementjp/fe-search-ai/
+
 ## ⚙️ Requirements
 
 - WordPress 6.6 or higher

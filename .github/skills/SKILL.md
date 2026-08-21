@@ -96,6 +96,17 @@ try {
 4. Test with simple query
 5. Check error logs
 
+### BM25 Keyword Index
+
+- Schema columns: `fe_search_ai_vectors.keyword_token_count` and `fe_search_ai_keyword_index.term_frequency`.
+- `SyncHandler::build_keyword_index_data()` and `insert_keyword_index_terms()` store token counts and term frequencies during batch sync.
+- `SyncHooks` realtime indexing stores the same metadata.
+- `find_similar_chunks_via_keyword_index()` ranks by BM25.
+- Tunable filters:
+    - `fe_search_ai_bm25_candidate_limit`
+    - `fe_search_ai_bm25_k1`
+    - `fe_search_ai_bm25_b`
+
 ### Retrieval Trace Ranking Diagnostics
 
 **Problem**: A specific result does not rank as expected.
@@ -107,6 +118,8 @@ try {
 - Check source count metadata to confirm which retrievers contributed candidates
 - Rebuild the index if keyword token counts are missing or stale
 - Tune the hybrid candidate limit when rerank needs a broader or narrower candidate set
+
+**Example**: A query like `店頭販売` initially lacking BM25 scores often means `wp_fe_search_ai_vectors.keyword_token_count` is zero while `keyword_index` rows exist. Rebuild the index; after rebuild, the expected `post_id` should rank first or second.
 
 ### AI Reranking Errors
 

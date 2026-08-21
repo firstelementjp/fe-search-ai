@@ -177,19 +177,67 @@ $decrypted = Encryption_Helper::decrypt( $encrypted );
 
 ## Release Process
 
-1. Update version in `fe-search-ai.php` and `readme.txt`
-2. Run `./test-release.sh` to verify release package
-3. Commit changes
-4. Create git tag: `git tag v1.0.0`
-5. Push tag: `git push origin v1.0.0`
-6. GitHub Actions will automatically:
-    - Create release ZIP
-    - Create GitHub Release with changelog
-    - Deploy to WordPress.org SVN (if secrets configured)
+When preparing a release, update the canonical versioned files:
+
+- `fe-search-ai.php` plugin header `Version` and `FE_SEARCH_AI_VERSION`
+- `package.json` and `package-lock.json` `version`
+- `readme.txt` `Stable tag` and changelog section
+- `README.md` version badge and recent highlights if behavior changed
+- `docs/changes.md` and `docs/ja/changes.md`
+- `docs/README.md` current release and highlights
+- `AGENT.md` and `.github/skills/SKILL.md` when architecture or troubleshooting guidance changes
+- `test-release.sh` `TAG` and `ZIP_NAME`
+
+Validation command sequence:
+
+```bash
+composer test
+composer phpcs
+npm ci
+npm run lint
+npm run build
+./test-release.sh
+git diff --check
+```
+
+Notes:
+
+- Do not update `@since` tags globally just because the release version changed.
+- Do not treat `composer.json` as a required release-version file unless it later adds a top-level `version` field.
+- Ignore generated files under `test-release/`.
 
 ## GitHub Actions Workflows
 
 - **ci.yml**: Code quality checks (push/PR)
-- **release.yml**: Release ZIP creation and GitHub Release (tags)
+- **release.yml**: Release ZIP creation and GitHub Release (tags), plus WordPress.org SVN deploy
 - **dependency-review.yml**: Dependency vulnerability checks (PR)
 - **deploy-staging.yml**: Staging/production deployment (optional, requires server)
+
+Required GitHub Secrets for WordPress.org SVN deploy:
+
+- `SVN_USERNAME`
+- `SVN_PASSWORD`
+
+## BM25 Keyword Search
+
+- DB schema uses `fe_search_ai_vectors.keyword_token_count` and `fe_search_ai_keyword_index.term_frequency`.
+- `SyncHandler` builds keyword index data during batch sync.
+- `find_similar_chunks_via_keyword_index()` ranks results by BM25.
+- Filters: `fe_search_ai_bm25_candidate_limit`, `fe_search_ai_bm25_k1`, `fe_search_ai_bm25_b`.
+- Realtime indexing in `SyncHooks` stores the same metadata.
+
+## GitHub Releases Updater
+
+- `includes/update/class-fe-search-ai-github-update-checker.php` provides fallback plugin updates while WordPress.org approval is pending.
+- Fetches `https://api.github.com/repos/firstelementjp/fe-search-ai/releases/latest`.
+- Prefers release asset ZIPs matching `fe-search-ai(-version).zip`; falls back to `zipball_url`.
+- Caches releases in `fe_search_ai_github_latest_release` for one hour.
+- Can be disabled with the `fe_search_ai_enable_github_updates` filter (default `true`).
+- Registered during `plugins_loaded` in `fe-search-ai.php`.
+
+## Retrieval Trace Diagnostics
+
+- Retrieval trace logs expose BM25, Qdrant, RRF, and Cohere scores.
+- The Sync screen shows index health metrics and retrieval trace `source_counts`.
+- If final trace items lack BM25, check whether `wp_fe_search_ai_vectors.keyword_token_count` is zero while `keyword_index` rows exist. Running **Rebuild Index** normally resolves this.
+- Typical validation query: `店頭販売` should rank the expected post first/second after the index is rebuilt.
