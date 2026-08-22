@@ -164,6 +164,69 @@ class LoggerTest extends TestCase {
 	}
 
 	/**
+	 * Test that forbidden keys are filtered recursively.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public function test_nested_forbidden_keys_are_filtered() {
+		\FESearchAI\Core\FE_Search_AI_Logger::log(
+			'INFO',
+			'Test nested data',
+			[
+				'nested' => [
+					'question' => 'sensitive question',
+					'safe_key' => 'safe data',
+					'deeper'   => [
+						'tokens' => [ 'sensitive', 'tokens' ],
+						'count'  => 2,
+					],
+				],
+			]
+		);
+
+		global $wpdb;
+		$table_name = $wpdb->prefix . 'fe_search_ai_system_logs';
+		$log        = $wpdb->get_row( "SELECT * FROM {$table_name} LIMIT 1" );
+		$data       = json_decode( $log->extra_data, true );
+
+		$this->assertArrayNotHasKey( 'question', $data['nested'], 'Nested question should be filtered' );
+		$this->assertArrayHasKey( 'safe_key', $data['nested'], 'Nested safe data should remain' );
+		$this->assertArrayNotHasKey( 'tokens', $data['nested']['deeper'], 'Deeply nested tokens should be filtered' );
+		$this->assertSame( 2, $data['nested']['deeper']['count'], 'Deeply nested safe data should remain' );
+	}
+
+	/**
+	 * Test that payload filters cannot restore forbidden keys.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public function test_payload_filter_cannot_restore_forbidden_keys() {
+		add_filter(
+			'fe_search_ai_system_log_payload',
+			function ( $data ) {
+				$data['question']           = 'restored question';
+				$data['nested']['answer']   = 'restored answer';
+				$data['nested']['safe_key'] = 'safe data';
+				return $data;
+			}
+		);
+
+		\FESearchAI\Core\FE_Search_AI_Logger::log( 'INFO', 'Test filtered payload' );
+		remove_all_filters( 'fe_search_ai_system_log_payload' );
+
+		global $wpdb;
+		$table_name = $wpdb->prefix . 'fe_search_ai_system_logs';
+		$log        = $wpdb->get_row( "SELECT * FROM {$table_name} LIMIT 1" );
+		$data       = json_decode( $log->extra_data, true );
+
+		$this->assertArrayNotHasKey( 'question', $data, 'Restored question should be filtered' );
+		$this->assertArrayNotHasKey( 'answer', $data['nested'], 'Restored nested answer should be filtered' );
+		$this->assertSame( 'safe data', $data['nested']['safe_key'], 'Safe filtered data should remain' );
+	}
+
+	/**
 	 * Test clear_logs functionality
 	 *
 	 * @since 1.0.0

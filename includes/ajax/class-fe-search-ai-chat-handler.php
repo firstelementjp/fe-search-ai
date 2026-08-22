@@ -254,6 +254,7 @@ class FE_Search_AI_Chat_Handler {
 			if ( empty( $question ) ) {
 				return;
 			}
+			$history = $this->sanitize_chat_history( $history );
 
 			// Log processing start
 			\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
@@ -420,6 +421,48 @@ class FE_Search_AI_Chat_Handler {
 		} finally {
 			exit;
 		}
+	}
+
+	/**
+	 * Sanitizes conversation history before it is sent to an AI provider.
+	 *
+	 * @param mixed $history Raw conversation history.
+	 * @return array Sanitized conversation messages.
+	 */
+	private function sanitize_chat_history( $history ) {
+		if ( ! is_array( $history ) ) {
+			return [];
+		}
+
+		$sanitized_history = [];
+		foreach ( $history as $message ) {
+			if ( ! is_array( $message ) || ! isset( $message['role'], $message['content'] ) || ! is_string( $message['content'] ) ) {
+				continue;
+			}
+
+			$role = sanitize_key( (string) $message['role'] );
+			if ( ! in_array( $role, [ 'user', 'assistant' ], true ) ) {
+				continue;
+			}
+
+			$content = $this->filter_personal_data( $message['content'] );
+			if ( 'user' === $role ) {
+				$content = apply_filters( 'fe_search_ai_preprocess_user_question', $content );
+			} else {
+				$content = apply_filters( 'fe_search_ai_preprocess_model_response', $content );
+			}
+
+			if ( ! is_string( $content ) || '' === trim( $content ) ) {
+				continue;
+			}
+
+			$sanitized_history[] = [
+				'role'    => $role,
+				'content' => $content,
+			];
+		}
+
+		return $sanitized_history;
 	}
 
 	/**
@@ -2480,14 +2523,18 @@ Your task is to answer the user's question using only the provided search result
 		}
 
 		// Filter the text against the comprehensive list of phrases.
-		$filtered_text = str_ireplace( $all_injection_phrases, __( '[REDACTED]', 'fe-search-ai' ), $text );
+		$redaction_count = 0;
+		$filtered_text   = str_ireplace( $all_injection_phrases, __( '[REDACTED]', 'fe-search-ai' ), $text, $redaction_count );
 
 		// SECURITY: Log if a basic security filter was triggered.
 		if ( $filtered_text !== $text ) {
 			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'SECURITY',
 				'Basic prompt injection filter triggered.',
-				[ 'original_text' => mb_substr( $text, 0, 100 ) . '...' ] // Log a snippet for context
+				[
+					'input_length'    => mb_strlen( $text, 'UTF-8' ),
+					'redaction_count' => $redaction_count,
+				]
 			);
 		}
 

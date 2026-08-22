@@ -2547,29 +2547,6 @@ class FE_Search_AI_Sync_Handler {
 			return [];
 		}
 
-		if ( $debug_mode ) {
-			$tokens_sample = [];
-			$max_sample    = 20;
-			foreach ( $data['result']['tokens'] as $i => $token_row ) {
-				if ( $i >= $max_sample ) {
-					break;
-				}
-				$tokens_sample[] = [
-					'i'        => $i,
-					'surface'  => (string) ( $token_row[0] ?? '' ),
-					'baseform' => (string) ( $token_row[2] ?? '' ),
-				];
-			}
-			\FESearchAI\Core\FE_Search_AI_Logger::log(
-				'INFO',
-				'Yahoo MA API tokens sample.',
-				[
-					'http_status' => $code,
-					'sample'      => $tokens_sample,
-				]
-			);
-		}
-
 		$words = [];
 		foreach ( $data['result']['tokens'] as $token_row ) {
 			// According to API docs: [surface, reading, baseform, pos, ...]
@@ -2587,9 +2564,8 @@ class FE_Search_AI_Sync_Handler {
 				'INFO',
 				'Yahoo MA API call succeeded.',
 				[
-					'http_status'  => $code,
-					'token_count'  => count( $words ),
-					'words_sample' => array_slice( $words, 0, 30 ),
+					'http_status' => $code,
+					'token_count' => count( $words ),
 				]
 			);
 		}
