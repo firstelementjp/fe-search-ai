@@ -23,7 +23,7 @@ FE Search AI is designed for WordPress sites where visitors need quick, accurate
 
 ## Current release
 
-Version 1.1.0 adds retrieval trace score details for BM25, Qdrant, RRF, and Cohere ranking diagnostics, sync index health metrics for identifying stale keyword indexes, source count metadata in retrieval traces, and a hybrid candidate limit setting for rerank tuning.
+Version 1.1.1 hardens privacy by sanitizing conversation history before AI provider calls, recursively stripping sensitive keys from system logs, and reducing tokenization log detail. It also fixes a sync timestamp timezone display issue and expands the developer hooks reference documentation.
 
 ## Recommended reading
 

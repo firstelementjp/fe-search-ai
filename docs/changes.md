@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.1.1 (2026-08-22)
+
+### Privacy and Security
+
+- Sanitized conversation history before AI provider calls to strip extra keys and validate message structure
+- Hardened system log filtering with recursive removal of sensitive keys and re-application after payload filter hooks
+- Removed token text and word samples from Yahoo MA tokenization logs, keeping only metadata
+- Redacted injection filter logging to record input length and redacted samples only
+
+### Bug Fixes
+
+- Fixed sync timestamp display timezone offset by replacing `date_i18n()` with `wp_date()`
+
+### Documentation
+
+- Expanded developer hooks reference documentation with detailed tables and examples
+- Added DeepWiki AI-powered documentation link
+- Migrated internal guidance into rules, agent guide, and skill docs
+
 ## 1.1.0 (2026-08-17)
 
 ### Search Observability
