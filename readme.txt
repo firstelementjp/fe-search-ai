@@ -3,7 +3,7 @@ Contributors: firstelementjp
 Tags: ai, search, chat, semantic, vector
 Requires at least: 6.6
 Tested up to: 7.0
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -144,6 +144,16 @@ Yes, the plugin includes numerous customization options and filter hooks for dev
 
 == Changelog ==
 
+= 1.1.1 =
+* Sanitized conversation history before AI provider calls to strip extra keys and validate message structure
+* Hardened system log filtering with recursive removal of sensitive keys and re-application after payload filter hooks
+* Removed token text and word samples from Yahoo MA tokenization logs, keeping only metadata
+* Redacted injection filter logging to record input length and redacted samples only
+* Fixed sync timestamp display timezone offset by replacing date_i18n() with wp_date()
+* Expanded developer hooks reference documentation with detailed tables and examples
+* Added DeepWiki AI-powered documentation link
+* Migrated internal guidance into rules, agent guide, and skill docs
+
 = 1.1.0 =
 * Added retrieval trace score details for BM25, Qdrant, RRF, and Cohere ranking diagnostics
 * Added sync index health metrics to help identify stale or incomplete keyword indexes
@@ -176,6 +186,9 @@ Yes, the plugin includes numerous customization options and filter hooks for dev
 * Developer hooks and filters
 
 == Upgrade Notice ==
+
+= 1.1.1 =
+This release hardens privacy by sanitizing chat history and reducing sensitive data in logs, and fixes a sync timestamp timezone display issue.
 
 = 1.0.0 =
 This release improves keyword relevance, sync status tracking, and GitHub-based automatic updates for non-WordPress.org installations.
