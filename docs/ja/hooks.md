@@ -113,8 +113,8 @@ add_filter(
 | `fe_search_ai_allow_conversation_log_pii`           | `bool $allowed`, `string $session_id`                              | 個人情報を含む可能性のある質問・回答本文の保存を許可します。初期値：`false`。                                               |
 | `fe_search_ai_conversation_log_payload`             | `array $row`, `string $session_id`                                 | 挿入前の会話ログ行を変更します。保持されるキーは`session_id`、`question`、`answer`、`context_found`、`created_at`のみです。 |
 | `fe_search_ai_allow_system_log_entry`               | `bool $allowed`, `string $level`, `string $message`, `array $data` | デバッグモード確認後に、個別のシステムログ記録を許可または抑止します。初期値：`true`。                                      |
-| `fe_search_ai_system_log_forbidden_keys`            | `array $keys`, `string $level`, `string $message`, `array $data`   | 挿入前のシステムログペイロードから除去するデータキーを変更します。                                                          |
-| `fe_search_ai_system_log_payload`                   | `array $data`, `string $level`, `string $message`                  | 挿入前に、サニタイズ済みのシステムログコンテキストデータを変更します。                                                      |
+| `fe_search_ai_system_log_forbidden_keys`            | `array $keys`, `string $level`, `string $message`, `array $data`   | 挿入前のシステムログペイロードから再帰的に除去するデータキーを変更します。                                                  |
+| `fe_search_ai_system_log_payload`                   | `array $data`, `string $level`, `string $message`                  | 挿入前にサニタイズ済みのシステムログコンテキストデータを変更します。このフィルター後にも禁止キーは再度除去されます。        |
 | `fe_search_ai_log_retention_days`                   | `int $days`                                                        | システムログの保持日数を変更します。初期値：`30`日。                                                                        |
 | `fe_search_ai_conversation_log_retention_days`      | `int $days`                                                        | 会話ログの保持日数を変更します。初期値：`7`日。                                                                             |
 

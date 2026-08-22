@@ -124,6 +124,84 @@ class SyncHandlerTest extends TestCase {
 	}
 
 	/**
+	 * Test Yahoo tokenization logs contain metadata only.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public function test_yahoo_tokenization_does_not_log_token_text() {
+		$previous_options = get_option( 'fe_search_ai_settings', [] );
+		$locale_filter    = function() {
+			return 'ja_JP';
+		};
+		$http_filter      = function ( $preempt, $args, $url ) {
+			if ( 'https://jlp.yahooapis.jp/MAService/V2/parse' !== $url ) {
+				return $preempt;
+			}
+
+			return [
+				'headers'  => [],
+				'body'     => wp_json_encode(
+					[
+						'result' => [
+							'tokens' => [
+								[ '秘密', 'ヒミツ', '秘密' ],
+								[ '相談', 'ソウダン', '相談' ],
+							],
+						],
+					]
+				),
+				'response' => [
+					'code'    => 200,
+					'message' => 'OK',
+				],
+				'cookies'  => [],
+				'filename' => null,
+			];
+		};
+
+		update_option(
+			'fe_search_ai_settings',
+			[
+				'advanced' => [ 'debug_mode' => true ],
+				'tokenizer' => [
+					'ja' => [
+						'engine'   => 'yahoo_ma',
+						'yahoo_id' => \FESearchAI\Core\FE_Search_AI_Encryption_Helper::encrypt( 'test-yahoo-id' ),
+					],
+				],
+			]
+		);
+		add_filter( 'locale', $locale_filter );
+		add_filter( 'pre_http_request', $http_filter, 10, 3 );
+		\FESearchAI\Core\FE_Search_AI_Logger::clear_logs();
+
+		try {
+			$handler = new \FESearchAI\Ajax\FE_Search_AI_Sync_Handler();
+			$result  = $handler->tokenize_text( '秘密の相談' );
+
+			$this->assertContains( '秘密', $result, 'Yahoo tokenization result should remain available' );
+			$this->assertContains( '相談', $result, 'Yahoo tokenization result should remain available' );
+
+			global $wpdb;
+			$table_name = $wpdb->prefix . 'fe_search_ai_system_logs';
+			$logs       = $wpdb->get_results( "SELECT message, extra_data FROM {$table_name} ORDER BY id ASC" );
+			$serialized = wp_json_encode( $logs, JSON_UNESCAPED_UNICODE );
+
+			$this->assertStringNotContainsString( 'Yahoo MA API tokens sample.', $serialized, 'Token sample event should not be logged' );
+			$this->assertStringNotContainsString( '秘密', $serialized, 'Token surface text should not be logged' );
+			$this->assertStringNotContainsString( '相談', $serialized, 'Token baseform text should not be logged' );
+			$this->assertStringNotContainsString( 'words_sample', $serialized, 'Word samples should not be logged' );
+			$this->assertStringContainsString( 'token_count', $serialized, 'Token count metadata should be logged' );
+		} finally {
+			remove_filter( 'locale', $locale_filter );
+			remove_filter( 'pre_http_request', $http_filter, 10 );
+			update_option( 'fe_search_ai_settings', $previous_options );
+			\FESearchAI\Core\FE_Search_AI_Logger::clear_logs();
+		}
+	}
+
+	/**
 	 * Test BM25 keyword index data keeps duplicate token frequencies.
 	 *
 	 * @since 1.0.0

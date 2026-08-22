@@ -98,14 +98,11 @@ class FE_Search_AI_Logger {
 		];
 		// Hook name is properly prefixed with fe_search_ai_.
 		$forbidden_keys = apply_filters( 'fe_search_ai_system_log_forbidden_keys', $forbidden_keys, $level, $message, $data );
-		foreach ( $forbidden_keys as $key ) {
-			if ( isset( $data[ $key ] ) ) {
-				unset( $data[ $key ] );
-			}
-		}
+		$data           = self::remove_forbidden_keys( $data, $forbidden_keys );
 
 		// Hook name is properly prefixed with fe_search_ai_.
 		$data = apply_filters( 'fe_search_ai_system_log_payload', $data, $level, $message );
+		$data = self::remove_forbidden_keys( (array) $data, $forbidden_keys );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		// Direct insert required for custom table.
@@ -118,6 +115,32 @@ class FE_Search_AI_Logger {
 				'created_at' => current_time( 'mysql' ),
 			]
 		);
+	}
+
+	/**
+	 * Removes forbidden keys recursively from log context data.
+	 *
+	 * @param array $data           Log context data.
+	 * @param array $forbidden_keys Keys that must not be persisted.
+	 * @return array Filtered log context data.
+	 */
+	private static function remove_forbidden_keys( array $data, array $forbidden_keys ) {
+		$forbidden_map = array_fill_keys( array_map( 'strval', $forbidden_keys ), true );
+
+		foreach ( $data as $key => $value ) {
+			if ( isset( $forbidden_map[ (string) $key ] ) ) {
+				unset( $data[ $key ] );
+				continue;
+			}
+
+			if ( is_array( $value ) ) {
+				$data[ $key ] = self::remove_forbidden_keys( $value, $forbidden_keys );
+			} elseif ( is_object( $value ) ) {
+				$data[ $key ] = self::remove_forbidden_keys( get_object_vars( $value ), $forbidden_keys );
+			}
+		}
+
+		return $data;
 	}
 
 	/**
