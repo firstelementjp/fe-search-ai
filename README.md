@@ -2,7 +2,7 @@
 
 ![FE Search AI Banner](docs/assets/images/img-sns-banner-100.jpg)
 
-[![Version](https://img.shields.io/badge/version-1.1.1-green.svg)](https://github.com/firstelementjp/fe-search-ai/releases)
+[![Version](https://img.shields.io/badge/version-1.1.2-green.svg)](https://github.com/firstelementjp/fe-search-ai/releases)
 [![License](https://img.shields.io/badge/License-GPLv2%2B-blue.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
 [![WordPress](https://img.shields.io/badge/WordPress-6.6%2B-blue.svg)](https://wordpress.org/)
 [![PHP](https://img.shields.io/badge/PHP-7.4%2B-blue.svg)](https://www.php.net/)
@@ -12,9 +12,9 @@ AI-powered, conversational search for WordPress. This repository contains the pl
 
 ## ✨ Recent Highlights
 
+- Hardened frontend chat rendering with DOMPurify sanitization and safer link handling
+- Strengthened chat session IDs with cryptographic random generation
 - Sanitized chat history and reduced sensitive data in logs for stronger privacy
-- Fixed sync timestamp timezone offset by switching to `wp_date()`
-- Expanded developer hooks reference documentation
 - Retrieval trace scores for BM25, Qdrant, RRF, and Cohere ranking diagnostics
 - Sync index health metrics to identify stale or incomplete keyword indexes
 - Hybrid candidate limit setting for tuning rerank quality and performance

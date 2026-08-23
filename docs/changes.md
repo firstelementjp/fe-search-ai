@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.1.2 (2026-08-23)
+
+### Security
+
+- Hardened frontend chat rendering with DOMPurify sanitization for AI-generated Markdown HTML
+- Strengthened chat session IDs with cryptographic random generation
+- Improved frontend link safety by removing unsafe URL schemes from rendered answers
+- Limited GitHub Actions workflow permissions to read-only contents access
+
+### Build and Release
+
+- Added DOMPurify to the release asset build and frontend script dependency chain
+- Disabled WordPress.org SVN deployment unless explicitly enabled after plugin approval
+- Added unit test coverage for the DOMPurify frontend dependency
+
 ## 1.1.1 (2026-08-22)
 
 ### Privacy and Security

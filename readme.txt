@@ -3,7 +3,7 @@ Contributors: firstelementjp
 Tags: ai, search, chat, semantic, vector
 Requires at least: 6.6
 Tested up to: 7.0
-Stable tag: 1.1.1
+Stable tag: 1.1.2
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -144,6 +144,15 @@ Yes, the plugin includes numerous customization options and filter hooks for dev
 
 == Changelog ==
 
+= 1.1.2 =
+* Hardened frontend chat rendering with DOMPurify sanitization for AI-generated Markdown HTML
+* Strengthened chat session IDs with cryptographic random generation
+* Improved frontend link safety by removing unsafe URL schemes from rendered answers
+* Added DOMPurify to the release asset build and frontend script dependency chain
+* Limited GitHub Actions workflow permissions to read-only contents access
+* Disabled WordPress.org SVN deployment unless explicitly enabled after plugin approval
+* Added unit test coverage for the DOMPurify frontend dependency
+
 = 1.1.1 =
 * Sanitized conversation history before AI provider calls to strip extra keys and validate message structure
 * Hardened system log filtering with recursive removal of sensitive keys and re-application after payload filter hooks
@@ -186,6 +195,9 @@ Yes, the plugin includes numerous customization options and filter hooks for dev
 * Developer hooks and filters
 
 == Upgrade Notice ==
+
+= 1.1.2 =
+This release hardens frontend chat rendering with DOMPurify sanitization, safer links, and cryptographic chat session IDs.
 
 = 1.1.1 =
 This release hardens privacy by sanitizing chat history and reducing sensitive data in logs, and fixes a sync timestamp timezone display issue.
