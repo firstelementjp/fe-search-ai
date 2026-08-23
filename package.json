@@ -8,7 +8,8 @@
 		"watch:all": "npm run watch:js & npm run watch:css & npm run watch:pro",
 		"watch:js": "esbuild assets/js/frontend-scripts.js --minify --allow-overwrite --outfile=assets/js/frontend-scripts.min.js --watch & esbuild assets/js/admin-scripts.js --minify --allow-overwrite --outfile=assets/js/admin-scripts.min.js --watch",
 		"watch:css": "esbuild assets/css/frontend-styles.css --minify --allow-overwrite --outfile=assets/css/frontend-styles.min.css --watch & esbuild assets/css/admin-styles.css --minify --allow-overwrite --outfile=assets/css/admin-styles.min.css --watch",
-		"build": "npm run build:js && npm run build:css",
+		"build": "npm run build:vendor && npm run build:js && npm run build:css",
+		"build:vendor": "esbuild node_modules/dompurify/dist/purify.js --minify --allow-overwrite --outfile=assets/vendor/dompurify.min.js",
 		"build:js": "esbuild assets/js/frontend-scripts.js --minify --allow-overwrite --outfile=assets/js/frontend-scripts.min.js && esbuild assets/js/admin-scripts.js --minify --allow-overwrite --outfile=assets/js/admin-scripts.min.js",
 		"build:css": "esbuild assets/css/frontend-styles.css --minify --allow-overwrite --outfile=assets/css/frontend-styles.min.css && esbuild assets/css/admin-styles.css --minify --allow-overwrite --outfile=assets/css/admin-styles.min.css",
 		"watch:pro": "esbuild ../fe-search-ai-pro/assets/js/admin-pro-scripts.js --minify --outfile=../fe-search-ai-pro/assets/js/admin-pro-scripts.min.js --watch",
@@ -31,5 +32,8 @@
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-prettier": "^5.5.4",
 		"prettier": "^3.6.2"
+	},
+	"dependencies": {
+		"dompurify": "3.4.13"
 	}
 }

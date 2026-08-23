@@ -239,9 +239,17 @@ class FE_Search_AI_Assets {
 		);
 
 		wp_enqueue_script(
+			'fe-search-ai-dompurify',
+			plugin_dir_url( FE_SEARCH_AI_PLUGIN_FILE ) . 'assets/vendor/dompurify.min.js',
+			[],
+			'3.4.13',
+			true
+		);
+
+		wp_enqueue_script(
 			'fe-search-ai-frontend-scripts',
 			plugin_dir_url( FE_SEARCH_AI_PLUGIN_FILE ) . $frontend_js,
-			[ 'wp-i18n', 'fe-search-ai-marked' ],
+			[ 'wp-i18n', 'fe-search-ai-marked', 'fe-search-ai-dompurify' ],
 			FE_SEARCH_AI_VERSION,
 			true
 		);

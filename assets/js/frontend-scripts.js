@@ -153,10 +153,7 @@ function handleError(error, context = 'unknown', showMessage = true) {
 
 	// Show error message to user if requested and addMessage function is available
 	if (showMessage && typeof window.addMessage === 'function') {
-		window.addMessage(
-			`<p><strong>${__('Error', 'fe-search-ai')}:</strong> ${errorMessage}</p>`,
-			'system'
-		);
+		window.addMessage(`${__('Error', 'fe-search-ai')}: ${errorMessage}`, 'system');
 	}
 
 	return { errorType, errorMessage };
@@ -247,8 +244,10 @@ function initializeSessionManagement() {
 		'initializeSessionManagement.get_session'
 	);
 
-	if (!sessionId) {
-		sessionId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+	if (typeof sessionId !== 'string' || !/^[a-f0-9]{32}$/.test(sessionId)) {
+		const randomValues = new Uint32Array(4);
+		window.crypto.getRandomValues(randomValues);
+		sessionId = Array.from(randomValues, value => value.toString(16).padStart(8, '0')).join('');
 		safeExecute(
 			() => sessionStorage.setItem(FE_SEARCH_AI_CONFIG.STORAGE.SESSION_ID, sessionId),
 			'initializeSessionManagement.set_session'
@@ -518,18 +517,25 @@ function initFEAIChat() {
 
 		const consentWrapper = document.createElement('div');
 		consentWrapper.className = 'fe-search-ai-consent';
-		consentWrapper.innerHTML = `
-			<div class="fe-search-ai-consent-message">
-				${privacyConfig.consent_message || ''}
-			</div>
-			<label class="fe-search-ai-consent-check">
-				<input type="checkbox" class="fe-search-ai-consent-checkbox">
-				<span>${__('I agree to the Terms of Service and Privacy Policy.', 'fe-search-ai')}</span>
-			</label>
-			<button type="button" class="fe-search-ai-consent-accept">
-				${__('Start chat', 'fe-search-ai')}
-			</button>
-		`;
+		const consentMessage = document.createElement('div');
+		consentMessage.className = 'fe-search-ai-consent-message';
+		setSanitizedHtmlContent(consentMessage, privacyConfig.consent_message || '');
+		const consentLabel = document.createElement('label');
+		consentLabel.className = 'fe-search-ai-consent-check';
+		const consentCheckbox = document.createElement('input');
+		consentCheckbox.type = 'checkbox';
+		consentCheckbox.className = 'fe-search-ai-consent-checkbox';
+		const consentLabelText = document.createElement('span');
+		consentLabelText.textContent = __(
+			'I agree to the Terms of Service and Privacy Policy.',
+			'fe-search-ai'
+		);
+		consentLabel.append(consentCheckbox, consentLabelText);
+		const consentAcceptButton = document.createElement('button');
+		consentAcceptButton.type = 'button';
+		consentAcceptButton.className = 'fe-search-ai-consent-accept';
+		consentAcceptButton.textContent = __('Start chat', 'fe-search-ai');
+		consentWrapper.append(consentMessage, consentLabel, consentAcceptButton);
 
 		chatWindowElement.appendChild(consentWrapper);
 
@@ -602,12 +608,10 @@ function initFEAIChat() {
 		const SESSION_LIMIT = fe_search_ai_ajax_obj.ip_limit_count;
 		if (SESSION_LIMIT > 0 && sessionHistory.length > SESSION_LIMIT * 2) {
 			addMessage(
-				'<p>' +
-					__(
-						'You have reached the message limit for this session. Please refresh the page to start a new conversation.',
-						'fe-search-ai'
-					) +
-					'</p>',
+				__(
+					'You have reached the message limit for this session. Please refresh the page to start a new conversation.',
+					'fe-search-ai'
+				),
 				'system'
 			);
 			return;
@@ -617,7 +621,7 @@ function initFEAIChat() {
 		if (!question) return;
 
 		// Update the session history variable
-		addMessage(`<p>${question}</p>`, 'user');
+		addMessage(question, 'user');
 		sessionHistory.push({ role: 'user', content: question });
 
 		const recentHistory = sessionHistory.slice(-FE_SEARCH_AI_CONFIG.CHAT.HISTORY_LIMIT);
@@ -625,11 +629,11 @@ function initFEAIChat() {
 		input.style.height = 'auto'; // Reset height
 		disableForm();
 
-		const aiMessageWrapperForFeedback = addMessage(
-			'<p><span class="fe-search-ai-spinner"></span></p>',
-			'ai'
-		);
+		const aiMessageWrapperForFeedback = addMessage('', 'ai');
 		currentAiMessageElement = aiMessageWrapperForFeedback.querySelector('p');
+		const spinner = document.createElement('span');
+		spinner.className = 'fe-search-ai-spinner';
+		currentAiMessageElement.appendChild(spinner);
 
 		fullResponse = '';
 		let contextFound = false;
@@ -693,7 +697,7 @@ function initFEAIChat() {
 							});
 							waitForQueueToEmpty().then(() => {
 								clearInterval(renderInterval);
-								aiMessageWrapperForFeedback.innerHTML = marked.parse(fullResponse);
+								setMarkdownContent(aiMessageWrapperForFeedback, fullResponse);
 								appendReferences(aiMessageWrapperForFeedback, references);
 								sessionHistory.push({
 									role: 'assistant',
@@ -727,8 +731,7 @@ function initFEAIChat() {
 								waitForQueueToEmpty().then(() => {
 									clearInterval(renderInterval);
 									// Replace the spinner wrapper with the final, parsed content
-									aiMessageWrapperForFeedback.innerHTML =
-										marked.parse(fullResponse);
+									setMarkdownContent(aiMessageWrapperForFeedback, fullResponse);
 									appendReferences(aiMessageWrapperForFeedback, references);
 
 									sessionHistory.push({
@@ -751,13 +754,23 @@ function initFEAIChat() {
 													document.createElement('div');
 												feedbackWrapper.className = 'fe-search-ai-feedback';
 												feedbackWrapper.innerHTML = `
-											<button class="feedback-btn good" data-log-id="${currentLogId}" data-rating="${FE_SEARCH_AI_CONFIG.CHAT.FEEDBACK_RATINGS.GOOD}" title="Good">
+											<button class="feedback-btn good" title="Good">
 												<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none"/><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
 											</button>
-											<button class="feedback-btn bad" data-log-id="${currentLogId}" data-rating="${FE_SEARCH_AI_CONFIG.CHAT.FEEDBACK_RATINGS.BAD}" title="Bad">
+											<button class="feedback-btn bad" title="Bad">
 												<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none"/><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
 											</button>
 										`;
+												const goodButton =
+													feedbackWrapper.querySelector('.good');
+												const badButton =
+													feedbackWrapper.querySelector('.bad');
+												goodButton.dataset.logId = String(currentLogId);
+												goodButton.dataset.rating =
+													FE_SEARCH_AI_CONFIG.CHAT.FEEDBACK_RATINGS.GOOD;
+												badButton.dataset.logId = String(currentLogId);
+												badButton.dataset.rating =
+													FE_SEARCH_AI_CONFIG.CHAT.FEEDBACK_RATINGS.BAD;
 												aiMessageWrapperForFeedback.appendChild(
 													feedbackWrapper
 												);
@@ -856,16 +869,89 @@ function initFEAIChat() {
 	 * ========================================================================
 	 */
 
+	const allowedHtmlTags = [
+		'a',
+		'blockquote',
+		'br',
+		'code',
+		'del',
+		'em',
+		'h1',
+		'h2',
+		'h3',
+		'h4',
+		'h5',
+		'h6',
+		'hr',
+		'li',
+		'ol',
+		'p',
+		'pre',
+		'strong',
+		'table',
+		'tbody',
+		'td',
+		'th',
+		'thead',
+		'tr',
+		'ul',
+	];
+
+	/**
+	 * Safely renders sanitized HTML into an element.
+	 * @param {HTMLElement} element - The destination element.
+	 * @param {string}      html    - Untrusted HTML.
+	 * @return {void}
+	 */
+	function setSanitizedHtmlContent(element, html) {
+		const sanitizedContent = window.DOMPurify.sanitize(String(html), {
+			ALLOWED_TAGS: allowedHtmlTags,
+			ALLOWED_ATTR: ['href', 'rel', 'target', 'title'],
+			RETURN_DOM_FRAGMENT: true,
+		});
+		sanitizedContent.querySelectorAll('a').forEach(link => {
+			const rawHref = link.getAttribute('href');
+			if (!rawHref) {
+				return;
+			}
+			try {
+				const url = new URL(rawHref, window.location.href);
+				if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+					link.removeAttribute('href');
+					return;
+				}
+				link.href = url.href;
+				link.rel = 'noopener noreferrer';
+			} catch (error) {
+				link.removeAttribute('href');
+				handleError(error, 'sanitize_link', false);
+			}
+		});
+		element.replaceChildren(sanitizedContent);
+	}
+
+	/**
+	 * Safely renders Markdown into an element.
+	 * @param {HTMLElement} element  - The destination element.
+	 * @param {string}      markdown - Untrusted Markdown.
+	 * @return {void}
+	 */
+	function setMarkdownContent(element, markdown) {
+		setSanitizedHtmlContent(element, marked.parse(String(markdown)));
+	}
+
 	/**
 	 * Adds a message to the chat UI.
-	 * @param {string} html - The HTML content of the message.
+	 * @param {string} text - The plain-text content of the message.
 	 * @param {string} type - 'user', 'ai', or 'system'.
 	 * @return {HTMLElement} The new message wrapper element.
 	 */
-	function addMessage(html, type) {
+	function addMessage(text, type) {
 		const messageWrapper = document.createElement('div');
 		messageWrapper.className = `fe-search-ai-message fe-search-ai-message-${type}`;
-		messageWrapper.innerHTML = html;
+		const paragraph = document.createElement('p');
+		paragraph.textContent = String(text);
+		messageWrapper.appendChild(paragraph);
 		messagesContainer.appendChild(messageWrapper);
 		messagesContainer.scrollTop = messagesContainer.scrollHeight;
 		return messageWrapper;
@@ -882,14 +968,33 @@ function initFEAIChat() {
 			return;
 		}
 
-		messageElement.innerHTML += `
-			<div class="fe-search-ai-references">
-				<strong>${__('References', 'fe-search-ai')}:</strong>
-				<ul>
-					${referencesList.map(url => `<li><a href="${url}">${url}</a></li>`).join('')}
-				</ul>
-			</div>
-		`;
+		const references = document.createElement('div');
+		references.className = 'fe-search-ai-references';
+		const heading = document.createElement('strong');
+		heading.textContent = `${__('References', 'fe-search-ai')}:`;
+		const list = document.createElement('ul');
+		referencesList.forEach(reference => {
+			try {
+				const url = new URL(String(reference), window.location.href);
+				if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+					return;
+				}
+				const item = document.createElement('li');
+				const link = document.createElement('a');
+				link.href = url.href;
+				link.rel = 'noopener noreferrer';
+				link.textContent = url.href;
+				item.appendChild(link);
+				list.appendChild(item);
+			} catch (error) {
+				handleError(error, 'append_reference', false);
+			}
+		});
+		if (!list.hasChildNodes()) {
+			return;
+		}
+		references.append(heading, list);
+		messageElement.appendChild(references);
 	}
 
 	/**
@@ -919,10 +1024,11 @@ function initFEAIChat() {
 			}
 
 			if (entry.role === 'user') {
-				addMessage(`<p>${entry.content}</p>`, 'user');
+				addMessage(entry.content, 'user');
 			} else if (entry.role === 'assistant') {
 				// Assistant messages are stored as plain markdown text.
-				const messageElement = addMessage(marked.parse(entry.content), 'ai');
+				const messageElement = addMessage('', 'ai');
+				setMarkdownContent(messageElement, entry.content);
 				appendReferences(messageElement, entry.references);
 
 				// Check if this message has a log entry and restore feedback UI
@@ -931,7 +1037,7 @@ function initFEAIChat() {
 					restoreFeedbackUI(messageElement, logInfo.logId, logInfo.rating);
 				}
 			} else if (entry.role === 'system') {
-				addMessage(`<p>${entry.content}</p>`, 'system');
+				addMessage(entry.content, 'system');
 			}
 		});
 	}
@@ -955,13 +1061,19 @@ function initFEAIChat() {
 			const feedbackWrapper = document.createElement('div');
 			feedbackWrapper.className = 'fe-search-ai-feedback';
 			feedbackWrapper.innerHTML = `
-				<button class="feedback-btn good" data-log-id="${logId}" data-rating="${FE_SEARCH_AI_CONFIG.CHAT.FEEDBACK_RATINGS.GOOD}" title="Good">
+				<button class="feedback-btn good" title="Good">
 					<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none"/><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
 				</button>
-				<button class="feedback-btn bad" data-log-id="${logId}" data-rating="${FE_SEARCH_AI_CONFIG.CHAT.FEEDBACK_RATINGS.BAD}" title="Bad">
+				<button class="feedback-btn bad" title="Bad">
 					<svg class="feedback-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none"/><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
 				</button>
 			`;
+			const goodButton = feedbackWrapper.querySelector('.good');
+			const badButton = feedbackWrapper.querySelector('.bad');
+			goodButton.dataset.logId = String(logId);
+			goodButton.dataset.rating = FE_SEARCH_AI_CONFIG.CHAT.FEEDBACK_RATINGS.GOOD;
+			badButton.dataset.logId = String(logId);
+			badButton.dataset.rating = FE_SEARCH_AI_CONFIG.CHAT.FEEDBACK_RATINGS.BAD;
 			messageElement.appendChild(feedbackWrapper);
 		}
 	}
@@ -1122,7 +1234,7 @@ function initFEAIChat() {
 			currentAiMessageElement.querySelector('.fe-search-ai-spinner') &&
 			characterQueue.length > 0
 		) {
-			currentAiMessageElement.innerHTML = '';
+			currentAiMessageElement.replaceChildren();
 		}
 		if (characterQueue.length === 0) return;
 
@@ -1132,7 +1244,7 @@ function initFEAIChat() {
 		const textToRender = stringsToRender.join('');
 		fullResponse += textToRender;
 
-		currentAiMessageElement.innerHTML = marked.parse(fullResponse);
+		setMarkdownContent(currentAiMessageElement, fullResponse);
 		messagesContainer.scrollTop = messagesContainer.scrollHeight;
 	}
 
@@ -1194,7 +1306,7 @@ function initFEAIChat() {
 					message = __('Rate limit exceeded. Please try again later.', 'fe-search-ai');
 				}
 			}
-			addMessage(`<p>${message}</p>`, 'system', currentAiMessageElement);
+			addMessage(message, 'system');
 		}
 		enableForm();
 	}
