@@ -7,7 +7,7 @@
 **FE Search AI** is a WordPress plugin that provides AI-powered semantic search.
 Uses vector embeddings and AI reranking for intelligent content discovery.
 
-- **Version**: 1.1.1
+- **Version**: 1.1.2
 - **License**: GPL-2.0+
 - **PHP**: >= 7.4
 - **Repository**: https://github.com/firstelementjp/fe-search-ai
@@ -48,6 +48,8 @@ assets/
   css/
     admin-styles.css                                 # Admin styles
     frontend-styles.css                              # Frontend styles
+  vendor/
+    dompurify.min.js                                 # Sanitizer for frontend AI-generated HTML
 languages/                                          # i18n files
 vendor/                                             # Composer dependencies (php-stemmer, tinysegmenter-php)
 ```

@@ -23,7 +23,7 @@ FE Search AI is designed for WordPress sites where visitors need quick, accurate
 
 ## Current release
 
-Version 1.1.1 hardens privacy by sanitizing conversation history before AI provider calls, recursively stripping sensitive keys from system logs, and reducing tokenization log detail. It also fixes a sync timestamp timezone display issue and expands the developer hooks reference documentation.
+Version 1.1.2 hardens frontend chat rendering with DOMPurify sanitization for AI-generated Markdown HTML, safer link handling, and cryptographic chat session IDs. It also limits GitHub Actions permissions and keeps WordPress.org SVN deployment disabled until explicitly enabled after plugin approval.
 
 ## Recommended reading
 
