@@ -69,6 +69,7 @@ temp/
 *.min.css
 assets/js/*.min.js
 assets/css/*.min.css
+!assets/vendor/dompurify.min.js
 
 # Release artifacts
 *.zip

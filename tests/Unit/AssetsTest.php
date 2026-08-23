@@ -71,4 +71,23 @@ class AssetsTest extends TestCase {
 
 		$this->assertTrue( is_callable( [ $assets, 'enqueue_assets' ] ), 'enqueue_assets should be callable' );
 	}
+
+	/**
+	 * Test DOMPurify is loaded before the frontend chat script.
+	 *
+	 * @since 1.1.1
+	 * @return void
+	 */
+	public function test_frontend_script_depends_on_dompurify() {
+		$assets = new \FESearchAI\Core\FE_Search_AI_Assets();
+		$assets->enqueue_assets();
+
+		$this->assertFileExists( FE_SEARCH_AI_PLUGIN_DIR . 'assets/vendor/dompurify.min.js' );
+		$this->assertTrue( wp_script_is( 'fe-search-ai-dompurify', 'enqueued' ), 'DOMPurify should be enqueued' );
+		$this->assertContains(
+			'fe-search-ai-dompurify',
+			wp_scripts()->registered['fe-search-ai-frontend-scripts']->deps,
+			'The frontend script should depend on DOMPurify'
+		);
+	}
 }
