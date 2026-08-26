@@ -108,6 +108,11 @@ add_filter(
 
 | フック                                              | フィルター値・追加引数                                             | 用途                                                                                                                        |
 | --------------------------------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| `fe_search_ai_privacy_provider_registry`            | `array $registry`, `array $settings`, `array $pro_settings`        | プライバシータブとフロントエンド通知で使うプロバイダーのデータ取扱い情報を変更します。                                      |
+| `fe_search_ai_active_privacy_recipients`            | `array $recipients`, `array $settings`, `array $pro_settings`      | 現在の設定で有効と表示する送信先を変更します。                                                                              |
+| `fe_search_ai_privacy_config`                       | `array $config`, `array $settings`, `array $pro_settings`          | バージョン付きのフロントエンドプライバシー・同意・ログ設定を変更します。                                                    |
+| `fe_search_ai_validate_chat_consent`                | `bool $valid`, `string $token`, `WP_REST_Request $request`         | チャット処理前に必須同意を検証します。初期値は`true`で、Pro版は有効時にトークンを検証します。                               |
+| `fe_search_ai_conversation_log_mode`                | `string $mode`, `string $session_id`, `string $token`              | 会話ログを`none`、`diagnostic`、`analytics`から選択します。初期値：`none`。                                                 |
 | `fe_search_ai_allow_conversation_log_question_text` | `bool $allowed`, `string $session_id`                              | 会話ログへの質問全文の保存を許可します。初期値：`false`。                                                                   |
 | `fe_search_ai_allow_conversation_log_answer_text`   | `bool $allowed`, `string $session_id`                              | 会話ログへの回答全文の保存を許可します。初期値：`false`。                                                                   |
 | `fe_search_ai_allow_conversation_log_pii`           | `bool $allowed`, `string $session_id`                              | 個人情報を含む可能性のある質問・回答本文の保存を許可します。初期値：`false`。                                               |

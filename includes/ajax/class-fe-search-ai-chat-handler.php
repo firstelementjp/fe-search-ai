@@ -231,6 +231,15 @@ class FE_Search_AI_Chat_Handler {
 				throw new \Exception( 'Nonce verification failed.' );
 			}
 
+			$consent_token = sanitize_text_field( (string) $request->get_header( 'X-FE-AI-Consent' ) );
+			$consent_valid = apply_filters( 'fe_search_ai_validate_chat_consent', true, $consent_token, $request );
+			if ( is_wp_error( $consent_valid ) || ! $consent_valid ) {
+				status_header( 403 );
+				echo 'data: ' . wp_json_encode( [ 'error' => __( 'Privacy consent is required before using this chat.', 'fe-search-ai' ) ] ) . "\n\n";
+				flush();
+				return;
+			}
+
 			// Provider is selected from the provider.chat setting (e.g. openai/google/anthropic).
 			$provider = $this->options['provider']['chat'] ?? 'openai';
 
@@ -1798,7 +1807,7 @@ class FE_Search_AI_Chat_Handler {
 		// Initialize context string.
 		$context_str = '';
 
-		// Legal links are managed under the Display > Text/Links settings.
+		// Legal links are managed under Privacy > Legal Documents.
 		$links           = $this->options['display']['links'] ?? [];
 		$terms_page_id   = $links['terms_page_id'] ?? 0;
 		$privacy_page_id = $links['privacy_page_id'] ?? 0;
@@ -2045,17 +2054,21 @@ Your task is to answer the user's question using only the provided search result
 	 * @hook     wp_ajax_nopriv_fe_search_ai_log_query
 	 */
 	public function ajax_log_query() {
-		// Use the same "Debug Mode" flag as the system logs (stored in fe_search_ai_settings[advanced][debug_mode]).
-		$settings      = get_option( 'fe_search_ai_settings', [] );
-		$advanced      = $settings['advanced'] ?? [];
-		$debug_mode_on = ! empty( $advanced['debug_mode'] );
 		$is_pro_active = class_exists( 'FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' );
-		if ( ! $is_pro_active || ! $debug_mode_on ) {
+		if ( ! $is_pro_active ) {
 			wp_send_json_success( [ 'log_id' => 0 ] );
 			return;
 		}
 
 		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
+
+		$session_id    = isset( $_POST['session_id'] ) ? sanitize_key( wp_unslash( $_POST['session_id'] ) ) : '';
+		$consent_token = isset( $_POST['consent_token'] ) ? sanitize_text_field( wp_unslash( $_POST['consent_token'] ) ) : '';
+		$log_mode      = sanitize_key( (string) apply_filters( 'fe_search_ai_conversation_log_mode', 'none', $session_id, $consent_token ) );
+		if ( ! in_array( $log_mode, [ 'diagnostic', 'analytics' ], true ) ) {
+			wp_send_json_success( [ 'log_id' => 0 ] );
+			return;
+		}
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		// Direct query required for custom table.
@@ -2073,21 +2086,20 @@ Your task is to answer the user's question using only the provided search result
 		// Input is sanitized after unslashing.
 		$answer_raw = isset( $_POST['answer'] ) ? wp_kses_post( wp_unslash( $_POST['answer'] ) ) : '';
 
-		$question      = $this->filter_personal_data( $question_raw );
-		$answer        = $this->filter_personal_data( $answer_raw );
-		$pii_suspected = ( $question_raw !== $question ) || ( $answer_raw !== $answer );
-		$session_id    = isset( $_POST['session_id'] ) ? sanitize_key( $_POST['session_id'] ) : '';
+		$question      = apply_filters( 'fe_search_ai_preprocess_user_question', $this->filter_personal_data( $question_raw ) );
+		$answer        = apply_filters( 'fe_search_ai_preprocess_model_response', $this->filter_personal_data( $answer_raw ) );
 		$context_found = isset( $_POST['context_found'] ) ? (bool) $_POST['context_found'] : false;
 		$question_len  = isset( $_POST['question_length'] ) ? intval( $_POST['question_length'] ) : 0;
 		$log_id        = 0;
+		$analytics     = 'analytics' === $log_mode;
 
 		// Hook name is properly prefixed with fe_search_ai_.
-		$enable_question_logging = apply_filters( 'fe_search_ai_allow_conversation_log_question_text', false, $session_id );
+		$enable_question_logging = (bool) apply_filters( 'fe_search_ai_allow_conversation_log_question_text', $analytics, $session_id );
 		// Hook name is properly prefixed with fe_search_ai_.
-		$enable_answer_logging = apply_filters( 'fe_search_ai_allow_conversation_log_answer_text', false, $session_id );
+		$enable_answer_logging = (bool) apply_filters( 'fe_search_ai_allow_conversation_log_answer_text', $analytics, $session_id );
 		// Hook name is properly prefixed with fe_search_ai_.
-		$allow_pii_logging = apply_filters( 'fe_search_ai_allow_conversation_log_pii', false, $session_id );
-		if ( $pii_suspected && ! $allow_pii_logging ) {
+		$allow_pii_logging = (bool) apply_filters( 'fe_search_ai_allow_conversation_log_pii', $analytics, $session_id );
+		if ( ! $allow_pii_logging ) {
 			$enable_question_logging = false;
 			$enable_answer_logging   = false;
 		}
@@ -2099,29 +2111,40 @@ Your task is to answer the user's question using only the provided search result
 			$answer_length = strlen( wp_strip_all_tags( $answer ) );
 			$answer_text   = $enable_answer_logging ? $answer : sprintf( 'AI answer is not logged. (length: %d chars)', max( 0, $answer_length ) );
 
-			$log_row = [
-				'session_id'    => $session_id,
-				'question'      => $question_text,
-				'answer'        => $answer_text,
-				'context_found' => $context_found,
-				'created_at'    => current_time( 'mysql' ),
+			$consent_record_id = (int) apply_filters( 'fe_search_ai_conversation_log_consent_record_id', 0, $consent_token, $session_id );
+			$log_row           = [
+				'session_id'        => $session_id,
+				'question'          => $question_text,
+				'answer'            => $answer_text,
+				'context_found'     => $context_found,
+				'purpose'           => $log_mode,
+				'consent_record_id' => $analytics ? $consent_record_id : 0,
+				'created_at'        => current_time( 'mysql' ),
 			];
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 			// Hook name is properly prefixed with fe_search_ai_.
-			$log_row                  = apply_filters( 'fe_search_ai_conversation_log_payload', $log_row, $session_id );
-			$allowed_keys             = [
-				'session_id'    => true,
-				'question'      => true,
-				'answer'        => true,
-				'context_found' => true,
-				'created_at'    => true,
+			$log_row                      = apply_filters( 'fe_search_ai_conversation_log_payload', $log_row, $session_id );
+			$allowed_keys                 = [
+				'session_id'        => true,
+				'question'          => true,
+				'answer'            => true,
+				'context_found'     => true,
+				'purpose'           => true,
+				'consent_record_id' => true,
+				'created_at'        => true,
 			];
-			$log_row                  = array_intersect_key( (array) $log_row, $allowed_keys );
-			$log_row['session_id']    = $session_id;
-			$log_row['context_found'] = $context_found;
-			$log_row['created_at']    = $log_row['created_at'] ?? current_time( 'mysql' );
-			$log_row['question']      = $enable_question_logging ? (string) ( $log_row['question'] ?? '' ) : sprintf( 'User question is not logged. (length: %d chars)', max( 0, $question_len ) );
-			$log_row['answer']        = $enable_answer_logging ? (string) ( $log_row['answer'] ?? '' ) : sprintf( 'AI answer is not logged. (length: %d chars)', max( 0, $answer_length ) );
+			$log_row                      = array_intersect_key( (array) $log_row, $allowed_keys );
+			$log_row['session_id']        = $session_id;
+			$log_row['context_found']     = $context_found;
+			$log_row['purpose']           = $log_mode;
+			$log_row['consent_record_id'] = $analytics ? $consent_record_id : 0;
+			$log_row['created_at']        = $log_row['created_at'] ?? current_time( 'mysql' );
+			$log_row['question']          = $enable_question_logging
+				? apply_filters( 'fe_search_ai_preprocess_user_question', $this->filter_personal_data( (string) ( $log_row['question'] ?? '' ) ) )
+				: sprintf( 'User question is not logged. (length: %d chars)', max( 0, $question_len ) );
+			$log_row['answer']            = $enable_answer_logging
+				? apply_filters( 'fe_search_ai_preprocess_model_response', $this->filter_personal_data( (string) ( $log_row['answer'] ?? '' ) ) )
+				: sprintf( 'AI answer is not logged. (length: %d chars)', max( 0, $answer_length ) );
 
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -2172,7 +2195,8 @@ Your task is to answer the user's question using only the provided search result
 	public function ajax_get_session_logs() {
 		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
 
-		$session_id = isset( $_POST['session_id'] ) ? sanitize_key( wp_unslash( $_POST['session_id'] ) ) : '';
+		$session_id    = isset( $_POST['session_id'] ) ? sanitize_key( wp_unslash( $_POST['session_id'] ) ) : '';
+		$consent_token = isset( $_POST['consent_token'] ) ? sanitize_text_field( wp_unslash( $_POST['consent_token'] ) ) : '';
 
 		if ( empty( $session_id ) ) {
 			wp_send_json_error( __( 'Session ID is required.', 'fe-search-ai' ) );
@@ -2188,14 +2212,18 @@ Your task is to answer the user's question using only the provided search result
 			return;
 		}
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$purpose_column = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM `{$logs_table}` LIKE %s", 'purpose' ) );
+		$privacy_fields = $purpose_column ? 'purpose, consent_record_id' : "'legacy' AS purpose, 0 AS consent_record_id";
+
 		// Get logs for this session with rating information.
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
-		// Table name is interpolated but controlled internally, session_id is prepared.
+		// Table name and selected privacy fields are controlled internally, session_id is prepared.
 		$logs = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT id, question, answer, rating, created_at
+				"SELECT id, question, answer, rating, {$privacy_fields}, created_at
 			 FROM {$logs_table}
 			 WHERE session_id = %s
 			 ORDER BY created_at ASC",
@@ -2203,7 +2231,8 @@ Your task is to answer the user's question using only the provided search result
 			)
 		);
 
-		wp_send_json_success( [ 'logs' => $logs ] );
+		$logs = apply_filters( 'fe_search_ai_filter_session_logs', $logs, $session_id, $consent_token );
+		wp_send_json_success( [ 'logs' => is_array( $logs ) ? $logs : [] ] );
 	}
 
 	/**
@@ -2220,9 +2249,11 @@ Your task is to answer the user's question using only the provided search result
 		$log_id = isset( $_POST['log_id'] ) ? absint( $_POST['log_id'] ) : 0;
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 		// Input is cast to int, no sanitization needed.
-		$rating = isset( $_POST['rating'] ) ? (int) $_POST['rating'] : 0;
+		$rating        = isset( $_POST['rating'] ) ? (int) $_POST['rating'] : 0;
+		$session_id    = isset( $_POST['session_id'] ) ? sanitize_key( wp_unslash( $_POST['session_id'] ) ) : '';
+		$consent_token = isset( $_POST['consent_token'] ) ? sanitize_text_field( wp_unslash( $_POST['consent_token'] ) ) : '';
 
-		if ( $log_id <= 0 ) {
+		if ( $log_id <= 0 || '' === $session_id ) {
 			wp_send_json_error( [ 'message' => __( 'Log ID is required.', 'fe-search-ai' ) ] );
 			return;
 		}
@@ -2239,14 +2270,23 @@ Your task is to answer the user's question using only the provided search result
 			return;
 		}
 
+		$can_rate = (bool) apply_filters( 'fe_search_ai_can_rate_conversation_log', true, $log_id, $session_id, $consent_token );
+		if ( ! $can_rate ) {
+			wp_send_json_error( [ 'message' => __( 'This conversation log is not available.', 'fe-search-ai' ) ], 403 );
+			return;
+		}
+
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		// Direct update required for custom table. Table name is controlled internally.
 		$updated = $wpdb->update(
 			$logs_table,
 			[ 'rating' => $rating ],
-			[ 'id' => $log_id ],
+			[
+				'id'         => $log_id,
+				'session_id' => $session_id,
+			],
 			[ '%d' ],
-			[ '%d' ]
+			[ '%d', '%s' ]
 		);
 
 		if ( false === $updated ) {

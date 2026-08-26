@@ -88,33 +88,7 @@ class FE_Search_AI_Assets {
 		$accent_top_hex             = $colors['accent_top'];
 		$accent_bottom_hex          = $colors['accent_bottom'];
 
-		// Prepare initial defaults for privacy consent banner.
-		$privacy_config = [
-			'enable_consent'  => false,
-			'consent_message' => '',
-		];
-
-		// Build the privacy consent configuration from Pro settings, if available.
-		if ( ! empty( $pro_options ) ) {
-			$privacy_options = $pro_options['privacy'] ?? [];
-			$enable_consent  = ! empty( $privacy_options['enable_consent'] );
-			$consent_tpl     = $privacy_options['consent_message'] ?? '';
-
-			if ( $enable_consent && ! empty( $consent_tpl ) ) {
-				$links           = $this->options['display']['links'] ?? [];
-				$terms_page_id   = isset( $links['terms_page_id'] ) ? (int) $links['terms_page_id'] : 0;
-				$privacy_page_id = isset( $links['privacy_page_id'] ) ? (int) $links['privacy_page_id'] : 0;
-				if ( $terms_page_id && $privacy_page_id ) {
-					$terms_url       = get_permalink( $terms_page_id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-					$privacy_url     = get_permalink( $privacy_page_id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-					$consent_message = sprintf( $consent_tpl, esc_url( $terms_url ), esc_url( $privacy_url ) );
-					$privacy_config  = [
-						'enable_consent'  => true,
-						'consent_message' => wp_kses_post( $consent_message ),
-					];
-				}
-			}
-		}
+		$privacy_config = FE_Search_AI_Privacy::get_frontend_config( $this->options, is_array( $pro_options ) ? $pro_options : [] );
 
 		// Rate limit settings values (base defaults).
 		$ip_limit_count     = 50;  // Default: 50 requests per IP address per hour.

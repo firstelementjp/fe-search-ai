@@ -33,6 +33,7 @@ includes/
     class-fe-search-ai-license-handler.php          # License validation
     class-fe-search-ai-license.php                  # License model
     class-fe-search-ai-logger.php                   # Logging utilities
+    class-fe-search-ai-privacy.php                  # Privacy registry, notices, and consent versioning
     class-fe-search-ai-retrieval-trace.php          # Retrieval trace data model
     class-fe-search-ai-retrieval-trace-recorder.php # Retrieval trace recording
     class-fe-search-ai-sync-hooks.php               # Sync hooks and handlers

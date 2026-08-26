@@ -164,7 +164,16 @@
 }
 
 #fe_search_ai_privacy_notice p {
-	margin: 0;
+	margin: 0 0 3px;
+}
+
+.fe-search-ai-privacy-recipients {
+	opacity: 0.8;
+}
+
+.fe-search-ai-logging-status {
+	color: #8a4b08;
+	font-weight: 600;
 }
 
 #fe_search_ai_options_toggle {
@@ -195,6 +204,18 @@
 	margin-bottom: 5px;
 	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 	white-space: nowrap;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+#fe_search_ai_options_menu .button-link {
+	border: 0;
+	background: transparent;
+	color: var(--feais-accent);
+	cursor: pointer;
+	padding: 0;
+	text-align: left;
 }
 
 #fe_search_ai_options_menu.hidden {
@@ -524,6 +545,10 @@
 
 .fe-search-ai-consent-checkbox {
 	margin: 0 1em !important;
+}
+
+.fe-search-ai-consent-optional {
+	border-style: dashed;
 }
 
 .fe-search-ai-consent-accept {

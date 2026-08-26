@@ -241,6 +241,8 @@ class FE_Search_AI_Chat_UI {
 		$send_on_shift_enter = $ui_options['send_on_shift_enter'] ?? $is_cjk;
 		$terms_page_id       = $links_options['terms_page_id'] ?? 0;
 		$privacy_page_id     = $links_options['privacy_page_id'] ?? 0;
+		$pro_settings        = get_option( 'fe_search_ai_pro_settings', [] );
+		$privacy_config      = \FESearchAI\Core\FE_Search_AI_Privacy::get_frontend_config( $this->options, is_array( $pro_settings ) ? $pro_settings : [] );
 
 		// Ensure text fields fall back to shared defaults when empty or not set.
 		$defaults = \FESearchAI\Core\FE_Search_AI_Defaults::get_display_text_defaults();
@@ -326,6 +328,20 @@ class FE_Search_AI_Chat_UI {
 					</form>
 					<div id="fe_search_ai_chat_options">
 						<div id="fe_search_ai_privacy_notice">
+							<p>
+								<?php
+								esc_html_e( 'Your input and recent conversation history are sent to the configured AI services to generate a response. Chat history is stored temporarily in this browser session.', 'fe-search-ai' );
+								?>
+							</p>
+							<?php if ( ! empty( $privacy_config['recipients'] ) ) : ?>
+								<p class="fe-search-ai-privacy-recipients">
+									<?php esc_html_e( 'Active services:', 'fe-search-ai' ); ?>
+									<?php echo esc_html( implode( ', ', array_column( $privacy_config['recipients'], 'label' ) ) ); ?>
+								</p>
+							<?php endif; ?>
+							<?php if ( ! empty( $privacy_config['diagnostic_enabled'] ) ) : ?>
+								<p class="fe-search-ai-logging-status"><?php esc_html_e( 'Diagnostic conversation metadata logging is active. Message text is not stored for this purpose.', 'fe-search-ai' ); ?></p>
+							<?php endif; ?>
 							<?php
 							$links = [];
 							if ( ! empty( $args['terms_url'] ) ) {
@@ -366,6 +382,8 @@ class FE_Search_AI_Chat_UI {
 										<?php esc_html_e( 'Cmd/Ctrl+Enter', 'fe-search-ai' ); ?>
 									</option>
 								</select>
+								<button type="button" id="fe_search_ai_clear_history" class="button-link"><?php esc_html_e( 'Clear local chat history', 'fe-search-ai' ); ?></button>
+								<button type="button" id="fe_search_ai_withdraw_consent" class="button-link"><?php esc_html_e( 'Withdraw privacy consent', 'fe-search-ai' ); ?></button>
 							</div>
 						</div>
 					</div>

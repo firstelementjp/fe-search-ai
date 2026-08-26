@@ -242,7 +242,7 @@ class FE_Search_AI_Admin {
 					'confirm_rebuild'        => __( 'This will rebuild the index from scratch and may take some time. Do you want to continue?', 'fe-search-ai' ),
 					'confirm_smart_sync'     => __( 'This will sync only new/updated/deleted content. Do you want to continue?', 'fe-search-ai' ),
 					'confirm_delete_data'    => __( 'Are you sure you want to delete all synced data? This action cannot be undone.', 'fe-search-ai' ),
-					'consent_pages_required' => __( 'To enable user consent (opt-in), please select both the Terms of Service Page and Privacy Policy Page in the Display > Text/Links settings.', 'fe-search-ai' ),
+					'consent_pages_required' => __( 'To enable user consent (opt-in), please select both the Terms of Service Page and Privacy Policy Page under Privacy > Legal Documents.', 'fe-search-ai' ),
 				],
 			]
 		);

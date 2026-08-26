@@ -472,29 +472,106 @@ function initFEAIChat() {
 	const consentStorageKey = FE_SEARCH_AI_CONFIG.STORAGE.USER_CONSENT;
 
 	/**
-	 * Check if the user has already given consent.
+	 * Returns the current versioned consent state.
 	 *
-	 * @return {boolean} True when consent is not required or already granted.
+	 * @return {Object|null} Consent state or null.
 	 */
-	function hasUserConsented() {
-		if (!privacyConfig.enable_consent) {
-			return true;
-		}
-		const stored = safeExecute(
-			() => localStorage.getItem(consentStorageKey),
-			'hasUserConsented.get',
-			''
+	function getConsentState() {
+		return safeExecute(
+			() => {
+				const raw = localStorage.getItem(consentStorageKey);
+				if (!raw || raw === '1' || raw === 'true') {
+					if (raw) localStorage.removeItem(consentStorageKey);
+					return null;
+				}
+				const state = JSON.parse(raw);
+				if (!state || state.version !== privacyConfig.version || !state.token) {
+					localStorage.removeItem(consentStorageKey);
+					return null;
+				}
+				return state;
+			},
+			'getConsentState',
+			null
 		);
-		return stored === '1' || stored === 'true';
 	}
 
 	/**
-	 * Stores the user's consent decision.
+	 * Checks whether current required consent exists.
+	 *
+	 * @return {boolean} Whether chat may proceed.
+	 */
+	function hasUserConsented() {
+		if (!privacyConfig.enable_consent) return true;
+		const state = getConsentState();
+		return Boolean(state && state.purposes && state.purposes.terms);
+	}
+
+	/**
+	 * Returns the current consent bearer token.
+	 *
+	 * @return {string} Consent token.
+	 */
+	function getConsentToken() {
+		return getConsentState()?.token || '';
+	}
+
+	/**
+	 * Stores versioned consent returned by the server.
+	 *
+	 * @param {Object} consent Consent response.
+	 * @return {void}
+	 */
+	function setConsentState(consent) {
+		const state = {
+			token: consent.token,
+			version: consent.version,
+			purposes: consent.purposes,
+			accepted_at: consent.accepted_at,
+		};
+		safeExecute(
+			() => localStorage.setItem(consentStorageKey, JSON.stringify(state)),
+			'setConsentState'
+		);
+	}
+
+	/**
+	 * Updates the visible logging status from the active consent state.
 	 *
 	 * @return {void}
 	 */
-	function setUserConsented() {
-		safeExecute(() => localStorage.setItem(consentStorageKey, '1'), 'setUserConsented.set');
+	function updatePrivacyStatus() {
+		const notice = document.getElementById('fe_search_ai_privacy_notice');
+		if (!notice) return;
+		notice.querySelector('.fe-search-ai-analytics-status')?.remove();
+		if (getConsentState()?.purposes?.conversation_analytics) {
+			const status = document.createElement('p');
+			status.className = 'fe-search-ai-logging-status fe-search-ai-analytics-status';
+			status.textContent = __(
+				'Masked conversation analytics is active for this browser.',
+				'fe-search-ai'
+			);
+			notice.appendChild(status);
+		}
+	}
+
+	/**
+	 * Requests and stores a new consent token.
+	 *
+	 * @param {boolean} analytics Whether optional analytics was selected.
+	 * @return {Promise<boolean>} Whether consent was saved.
+	 */
+	async function recordConsent(analytics) {
+		const response = await wpPost('fe_search_ai_record_consent', {
+			nonce: fe_search_ai_ajax_obj.nonce,
+			version: privacyConfig.version,
+			terms: '1',
+			conversation_analytics: analytics ? '1' : '0',
+		});
+		if (!response.success || !response.data?.token) return false;
+		setConsentState(response.data);
+		updatePrivacyStatus();
+		return true;
 	}
 
 	/**
@@ -503,75 +580,65 @@ function initFEAIChat() {
 	 * @return {void}
 	 */
 	function ensureConsentUI() {
-		if (!privacyConfig.enable_consent || hasUserConsented()) {
-			return;
-		}
-
-		// Lock the form until consent is given.
+		if (!privacyConfig.enable_consent || hasUserConsented()) return;
 		disableForm();
-
-		// Avoid duplicating the consent UI.
-		if (container.querySelector('.fe-search-ai-consent')) {
-			return;
-		}
+		if (container.querySelector('.fe-search-ai-consent')) return;
 
 		const consentWrapper = document.createElement('div');
 		consentWrapper.className = 'fe-search-ai-consent';
 		const consentMessage = document.createElement('div');
 		consentMessage.className = 'fe-search-ai-consent-message';
 		setSanitizedHtmlContent(consentMessage, privacyConfig.consent_message || '');
-		const consentLabel = document.createElement('label');
-		consentLabel.className = 'fe-search-ai-consent-check';
-		const consentCheckbox = document.createElement('input');
-		consentCheckbox.type = 'checkbox';
-		consentCheckbox.className = 'fe-search-ai-consent-checkbox';
-		const consentLabelText = document.createElement('span');
-		consentLabelText.textContent = __(
-			'I agree to the Terms of Service and Privacy Policy.',
-			'fe-search-ai'
-		);
-		consentLabel.append(consentCheckbox, consentLabelText);
-		const consentAcceptButton = document.createElement('button');
-		consentAcceptButton.type = 'button';
-		consentAcceptButton.className = 'fe-search-ai-consent-accept';
-		consentAcceptButton.textContent = __('Start chat', 'fe-search-ai');
-		consentWrapper.append(consentMessage, consentLabel, consentAcceptButton);
+		const termsLabel = document.createElement('label');
+		termsLabel.className = 'fe-search-ai-consent-check';
+		const termsCheckbox = document.createElement('input');
+		termsCheckbox.type = 'checkbox';
+		termsCheckbox.className = 'fe-search-ai-consent-checkbox';
+		const termsText = document.createElement('span');
+		termsText.textContent =
+			privacyConfig.terms_label || __('I agree to the Terms of Service.', 'fe-search-ai');
+		termsLabel.append(termsCheckbox, termsText);
+		consentWrapper.append(consentMessage, termsLabel);
 
+		let analyticsCheckbox = null;
+		if (privacyConfig.analytics_available) {
+			const analyticsLabel = document.createElement('label');
+			analyticsLabel.className = 'fe-search-ai-consent-check fe-search-ai-consent-optional';
+			analyticsCheckbox = document.createElement('input');
+			analyticsCheckbox.type = 'checkbox';
+			const analyticsText = document.createElement('span');
+			analyticsText.textContent = privacyConfig.analytics_label;
+			analyticsLabel.append(analyticsCheckbox, analyticsText);
+			consentWrapper.appendChild(analyticsLabel);
+		}
+
+		const acceptBtn = document.createElement('button');
+		acceptBtn.type = 'button';
+		acceptBtn.className = 'fe-search-ai-consent-accept';
+		acceptBtn.textContent = __('Start chat', 'fe-search-ai');
+		consentWrapper.appendChild(acceptBtn);
 		chatWindowElement.appendChild(consentWrapper);
 
-		const checkbox = consentWrapper.querySelector('.fe-search-ai-consent-checkbox');
-		const acceptBtn = consentWrapper.querySelector('.fe-search-ai-consent-accept');
-
-		// Update button color based on checkbox state.
-		checkbox.addEventListener('change', () => {
-			if (checkbox.checked) {
-				acceptBtn.style.background = '#3b82f6';
-			} else {
-				acceptBtn.style.background = '#ccc';
-			}
+		termsCheckbox.addEventListener('change', () => {
+			acceptBtn.style.background = termsCheckbox.checked ? '#3b82f6' : '#ccc';
 		});
-
-		acceptBtn.addEventListener('click', () => {
-			if (!checkbox.checked) {
-				checkbox.focus();
+		acceptBtn.addEventListener('click', async () => {
+			if (!termsCheckbox.checked) {
+				termsCheckbox.focus();
 				return;
 			}
-
-			setUserConsented();
-			safeExecuteAsync(
-				() =>
-					wpPost('fe_search_ai_log_consent', {
-						nonce: fe_search_ai_ajax_obj.nonce,
-						session_id: sessionId,
-						source: 'chat_overlay',
-					}),
-				'ensureConsentUI.log_consent'
-			);
-
+			acceptBtn.disabled = true;
+			const saved = await recordConsent(Boolean(analyticsCheckbox?.checked));
+			if (!saved) {
+				acceptBtn.disabled = false;
+				return;
+			}
 			consentWrapper.remove();
 			enableForm();
 		});
 	}
+
+	updatePrivacyStatus();
 
 	// Initialize Settings
 	const sendMode = initializeSendModeSettings(shiftEnterToggle);
@@ -590,6 +657,30 @@ function initFEAIChat() {
 
 	// Setup keyboard event listener with dynamic send mode
 	setupKeyboardEventListener(input, form, () => currentSendMode);
+
+	const clearHistoryButton = document.getElementById('fe_search_ai_clear_history');
+	const withdrawConsentButton = document.getElementById('fe_search_ai_withdraw_consent');
+	if (withdrawConsentButton && !getConsentState()) withdrawConsentButton.hidden = true;
+	clearHistoryButton?.addEventListener('click', () => {
+		sessionStorage.removeItem(FE_SEARCH_AI_CONFIG.STORAGE.CHAT_HISTORY);
+		sessionStorage.removeItem(FE_SEARCH_AI_CONFIG.STORAGE.SESSION_LOGS);
+		sessionStorage.removeItem(FE_SEARCH_AI_CONFIG.STORAGE.SESSION_ID);
+		window.location.reload();
+	});
+	withdrawConsentButton?.addEventListener('click', async () => {
+		const token = getConsentToken();
+		if (token) {
+			await wpPost('fe_search_ai_revoke_consent', {
+				nonce: fe_search_ai_ajax_obj.nonce,
+				consent_token: token,
+			});
+		}
+		localStorage.removeItem(consentStorageKey);
+		sessionStorage.removeItem(FE_SEARCH_AI_CONFIG.STORAGE.CHAT_HISTORY);
+		sessionStorage.removeItem(FE_SEARCH_AI_CONFIG.STORAGE.SESSION_LOGS);
+		sessionStorage.removeItem(FE_SEARCH_AI_CONFIG.STORAGE.SESSION_ID);
+		window.location.reload();
+	});
 
 	/**
 	 * Handles the actual form submission ("Worker").
@@ -648,6 +739,7 @@ function initFEAIChat() {
 			headers: {
 				'X-WP-Nonce': fe_search_ai_ajax_obj.rest_nonce,
 				'X-FE-AI-Session': sessionId,
+				'X-FE-AI-Consent': getConsentToken(),
 			},
 			body: new URLSearchParams({
 				question,
@@ -657,6 +749,11 @@ function initFEAIChat() {
 			.then(response => {
 				if (!response.ok) {
 					clearInterval(renderInterval);
+					if (response.status === 403 && privacyConfig.enable_consent) {
+						localStorage.removeItem(consentStorageKey);
+						ensureConsentUI();
+						return;
+					}
 					if (response.status === FE_SEARCH_AI_CONFIG.CHAT.HTTP_STATUS.RATE_LIMIT) {
 						handleError(new Error('rate_limit'));
 					} else {
@@ -848,6 +945,8 @@ function initFEAIChat() {
 			wpPost('fe_search_ai_rate_answer', {
 				nonce: fe_search_ai_ajax_obj.nonce,
 				log_id: logId,
+				session_id: sessionId,
+				consent_token: getConsentToken(),
 				rating,
 			});
 
@@ -1087,13 +1186,25 @@ function initFEAIChat() {
 	 */
 	async function logConversation(question, answer, contextFound) {
 		const questionLength = typeof question === 'string' ? question.length : 0;
+		const consentState = getConsentState();
+		const analyticsEnabled = Boolean(
+			privacyConfig.analytics_available && consentState?.purposes?.conversation_analytics
+		);
+		let mode = 'none';
+		if (analyticsEnabled) {
+			mode = 'analytics';
+		} else if (privacyConfig.diagnostic_enabled) {
+			mode = 'diagnostic';
+		}
+		if (mode === 'none') return null;
 
 		return safeExecuteAsync(
 			async () => {
 				const response = await wpPost('fe_search_ai_log_query', {
 					nonce: fe_search_ai_ajax_obj.nonce,
 					session_id: sessionId,
-					question: '',
+					consent_token: getConsentToken(),
+					question: analyticsEnabled ? question : '',
 					question_length: questionLength,
 					answer,
 					context_found: contextFound ? '1' : '0',
@@ -1144,6 +1255,7 @@ function initFEAIChat() {
 				const response = await wpPost('fe_search_ai_get_session_logs', {
 					nonce: fe_search_ai_ajax_obj.nonce,
 					session_id: sessionId,
+					consent_token: getConsentToken(),
 				});
 
 				if (response.success && response.data && response.data.logs) {

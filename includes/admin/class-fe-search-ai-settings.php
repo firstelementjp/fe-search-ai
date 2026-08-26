@@ -113,6 +113,7 @@ class FE_Search_AI_Settings {
 				<a href="#tab_sync" class="nav-tab"><?php esc_html_e( 'Sync', 'fe-search-ai' ); ?></a>
 				<a href="#tab_prompt" class="nav-tab"><?php esc_html_e( 'Prompts', 'fe-search-ai' ); ?></a>
 				<a href="#tab_display" class="nav-tab"><?php esc_html_e( 'Display', 'fe-search-ai' ); ?></a>
+				<a href="#tab_privacy" class="nav-tab"><?php esc_html_e( 'Privacy', 'fe-search-ai' ); ?></a>
 				<?php if ( class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) ) : ?>
 					<a href="#tab_security" class="nav-tab"><?php esc_html_e( 'Security', 'fe-search-ai' ); ?></a>
 				<?php endif; ?>
@@ -220,6 +221,18 @@ class FE_Search_AI_Settings {
 						// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 						// Hook name is properly prefixed with fe_search_ai_.
 						do_action( 'fe_search_ai_after_display_settings_fields', $is_pro );
+						?>
+					</div>
+
+					<div id="tab_privacy" class="tab-content">
+						<?php do_settings_sections( 'fe_search_ai_privacy_section' ); ?>
+						<table class="form-table">
+							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_privacy_section' ); ?>
+						</table>
+						<?php
+						// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+						// Hook name is properly prefixed with fe_search_ai_.
+						do_action( 'fe_search_ai_after_privacy_settings_fields', $is_pro );
 						?>
 					</div>
 
@@ -410,7 +423,6 @@ class FE_Search_AI_Settings {
 		add_settings_section( 'fe_search_ai_display_appearance_section', __( 'Chat UI Appearance', 'fe-search-ai' ), null, $page_slug );
 		add_settings_field( 'fe_search_ai_display_chat_text', __( 'Text & Colors', 'fe-search-ai' ), [ $this, 'display_text_color_field_html' ], $page_slug, 'fe_search_ai_display_appearance_section' );
 		add_settings_field( 'fe_search_ai_display_interaction', __( 'Interaction', 'fe-search-ai' ), [ $this, 'display_interaction_field_html' ], $page_slug, 'fe_search_ai_display_appearance_section' );
-		add_settings_field( 'fe_search_ai_display_links', __( 'Legal Links', 'fe-search-ai' ), [ $this, 'display_links_field_html' ], $page_slug, 'fe_search_ai_display_appearance_section' );
 
 		// Floating Mode Section
 		add_settings_section( 'fe_search_ai_display_floating_section', __( 'Floating Mode Settings', 'fe-search-ai' ), null, $page_slug );
@@ -430,6 +442,12 @@ class FE_Search_AI_Settings {
 		add_settings_field( 'fe_search_ai_structured_output', __( 'Structured Output', 'fe-search-ai' ), [ $this, 'structured_output_field_html' ], $page_slug, 'fe_search_ai_prompt_section' );
 
 		// ------------------
+		// Privacy Tab
+		// ------------------
+		add_settings_section( 'fe_search_ai_privacy_section', __( 'Privacy and Data Handling', 'fe-search-ai' ), null, $page_slug );
+		add_settings_field( 'fe_search_ai_privacy_summary', __( 'Current Data Handling', 'fe-search-ai' ), [ $this, 'privacy_summary_field_html' ], $page_slug, 'fe_search_ai_privacy_section' );
+		add_settings_field( 'fe_search_ai_display_links', __( 'Legal Documents', 'fe-search-ai' ), [ $this, 'display_links_field_html' ], $page_slug, 'fe_search_ai_privacy_section' );
+
 		// Advanced Tab
 		// ------------------
 		// Qdrant connection settings (endpoint, API key, collection) shown in Advanced tab.
@@ -2421,6 +2439,9 @@ class FE_Search_AI_Settings {
 		$advanced_options = $this->options['advanced'] ?? [];
 		$is_enabled       = $advanced_options['debug_mode'] ?? false;
 		?>
+		<?php if ( $is_enabled ) : ?>
+			<div class="notice notice-warning inline"><p><?php esc_html_e( 'Debug Mode is active. Operational system logs are being stored. Review Privacy > Current Data Handling and delete logs when troubleshooting is complete.', 'fe-search-ai' ); ?></p></div>
+		<?php endif; ?>
 		<fieldset>
 			<label>
 				<input type="checkbox" name="fe_search_ai_settings[advanced][debug_mode]" value="1" <?php checked( $is_enabled ); ?>>
@@ -2964,6 +2985,44 @@ class FE_Search_AI_Settings {
 					<?php esc_html_e( 'Cmd/Ctrl+Enter (Enter for newline)', 'fe-search-ai' ); ?>
 				</option>
 			</select>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Renders the current privacy and data handling summary.
+	 *
+	 * @since 1.2.0
+	 * @return void
+	 */
+	public function privacy_summary_field_html() {
+		$pro_settings = get_option( 'fe_search_ai_pro_settings', [] );
+		$recipients   = \FESearchAI\Core\FE_Search_AI_Privacy::get_active_recipients( $this->options, is_array( $pro_settings ) ? $pro_settings : [] );
+		$advanced     = isset( $this->options['advanced'] ) && is_array( $this->options['advanced'] ) ? $this->options['advanced'] : [];
+		?>
+		<div class="fe-search-ai-privacy-summary">
+			<p><?php esc_html_e( 'Chat input and recent conversation history are sent to the configured AI services to generate responses. Conversation history is also stored temporarily in the visitor’s browser session.', 'fe-search-ai' ); ?></p>
+			<?php if ( ! empty( $recipients ) ) : ?>
+				<ul>
+					<?php foreach ( $recipients as $recipient ) : ?>
+						<li>
+							<strong><?php echo esc_html( $recipient['label'] ?? '' ); ?></strong>
+							— <?php echo esc_html( str_replace( '_', ' ', (string) ( $recipient['purpose'] ?? '' ) ) ); ?>
+						</li>
+					<?php endforeach; ?>
+				</ul>
+			<?php endif; ?>
+			<p>
+				<strong><?php esc_html_e( 'System diagnostic logging:', 'fe-search-ai' ); ?></strong>
+				<?php echo ! empty( $advanced['debug_mode'] ) ? esc_html__( 'Enabled', 'fe-search-ai' ) : esc_html__( 'Disabled', 'fe-search-ai' ); ?>
+			</p>
+			<?php if ( is_array( $pro_settings ) && ! empty( $pro_settings ) ) : ?>
+				<?php $privacy = isset( $pro_settings['privacy'] ) && is_array( $pro_settings['privacy'] ) ? $pro_settings['privacy'] : []; ?>
+				<p><strong><?php esc_html_e( 'Optional conversation analytics:', 'fe-search-ai' ); ?></strong> <?php echo ! empty( $privacy['enable_conversation_analytics'] ) ? esc_html__( 'Available by visitor opt-in', 'fe-search-ai' ) : esc_html__( 'Disabled', 'fe-search-ai' ); ?></p>
+				<p><strong><?php esc_html_e( 'Diagnostic conversation summaries:', 'fe-search-ai' ); ?></strong> <?php echo ! empty( $privacy['enable_diagnostic_conversation_summary'] ) ? esc_html__( 'Enabled when Debug Mode is active', 'fe-search-ai' ) : esc_html__( 'Disabled', 'fe-search-ai' ); ?></p>
+			<?php endif; ?>
+			<p class="description"><?php esc_html_e( 'Review each provider’s terms, privacy policy, retention, and international transfer practices before enabling it. This summary is informational and does not replace a site-specific legal review.', 'fe-search-ai' ); ?></p>
+			<p><a href="#tab_advanced" class="fe-search-ai-tab-link"><?php esc_html_e( 'Open Advanced Data Management to delete stored plugin data.', 'fe-search-ai' ); ?></a></p>
 		</div>
 		<?php
 	}

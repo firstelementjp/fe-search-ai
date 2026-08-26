@@ -31,6 +31,7 @@ class LoggerTest extends TestCase {
 				],
 			]
 		);
+		\FESearchAI\Core\FE_Search_AI_Logger::clear_logs();
 	}
 
 	/**

@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Privacy
+
+- Added a dedicated Privacy settings tab and current data-handling summary
+- Added persistent frontend disclosure of active AI services and browser session storage
+- Added versioned consent integration, withdrawal, local history deletion, and purpose-specific log modes
+
 ## 1.1.2 (2026-08-23)
 
 ### Security
