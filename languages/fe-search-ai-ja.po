@@ -1511,6 +1511,10 @@ msgstr "Yahoo! App ID (オプション)"
 msgid "Yahoo! Japanese MA API"
 msgstr "Yahoo! 日本語形態素解析 API"
 
+#: includes/core/class-fe-search-ai-privacy.php:63
+msgid "Yahoo! JAPAN Japanese MA API"
+msgstr "Yahoo! JAPAN テキスト解析 Web API（日本語形態素解析）"
+
 #: includes/ajax/class-fe-search-ai-sync-handler.php:2667
 msgid "Yahoo! Japanese MA API (App ID configured)"
 msgstr "Yahoo! 日本語形態素解析 API (App ID 設定済み)"

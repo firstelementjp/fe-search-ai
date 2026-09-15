@@ -60,7 +60,7 @@ class FE_Search_AI_Privacy {
 				'is_external' => true,
 			],
 			'yahoo_ma'  => [
-				'label'       => 'Yahoo! JAPAN Japanese MA API',
+				'label'       => __( 'Yahoo! JAPAN Japanese MA API', 'fe-search-ai' ),
 				'data'        => [ 'question_or_indexed_content' ],
 				'purpose'     => 'tokenization',
 				'is_external' => true,
