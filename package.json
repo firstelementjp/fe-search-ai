@@ -14,8 +14,8 @@
 		"build:css": "esbuild assets/css/frontend-styles.css --minify --allow-overwrite --outfile=assets/css/frontend-styles.min.css && esbuild assets/css/admin-styles.css --minify --allow-overwrite --outfile=assets/css/admin-styles.min.css",
 		"watch:pro": "esbuild ../fe-search-ai-pro/assets/js/admin-pro-scripts.js --minify --outfile=../fe-search-ai-pro/assets/js/admin-pro-scripts.min.js --watch",
 		"build:pro": "esbuild ../fe-search-ai-pro/assets/js/admin-pro-scripts.js --minify --outfile=../fe-search-ai-pro/assets/js/admin-pro-scripts.min.js",
-		"lint": "eslint . --ext .js",
-		"lint:fix": "eslint . --ext .js --fix"
+		"lint": "eslint .",
+		"lint:fix": "eslint . --fix"
 	},
 	"keywords": [
 		"wordpress",
@@ -25,12 +25,13 @@
 	"author": "Daijiro Miyazawa",
 	"license": "GPL-2.0-or-later",
 	"devDependencies": {
-		"@wordpress/eslint-plugin": "^25.10.0",
-		"@wordpress/scripts": "^34.2.0",
+		"@wordpress/eslint-plugin": "^26.0.0",
+		"@wordpress/scripts": "^35.0.0",
 		"esbuild": "^0.28.2",
-		"eslint": "^8.0.0",
+		"eslint": "^9.0.0",
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-prettier": "^5.5.4",
+		"globals": "^16.0.0",
 		"prettier": "^3.9.6"
 	},
 	"dependencies": {
