@@ -3,7 +3,7 @@ Contributors: firstelementjp
 Tags: ai, search, chat, semantic, vector
 Requires at least: 6.6
 Tested up to: 7.0
-Stable tag: 1.1.2
+Stable tag: 1.2.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -148,6 +148,20 @@ Yes, the plugin includes numerous customization options and filter hooks for dev
 
 == Changelog ==
 
+= 1.2.0 =
+* Added a dedicated Privacy settings tab with a current data-handling summary
+* Added persistent frontend disclosure of active AI services and browser session storage
+* Added versioned consent integration with withdrawal, local history deletion, and purpose-specific log modes
+* Fixed "Delete Data on Uninstall" never taking effect; uninstall now removes all plugin tables, options, transients, and hashed-IP rate-limit counters
+* Fixed the Log Retention setting, which was displayed but never saved or applied to system log rotation
+* Added a Retrieval Trace Persistence toggle with configurable retention and a delete action
+* Made the conversation history sanitizer a shared entry point so REST and MCP integrations apply the same PII masking as the chat UI
+* Extended system log filtering so response bodies and message payloads can never be persisted
+* Switched rate-limit counters to a salted HMAC of the IP address and stopped transmitting answer text in diagnostic-only logging
+* Added suggested Privacy Policy content via the WordPress Privacy Policy guide
+* Added a server-side retention summary to the Privacy tab and marked which external services receive visitor input
+* Documented the Zero Data Retention posture, data processing map, and complete external endpoint list
+
 = 1.1.2 =
 * Hardened frontend chat rendering with DOMPurify sanitization for AI-generated Markdown HTML
 * Strengthened chat session IDs with cryptographic random generation
@@ -199,6 +213,9 @@ Yes, the plugin includes numerous customization options and filter hooks for dev
 * Developer hooks and filters
 
 == Upgrade Notice ==
+
+= 1.2.0 =
+Privacy release. Fixes uninstall cleanup and log retention settings, adds retrieval trace lifecycle controls, and documents the Zero Data Retention posture. Consent versions change on upgrade, so Pro visitors will be asked to re-accept.
 
 = 1.1.2 =
 This release hardens frontend chat rendering with DOMPurify sanitization, safer links, and cryptographic chat session IDs.
