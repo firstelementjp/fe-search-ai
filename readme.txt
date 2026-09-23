@@ -83,6 +83,10 @@ The plugin sends user questions and relevant content chunks to your chosen AI pr
 
 * **Cohere** - Optional service for reranking search results to improve answer quality. Content chunks are sent to Cohere for reranking when enabled.
 
+= Plugin Updates =
+
+* **GitHub API** (`api.github.com`) - The site fetches release metadata from the plugin's public GitHub repository to provide plugin update checks while WordPress.org distribution is pending. No visitor data, questions, or conversation content is sent; only the site's standard request metadata reaches GitHub. Update checks can be disabled entirely with the `fe_search_ai_enable_github_updates` filter.
+
 = License Validation (Pro Version) =
 
 FE Search AI Pro uses an external license API service for license validation and activation. This service is used solely for:
@@ -130,7 +134,7 @@ Yes, you need an API key from at least one of the supported AI providers (OpenAI
 
 = Is my data sent to third-party services? =
 
-Yes, this plugin communicates with external services to provide AI-powered search functionality. Please see the "External Services" section below for detailed information about which services are used and what data is transmitted.
+Yes, this plugin communicates with external services to provide AI-powered search functionality. Please see the "External Services" section below for detailed information about which services are used and what data is transmitted. For details on the plugin's Zero Data Retention posture and full data processing map, see the `docs/privacy.md` file in the plugin directory.
 
 = Can I customize the chat interface? =
 

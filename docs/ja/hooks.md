@@ -26,18 +26,18 @@ FE Search AIは、プロバイダー、検索、インデックス、チャッ�
 
 ## 検索・ランキングフィルター
 
-| フック                                            | フィルター値・追加引数                                                       | 用途                                                                                                              |
-| ------------------------------------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `fe_search_ai_qdrant_search_limit`                | `int $limit`, `string $question`                                             | Qdrantから取得する候補数を変更します。初期値は設定済みのリランク初期候補数です。                                  |
-| `fe_search_ai_max_chunks_for_llm`                 | `int $max_chunks`, `string $question`                                        | モデルのコンテキスト用に返すBM25チャンクの最大数を変更します。初期値：`100`。                                     |
-| `fe_search_ai_bm25_candidate_limit`               | `int $limit`, `string $question`                                             | BM25スコアリング前に評価するキーワードインデックス行数を変更します。初期値：`500`と`$max_chunks * 20`の大きい方。 |
-| `fe_search_ai_bm25_k1`                            | `float $k1`, `string $question`                                              | BM25の単語頻度飽和パラメーターを変更します。初期値：`1.2`。0以下は初期値に戻ります。                              |
-| `fe_search_ai_bm25_b`                             | `float $b`, `string $question`                                               | BM25の文書長正規化パラメーターを変更します。初期値：`0.75`。有効範囲は`0`から`1`です。                            |
-| `fe_search_ai_hybrid_candidate_limit`             | `int $limit`, `string $question`                                             | ハイブリッド検索で各検索元から取得する候補数を変更します。設定値の初期値は`50`です。                              |
-| `fe_search_ai_hybrid_rrf_k`                       | `int $k`, `string $question`                                                 | Reciprocal Rank Fusionの定数を変更します。初期値：`60`。                                                          |
-| `fe_search_ai_hybrid_search_limit`                | `int $limit`, `string $question`                                             | 統合後のハイブリッド検索結果の最大数を変更します。初期値：`100`。                                                 |
-| `fe_search_ai_retrieval_trace_payload`            | `array $payload`, `array $chunks`, `string $question`, `string $sequence_id` | ログ記録、アクション発火、任意のDB保存より前に、安全化された検索トレースペイロードを変更します。                  |
-| `fe_search_ai_enable_retrieval_trace_persistence` | `bool $enabled`, `array $trace`                                              | 検索トレースのDB保存を有効にします。初期値：`false`。                                                             |
+| フック                                            | フィルター値・追加引数                                                       | 用途                                                                                                                               |
+| ------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `fe_search_ai_qdrant_search_limit`                | `int $limit`, `string $question`                                             | Qdrantから取得する候補数を変更します。初期値は設定済みのリランク初期候補数です。                                                   |
+| `fe_search_ai_max_chunks_for_llm`                 | `int $max_chunks`, `string $question`                                        | モデルのコンテキスト用に返すBM25チャンクの最大数を変更します。初期値：`100`。                                                      |
+| `fe_search_ai_bm25_candidate_limit`               | `int $limit`, `string $question`                                             | BM25スコアリング前に評価するキーワードインデックス行数を変更します。初期値：`500`と`$max_chunks * 20`の大きい方。                  |
+| `fe_search_ai_bm25_k1`                            | `float $k1`, `string $question`                                              | BM25の単語頻度飽和パラメーターを変更します。初期値：`1.2`。0以下は初期値に戻ります。                                               |
+| `fe_search_ai_bm25_b`                             | `float $b`, `string $question`                                               | BM25の文書長正規化パラメーターを変更します。初期値：`0.75`。有効範囲は`0`から`1`です。                                             |
+| `fe_search_ai_hybrid_candidate_limit`             | `int $limit`, `string $question`                                             | ハイブリッド検索で各検索元から取得する候補数を変更します。設定値の初期値は`50`です。                                               |
+| `fe_search_ai_hybrid_rrf_k`                       | `int $k`, `string $question`                                                 | Reciprocal Rank Fusionの定数を変更します。初期値：`60`。                                                                           |
+| `fe_search_ai_hybrid_search_limit`                | `int $limit`, `string $question`                                             | 統合後のハイブリッド検索結果の最大数を変更します。初期値：`100`。                                                                  |
+| `fe_search_ai_retrieval_trace_payload`            | `array $payload`, `array $chunks`, `string $question`, `string $sequence_id` | ログ記録、アクション発火、任意のDB保存より前に、安全化された検索トレースペイロードを変更します。                                   |
+| `fe_search_ai_enable_retrieval_trace_persistence` | `bool $enabled`, `array $trace`                                              | 検索トレースのDB保存を有効にします。フィルター前の既定値は「Retrieval Trace Persistence」設定から取得されます（初期値：`false`）。 |
 
 ## 同期・チャンク・要約フィルター
 
@@ -106,22 +106,23 @@ add_filter(
 
 会話本文および個人情報を含む可能性のある内容は、初期状態では保存されません。以下のフィルターを有効にする場合は、プライバシーと法令順守への影響を確認してください。
 
-| フック                                              | フィルター値・追加引数                                             | 用途                                                                                                                        |
-| --------------------------------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
-| `fe_search_ai_privacy_provider_registry`            | `array $registry`, `array $settings`, `array $pro_settings`        | プライバシータブとフロントエンド通知で使うプロバイダーのデータ取扱い情報を変更します。                                      |
-| `fe_search_ai_active_privacy_recipients`            | `array $recipients`, `array $settings`, `array $pro_settings`      | 現在の設定で有効と表示する送信先を変更します。                                                                              |
-| `fe_search_ai_privacy_config`                       | `array $config`, `array $settings`, `array $pro_settings`          | バージョン付きのフロントエンドプライバシー・同意・ログ設定を変更します。                                                    |
-| `fe_search_ai_validate_chat_consent`                | `bool $valid`, `string $token`, `WP_REST_Request $request`         | チャット処理前に必須同意を検証します。初期値は`true`で、Pro版は有効時にトークンを検証します。                               |
-| `fe_search_ai_conversation_log_mode`                | `string $mode`, `string $session_id`, `string $token`              | 会話ログを`none`、`diagnostic`、`analytics`から選択します。初期値：`none`。                                                 |
-| `fe_search_ai_allow_conversation_log_question_text` | `bool $allowed`, `string $session_id`                              | 会話ログへの質問全文の保存を許可します。初期値：`false`。                                                                   |
-| `fe_search_ai_allow_conversation_log_answer_text`   | `bool $allowed`, `string $session_id`                              | 会話ログへの回答全文の保存を許可します。初期値：`false`。                                                                   |
-| `fe_search_ai_allow_conversation_log_pii`           | `bool $allowed`, `string $session_id`                              | 個人情報を含む可能性のある質問・回答本文の保存を許可します。初期値：`false`。                                               |
-| `fe_search_ai_conversation_log_payload`             | `array $row`, `string $session_id`                                 | 挿入前の会話ログ行を変更します。保持されるキーは`session_id`、`question`、`answer`、`context_found`、`created_at`のみです。 |
-| `fe_search_ai_allow_system_log_entry`               | `bool $allowed`, `string $level`, `string $message`, `array $data` | デバッグモード確認後に、個別のシステムログ記録を許可または抑止します。初期値：`true`。                                      |
-| `fe_search_ai_system_log_forbidden_keys`            | `array $keys`, `string $level`, `string $message`, `array $data`   | 挿入前のシステムログペイロードから再帰的に除去するデータキーを変更します。                                                  |
-| `fe_search_ai_system_log_payload`                   | `array $data`, `string $level`, `string $message`                  | 挿入前にサニタイズ済みのシステムログコンテキストデータを変更します。このフィルター後にも禁止キーは再度除去されます。        |
-| `fe_search_ai_log_retention_days`                   | `int $days`                                                        | システムログの保持日数を変更します。初期値：`30`日。                                                                        |
-| `fe_search_ai_conversation_log_retention_days`      | `int $days`                                                        | 会話ログの保持日数を変更します。初期値：`7`日。                                                                             |
+| フック                                              | フィルター値・追加引数                                             | 用途                                                                                                                                           |
+| --------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fe_search_ai_privacy_provider_registry`            | `array $registry`, `array $settings`, `array $pro_settings`        | プライバシータブとフロントエンド通知で使うプロバイダーのデータ取扱い情報を変更します。                                                         |
+| `fe_search_ai_active_privacy_recipients`            | `array $recipients`, `array $settings`, `array $pro_settings`      | 現在の設定で有効と表示する送信先を変更します。                                                                                                 |
+| `fe_search_ai_privacy_config`                       | `array $config`, `array $settings`, `array $pro_settings`          | バージョン付きのフロントエンドプライバシー・同意・ログ設定を変更します。                                                                       |
+| `fe_search_ai_validate_chat_consent`                | `bool $valid`, `string $token`, `WP_REST_Request $request`         | チャット処理前に必須同意を検証します。初期値は`true`で、Pro版は有効時にトークンを検証します。                                                  |
+| `fe_search_ai_conversation_log_mode`                | `string $mode`, `string $session_id`, `string $token`              | 会話ログを`none`、`diagnostic`、`analytics`から選択します。初期値：`none`。                                                                    |
+| `fe_search_ai_allow_conversation_log_question_text` | `bool $allowed`, `string $session_id`                              | 会話ログへの質問全文の保存を許可します。初期値：`false`。                                                                                      |
+| `fe_search_ai_allow_conversation_log_answer_text`   | `bool $allowed`, `string $session_id`                              | 会話ログへの回答全文の保存を許可します。初期値：`false`。                                                                                      |
+| `fe_search_ai_allow_conversation_log_pii`           | `bool $allowed`, `string $session_id`                              | 個人情報を含む可能性のある質問・回答本文の保存を許可します。初期値：`false`。                                                                  |
+| `fe_search_ai_conversation_log_payload`             | `array $row`, `string $session_id`                                 | 挿入前の会話ログ行を変更します。保持されるキーは`session_id`、`question`、`answer`、`context_found`、`created_at`のみです。                    |
+| `fe_search_ai_allow_system_log_entry`               | `bool $allowed`, `string $level`, `string $message`, `array $data` | デバッグモード確認後に、個別のシステムログ記録を許可または抑止します。初期値：`true`。                                                         |
+| `fe_search_ai_system_log_forbidden_keys`            | `array $keys`, `string $level`, `string $message`, `array $data`   | 挿入前のシステムログペイロードから再帰的に除去するデータキーを変更します。                                                                     |
+| `fe_search_ai_system_log_payload`                   | `array $data`, `string $level`, `string $message`                  | 挿入前にサニタイズ済みのシステムログコンテキストデータを変更します。このフィルター後にも禁止キーは再度除去されます。                           |
+| `fe_search_ai_log_retention_days`                   | `int $days`                                                        | システムログの保持日数を変更します。フィルター前の既定値は「Log Retention (days)」設定から取得されます（初期値：`30`日）。                     |
+| `fe_search_ai_conversation_log_retention_days`      | `int $days`                                                        | 会話ログの保持日数を変更します。フィルター前の既定値はPro版プライバシー設定の「Conversation log retention」から取得されます（初期値：`7`日）。 |
+| `fe_search_ai_retrieval_trace_retention_days`       | `int $days`                                                        | 日次ローテーションで使う検索トレースの保持日数を変更します。フィルター前の既定値は検索トレース保持設定から取得されます（初期値：`30`日）。     |
 
 ## 設定サニタイズフィルター
 

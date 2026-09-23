@@ -91,6 +91,9 @@ add_action(
 
 		new FESearchAI\Admin\FE_Search_AI_Admin();
 		new FESearchAI\Admin\FE_Search_AI_License_Settings();
+		if ( is_admin() ) {
+			\FESearchAI\Admin\FE_Search_AI_Privacy_Policy::register();
+		}
 		new FESearchAI\Frontend\FE_Search_AI_Chat_UI( $assets_handler );
 		new FESearchAI\Ajax\FE_Search_AI_Chat_Handler( $sync_handler );
 

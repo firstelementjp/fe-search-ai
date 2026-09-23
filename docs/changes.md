@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+### Zero Data Retention
+
+- Fixed Delete Data on Uninstall never firing and expanded it to cover all plugin tables, options, and transients
+- Made the Log Retention (days) setting actually saved and applied to system log rotation
+- Added retrieval trace persistence toggle, configurable retention, and a delete action
+- Added a shared conversation history sanitizer used by the REST and MCP endpoints
+- Extended system log forbidden keys so prompt/response-shaped payloads are never persisted
+- Switched rate-limit IP keys to HMAC-SHA256 hashing with the site salt
+- Diagnostic conversation logging no longer transmits answer text, only lengths
+- Added suggested WordPress Privacy Policy content describing the plugin's data flow
+- Documented the data processing map and external endpoints
+
 ### Privacy
 
 - Added a dedicated Privacy settings tab and current data-handling summary

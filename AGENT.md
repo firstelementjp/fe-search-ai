@@ -21,6 +21,7 @@ includes/
     class-fe-search-ai-admin.php                   # Admin bootstrap
     class-fe-search-ai-settings.php                 # Plugin settings UI
     class-fe-search-ai-license-settings.php         # License management UI
+    class-fe-search-ai-privacy-policy.php           # WordPress Privacy Policy guide content
   ajax/
     class-fe-search-ai-chat-handler.php             # Chat AJAX request handling
     class-fe-search-ai-sync-handler.php             # Sync AJAX request handling
@@ -237,6 +238,13 @@ Required GitHub Secrets for WordPress.org SVN deploy:
 - Caches releases in `fe_search_ai_github_latest_release` for one hour.
 - Can be disabled with the `fe_search_ai_enable_github_updates` filter (default `true`).
 - Registered during `plugins_loaded` in `fe-search-ai.php`.
+
+## Privacy / ZDR invariants
+
+- Never add a Logger payload key that can carry prompt/response text; add such keys to `$forbidden_keys` instead.
+- Any new endpoint that forwards conversation history to an AI provider must call `FE_Search_AI_Chat_Handler::sanitize_chat_history()`.
+- Any new persistent table needs: a retention period, an admin delete action, an uninstall cleanup entry, and a row in the `docs/privacy.md` data processing map.
+- Related tests: `UninstallTest`, `RetrievalTraceRecorderTest`, `PrivacyPolicyTest`.
 
 ## Retrieval Trace Diagnostics
 

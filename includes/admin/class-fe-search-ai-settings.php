@@ -3096,10 +3096,91 @@ class FE_Search_AI_Settings {
 						<li>
 							<strong><?php echo esc_html( $recipient['label'] ?? '' ); ?></strong>
 							— <?php echo esc_html( str_replace( '_', ' ', (string) ( $recipient['purpose'] ?? '' ) ) ); ?>
+							<?php if ( ! empty( $recipient['user_content'] ) ) : ?>
+								— <?php esc_html_e( 'receives visitor input', 'fe-search-ai' ); ?>
+							<?php endif; ?>
 						</li>
 					<?php endforeach; ?>
 				</ul>
 			<?php endif; ?>
+
+			<?php
+			$privacy_pro          = is_array( $pro_settings ) && isset( $pro_settings['privacy'] ) && is_array( $pro_settings['privacy'] ) ? $pro_settings['privacy'] : null;
+			$pro_logs_enabled     = null !== $privacy_pro && ( ! empty( $privacy_pro['enable_conversation_analytics'] ) || ! empty( $privacy_pro['enable_diagnostic_conversation_summary'] ) );
+			$system_log_retention = isset( $advanced['log_retention_days'] ) ? (int) $advanced['log_retention_days'] : 30;
+			$trace_enabled        = ! empty( $advanced['retrieval_trace_persistence'] );
+			$trace_retention      = isset( $advanced['retrieval_trace_retention_days'] ) ? (int) $advanced['retrieval_trace_retention_days'] : 30;
+			$conv_log_retention   = null !== $privacy_pro && isset( $privacy_pro['conversation_log_retention_days'] ) ? (int) $privacy_pro['conversation_log_retention_days'] : 7;
+			$consent_retention    = null !== $privacy_pro && isset( $privacy_pro['consent_record_retention_days'] ) ? (int) $privacy_pro['consent_record_retention_days'] : 180;
+			?>
+			<table class="widefat striped">
+				<thead>
+					<tr>
+						<th scope="col"><?php esc_html_e( 'Server-side retention', 'fe-search-ai' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Period', 'fe-search-ai' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td><?php esc_html_e( 'System diagnostic logs', 'fe-search-ai' ); ?></td>
+						<td>
+							<?php
+							if ( ! empty( $advanced['debug_mode'] ) ) {
+								/* translators: %d: number of days */
+								echo esc_html( sprintf( __( '%d days', 'fe-search-ai' ), $system_log_retention ) );
+							} else {
+								esc_html_e( 'Disabled', 'fe-search-ai' );
+							}
+							?>
+						</td>
+					</tr>
+					<tr>
+						<td><?php esc_html_e( 'Retrieval traces', 'fe-search-ai' ); ?></td>
+						<td>
+							<?php
+							if ( $trace_enabled ) {
+								/* translators: %d: number of days */
+								echo esc_html( sprintf( __( '%d days', 'fe-search-ai' ), $trace_retention ) );
+							} else {
+								esc_html_e( 'Disabled', 'fe-search-ai' );
+							}
+							?>
+						</td>
+					</tr>
+					<tr>
+						<td><?php esc_html_e( 'Conversation logs (Pro)', 'fe-search-ai' ); ?></td>
+						<td>
+							<?php
+							if ( null === $privacy_pro ) {
+								esc_html_e( 'Not available (Pro)', 'fe-search-ai' );
+							} elseif ( $pro_logs_enabled ) {
+								/* translators: %d: number of days */
+								echo esc_html( sprintf( __( '%d days', 'fe-search-ai' ), $conv_log_retention ) );
+							} else {
+								esc_html_e( 'Disabled', 'fe-search-ai' );
+							}
+							?>
+						</td>
+					</tr>
+					<tr>
+						<td><?php esc_html_e( 'Consent records (Pro)', 'fe-search-ai' ); ?></td>
+						<td>
+							<?php
+							if ( null === $privacy_pro ) {
+								esc_html_e( 'Not available (Pro)', 'fe-search-ai' );
+							} else {
+								/* translators: %d: number of days */
+								echo esc_html( sprintf( __( '%d days after revocation/obsolescence', 'fe-search-ai' ), $consent_retention ) );
+							}
+							?>
+						</td>
+					</tr>
+					<tr>
+						<td><?php esc_html_e( 'Rate-limit counters', 'fe-search-ai' ); ?></td>
+						<td><?php esc_html_e( 'Keyed IP hash, 1 hour', 'fe-search-ai' ); ?></td>
+					</tr>
+				</tbody>
+			</table>
 			<p>
 				<strong><?php esc_html_e( 'System diagnostic logging:', 'fe-search-ai' ); ?></strong>
 				<?php echo ! empty( $advanced['debug_mode'] ) ? esc_html__( 'Enabled', 'fe-search-ai' ) : esc_html__( 'Disabled', 'fe-search-ai' ); ?>

@@ -29,6 +29,11 @@ class FE_Search_AI_Privacy {
 	/**
 	 * Returns the provider privacy registry.
 	 *
+	 * Each entry is an array with the keys `label` (string), `data` (string[]),
+	 * `purpose` (string), `is_external` (bool), and `user_content` (bool —
+	 * whether visitor-entered text such as the question or conversation
+	 * history reaches the service).
+	 *
 	 * @param array $settings Free plugin settings.
 	 * @param array $pro_settings Pro plugin settings.
 	 * @return array Provider registry.
@@ -36,40 +41,54 @@ class FE_Search_AI_Privacy {
 	public static function get_provider_registry( array $settings = [], array $pro_settings = [] ) {
 		$registry = [
 			'openai'    => [
-				'label'       => 'OpenAI',
-				'data'        => [ 'question', 'conversation_history', 'retrieved_content' ],
-				'purpose'     => 'chat_and_embedding',
-				'is_external' => true,
+				'label'        => 'OpenAI',
+				'data'         => [ 'question', 'conversation_history', 'retrieved_content' ],
+				'purpose'      => 'chat_and_embedding',
+				'is_external'  => true,
+				'user_content' => true,
 			],
 			'google'    => [
-				'label'       => 'Google Gemini',
-				'data'        => [ 'question', 'conversation_history', 'retrieved_content' ],
-				'purpose'     => 'chat_and_embedding',
-				'is_external' => true,
+				'label'        => 'Google Gemini',
+				'data'         => [ 'question', 'conversation_history', 'retrieved_content' ],
+				'purpose'      => 'chat_and_embedding',
+				'is_external'  => true,
+				'user_content' => true,
 			],
 			'anthropic' => [
-				'label'       => 'Anthropic Claude',
-				'data'        => [ 'question', 'conversation_history', 'retrieved_content' ],
-				'purpose'     => 'chat',
-				'is_external' => true,
+				'label'        => 'Anthropic Claude',
+				'data'         => [ 'question', 'conversation_history', 'retrieved_content' ],
+				'purpose'      => 'chat',
+				'is_external'  => true,
+				'user_content' => true,
 			],
 			'cohere'    => [
-				'label'       => 'Cohere Rerank',
-				'data'        => [ 'question', 'retrieved_content' ],
-				'purpose'     => 'reranking',
-				'is_external' => true,
+				'label'        => 'Cohere Rerank',
+				'data'         => [ 'question', 'retrieved_content' ],
+				'purpose'      => 'reranking',
+				'is_external'  => true,
+				'user_content' => true,
 			],
 			'yahoo_ma'  => [
-				'label'       => __( 'Yahoo! JAPAN Japanese MA API', 'fe-search-ai' ),
-				'data'        => [ 'question_or_indexed_content' ],
-				'purpose'     => 'tokenization',
-				'is_external' => true,
+				'label'        => __( 'Yahoo! JAPAN Japanese MA API', 'fe-search-ai' ),
+				'data'         => [ 'question_or_indexed_content' ],
+				'purpose'      => 'tokenization',
+				'is_external'  => true,
+				'user_content' => true,
 			],
 			'qdrant'    => [
-				'label'       => 'Qdrant',
-				'data'        => [ 'vector_data', 'indexed_content_metadata' ],
-				'purpose'     => 'vector_storage_and_search',
-				'is_external' => true,
+				'label'        => 'Qdrant',
+				'data'         => [ 'vector_data', 'indexed_content_metadata' ],
+				'purpose'      => 'vector_storage_and_search',
+				'is_external'  => true,
+				// The query vector is derived from the visitor's question.
+				'user_content' => true,
+			],
+			'github'    => [
+				'label'        => 'GitHub API',
+				'data'         => [ 'site_metadata' ],
+				'purpose'      => 'plugin_updates',
+				'is_external'  => true,
+				'user_content' => false,
 			],
 		];
 
@@ -120,6 +139,10 @@ class FE_Search_AI_Privacy {
 			$active['qdrant'] = $registry['qdrant'];
 		}
 
+		if ( apply_filters( 'fe_search_ai_enable_github_updates', true ) && isset( $registry['github'] ) ) {
+			$active['github'] = $registry['github'];
+		}
+
 		/**
 		 * Filters recipients active for the current configuration.
 		 *
@@ -165,7 +188,13 @@ class FE_Search_AI_Privacy {
 	 * @return array Privacy configuration.
 	 */
 	public static function get_frontend_config( array $settings = [], array $pro_settings = [] ) {
-		$recipients = self::get_active_recipients( $settings, $pro_settings );
+		// Visitors are only told about services that receive their input.
+		$recipients = array_filter(
+			self::get_active_recipients( $settings, $pro_settings ),
+			static function ( $recipient ) {
+				return ! empty( $recipient['user_content'] );
+			}
+		);
 		$legal      = self::get_legal_documents( $settings );
 		$config     = [
 			'enable_consent'      => false,

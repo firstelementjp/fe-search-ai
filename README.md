@@ -12,6 +12,7 @@ AI-powered, conversational search for WordPress. This repository contains the pl
 
 ## ✨ Recent Highlights
 
+- Zero Data Retention posture: no server-side storage of conversation content by default, configurable retention for every record class, verified uninstall cleanup — see docs/privacy.md
 - Hardened frontend chat rendering with DOMPurify sanitization and safer link handling
 - Strengthened chat session IDs with cryptographic random generation
 - Sanitized chat history and reduced sensitive data in logs for stronger privacy

@@ -23,6 +23,7 @@ class PrivacyTest extends TestCase {
 		remove_all_filters( 'fe_search_ai_privacy_provider_registry' );
 		remove_all_filters( 'fe_search_ai_active_privacy_recipients' );
 		remove_all_filters( 'fe_search_ai_privacy_config' );
+		remove_all_filters( 'fe_search_ai_enable_github_updates' );
 		parent::tearDown();
 	}
 
@@ -49,6 +50,42 @@ class PrivacyTest extends TestCase {
 		$this->assertArrayHasKey( 'cohere', $recipients );
 		$this->assertArrayHasKey( 'yahoo_ma', $recipients );
 		$this->assertArrayHasKey( 'qdrant', $recipients );
+		$this->assertArrayHasKey( 'github', $recipients, 'GitHub should be an active recipient by default' );
+	}
+
+	/**
+	 * Test that every registry entry declares whether it receives user content.
+	 *
+	 * @return void
+	 */
+	public function test_registry_entries_have_user_content_flag() {
+		$registry = \FESearchAI\Core\FE_Search_AI_Privacy::get_provider_registry();
+
+		foreach ( $registry as $key => $entry ) {
+			$this->assertArrayHasKey( 'user_content', $entry, "Registry entry {$key} should declare user_content" );
+			$this->assertIsBool( $entry['user_content'], "Registry entry {$key} user_content should be a boolean" );
+		}
+
+		$this->assertFalse( $registry['github']['user_content'], 'GitHub should not receive user content' );
+		$this->assertTrue( $registry['qdrant']['user_content'], 'Qdrant receives the query vector derived from the question' );
+	}
+
+	/**
+	 * Test that GitHub is excluded from active recipients when updates are disabled.
+	 *
+	 * @return void
+	 */
+	public function test_github_recipient_follows_update_filter() {
+		$settings = [ 'provider' => [ 'chat' => 'openai', 'embedding' => 'openai' ] ];
+
+		$recipients = \FESearchAI\Core\FE_Search_AI_Privacy::get_active_recipients( $settings );
+		$this->assertArrayHasKey( 'github', $recipients, 'GitHub should be listed when updates are enabled' );
+
+		add_filter( 'fe_search_ai_enable_github_updates', '__return_false' );
+		$recipients = \FESearchAI\Core\FE_Search_AI_Privacy::get_active_recipients( $settings );
+		remove_filter( 'fe_search_ai_enable_github_updates', '__return_false' );
+
+		$this->assertArrayNotHasKey( 'github', $recipients, 'GitHub should not be listed when updates are disabled' );
 	}
 
 	/**
