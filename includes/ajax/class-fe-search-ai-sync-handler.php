@@ -832,18 +832,15 @@ class FE_Search_AI_Sync_Handler {
 
 		$status_code = (int) wp_remote_retrieve_response_code( $response );
 		if ( $status_code < 200 || $status_code >= 300 ) {
-			$body_text    = wp_remote_retrieve_body( $response );
-			$body_summary = mb_substr( $body_text, 0, 1000 );
-			if ( mb_strlen( $body_text ) > 1000 ) {
-				$body_summary .= '...(truncated)';
-			}
+			$body_text = wp_remote_retrieve_body( $response );
 			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'ERROR',
 				'Qdrant upsert returned non-2xx status.',
 				[
-					'post_id'       => $post->ID,
-					'http_status'   => $status_code,
-					'response_body' => $body_summary,
+					'post_id'              => $post->ID,
+					'http_status'          => $status_code,
+					'response_body_length' => mb_strlen( $body_text ),
+					'error_summary'        => mb_substr( $body_text, 0, 300 ),
 				]
 			);
 		}
@@ -1253,8 +1250,9 @@ class FE_Search_AI_Sync_Handler {
 				'ERROR',
 				'Qdrant search returned non-2xx status.',
 				[
-					'http_status'   => $status_code,
-					'response_body' => $body_text,
+					'http_status'          => $status_code,
+					'response_body_length' => mb_strlen( $body_text ),
+					'error_summary'        => mb_substr( $body_text, 0, 300 ),
 				]
 			);
 			return new WP_Error( 'qdrant_error', 'Qdrant returned non-2xx status.' );

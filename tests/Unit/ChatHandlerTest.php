@@ -78,7 +78,42 @@ class ChatHandlerTest extends TestCase {
 		$filtered = $handler->filter_personal_data( $text );
 
 		$this->assertStringNotContainsString( 'test@example.com', $filtered, 'Email should be filtered' );
-		$this->assertStringContainsString( '[REDACTED]', $filtered, 'Redacted placeholder should be present' );
+	}
+
+	/**
+	 * Test sanitize_chat_history masks PII and drops invalid entries
+	 *
+	 * @since 1.2.0
+	 * @return void
+	 */
+	public function test_sanitize_chat_history_masks_pii_and_drops_invalid_roles() {
+		$sync_handler = $this->createMock( 'FESearchAI\Ajax\FE_Search_AI_Sync_Handler' );
+		$handler      = new \FESearchAI\Ajax\FE_Search_AI_Chat_Handler( $sync_handler );
+
+		$history = [
+			[
+				'role'    => 'user',
+				'content' => 'Email me at foo@example.com or call 090-1234-5678',
+			],
+			[
+				'role'    => 'assistant',
+				'content' => 'Sure, I can help with that.',
+			],
+			[
+				'role'    => 'system',
+				'content' => 'You are a helpful assistant.',
+			],
+			'not-an-array-entry',
+		];
+
+		$sanitized = $handler->sanitize_chat_history( $history );
+
+		$this->assertCount( 2, $sanitized, 'Only valid user/assistant messages should remain' );
+		$this->assertEquals( 'user', $sanitized[0]['role'] );
+		$this->assertEquals( 'assistant', $sanitized[1]['role'] );
+		$this->assertStringNotContainsString( 'foo@example.com', $sanitized[0]['content'], 'Email should be masked' );
+		$this->assertStringNotContainsString( '090-1234-5678', $sanitized[0]['content'], 'Phone number should be masked' );
+		$this->assertStringContainsString( '[REDACTED]', $sanitized[0]['content'], 'Masked PII should be replaced with a redaction marker' );
 	}
 
 	/**

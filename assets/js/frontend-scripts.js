@@ -1206,7 +1206,9 @@ function initFEAIChat() {
 					consent_token: getConsentToken(),
 					question: analyticsEnabled ? question : '',
 					question_length: questionLength,
-					answer,
+					answer: analyticsEnabled ? answer : '',
+					answer_length:
+						typeof answer === 'string' ? answer.replace(/<[^>]*>/g, '').length : 0,
 					context_found: contextFound ? '1' : '0',
 				});
 

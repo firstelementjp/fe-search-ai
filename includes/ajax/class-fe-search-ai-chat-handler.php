@@ -155,8 +155,9 @@ class FE_Search_AI_Chat_Handler {
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 			// REMOTE_ADDR is server-provided, used for rate limiting only.
-			$ip_address       = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
-			$ip_transient_key = 'fe_search_ai_rl_ip_' . md5( $ip_address );
+			$ip_address = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+			// The IP address is stored only as a keyed hash for one hour and never in plain form.
+			$ip_transient_key = 'fe_search_ai_rl_ip_' . hash_hmac( 'sha256', $ip_address, wp_salt( 'auth' ) );
 			$ip_request_count = get_transient( $ip_transient_key );
 
 			if ( $ip_request_count > $ip_limit_count ) {
@@ -435,10 +436,17 @@ class FE_Search_AI_Chat_Handler {
 	/**
 	 * Sanitizes conversation history before it is sent to an AI provider.
 	 *
+	 * Applies PII masking via filter_personal_data() and the
+	 * `fe_search_ai_preprocess_user_question` / `fe_search_ai_preprocess_model_response`
+	 * filters. This is the required entry point for any integration (REST, MCP,
+	 * Pro) that forwards conversation history to an AI provider.
+	 *
+	 * @since 0.9.0
+	 * @since 1.2.0 Visibility changed from private to public.
 	 * @param mixed $history Raw conversation history.
 	 * @return array Sanitized conversation messages.
 	 */
-	private function sanitize_chat_history( $history ) {
+	public function sanitize_chat_history( $history ) {
 		if ( ! is_array( $history ) ) {
 			return [];
 		}
@@ -2090,6 +2098,7 @@ Your task is to answer the user's question using only the provided search result
 		$answer        = apply_filters( 'fe_search_ai_preprocess_model_response', $this->filter_personal_data( $answer_raw ) );
 		$context_found = isset( $_POST['context_found'] ) ? (bool) $_POST['context_found'] : false;
 		$question_len  = isset( $_POST['question_length'] ) ? intval( $_POST['question_length'] ) : 0;
+		$answer_len    = isset( $_POST['answer_length'] ) ? intval( $_POST['answer_length'] ) : 0;
 		$log_id        = 0;
 		$analytics     = 'analytics' === $log_mode;
 
@@ -2106,9 +2115,9 @@ Your task is to answer the user's question using only the provided search result
 
 		// For privacy protection, do not store the full question text by default.
 		// Only create a log entry when both a session ID and an answer are available.
-		if ( ! empty( $session_id ) && ! empty( $answer ) ) {
+		if ( ! empty( $session_id ) && ( ! empty( $answer ) || $answer_len > 0 ) ) {
 			$question_text = $enable_question_logging ? $question : sprintf( 'User question is not logged. (length: %d chars)', max( 0, $question_len ) );
-			$answer_length = strlen( wp_strip_all_tags( $answer ) );
+			$answer_length = max( $answer_len, strlen( wp_strip_all_tags( $answer ) ) );
 			$answer_text   = $enable_answer_logging ? $answer : sprintf( 'AI answer is not logged. (length: %d chars)', max( 0, $answer_length ) );
 
 			$consent_record_id = (int) apply_filters( 'fe_search_ai_conversation_log_consent_record_id', 0, $consent_token, $session_id );

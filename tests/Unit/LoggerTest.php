@@ -228,6 +228,41 @@ class LoggerTest extends TestCase {
 	}
 
 	/**
+	 * Test that the extended forbidden keys are stripped from log data
+	 *
+	 * @since 1.2.0
+	 * @return void
+	 */
+	public function test_log_strips_extended_forbidden_keys() {
+		\FESearchAI\Core\FE_Search_AI_Logger::log(
+			'INFO',
+			'Test extended forbidden keys',
+			[
+				'raw'           => 'x',
+				'messages'      => [ 'a' ],
+				'response_body' => 'y',
+				'nested'        => [
+					'text' => 'z',
+					'safe' => 1,
+				],
+			]
+		);
+
+		global $wpdb;
+		$table_name = $wpdb->prefix . 'fe_search_ai_system_logs';
+		$log        = $wpdb->get_row( "SELECT * FROM {$table_name} LIMIT 1" );
+
+		$this->assertNotNull( $log, 'Log entry should exist' );
+		$data = json_decode( $log->extra_data, true );
+
+		$this->assertArrayNotHasKey( 'raw', $data, 'Forbidden key "raw" should be filtered' );
+		$this->assertArrayNotHasKey( 'messages', $data, 'Forbidden key "messages" should be filtered' );
+		$this->assertArrayNotHasKey( 'response_body', $data, 'Forbidden key "response_body" should be filtered' );
+		$this->assertArrayNotHasKey( 'text', $data['nested'], 'Nested forbidden key "text" should be filtered' );
+		$this->assertArrayHasKey( 'safe', $data['nested'], 'Nested safe key should remain' );
+	}
+
+	/**
 	 * Test clear_logs functionality
 	 *
 	 * @since 1.0.0
