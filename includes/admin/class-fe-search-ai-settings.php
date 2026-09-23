@@ -77,6 +77,7 @@ class FE_Search_AI_Settings {
 
 		add_action( 'admin_init', [ $this, 'settings_init' ] );
 		add_action( 'wp_ajax_fe_search_ai_delete_system_logs', [ $this, 'ajax_delete_system_logs' ] );
+		add_action( 'wp_ajax_fe_search_ai_delete_retrieval_traces', [ $this, 'ajax_delete_retrieval_traces' ] );
 	}
 
 	/**
@@ -470,11 +471,13 @@ class FE_Search_AI_Settings {
 		add_settings_field( 'fe_search_ai_display_advanced', __( 'Assets Loading', 'fe-search-ai' ), [ $this, 'display_advanced_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
 		add_settings_field( 'fe_search_ai_debug_mode_enabled', __( 'Debug Mode', 'fe-search-ai' ), [ $this, 'debug_mode_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
 		add_settings_field( 'fe_search_ai_log_retention_days', __( 'Log Retention (days)', 'fe-search-ai' ), [ $this, 'log_retention_days_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
+		add_settings_field( 'fe_search_ai_retrieval_trace', __( 'Retrieval Trace Persistence', 'fe-search-ai' ), [ $this, 'retrieval_trace_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
 
 		// Data delete
 		add_settings_section( 'fe_search_ai_data_section', __( 'Data Management', 'fe-search-ai' ), null, $page_slug );
 		add_settings_field( 'fe_search_ai_delete_vectors_ui', __( 'Delete Synced Data', 'fe-search-ai' ), [ $this, 'delete_vectors_ui_field_html' ], $page_slug, 'fe_search_ai_data_section' );
 		add_settings_field( 'fe_search_ai_delete_system_logs_ui', __( 'Delete System Logs', 'fe-search-ai' ), [ $this, 'delete_system_logs_ui_field_html' ], $page_slug, 'fe_search_ai_data_section' );
+		add_settings_field( 'fe_search_ai_delete_retrieval_traces_ui', __( 'Delete Retrieval Traces', 'fe-search-ai' ), [ $this, 'delete_retrieval_traces_ui_field_html' ], $page_slug, 'fe_search_ai_data_section' );
 		add_settings_field( 'fe_search_ai_delete_on_uninstall', __( 'Delete Data on Uninstall', 'fe-search-ai' ), [ $this, 'delete_on_uninstall_field_html' ], $page_slug, 'fe_search_ai_data_section' );
 	}
 
@@ -1538,6 +1541,46 @@ class FE_Search_AI_Settings {
 	}
 
 	/**
+	 * Renders the UI for deleting all retrieval traces.
+	 *
+	 * Placed under the "Delete System Logs" control in the Data Management
+	 * section so that all destructive maintenance actions are grouped together.
+	 *
+	 * @since 1.2.0
+	 * @return void
+	 */
+	public function delete_retrieval_traces_ui_field_html() {
+		?>
+		<p class="description">
+			<?php esc_html_e( 'This will delete all retrieval trace records stored in the `{prefix}fe_search_ai_retrieval_traces` and `{prefix}fe_search_ai_retrieval_trace_items` tables.', 'fe-search-ai' ); ?>
+		</p>
+		<button type="button" id="fe_search_ai_delete_retrieval_traces_button" class="button button-secondary">
+			<?php esc_html_e( 'Delete all retrieval traces', 'fe-search-ai' ); ?>
+		</button>
+		<span class="spinner"></span>
+		<p id="fe_search_ai_delete_traces_status"></p>
+		<?php
+	}
+
+	/**
+	 * Handles the AJAX request to delete all retrieval traces.
+	 *
+	 * @since 1.2.0
+	 * @return void
+	 */
+	public function ajax_delete_retrieval_traces() {
+		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'You do not have sufficient permissions to perform this action.', 'fe-search-ai' ) );
+		}
+
+		\FESearchAI\Core\FE_Search_AI_Retrieval_Trace_Recorder::clear();
+
+		wp_send_json_success( __( 'All retrieval traces have been deleted.', 'fe-search-ai' ) );
+	}
+
+	/**
 	 * Renders the settings for the floating chat widget display rules.
 	 *
 	 * Controls login status visibility, device targeting, and per-template
@@ -1719,8 +1762,8 @@ class FE_Search_AI_Settings {
 	/**
 	 * Renders the numeric input for log retention days.
 	 *
-	 * Controls how many days system logs and conversation logs are kept before
-	 * being automatically deleted by the daily log rotation cron.
+	 * Controls how many days system diagnostic logs are kept before being
+	 * automatically deleted by the daily log rotation cron.
 	 *
 	 * @since 0.9.0
 	 * @return void
@@ -1728,9 +1771,7 @@ class FE_Search_AI_Settings {
 	public function log_retention_days_field_html() {
 		$advanced_options = $this->options['advanced'] ?? [];
 		$days             = isset( $advanced_options['log_retention_days'] ) ? (int) $advanced_options['log_retention_days'] : 30;
-		if ( $days < 0 ) {
-			$days = 30;
-		}
+		$days             = min( 365, max( 1, $days ) );
 		?>
 		<input
 			type="number"
@@ -1738,15 +1779,59 @@ class FE_Search_AI_Settings {
 			value="<?php echo esc_attr( $days ); ?>"
 			class="small-text"
 			min="1"
+			max="365"
 		/>
+		<?php esc_html_e( 'days', 'fe-search-ai' ); ?>
 		<p class="description">
 			<?php
 			esc_html_e(
-				'Number of days to keep system logs and conversation logs. Older entries will be deleted automatically by the daily log rotation. Leave blank or set to -1 to disable automatic deletion.',
+				'Number of days to keep system diagnostic logs. Older entries are deleted automatically by the daily rotation. Conversation log retention is configured separately in the Pro Privacy settings.',
 				'fe-search-ai'
 			);
 			?>
 		</p>
+		<?php
+	}
+
+	/**
+	 * Renders the retrieval trace persistence controls.
+	 *
+	 * Provides a checkbox to enable trace persistence and a numeric input for
+	 * how many days traces are kept before the daily rotation deletes them.
+	 *
+	 * @since 1.2.0
+	 * @return void
+	 */
+	public function retrieval_trace_field_html() {
+		$advanced_options = $this->options['advanced'] ?? [];
+		$is_enabled       = ! empty( $advanced_options['retrieval_trace_persistence'] );
+		$days             = isset( $advanced_options['retrieval_trace_retention_days'] ) ? (int) $advanced_options['retrieval_trace_retention_days'] : 30;
+		$days             = min( 365, max( 1, $days ) );
+		?>
+		<fieldset>
+			<label>
+				<input type="checkbox" name="fe_search_ai_settings[advanced][retrieval_trace_persistence]" value="1" <?php checked( $is_enabled ); ?>>
+				<?php esc_html_e( 'Store retrieval trace records in the database', 'fe-search-ai' ); ?>
+			</label>
+			<p>
+				<label for="fe_search_ai_retrieval_trace_retention_days">
+					<?php esc_html_e( 'Retention:', 'fe-search-ai' ); ?>
+				</label>
+				<input
+					type="number"
+					id="fe_search_ai_retrieval_trace_retention_days"
+					name="fe_search_ai_settings[advanced][retrieval_trace_retention_days]"
+					value="<?php echo esc_attr( $days ); ?>"
+					class="small-text"
+					min="1"
+					max="365"
+				/>
+				<?php esc_html_e( 'days', 'fe-search-ai' ); ?>
+			</p>
+			<p class="description">
+				<?php esc_html_e( 'Traces store hashed queries, post IDs, and ranking scores for search quality analysis — never question or answer text. Disabled by default.', 'fe-search-ai' ); ?>
+			</p>
+		</fieldset>
 		<?php
 	}
 
@@ -2673,8 +2758,11 @@ class FE_Search_AI_Settings {
 		$new_input['tokenizer']['ja']['yahoo_id'] = FE_Search_AI_Encryption_Helper::encrypt( sanitize_text_field( $tokenizer_input['yahoo_id'] ?? '' ) );
 
 		// Data Tab
-		$new_input['advanced']['delete_on_uninstall'] = ! empty( $input['advanced']['delete_on_uninstall'] );
-		$new_input['advanced']['debug_mode']          = ! empty( $input['advanced']['debug_mode'] );
+		$new_input['advanced']['delete_on_uninstall']            = ! empty( $input['advanced']['delete_on_uninstall'] );
+		$new_input['advanced']['debug_mode']                     = ! empty( $input['advanced']['debug_mode'] );
+		$new_input['advanced']['log_retention_days']             = min( 365, max( 1, absint( $input['advanced']['log_retention_days'] ?? 30 ) ) );
+		$new_input['advanced']['retrieval_trace_persistence']    = ! empty( $input['advanced']['retrieval_trace_persistence'] );
+		$new_input['advanced']['retrieval_trace_retention_days'] = min( 365, max( 1, absint( $input['advanced']['retrieval_trace_retention_days'] ?? 30 ) ) );
 
 		// License data is managed by a dedicated option (fe_search_ai_license).
 		// DB version is handled by the activator, not here.

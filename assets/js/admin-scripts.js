@@ -28,6 +28,10 @@ document.addEventListener('DOMContentLoaded', () => {
 	const deleteStatus = document.querySelector('#fe_search_ai_delete_status');
 	const deleteLogsButton = document.querySelector('#fe_search_ai_delete_system_logs_button');
 	const deleteLogsStatus = document.querySelector('#fe_search_ai_delete_logs_status');
+	const deleteTracesButton = document.querySelector(
+		'#fe_search_ai_delete_retrieval_traces_button'
+	);
+	const deleteTracesStatus = document.querySelector('#fe_search_ai_delete_traces_status');
 	const deleteConversationLogsButton = document.querySelector(
 		'#fe_search_ai_delete_conversation_logs_button'
 	);
@@ -526,6 +530,45 @@ document.addEventListener('DOMContentLoaded', () => {
 			);
 		} finally {
 			deleteLogsButton.disabled = false;
+			spinner.style.visibility = 'hidden';
+		}
+	});
+
+	// Delete Retrieval Traces Button
+	deleteTracesButton?.addEventListener('click', async () => {
+		if (
+			// eslint-disable-next-line no-alert
+			!confirm(
+				__(
+					'Are you sure you want to delete all retrieval traces? This action cannot be undone.',
+					'fe-search-ai'
+				)
+			)
+		) {
+			return;
+		}
+		deleteTracesButton.disabled = true;
+		const spinner = deleteTracesButton.parentElement.querySelector('.spinner');
+		spinner.style.visibility = 'visible';
+		deleteTracesStatus.textContent = '';
+		try {
+			const response = await wpPost('fe_search_ai_delete_retrieval_traces', {
+				nonce: fe_search_ai_sync_obj.nonce,
+			});
+			if (response.success) {
+				deleteTracesStatus.style.color = 'green';
+				deleteTracesStatus.textContent = response.data;
+			} else {
+				throw new Error(response.data.message || 'Deletion failed.');
+			}
+		} catch (error) {
+			deleteTracesStatus.style.color = 'red';
+			deleteTracesStatus.textContent = __(
+				'A communication error has occurred.',
+				'fe-search-ai'
+			);
+		} finally {
+			deleteTracesButton.disabled = false;
 			spinner.style.visibility = 'hidden';
 		}
 	});

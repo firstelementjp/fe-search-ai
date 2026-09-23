@@ -103,7 +103,27 @@ add_action(
 	'fe_search_ai_daily_log_rotation_event',
 	static function () {
 		\FESearchAI\Core\FE_Search_AI_Logger::rotate_logs();
+		\FESearchAI\Core\FE_Search_AI_Retrieval_Trace_Recorder::rotate();
 	}
+);
+
+/**
+ * Feeds the `advanced.log_retention_days` setting into the system log rotation.
+ *
+ * Registered at priority 5 so that site code hooked at the default priority 10
+ * can still override the configured value.
+ *
+ * @since 1.2.0
+ * @param int $days Default retention period in days.
+ * @return int Retention period in days.
+ */
+add_filter(
+	'fe_search_ai_log_retention_days',
+	static function ( $days ) {
+		$options = get_option( 'fe_search_ai_settings', [] );
+		return isset( $options['advanced']['log_retention_days'] ) ? max( 1, (int) $options['advanced']['log_retention_days'] ) : $days;
+	},
+	5
 );
 
 /**
