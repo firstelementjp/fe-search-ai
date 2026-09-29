@@ -318,6 +318,13 @@ function setupUIEventListeners(elements, ensureConsentUI) {
 		optionsToggle.addEventListener('click', () => {
 			optionsMenu.classList.toggle('hidden');
 		});
+
+		const optionsMenuClose = document.getElementById('fe_search_ai_options_menu_close');
+		if (optionsMenuClose) {
+			optionsMenuClose.addEventListener('click', () => {
+				optionsMenu.classList.add('hidden');
+			});
+		}
 	}
 }
 
@@ -547,10 +554,9 @@ function initFEAIChat() {
 		if (getConsentState()?.purposes?.conversation_analytics) {
 			const status = document.createElement('p');
 			status.className = 'fe-search-ai-logging-status fe-search-ai-analytics-status';
-			status.textContent = __(
-				'Masked conversation analytics is active for this browser.',
-				'fe-search-ai'
-			);
+			status.textContent =
+				fe_search_ai_ajax_obj.analytics_status_message ||
+				'Conversation content from this browser is currently being recorded for conversation analytics (personal information is masked).';
 			notice.appendChild(status);
 		}
 	}
