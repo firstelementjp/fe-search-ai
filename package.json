@@ -35,6 +35,6 @@
 		"prettier": "^3.9.9"
 	},
 	"dependencies": {
-		"dompurify": "3.4.15"
+		"dompurify": "3.4.16"
 	}
 }
