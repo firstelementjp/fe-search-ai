@@ -661,6 +661,7 @@ function initFEAIChat() {
 		if (!response.success || !response.data?.token) return false;
 		setConsentState(response.data);
 		updatePrivacyStatus();
+		document.getElementById('fe_search_ai_consent_menu_item')?.removeAttribute('hidden');
 		return true;
 	}
 
@@ -696,6 +697,7 @@ function initFEAIChat() {
 			analyticsLabel.className = 'fe-search-ai-consent-check fe-search-ai-consent-optional';
 			analyticsCheckbox = document.createElement('input');
 			analyticsCheckbox.type = 'checkbox';
+			analyticsCheckbox.className = 'fe-search-ai-consent-checkbox';
 			const analyticsText = document.createElement('span');
 			analyticsText.textContent = privacyConfig.analytics_label;
 			analyticsLabel.append(analyticsCheckbox, analyticsText);
@@ -710,7 +712,7 @@ function initFEAIChat() {
 		chatWindowElement.appendChild(consentWrapper);
 
 		termsCheckbox.addEventListener('change', () => {
-			acceptBtn.style.background = termsCheckbox.checked ? '#3b82f6' : '#ccc';
+			acceptBtn.classList.toggle('is-active', termsCheckbox.checked);
 		});
 		acceptBtn.addEventListener('click', async () => {
 			if (!termsCheckbox.checked) {
@@ -754,8 +756,9 @@ function initFEAIChat() {
 	}
 
 	const clearHistoryButton = document.getElementById('fe_search_ai_clear_history');
+	const consentMenuItem = document.getElementById('fe_search_ai_consent_menu_item');
 	const withdrawConsentButton = document.getElementById('fe_search_ai_withdraw_consent');
-	if (withdrawConsentButton && !getConsentState()) withdrawConsentButton.hidden = true;
+	if (consentMenuItem && !getConsentState()) consentMenuItem.hidden = true;
 	clearHistoryButton?.addEventListener('click', () => {
 		sessionStorage.removeItem(FE_SEARCH_AI_CONFIG.STORAGE.CHAT_HISTORY);
 		sessionStorage.removeItem(FE_SEARCH_AI_CONFIG.STORAGE.SESSION_LOGS);

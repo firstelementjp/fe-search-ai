@@ -377,10 +377,14 @@ class FE_Search_AI_Chat_UI {
 										<?php esc_html_e( 'Local chat history', 'fe-search-ai' ); ?>
 									</p>
 									<button type="button" id="fe_search_ai_clear_history" class="button-link"><?php esc_html_e( 'Clear', 'fe-search-ai' ); ?></button>
-									<p class="fe-search-ai-menu-heading">
-										<?php esc_html_e( 'Privacy consent', 'fe-search-ai' ); ?>
-									</p>
-									<button type="button" id="fe_search_ai_withdraw_consent" class="button-link"><?php esc_html_e( 'Withdraw', 'fe-search-ai' ); ?></button>
+									<?php if ( ! empty( $privacy_config['enable_consent'] ) ) : ?>
+										<div id="fe_search_ai_consent_menu_item">
+											<p class="fe-search-ai-menu-heading">
+												<?php esc_html_e( 'Privacy consent', 'fe-search-ai' ); ?>
+											</p>
+											<button type="button" id="fe_search_ai_withdraw_consent" class="button-link"><?php esc_html_e( 'Withdraw', 'fe-search-ai' ); ?></button>
+										</div>
+									<?php endif; ?>
 								</div>
 								<div class="fe-search-ai-privacy-section">
 									<p class="fe-search-ai-menu-heading"><?php esc_html_e( 'Privacy and Data Handling', 'fe-search-ai' ); ?></p>

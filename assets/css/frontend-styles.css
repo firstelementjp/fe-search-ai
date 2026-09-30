@@ -583,7 +583,8 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	background: rgba(255, 255, 255, 0.92);
+	background: color-mix(in srgb, var(--feais-bg) 92%, transparent);
+	color: var(--feais-text);
 	z-index: 20;
 	padding: 20px;
 	box-sizing: border-box;
@@ -593,7 +594,7 @@
 .fe-search-ai-consent-message {
 	margin-bottom: 15px;
 	font-size: 14px;
-	color: #333;
+	color: var(--feais-text);
 }
 
 .fe-search-ai-consent-message p {
@@ -606,27 +607,37 @@
 	gap: 8px;
 	margin-bottom: 15px;
 	font-size: 13px;
-	padding: 0.2em;
-	border: 1px solid silver;
+	padding: 0.5em;
+	border-radius: 5px;
+	background: var(--feais-input-bg);
+	color: var(--feais-text);
+	width: 100%;
 }
 
 .fe-search-ai-consent-checkbox {
 	margin: 0 1em !important;
 }
 
-.fe-search-ai-consent-optional {
+/* .fe-search-ai-consent-optional {
 	border-style: dashed;
-}
+} */
 
 .fe-search-ai-consent-accept {
 	display: inline-block;
 	padding: 8px 16px;
 	border-radius: 18px;
 	border: none;
-	color: #fff;
+	color: var(--feais-text);
 	cursor: pointer;
-	background: #ccc;
+	background: var(--feais-input-bg);
 	transition: background 0.2s ease;
+}
+
+.fe-search-ai-consent-accept.is-active {
+	background: var(--feais-accent-bg);
+	background-size: var(--feais-accent-bg-size);
+	color: var(--feais-on-accent);
+	animation: var(--feais-button-animation);
 }
 
 .fe-search-ai-consent-accept:hover {
