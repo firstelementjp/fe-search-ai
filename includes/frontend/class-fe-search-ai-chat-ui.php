@@ -267,6 +267,11 @@ class FE_Search_AI_Chat_UI {
 			$submit_button_text = $defaults['submit_button_text'];
 		}
 
+		$footer_notice = trim( $text_options['footer_notice'] ?? '' );
+		if ( '' === $footer_notice ) {
+			$footer_notice = $defaults['footer_notice'];
+		}
+
 		// Build the $args array for passing to the filter.
 		$args = [
 			'mode'                => $mode,
@@ -274,6 +279,7 @@ class FE_Search_AI_Chat_UI {
 			'greeting_message'    => $greeting_message,
 			'placeholder_text'    => $placeholder_text,
 			'submit_button_text'  => $submit_button_text,
+			'footer_notice'       => $footer_notice,
 			'send_on_shift_enter' => (bool) $send_on_shift_enter,
 			'terms_url'           => $terms_page_id ? get_permalink( $terms_page_id ) : '',
 			'privacy_url'         => $privacy_page_id ? get_permalink( $privacy_page_id ) : get_privacy_policy_url(),
@@ -322,11 +328,21 @@ class FE_Search_AI_Chat_UI {
 					</div>
 				</div>
 				<div id="fe_search_ai_chat_footer">
+					<div
+						id="fe_search_ai_input_resizer"
+						role="separator"
+						tabindex="0"
+						aria-orientation="horizontal"
+						aria-label="<?php esc_attr_e( 'Resize input area', 'fe-search-ai' ); ?>"
+					></div>
 					<form id="fe_search_ai_chat_form">
-						<textarea id="fe_search_ai_chat_input" placeholder="<?php echo esc_attr( $args['placeholder_text'] ); ?>" autocomplete="off"></textarea>
+						<textarea id="fe_search_ai_chat_input" rows="1" placeholder="<?php echo esc_attr( $args['placeholder_text'] ); ?>" autocomplete="off"></textarea>
 						<button type="submit"><?php echo esc_html( $args['submit_button_text'] ); ?></button>
 					</form>
 					<div id="fe_search_ai_chat_options">
+						<?php if ( '' !== $args['footer_notice'] ) : ?>
+							<p id="fe_search_ai_footer_notice"><?php echo esc_html( $args['footer_notice'] ); ?></p>
+						<?php endif; ?>
 						<div id="fe_search_ai_chat_footer_actions">
 							<button id="fe_search_ai_options_toggle" title="<?php esc_attr_e( 'Settings', 'fe-search-ai' ); ?>">
 								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
@@ -343,11 +359,9 @@ class FE_Search_AI_Chat_UI {
 									</button>
 								</div>
 								<div class="fe-search-ai-options-menu-controls">
-									<p class="fe-search-ai-menu-heading">
-										<label for="fe_search_ai_send_mode_toggle">
-											<?php esc_html_e( 'Send Key Settings:', 'fe-search-ai' ); ?>
-										</label>
-									</p>
+									<label for="fe_search_ai_send_mode_toggle">
+										<?php esc_html_e( 'Send Key Settings', 'fe-search-ai' ); ?>
+									</label>
 									<select id="fe_search_ai_send_mode_toggle">
 										<option value="enter">
 											<?php esc_html_e( 'Enter', 'fe-search-ai' ); ?>

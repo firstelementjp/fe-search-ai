@@ -64,29 +64,47 @@ class FE_Search_AI_Assets {
 		}
 
 		// UI settings values
-		$ui_options                 = $this->options['display']['ui'] ?? [];
-		$enable_css                 = $ui_options['enable_css'] ?? true;
-		$enable_js                  = $ui_options['enable_js'] ?? true;
-		$animation_speed            = $ui_options['animation_speed'] ?? 3;
-		$send_mode                  = $ui_options['send_mode'] ?? 'enter';
-		$key_color                  = $ui_options['key_color'] ?? '#cee8ff';
-		$background_color           = $ui_options['background_color'] ?? '#f5f5f5';
-		$text_color                 = $ui_options['text_color'] ?? '#3a424f';
-		$use_gradient               = isset( $ui_options['use_gradient'] ) ? (bool) $ui_options['use_gradient'] : false;
-		$key_color_sanitized        = sanitize_hex_color( $key_color );
-		$key_color                  = ! empty( $key_color_sanitized ) ? $key_color_sanitized : '#0073aa';
-		$background_color_sanitized = sanitize_hex_color( $background_color );
-		$background_color           = ! empty( $background_color_sanitized ) ? $background_color_sanitized : '#f5f5f5';
-		$text_color_sanitized       = sanitize_hex_color( $text_color );
-		$text_color                 = ! empty( $text_color_sanitized ) ? $text_color_sanitized : '#111111';
-		$colors                     = $this->compute_chat_colors( $key_color, $background_color, $text_color, $use_gradient );
-		$border_color               = $colors['border'];
-		$input_bg_hex               = $colors['input_bg'];
-		$user_bubble_hex            = $colors['user_bubble'];
-		$bg_top_hex                 = $colors['bg_top'];
-		$bg_bottom_hex              = $colors['bg_bottom'];
-		$accent_top_hex             = $colors['accent_top'];
-		$accent_bottom_hex          = $colors['accent_bottom'];
+		$ui_options                  = $this->options['display']['ui'] ?? [];
+		$enable_css                  = $ui_options['enable_css'] ?? true;
+		$enable_js                   = $ui_options['enable_js'] ?? true;
+		$animation_speed             = $ui_options['animation_speed'] ?? 3;
+		$send_mode                   = $ui_options['send_mode'] ?? 'enter';
+		$key_color                   = $ui_options['key_color'] ?? '#cee8ff';
+		$background_color            = $ui_options['background_color'] ?? '#FFFFFF';
+		$text_color                  = $ui_options['text_color'] ?? '#333333';
+		$use_gradient                = isset( $ui_options['use_gradient'] ) ? (bool) $ui_options['use_gradient'] : false;
+		$bubble_gradient             = isset( $ui_options['bubble_gradient'] ) ? (bool) $ui_options['bubble_gradient'] : true;
+		$bubble_animation            = isset( $ui_options['bubble_animation'] ) ? (bool) $ui_options['bubble_animation'] : true;
+		$bubble_grad_start           = $ui_options['bubble_gradient_start'] ?? '#00AFFE';
+		$bubble_grad_end             = $ui_options['bubble_gradient_end'] ?? '#973CFF';
+		$bubble_grad_angle           = isset( $ui_options['bubble_gradient_angle'] ) ? (int) $ui_options['bubble_gradient_angle'] : 135;
+		$bubble_grad_start_sanitized = sanitize_hex_color( $bubble_grad_start );
+		$bubble_grad_start           = ! empty( $bubble_grad_start_sanitized ) ? $bubble_grad_start_sanitized : '#00AFFE';
+		$bubble_grad_end_sanitized   = sanitize_hex_color( $bubble_grad_end );
+		$bubble_grad_end             = ! empty( $bubble_grad_end_sanitized ) ? $bubble_grad_end_sanitized : '#973CFF';
+		$bubble_grad_angle           = min( 360, max( 0, $bubble_grad_angle ) );
+		$key_color_sanitized         = sanitize_hex_color( $key_color );
+		$key_color                   = ! empty( $key_color_sanitized ) ? $key_color_sanitized : '#0073aa';
+		$background_color_sanitized  = sanitize_hex_color( $background_color );
+		$background_color            = ! empty( $background_color_sanitized ) ? $background_color_sanitized : '#FFFFFF';
+		$text_color_sanitized        = sanitize_hex_color( $text_color );
+		$text_color                  = ! empty( $text_color_sanitized ) ? $text_color_sanitized : '#333333';
+		$colors                      = $this->compute_chat_colors( $key_color, $background_color, $text_color, $use_gradient );
+		$border_color                = $colors['border'];
+		$input_bg_hex                = $colors['input_bg'];
+		$user_bubble_hex             = $colors['user_bubble'];
+		$bg_top_hex                  = $colors['bg_top'];
+		$bg_bottom_hex               = $colors['bg_bottom'];
+		$accent_top_hex              = $colors['accent_top'];
+		$accent_bottom_hex           = $colors['accent_bottom'];
+		$bubble_styles               = $this->compute_bubble_accent_styles(
+			$key_color,
+			$bubble_gradient,
+			$bubble_grad_start,
+			$bubble_grad_end,
+			$bubble_grad_angle,
+			$bubble_animation
+		);
 
 		$privacy_config = FE_Search_AI_Privacy::get_frontend_config( $this->options, is_array( $pro_options ) ? $pro_options : [] );
 
@@ -149,6 +167,11 @@ class FE_Search_AI_Assets {
 				'--feais-accent-bottom:%8$s;' .
 				'--feais-input-bg:%9$s;' .
 				'--feais-user-bubble-bg:%10$s;' .
+				'--feais-accent-bg:%11$s;' .
+				'--feais-accent-bg-size:%12$s;' .
+				'--feais-bubble-animation:%13$s;' .
+				'--feais-button-animation:%14$s;' .
+				'--feais-on-accent:%15$s;' .
 				'--fe-search-ai-key-color:var(--feais-accent);' .
 				'}',
 				$key_color,
@@ -160,7 +183,12 @@ class FE_Search_AI_Assets {
 				$accent_top_hex,
 				$accent_bottom_hex,
 				$input_bg_hex,
-				$user_bubble_hex
+				$user_bubble_hex,
+				$bubble_styles['accent_bg'],
+				$bubble_styles['accent_bg_size'],
+				$bubble_styles['bubble_animation'],
+				$bubble_styles['button_animation'],
+				$bubble_styles['on_accent']
 			);
 
 			/**
@@ -172,8 +200,8 @@ class FE_Search_AI_Assets {
 			 * @since 0.9.0
 			 *
 			 * @param string $color_css The generated inline CSS string.
-			 * @param array  $colors    Array of normalized hex colors with keys
-			 *                          "accent", "background", and "text".
+			 * @param array  $colors    Array of normalized hex colors and derived
+			 *                          accent style values.
 			 */
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 			// Hook name is properly prefixed with fe_search_ai_.
@@ -191,6 +219,8 @@ class FE_Search_AI_Assets {
 					'accent_bottom'  => $accent_bottom_hex,
 					'input_bg'       => $input_bg_hex,
 					'user_bubble_bg' => $user_bubble_hex,
+					'accent_bg'      => $bubble_styles['accent_bg'],
+					'on_accent'      => $bubble_styles['on_accent'],
 				]
 			);
 
@@ -304,12 +334,18 @@ class FE_Search_AI_Assets {
 		list( $bg_r, $bg_g, $bg_b )             = $bg_rgb;
 		list( $accent_r, $accent_g, $accent_b ) = $accent_rgb;
 
-		// Calculate the input field background color by making the background color about 10% lighter.
-		$input_bg_r             = (int) round( $bg_r + ( 255 - $bg_r ) * 0.1 );
-		$input_bg_g             = (int) round( $bg_g + ( 255 - $bg_g ) * 0.1 );
-		$input_bg_b             = (int) round( $bg_b + ( 255 - $bg_b ) * 0.1 );
-		$input_bg_hex_sanitized = sanitize_hex_color( sprintf( '#%02x%02x%02x', $input_bg_r, $input_bg_g, $input_bg_b ) );
-		$input_bg_hex           = ! empty( $input_bg_hex_sanitized ) ? $input_bg_hex_sanitized : $background_color;
+		// Calculate the input field background color by shifting the background
+		// lightness away from the mid-point: lighter on dark backgrounds and
+		// darker on light backgrounds. This keeps the input distinguishable
+		// from the chat window for any user-specified background color.
+		$input_bg_lightness_shift                     = 0.1;
+		list( $input_bg_h, $input_bg_s, $input_bg_l ) = $this->rgb_to_hsl( $bg_r, $bg_g, $bg_b );
+		$input_bg_l                                   = ( $input_bg_l > 0.5 )
+			? max( 0.0, $input_bg_l - $input_bg_lightness_shift )
+			: min( 1.0, $input_bg_l + $input_bg_lightness_shift );
+		list( $input_bg_r, $input_bg_g, $input_bg_b ) = $this->hsl_to_rgb( $input_bg_h, $input_bg_s, $input_bg_l );
+		$input_bg_hex_sanitized                       = sanitize_hex_color( sprintf( '#%02x%02x%02x', $input_bg_r, $input_bg_g, $input_bg_b ) );
+		$input_bg_hex                                 = ! empty( $input_bg_hex_sanitized ) ? $input_bg_hex_sanitized : $background_color;
 
 		// Calculate the user chat bubble color by mixing a small amount (5%) of the accent color into the input color.
 		$user_bubble_mix           = 0.05;
@@ -374,6 +410,80 @@ class FE_Search_AI_Assets {
 			'accent_top'    => $accent_top_hex,
 			'accent_bottom' => $accent_bottom_hex,
 		];
+	}
+
+	/**
+	 * Computes the CSS values used to paint the accent surfaces (floating
+	 * chat bubble and send button).
+	 *
+	 * Returns either a solid color or a linear-gradient value for the
+	 * background, plus the matching background size, animation shorthand, and
+	 * a readable foreground color for text/icons rendered on the accent.
+	 *
+	 * @param string $key_color  Sanitized HEX key color.
+	 * @param bool   $gradient   Whether to render the accent as a gradient.
+	 * @param string $grad_start Sanitized HEX gradient start color.
+	 * @param string $grad_end   Sanitized HEX gradient end color.
+	 * @param int    $angle      Gradient angle in degrees (0-360).
+	 * @param bool   $animation  Whether the accent should animate.
+	 * @return array{
+	 *     accent_bg: string,
+	 *     accent_bg_size: string,
+	 *     bubble_animation: string,
+	 *     button_animation: string,
+	 *     on_accent: string
+	 * }
+	 */
+	private function compute_bubble_accent_styles( string $key_color, bool $gradient, string $grad_start, string $grad_end, int $angle, bool $animation ): array {
+		$bg_size = '100% 100%';
+
+		if ( $gradient ) {
+			if ( $animation ) {
+				// Loop the gradient back to the start color so the background
+				// position animation sweeps smoothly.
+				$accent_bg = sprintf( 'linear-gradient(%1$ddeg, %2$s 0%%, %3$s 50%%, %2$s 100%%)', $angle, $grad_start, $grad_end );
+				$bg_size   = '400% 400%';
+			} else {
+				$accent_bg = sprintf( 'linear-gradient(%1$ddeg, %2$s, %3$s)', $angle, $grad_start, $grad_end );
+			}
+			$lum_base = ( $this->color_luminance( $grad_start ) + $this->color_luminance( $grad_end ) ) / 2;
+		} else {
+			$accent_bg = $key_color;
+			$lum_base  = $this->color_luminance( $key_color );
+		}
+
+		// Pick a readable foreground color for text/icons drawn on the accent.
+		$on_accent = ( $lum_base < 0.55 ) ? '#ffffff' : '#1a1a1a';
+
+		$bubble_animation_value = 'none';
+		$button_animation_value = 'none';
+		if ( $animation ) {
+			$bubble_animation_value = 'shimmer 6s ease-in-out infinite alternate, pulse 4s ease-in-out infinite, opacity 3s linear infinite alternate';
+			$button_animation_value = 'shimmer 6s ease-in-out infinite alternate';
+		}
+
+		return [
+			'accent_bg'        => $accent_bg,
+			'accent_bg_size'   => $bg_size,
+			'bubble_animation' => $bubble_animation_value,
+			'button_animation' => $button_animation_value,
+			'on_accent'        => $on_accent,
+		];
+	}
+
+	/**
+	 * Computes the simple weighted luminance (0-1) of a HEX color.
+	 *
+	 * @param string $hex Sanitized HEX color (#rrggbb).
+	 * @return float Luminance between 0.0 and 1.0 (0.5 for invalid colors).
+	 */
+	private function color_luminance( string $hex ): float {
+		$rgb = $this->hex_to_rgb( $hex );
+		if ( ! $rgb ) {
+			return 0.5;
+		}
+
+		return ( 0.2126 * $rgb[0] + 0.7152 * $rgb[1] + 0.0722 * $rgb[2] ) / 255;
 	}
 
 	/**

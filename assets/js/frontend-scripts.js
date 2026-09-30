@@ -56,6 +56,7 @@ const FE_SEARCH_AI_CONFIG = {
 		SEND_MODE: 'fe_search_ai_send_mode',
 		USER_CONSENT: 'fe_search_ai_user_consented',
 		SESSION_LOGS: 'fe_search_ai_session_logs',
+		INPUT_HEIGHT: 'fe_search_ai_input_height',
 	},
 
 	// UI update intervals
@@ -217,6 +218,7 @@ function getChatDOMElements() {
 	const optionsToggle = document.getElementById('fe_search_ai_options_toggle');
 	const optionsMenu = document.getElementById('fe_search_ai_options_menu');
 	const shiftEnterToggle = document.getElementById('fe_search_ai_send_mode_toggle');
+	const inputResizer = document.getElementById('fe_search_ai_input_resizer');
 
 	return {
 		bubble,
@@ -230,6 +232,7 @@ function getChatDOMElements() {
 		optionsToggle,
 		optionsMenu,
 		shiftEnterToggle,
+		inputResizer,
 	};
 }
 
@@ -384,6 +387,86 @@ function setupKeyboardEventListener(input, form, getSendMode) {
 }
 
 /**
+ * Sets up the drag handle that resizes the chat input area.
+ *
+ * Visitors can change the input height by dragging the handle above the
+ * input form, or by using the arrow keys for accessibility. The chosen
+ * height is persisted in localStorage.
+ *
+ * @param {HTMLElement} resizer           - The drag handle element.
+ * @param {HTMLElement} input             - Chat input textarea element.
+ * @param {HTMLElement} chatWindowElement - Chat window element.
+ */
+function setupInputResizer(resizer, input, chatWindowElement) {
+	const MIN_HEIGHT = 32;
+	const KEY_STEP = 8;
+
+	const getMaxHeight = () =>
+		Math.max(MIN_HEIGHT, Math.round(chatWindowElement.getBoundingClientRect().height * 0.5));
+
+	const applyHeight = height => {
+		const clamped = Math.min(Math.max(height, MIN_HEIGHT), getMaxHeight());
+		input.style.height = `${clamped}px`;
+		resizer.setAttribute('aria-valuenow', String(clamped));
+		return clamped;
+	};
+
+	const saveHeight = () => {
+		safeExecute(
+			() =>
+				localStorage.setItem(FE_SEARCH_AI_CONFIG.STORAGE.INPUT_HEIGHT, input.style.height),
+			'setupInputResizer.save_height'
+		);
+	};
+
+	// Restore a previously saved height.
+	const savedHeight = parseInt(
+		safeExecute(
+			() => localStorage.getItem(FE_SEARCH_AI_CONFIG.STORAGE.INPUT_HEIGHT),
+			'setupInputResizer.restore_height',
+			null
+		),
+		10
+	);
+	if (Number.isFinite(savedHeight)) {
+		applyHeight(savedHeight);
+	}
+
+	resizer.addEventListener('pointerdown', event => {
+		event.preventDefault();
+		resizer.setPointerCapture(event.pointerId);
+		const startY = event.clientY;
+		const startHeight = input.getBoundingClientRect().height;
+
+		const onMove = moveEvent => {
+			// Dragging upward increases the input height.
+			applyHeight(startHeight + (startY - moveEvent.clientY));
+		};
+		const onEnd = () => {
+			resizer.removeEventListener('pointermove', onMove);
+			resizer.removeEventListener('pointerup', onEnd);
+			resizer.removeEventListener('pointercancel', onEnd);
+			saveHeight();
+		};
+
+		resizer.addEventListener('pointermove', onMove);
+		resizer.addEventListener('pointerup', onEnd);
+		resizer.addEventListener('pointercancel', onEnd);
+	});
+
+	// Keyboard support for accessibility.
+	resizer.addEventListener('keydown', event => {
+		if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') {
+			return;
+		}
+		event.preventDefault();
+		const delta = event.key === 'ArrowUp' ? KEY_STEP : -KEY_STEP;
+		applyHeight(input.getBoundingClientRect().height + delta);
+		saveHeight();
+	});
+}
+
+/**
  * Sets up send mode event listener.
  *
  * @param {HTMLElement} shiftEnterToggle - Send mode toggle element.
@@ -449,6 +532,7 @@ function initFEAIChat() {
 		messagesContainer,
 		container,
 		shiftEnterToggle,
+		inputResizer,
 	} = domElements;
 
 	// Prevent duplicate initialization
@@ -663,6 +747,11 @@ function initFEAIChat() {
 
 	// Setup keyboard event listener with dynamic send mode
 	setupKeyboardEventListener(input, form, () => currentSendMode);
+
+	// Setup input resize handle (drag or arrow keys to adjust input height).
+	if (inputResizer) {
+		setupInputResizer(inputResizer, input, chatWindowElement);
+	}
 
 	const clearHistoryButton = document.getElementById('fe_search_ai_clear_history');
 	const withdrawConsentButton = document.getElementById('fe_search_ai_withdraw_consent');

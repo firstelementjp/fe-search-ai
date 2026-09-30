@@ -147,6 +147,7 @@ class FE_Search_AI_Admin {
 				</a>
 			</div>
 		</div>
+		<h2></h2>
 		<?php
 	}
 

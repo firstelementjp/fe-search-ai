@@ -166,6 +166,17 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	}
 
+	// Show/hide the bubble gradient options based on the gradient checkbox.
+	const bubbleGradientToggle = document.getElementById('fe_search_ai_bubble_gradient');
+	const bubbleGradientOptions = document.getElementById('fe_search_ai_bubble_gradient_options');
+	if (bubbleGradientToggle && bubbleGradientOptions) {
+		const syncBubbleGradientOptions = () => {
+			bubbleGradientOptions.style.display = bubbleGradientToggle.checked ? '' : 'none';
+		};
+		syncBubbleGradientOptions();
+		bubbleGradientToggle.addEventListener('change', syncBubbleGradientOptions);
+	}
+
 	// ==========================================================================
 	// Manual Synchronization
 	// ==========================================================================

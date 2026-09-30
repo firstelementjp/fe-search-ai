@@ -136,6 +136,12 @@ msgstr "詳細設定"
 msgid "Advanced Sync Settings"
 msgstr "高度な同期設定"
 
+#: includes/core/class-fe-search-ai-defaults.php:38
+msgid ""
+"AI may display inaccurate information. You can review the send key, "
+"privacy, and other settings from the icon on the right."
+msgstr "AIは不正確な情報を表示することもあります。送信キーやプライバシーなどの設定は右のアイコンからご確認ください。"
+
 #: includes/admin/class-fe-search-ai-privacy-policy.php:66
 msgid "AI Search and Chat"
 msgstr "AI検索とチャット"
@@ -764,6 +770,10 @@ msgstr "FirstElement K.K., Daijiro Miyazawa"
 msgid "Floating Mode Settings"
 msgstr "フローティングモードの設定"
 
+#: includes/admin/class-fe-search-ai-settings.php:427
+msgid "Footer Notice"
+msgstr "フッターの注意書き"
+
 #: includes/admin/class-fe-search-ai-license-settings.php:143
 msgid ""
 "For each provider, choose models that fit your needs, from the latest GPT, "
@@ -1350,6 +1360,10 @@ msgid ""
 "the LLM by selecting the most relevant chunks."
 msgstr "リランキングは、最も関連性の高いチャンクを選択することで、回答品質を向上させ、LLMに送信されるコンテキスト量を削減します。"
 
+#: includes/frontend/class-fe-search-ai-chat-ui.php:336
+msgid "Resize input area"
+msgstr "入力エリアのサイズを変更"
+
 #: includes/admin/class-fe-search-ai-settings.php:1818
 msgid "Retention:"
 msgstr "保持期間："
@@ -1588,6 +1602,12 @@ msgstr "テスト"
 #: includes/admin/class-fe-search-ai-settings.php:425
 msgid "Text & Colors"
 msgstr "文字と色"
+
+#: includes/admin/class-fe-search-ai-settings.php:3104
+msgid ""
+"Text shown at the bottom of the chat window, next to the settings icon. "
+"Leave blank to use the default text."
+msgstr "チャットウィンドウ下部の設定アイコンの横に表示されるテキストです。空欄の場合はデフォルトの文面が使用されます。"
 
 #: includes/ajax/class-fe-search-ai-sync-handler.php:1097
 msgid "The Anthropic API key is not configured."

@@ -424,6 +424,7 @@ class FE_Search_AI_Settings {
 		add_settings_section( 'fe_search_ai_display_appearance_section', __( 'Chat UI Appearance', 'fe-search-ai' ), null, $page_slug );
 		add_settings_field( 'fe_search_ai_display_chat_text', __( 'Text & Colors', 'fe-search-ai' ), [ $this, 'display_text_color_field_html' ], $page_slug, 'fe_search_ai_display_appearance_section' );
 		add_settings_field( 'fe_search_ai_display_interaction', __( 'Interaction', 'fe-search-ai' ), [ $this, 'display_interaction_field_html' ], $page_slug, 'fe_search_ai_display_appearance_section' );
+		add_settings_field( 'fe_search_ai_display_footer_notice', __( 'Footer Notice', 'fe-search-ai' ), [ $this, 'display_footer_notice_field_html' ], $page_slug, 'fe_search_ai_display_appearance_section' );
 
 		// Floating Mode Section
 		add_settings_section( 'fe_search_ai_display_floating_section', __( 'Floating Mode Settings', 'fe-search-ai' ), null, $page_slug );
@@ -1981,7 +1982,7 @@ class FE_Search_AI_Settings {
 		$defaults += [
 			'key_color'        => '#E9E9E9',
 			'background_color' => '#FFFFFF',
-			'text_color'       => '#111111',
+			'text_color'       => '#333333',
 		];
 
 		$window_title       = $display_options['window_title'] ?? $defaults['window_title'];
@@ -1989,10 +1990,14 @@ class FE_Search_AI_Settings {
 		$placeholder_text   = $display_options['placeholder_text'] ?? $defaults['placeholder_text'];
 		$submit_button_text = $display_options['submit_button_text'] ?? $defaults['submit_button_text'];
 
-		$key_color        = $ui_options['key_color'] ?? $defaults['key_color'];
-		$background_color = $ui_options['background_color'] ?? $defaults['background_color'];
-		$text_color       = $ui_options['text_color'] ?? $defaults['text_color'];
-		$use_gradient     = $ui_options['use_gradient'] ?? false;
+		$key_color             = $ui_options['key_color'] ?? $defaults['key_color'];
+		$background_color      = $ui_options['background_color'] ?? $defaults['background_color'];
+		$text_color            = $ui_options['text_color'] ?? $defaults['text_color'];
+		$bubble_gradient       = $ui_options['bubble_gradient'] ?? true;
+		$bubble_gradient_start = $ui_options['bubble_gradient_start'] ?? '#00AFFE';
+		$bubble_gradient_end   = $ui_options['bubble_gradient_end'] ?? '#973CFF';
+		$bubble_gradient_angle = $ui_options['bubble_gradient_angle'] ?? 135;
+		$bubble_animation      = $ui_options['bubble_animation'] ?? true;
 		?>
 		<p>
 			<label for="fe_search_ai_window_title"><?php esc_html_e( 'Chat window title', 'fe-search-ai' ); ?></label>
@@ -2055,8 +2060,90 @@ class FE_Search_AI_Settings {
 				</div>
 				<div class="color-picker-box-right">
 					<label for="fe_search_ai_key_color"><?php esc_html_e( 'Bubble Color', 'fe-search-ai' ); ?></label>
-					<span class="description"><?php esc_html_e( 'Select the basic color for user speech balloons.', 'fe-search-ai' ); ?></span>
+					<span class="description"><?php esc_html_e( 'Base color applied to the floating chat bubble and the send button.', 'fe-search-ai' ); ?></span>
 				</div>
+			</div>
+
+			<div class="color-picker-text">
+				<label>
+					<input
+						type="checkbox"
+						id="fe_search_ai_bubble_gradient"
+						name="fe_search_ai_settings[display][ui][bubble_gradient]"
+						value="1"
+						<?php checked( (bool) $bubble_gradient ); ?>
+					>
+					<?php esc_html_e( 'Use a gradient for the bubble color', 'fe-search-ai' ); ?>
+				</label>
+				<span class="description"><?php esc_html_e( 'When enabled, the bubble color is rendered as a gradient between the start and end colors below.', 'fe-search-ai' ); ?></span>
+			</div>
+
+			<div id="fe_search_ai_bubble_gradient_options"<?php echo $bubble_gradient ? '' : ' style="display:none;"'; ?>>
+				<div class="color-picker-box">
+					<div class="color-picker-box-left">
+						<input
+							type="hidden"
+							id="fe_search_ai_bubble_gradient_start"
+							name="fe_search_ai_settings[display][ui][bubble_gradient_start]"
+							value="<?php echo esc_attr( $bubble_gradient_start ); ?>"
+						>
+						<div
+							class="fe-search-ai-color-picker"
+							data-target-input="fe_search_ai_bubble_gradient_start"
+							data-default-color="<?php echo esc_attr( $bubble_gradient_start ); ?>"
+						></div>
+					</div>
+					<div class="color-picker-box-right">
+						<label for="fe_search_ai_bubble_gradient_start"><?php esc_html_e( 'Gradient start color', 'fe-search-ai' ); ?></label>
+					</div>
+				</div>
+
+				<div class="color-picker-box">
+					<div class="color-picker-box-left">
+						<input
+							type="hidden"
+							id="fe_search_ai_bubble_gradient_end"
+							name="fe_search_ai_settings[display][ui][bubble_gradient_end]"
+							value="<?php echo esc_attr( $bubble_gradient_end ); ?>"
+						>
+						<div
+							class="fe-search-ai-color-picker"
+							data-target-input="fe_search_ai_bubble_gradient_end"
+							data-default-color="<?php echo esc_attr( $bubble_gradient_end ); ?>"
+						></div>
+					</div>
+					<div class="color-picker-box-right">
+						<label for="fe_search_ai_bubble_gradient_end"><?php esc_html_e( 'Gradient end color', 'fe-search-ai' ); ?></label>
+					</div>
+				</div>
+
+				<div class="color-picker-text">
+					<label for="fe_search_ai_bubble_gradient_angle"><?php esc_html_e( 'Gradient angle (degrees)', 'fe-search-ai' ); ?></label>
+					<input
+						type="number"
+						id="fe_search_ai_bubble_gradient_angle"
+						name="fe_search_ai_settings[display][ui][bubble_gradient_angle]"
+						value="<?php echo esc_attr( (string) (int) $bubble_gradient_angle ); ?>"
+						min="0"
+						max="360"
+						step="1"
+						class="small-text"
+					>
+				</div>
+			</div>
+
+			<div class="color-picker-text">
+				<label>
+					<input
+						type="checkbox"
+						id="fe_search_ai_bubble_animation"
+						name="fe_search_ai_settings[display][ui][bubble_animation]"
+						value="1"
+						<?php checked( (bool) $bubble_animation ); ?>
+					>
+					<?php esc_html_e( 'Animate the bubble', 'fe-search-ai' ); ?>
+				</label>
+				<span class="description"><?php esc_html_e( 'Slowly animates the bubble gradient to add subtle motion. The animation style is fixed.', 'fe-search-ai' ); ?></span>
 			</div>
 
 			<hr>
@@ -2102,28 +2189,6 @@ class FE_Search_AI_Settings {
 					<span class="description"><?php esc_html_e( 'Default text color used for chat content and labels.', 'fe-search-ai' ); ?></span>
 				</div>
 			</div>
-
-			<hr>
-
-			<?php
-			// Gradient feature temporarily disabled.
-			// TODO: Re-enable if gradient effects are improved.
-
-			/*
-			<div class="color-picker-text">
-				<label>
-					<input
-						type="checkbox"
-						name="fe_search_ai_settings[display][ui][use_gradient]"
-						value="1"
-						<?php checked( (bool) $use_gradient ); ?>
-					>
-					<?php esc_html_e( 'Display chat background and bubble color with gradients', 'fe-search-ai' ); ?>
-				</label>
-				<span class="description"><?php esc_html_e( 'When unchecked, the chat UI will use flat colors without gradients.', 'fe-search-ai' ); ?></span>
-			</div>
-			*/
-			?>
 
 		</div>
 
@@ -2948,17 +3013,22 @@ class FE_Search_AI_Settings {
 		$new_input                     = [];
 		$new_input['key_color']        = sanitize_hex_color( $input['key_color'] ?? '#E9E9E9' );
 		$new_input['background_color'] = sanitize_hex_color( $input['background_color'] ?? '#FFFFFF' );
-		$new_input['text_color']       = sanitize_hex_color( $input['text_color'] ?? '#111111' );
+		$new_input['text_color']       = sanitize_hex_color( $input['text_color'] ?? '#333333' );
 		$new_input['animation_speed']  = absint( $input['animation_speed'] ?? 3 );
 		// Validate send_mode string (enter / shift_enter / cmd_enter).
 		$send_mode = $input['send_mode'] ?? 'enter';
 		if ( ! in_array( $send_mode, [ 'enter', 'shift_enter', 'cmd_enter' ], true ) ) {
 			$send_mode = 'enter';
 		}
-		$new_input['send_mode']    = $send_mode;
-		$new_input['enable_css']   = ! empty( $input['enable_css'] );
-		$new_input['enable_js']    = ! empty( $input['enable_js'] );
-		$new_input['use_gradient'] = ! empty( $input['use_gradient'] );
+		$new_input['send_mode']             = $send_mode;
+		$new_input['enable_css']            = ! empty( $input['enable_css'] );
+		$new_input['enable_js']             = ! empty( $input['enable_js'] );
+		$new_input['use_gradient']          = ! empty( $input['use_gradient'] );
+		$new_input['bubble_gradient']       = ! empty( $input['bubble_gradient'] );
+		$new_input['bubble_gradient_start'] = sanitize_hex_color( $input['bubble_gradient_start'] ?? '#00AFFE' );
+		$new_input['bubble_gradient_end']   = sanitize_hex_color( $input['bubble_gradient_end'] ?? '#973CFF' );
+		$new_input['bubble_gradient_angle'] = min( 360, max( 0, absint( $input['bubble_gradient_angle'] ?? 135 ) ) );
+		$new_input['bubble_animation']      = ! empty( $input['bubble_animation'] );
 
 		return $new_input;
 	}
@@ -2975,6 +3045,7 @@ class FE_Search_AI_Settings {
 		$new_input['greeting_message']   = sanitize_textarea_field( $input['greeting_message'] ?? '' );
 		$new_input['placeholder_text']   = sanitize_text_field( $input['placeholder_text'] ?? '' );
 		$new_input['submit_button_text'] = sanitize_text_field( $input['submit_button_text'] ?? '' );
+		$new_input['footer_notice']      = sanitize_textarea_field( $input['footer_notice'] ?? '' );
 		return $new_input;
 	}
 
@@ -3074,6 +3145,33 @@ class FE_Search_AI_Settings {
 				</option>
 			</select>
 		</div>
+		<?php
+	}
+
+	/**
+	 * Renders the HTML for the chat footer notice setting.
+	 *
+	 * This method outputs a textarea for customizing the notice displayed at
+	 * the bottom of the chat window, to the left of the settings (gear) icon.
+	 *
+	 * @since 1.3.0
+	 * @return void
+	 */
+	public function display_footer_notice_field_html() {
+		$display_options = $this->options['display']['text'] ?? [];
+		$defaults        = \FESearchAI\Core\FE_Search_AI_Defaults::get_display_text_defaults();
+		$footer_notice   = $display_options['footer_notice'] ?? '';
+		?>
+		<textarea
+			id="fe_search_ai_footer_notice_input"
+			name="fe_search_ai_settings[display][text][footer_notice]"
+			rows="3"
+			class="large-text"
+			placeholder="<?php echo esc_attr( $defaults['footer_notice'] ); ?>"
+		><?php echo esc_textarea( $footer_notice ); ?></textarea>
+		<p class="description">
+			<?php esc_html_e( 'Text shown at the bottom of the chat window, next to the settings icon. Leave blank to use the default text.', 'fe-search-ai' ); ?>
+		</p>
 		<?php
 	}
 
