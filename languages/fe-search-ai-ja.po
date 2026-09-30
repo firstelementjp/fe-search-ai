@@ -1454,7 +1454,7 @@ msgid ""
 "Retention on the providers' side is governed by your contract with them (for "
 "example, zero-data-retention arrangements)."
 msgstr ""
-"各サービスプロバイダーのプライバシーポリシーとデータ保持条件を確認してください。プロバイダー側での保持は、各プロバイダーとの契約（例：ゼロデータリテンションの取り決め）に従います。"
+"各サービスプロバイダーのプライバシーポリシーとデータ保持条件を確認してください。プロバイダー側での保持は、各プロバイダーとの契約（例：ゼロデータ保持（Zero Data Retention, ZDR）の取り決め）に従います。"
 
 #: includes/admin/class-fe-search-ai-settings.php:311
 msgid "Save Settings"
