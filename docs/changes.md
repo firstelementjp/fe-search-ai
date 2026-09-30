@@ -1,19 +1,6 @@
 # Changelog
 
-## Unreleased
-
-### Privacy
-
-- Fixed versioned consent always failing for logged-in users whose admin locale differs from the site locale by excluding translated presentation fields (`terms_label`, `analytics_label`, recipient `label`) from the consent version hash
-- Changing the consent version hashing scheme invalidates previously issued consent tokens; visitors are asked to consent once again
-
-### Chat UI
-
-- Added Bubble Color gradient support with configurable start/end colors and angle, plus an optional fixed animation, applied to the floating chat bubble and send button
-- Wired the Bubble Color setting to the floating chat bubble and send button, replacing the hard-coded blue-purple gradient
-- Derived the chat input background from the background lightness (HSL shift) so the input field stays distinguishable on bright or custom colors
-
-## 1.2.0 (2026-09-23)
+## 1.2.0 (2026-09-30)
 
 ### Zero Data Retention
 
@@ -32,6 +19,17 @@
 - Added a dedicated Privacy settings tab and current data-handling summary
 - Added persistent frontend disclosure of active AI services and browser session storage
 - Added versioned consent integration, withdrawal, local history deletion, and purpose-specific log modes
+- Fixed versioned consent always failing for logged-in users whose admin locale differs from the site locale by excluding translated presentation fields (`terms_label`, `analytics_label`, recipient `label`) from the consent version hash
+- Changing the consent version hashing scheme invalidates previously issued consent tokens; visitors are asked to consent once again
+
+### Chat UI
+
+- Reworked the options menu into a full-size scrollable overlay with grouped controls, a header, and a close button
+- Added Bubble Color gradient support with configurable start/end colors and angle, plus an optional fixed animation, applied to the floating chat bubble and send button
+- Wired the Bubble Color setting to the floating chat bubble and send button, replacing the hard-coded blue-purple gradient
+- Derived the chat input background from the background lightness (HSL shift) so the input field stays distinguishable on bright or custom colors
+- Added a footer notice under the chat input and a draggable input-area resizer
+- Showed the consent menu item only when consent is enabled
 
 ## 1.1.2 (2026-08-23)
 
