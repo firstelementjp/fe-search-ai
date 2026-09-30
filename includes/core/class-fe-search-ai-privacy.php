@@ -232,6 +232,20 @@ class FE_Search_AI_Privacy {
 	 */
 	public static function generate_consent_version( array $config ) {
 		unset( $config['version'] );
+
+		// Exclude presentational, translated strings from the hash. The
+		// version must be identical in every request context (frontend uses
+		// the site locale, admin-ajax uses the logged-in user's locale),
+		// and re-translating a label is not a change to the disclosed terms.
+		unset( $config['terms_label'], $config['analytics_label'] );
+		if ( isset( $config['recipients'] ) && is_array( $config['recipients'] ) ) {
+			foreach ( $config['recipients'] as $key => $recipient ) {
+				if ( is_array( $recipient ) ) {
+					unset( $config['recipients'][ $key ]['label'] );
+				}
+			}
+		}
+
 		$config = self::sort_recursive( $config );
 		return hash( 'sha256', (string) wp_json_encode( $config ) );
 	}
