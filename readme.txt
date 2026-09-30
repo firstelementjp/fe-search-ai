@@ -161,6 +161,10 @@ Yes, the plugin includes numerous customization options and filter hooks for dev
 * Added suggested Privacy Policy content via the WordPress Privacy Policy guide
 * Added a server-side retention summary to the Privacy tab and marked which external services receive visitor input
 * Documented the Zero Data Retention posture, data processing map, and complete external endpoint list
+* Reworked the chat options menu into a scrollable overlay with grouped controls and clearer privacy notices
+* Made Bubble Color configurable with optional gradient and animation, applied to the floating bubble and send button
+* Improved chat window readability: adaptive input background, footer notice, and a draggable input-area resizer
+* Fixed versioned consent failing when the administrator's locale differs from the site locale
 
 = 1.1.2 =
 * Hardened frontend chat rendering with DOMPurify sanitization for AI-generated Markdown HTML
