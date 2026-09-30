@@ -95,6 +95,14 @@ class FE_Search_AI_Logger {
 			'retrieved_chunks',
 			'prompt',
 			'system_prompt',
+			'raw',
+			'response_body',
+			'response',
+			'messages',
+			'history',
+			'content',
+			'text',
+			'body',
 		];
 		// Hook name is properly prefixed with fe_search_ai_.
 		$forbidden_keys = apply_filters( 'fe_search_ai_system_log_forbidden_keys', $forbidden_keys, $level, $message, $data );

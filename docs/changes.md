@@ -1,5 +1,38 @@
 # Changelog
 
+## Unreleased
+
+### Privacy
+
+- Fixed versioned consent always failing for logged-in users whose admin locale differs from the site locale by excluding translated presentation fields (`terms_label`, `analytics_label`, recipient `label`) from the consent version hash
+- Changing the consent version hashing scheme invalidates previously issued consent tokens; visitors are asked to consent once again
+
+### Chat UI
+
+- Added Bubble Color gradient support with configurable start/end colors and angle, plus an optional fixed animation, applied to the floating chat bubble and send button
+- Wired the Bubble Color setting to the floating chat bubble and send button, replacing the hard-coded blue-purple gradient
+- Derived the chat input background from the background lightness (HSL shift) so the input field stays distinguishable on bright or custom colors
+
+## 1.2.0 (2026-09-23)
+
+### Zero Data Retention
+
+- Fixed Delete Data on Uninstall never firing and expanded it to cover all plugin tables, options, and transients
+- Made the Log Retention (days) setting actually saved and applied to system log rotation
+- Added retrieval trace persistence toggle, configurable retention, and a delete action
+- Added a shared conversation history sanitizer used by the REST and MCP endpoints
+- Extended system log forbidden keys so prompt/response-shaped payloads are never persisted
+- Switched rate-limit IP keys to HMAC-SHA256 hashing with the site salt
+- Diagnostic conversation logging no longer transmits answer text, only lengths
+- Added suggested WordPress Privacy Policy content describing the plugin's data flow
+- Documented the data processing map and external endpoints
+
+### Privacy
+
+- Added a dedicated Privacy settings tab and current data-handling summary
+- Added persistent frontend disclosure of active AI services and browser session storage
+- Added versioned consent integration, withdrawal, local history deletion, and purpose-specific log modes
+
 ## 1.1.2 (2026-08-23)
 
 ### Security

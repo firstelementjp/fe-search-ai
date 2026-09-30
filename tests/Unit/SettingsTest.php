@@ -294,6 +294,52 @@ class SettingsTest extends TestCase {
 	}
 
 	/**
+	 * Test sanitize_main_settings clamps the advanced retention settings.
+	 *
+	 * @since 1.2.0
+	 * @return void
+	 */
+	public function test_sanitize_main_settings_clamps_retention_settings() {
+		$settings = new \FESearchAI\Admin\FE_Search_AI_Settings();
+
+		$result = $settings->sanitize_main_settings(
+			[
+				'provider' => [],
+				'sync'     => [],
+				'vector'   => [],
+				'display'  => [],
+				'advanced' => [
+					'log_retention_days'              => '0',
+					'retrieval_trace_retention_days'  => '9999',
+					// retrieval_trace_persistence checkbox missing -> false.
+				],
+			]
+		);
+
+		$this->assertSame( 1, $result['advanced']['log_retention_days'], 'Log retention should be clamped to a minimum of 1' );
+		$this->assertSame( 365, $result['advanced']['retrieval_trace_retention_days'], 'Trace retention should be capped at 365' );
+		$this->assertFalse( $result['advanced']['retrieval_trace_persistence'], 'Missing trace persistence checkbox should be false' );
+
+		$result_enabled = $settings->sanitize_main_settings(
+			[
+				'provider' => [],
+				'sync'     => [],
+				'vector'   => [],
+				'display'  => [],
+				'advanced' => [
+					'log_retention_days'              => '30',
+					'retrieval_trace_persistence'     => '1',
+					'retrieval_trace_retention_days'  => '7',
+				],
+			]
+		);
+
+		$this->assertSame( 30, $result_enabled['advanced']['log_retention_days'], 'Log retention should be saved' );
+		$this->assertTrue( $result_enabled['advanced']['retrieval_trace_persistence'], 'Trace persistence checkbox should be true' );
+		$this->assertSame( 7, $result_enabled['advanced']['retrieval_trace_retention_days'], 'Trace retention should be saved' );
+	}
+
+	/**
 	 * Test that key sanitization methods exist
 	 *
 	 * @since 1.0.0

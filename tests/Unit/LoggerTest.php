@@ -31,6 +31,7 @@ class LoggerTest extends TestCase {
 				],
 			]
 		);
+		\FESearchAI\Core\FE_Search_AI_Logger::clear_logs();
 	}
 
 	/**
@@ -227,6 +228,41 @@ class LoggerTest extends TestCase {
 	}
 
 	/**
+	 * Test that the extended forbidden keys are stripped from log data
+	 *
+	 * @since 1.2.0
+	 * @return void
+	 */
+	public function test_log_strips_extended_forbidden_keys() {
+		\FESearchAI\Core\FE_Search_AI_Logger::log(
+			'INFO',
+			'Test extended forbidden keys',
+			[
+				'raw'           => 'x',
+				'messages'      => [ 'a' ],
+				'response_body' => 'y',
+				'nested'        => [
+					'text' => 'z',
+					'safe' => 1,
+				],
+			]
+		);
+
+		global $wpdb;
+		$table_name = $wpdb->prefix . 'fe_search_ai_system_logs';
+		$log        = $wpdb->get_row( "SELECT * FROM {$table_name} LIMIT 1" );
+
+		$this->assertNotNull( $log, 'Log entry should exist' );
+		$data = json_decode( $log->extra_data, true );
+
+		$this->assertArrayNotHasKey( 'raw', $data, 'Forbidden key "raw" should be filtered' );
+		$this->assertArrayNotHasKey( 'messages', $data, 'Forbidden key "messages" should be filtered' );
+		$this->assertArrayNotHasKey( 'response_body', $data, 'Forbidden key "response_body" should be filtered' );
+		$this->assertArrayNotHasKey( 'text', $data['nested'], 'Nested forbidden key "text" should be filtered' );
+		$this->assertArrayHasKey( 'safe', $data['nested'], 'Nested safe key should remain' );
+	}
+
+	/**
 	 * Test clear_logs functionality
 	 *
 	 * @since 1.0.0
@@ -402,16 +438,62 @@ class LoggerTest extends TestCase {
 		);
 
 		// Set custom retention to 10 days
-		add_filter( 'fe_search_ai_log_retention_days', function() {
+		$custom_retention = function() {
 			return 10;
-		} );
+		};
+		add_filter( 'fe_search_ai_log_retention_days', $custom_retention );
 
 		\FESearchAI\Core\FE_Search_AI_Logger::rotate_logs();
 
 		$count = $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name}" );
 		$this->assertEquals( 0, $count, 'All entries should be removed with 10-day retention' );
 
-		remove_all_filters( 'fe_search_ai_log_retention_days' );
+		// Remove only this test's filter so the plugin's own filter stays registered.
+		remove_filter( 'fe_search_ai_log_retention_days', $custom_retention );
+	}
+
+	/**
+	 * Test log rotation uses the advanced.log_retention_days setting
+	 *
+	 * @since 1.2.0
+	 * @return void
+	 */
+	public function test_rotate_logs_uses_setting_value() {
+		global $wpdb;
+		$table_name = $wpdb->prefix . 'fe_search_ai_system_logs';
+
+		\FESearchAI\Core\FE_Search_AI_Logger::clear_logs();
+
+		// Configure a 3-day retention period via the settings option.
+		$settings                                       = get_option( 'fe_search_ai_settings', [] );
+		$settings['advanced']['log_retention_days']     = 3;
+		update_option( 'fe_search_ai_settings', $settings );
+
+		// Create a recent entry (2 days ago) and an old entry (5 days ago).
+		$wpdb->insert(
+			$table_name,
+			[
+				'level'      => 'INFO',
+				'message'    => 'Recent log entry',
+				'extra_data' => '{}',
+				'created_at' => gmdate( 'Y-m-d H:i:s', time() - ( 2 * DAY_IN_SECONDS ) ),
+			]
+		);
+		$wpdb->insert(
+			$table_name,
+			[
+				'level'      => 'INFO',
+				'message'    => 'Old log entry',
+				'extra_data' => '{}',
+				'created_at' => gmdate( 'Y-m-d H:i:s', time() - ( 5 * DAY_IN_SECONDS ) ),
+			]
+		);
+
+		\FESearchAI\Core\FE_Search_AI_Logger::rotate_logs();
+
+		$logs = $wpdb->get_results( "SELECT * FROM {$table_name}" );
+		$this->assertCount( 1, $logs, 'Only the entry within the configured retention should remain' );
+		$this->assertEquals( 'Recent log entry', $logs[0]->message, 'The 5-day-old entry should be deleted by the 3-day setting' );
 	}
 
 	/**

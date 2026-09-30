@@ -25,7 +25,8 @@ class FE_Search_AI_Defaults {
 	 *     window_title: string,
 	 *     greeting_message: string,
 	 *     placeholder_text: string,
-	 *     submit_button_text: string
+	 *     submit_button_text: string,
+	 *     footer_notice: string
 	 * }
 	 */
 	public static function get_display_text_defaults() {
@@ -34,6 +35,7 @@ class FE_Search_AI_Defaults {
 			'greeting_message'   => __( 'Hello! I am FE Search AI. How can I help you today?', 'fe-search-ai' ),
 			'placeholder_text'   => __( 'Ask a question about this site…', 'fe-search-ai' ),
 			'submit_button_text' => __( 'Send', 'fe-search-ai' ),
+			'footer_notice'      => __( 'AI may display inaccurate information. You can review the send key, privacy, and other settings from the icon on the right.', 'fe-search-ai' ),
 		];
 	}
 }

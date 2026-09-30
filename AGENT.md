@@ -7,7 +7,7 @@
 **FE Search AI** is a WordPress plugin that provides AI-powered semantic search.
 Uses vector embeddings and AI reranking for intelligent content discovery.
 
-- **Version**: 1.1.2
+- **Version**: 1.2.0
 - **License**: GPL-2.0+
 - **PHP**: >= 7.4
 - **Repository**: https://github.com/firstelementjp/fe-search-ai
@@ -21,6 +21,7 @@ includes/
     class-fe-search-ai-admin.php                   # Admin bootstrap
     class-fe-search-ai-settings.php                 # Plugin settings UI
     class-fe-search-ai-license-settings.php         # License management UI
+    class-fe-search-ai-privacy-policy.php           # WordPress Privacy Policy guide content
   ajax/
     class-fe-search-ai-chat-handler.php             # Chat AJAX request handling
     class-fe-search-ai-sync-handler.php             # Sync AJAX request handling
@@ -33,6 +34,7 @@ includes/
     class-fe-search-ai-license-handler.php          # License validation
     class-fe-search-ai-license.php                  # License model
     class-fe-search-ai-logger.php                   # Logging utilities
+    class-fe-search-ai-privacy.php                  # Privacy registry, notices, and consent versioning
     class-fe-search-ai-retrieval-trace.php          # Retrieval trace data model
     class-fe-search-ai-retrieval-trace-recorder.php # Retrieval trace recording
     class-fe-search-ai-sync-hooks.php               # Sync hooks and handlers
@@ -236,6 +238,13 @@ Required GitHub Secrets for WordPress.org SVN deploy:
 - Caches releases in `fe_search_ai_github_latest_release` for one hour.
 - Can be disabled with the `fe_search_ai_enable_github_updates` filter (default `true`).
 - Registered during `plugins_loaded` in `fe-search-ai.php`.
+
+## Privacy / ZDR invariants
+
+- Never add a Logger payload key that can carry prompt/response text; add such keys to `$forbidden_keys` instead.
+- Any new endpoint that forwards conversation history to an AI provider must call `FE_Search_AI_Chat_Handler::sanitize_chat_history()`.
+- Any new persistent table needs: a retention period, an admin delete action, an uninstall cleanup entry, and a row in the `docs/privacy.md` data processing map.
+- Related tests: `UninstallTest`, `RetrievalTraceRecorderTest`, `PrivacyPolicyTest`.
 
 ## Retrieval Trace Diagnostics
 

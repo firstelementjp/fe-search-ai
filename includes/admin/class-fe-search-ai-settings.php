@@ -77,6 +77,7 @@ class FE_Search_AI_Settings {
 
 		add_action( 'admin_init', [ $this, 'settings_init' ] );
 		add_action( 'wp_ajax_fe_search_ai_delete_system_logs', [ $this, 'ajax_delete_system_logs' ] );
+		add_action( 'wp_ajax_fe_search_ai_delete_retrieval_traces', [ $this, 'ajax_delete_retrieval_traces' ] );
 	}
 
 	/**
@@ -113,6 +114,7 @@ class FE_Search_AI_Settings {
 				<a href="#tab_sync" class="nav-tab"><?php esc_html_e( 'Sync', 'fe-search-ai' ); ?></a>
 				<a href="#tab_prompt" class="nav-tab"><?php esc_html_e( 'Prompts', 'fe-search-ai' ); ?></a>
 				<a href="#tab_display" class="nav-tab"><?php esc_html_e( 'Display', 'fe-search-ai' ); ?></a>
+				<a href="#tab_privacy" class="nav-tab"><?php esc_html_e( 'Privacy', 'fe-search-ai' ); ?></a>
 				<?php if ( class_exists( '\\FESearchAI\\Pro\\Admin\\FE_Search_AI_Pro_Settings' ) ) : ?>
 					<a href="#tab_security" class="nav-tab"><?php esc_html_e( 'Security', 'fe-search-ai' ); ?></a>
 				<?php endif; ?>
@@ -223,6 +225,18 @@ class FE_Search_AI_Settings {
 						?>
 					</div>
 
+					<div id="tab_privacy" class="tab-content">
+						<?php do_settings_sections( 'fe_search_ai_privacy_section' ); ?>
+						<table class="form-table">
+							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_privacy_section' ); ?>
+						</table>
+						<?php
+						// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+						// Hook name is properly prefixed with fe_search_ai_.
+						do_action( 'fe_search_ai_after_privacy_settings_fields', $is_pro );
+						?>
+					</div>
+
 					<div id="tab_prompt" class="tab-content">
 						<?php do_settings_sections( 'fe_search_ai_prompt_section' ); ?>
 						<table class="form-table">
@@ -264,11 +278,15 @@ class FE_Search_AI_Settings {
 						<?php do_settings_sections( 'fe_search_ai_data_section' ); ?>
 						<table class="form-table">
 							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_data_section' ); ?>
-							<?php
-							// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
-							// Hook name is properly prefixed with fe_search_ai_.
-							do_action( 'fe_search_ai_after_data_management_settings_fields', $is_pro );
-							?>
+						</table>
+						<?php
+						// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+						// Hook name is properly prefixed with fe_search_ai_.
+						do_action( 'fe_search_ai_after_data_management_settings_fields', $is_pro );
+						?>
+						<?php do_settings_sections( 'fe_search_ai_uninstall_section' ); ?>
+						<table class="form-table">
+							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_uninstall_section' ); ?>
 						</table>
 						<?php
 						// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
@@ -410,7 +428,7 @@ class FE_Search_AI_Settings {
 		add_settings_section( 'fe_search_ai_display_appearance_section', __( 'Chat UI Appearance', 'fe-search-ai' ), null, $page_slug );
 		add_settings_field( 'fe_search_ai_display_chat_text', __( 'Text & Colors', 'fe-search-ai' ), [ $this, 'display_text_color_field_html' ], $page_slug, 'fe_search_ai_display_appearance_section' );
 		add_settings_field( 'fe_search_ai_display_interaction', __( 'Interaction', 'fe-search-ai' ), [ $this, 'display_interaction_field_html' ], $page_slug, 'fe_search_ai_display_appearance_section' );
-		add_settings_field( 'fe_search_ai_display_links', __( 'Legal Links', 'fe-search-ai' ), [ $this, 'display_links_field_html' ], $page_slug, 'fe_search_ai_display_appearance_section' );
+		add_settings_field( 'fe_search_ai_display_footer_notice', __( 'Footer Notice', 'fe-search-ai' ), [ $this, 'display_footer_notice_field_html' ], $page_slug, 'fe_search_ai_display_appearance_section' );
 
 		// Floating Mode Section
 		add_settings_section( 'fe_search_ai_display_floating_section', __( 'Floating Mode Settings', 'fe-search-ai' ), null, $page_slug );
@@ -430,6 +448,12 @@ class FE_Search_AI_Settings {
 		add_settings_field( 'fe_search_ai_structured_output', __( 'Structured Output', 'fe-search-ai' ), [ $this, 'structured_output_field_html' ], $page_slug, 'fe_search_ai_prompt_section' );
 
 		// ------------------
+		// Privacy Tab
+		// ------------------
+		add_settings_section( 'fe_search_ai_privacy_section', __( 'Privacy and Data Handling', 'fe-search-ai' ), null, $page_slug );
+		add_settings_field( 'fe_search_ai_privacy_summary', __( 'Current Data Handling', 'fe-search-ai' ), [ $this, 'privacy_summary_field_html' ], $page_slug, 'fe_search_ai_privacy_section' );
+		add_settings_field( 'fe_search_ai_display_links', __( 'Legal Documents', 'fe-search-ai' ), [ $this, 'display_links_field_html' ], $page_slug, 'fe_search_ai_privacy_section' );
+
 		// Advanced Tab
 		// ------------------
 		// Qdrant connection settings (endpoint, API key, collection) shown in Advanced tab.
@@ -452,12 +476,17 @@ class FE_Search_AI_Settings {
 		add_settings_field( 'fe_search_ai_display_advanced', __( 'Assets Loading', 'fe-search-ai' ), [ $this, 'display_advanced_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
 		add_settings_field( 'fe_search_ai_debug_mode_enabled', __( 'Debug Mode', 'fe-search-ai' ), [ $this, 'debug_mode_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
 		add_settings_field( 'fe_search_ai_log_retention_days', __( 'Log Retention (days)', 'fe-search-ai' ), [ $this, 'log_retention_days_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
+		add_settings_field( 'fe_search_ai_retrieval_trace', __( 'Retrieval Trace Persistence', 'fe-search-ai' ), [ $this, 'retrieval_trace_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
 
 		// Data delete
 		add_settings_section( 'fe_search_ai_data_section', __( 'Data Management', 'fe-search-ai' ), null, $page_slug );
 		add_settings_field( 'fe_search_ai_delete_vectors_ui', __( 'Delete Synced Data', 'fe-search-ai' ), [ $this, 'delete_vectors_ui_field_html' ], $page_slug, 'fe_search_ai_data_section' );
 		add_settings_field( 'fe_search_ai_delete_system_logs_ui', __( 'Delete System Logs', 'fe-search-ai' ), [ $this, 'delete_system_logs_ui_field_html' ], $page_slug, 'fe_search_ai_data_section' );
-		add_settings_field( 'fe_search_ai_delete_on_uninstall', __( 'Delete Data on Uninstall', 'fe-search-ai' ), [ $this, 'delete_on_uninstall_field_html' ], $page_slug, 'fe_search_ai_data_section' );
+		add_settings_field( 'fe_search_ai_delete_retrieval_traces_ui', __( 'Delete Retrieval Traces', 'fe-search-ai' ), [ $this, 'delete_retrieval_traces_ui_field_html' ], $page_slug, 'fe_search_ai_data_section' );
+
+		// Uninstall behavior is rendered after all delete actions, including Pro-injected rows.
+		add_settings_section( 'fe_search_ai_uninstall_section', null, null, $page_slug );
+		add_settings_field( 'fe_search_ai_delete_on_uninstall', __( 'Delete Data on Uninstall', 'fe-search-ai' ), [ $this, 'delete_on_uninstall_field_html' ], $page_slug, 'fe_search_ai_uninstall_section' );
 	}
 
 	/**
@@ -1520,6 +1549,46 @@ class FE_Search_AI_Settings {
 	}
 
 	/**
+	 * Renders the UI for deleting all retrieval traces.
+	 *
+	 * Placed under the "Delete System Logs" control in the Data Management
+	 * section so that all destructive maintenance actions are grouped together.
+	 *
+	 * @since 1.2.0
+	 * @return void
+	 */
+	public function delete_retrieval_traces_ui_field_html() {
+		?>
+		<p class="description">
+			<?php esc_html_e( 'This will delete all retrieval trace records stored in the `{prefix}fe_search_ai_retrieval_traces` and `{prefix}fe_search_ai_retrieval_trace_items` tables.', 'fe-search-ai' ); ?>
+		</p>
+		<button type="button" id="fe_search_ai_delete_retrieval_traces_button" class="button button-secondary">
+			<?php esc_html_e( 'Delete all retrieval traces', 'fe-search-ai' ); ?>
+		</button>
+		<span class="spinner"></span>
+		<p id="fe_search_ai_delete_traces_status"></p>
+		<?php
+	}
+
+	/**
+	 * Handles the AJAX request to delete all retrieval traces.
+	 *
+	 * @since 1.2.0
+	 * @return void
+	 */
+	public function ajax_delete_retrieval_traces() {
+		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'You do not have sufficient permissions to perform this action.', 'fe-search-ai' ) );
+		}
+
+		\FESearchAI\Core\FE_Search_AI_Retrieval_Trace_Recorder::clear();
+
+		wp_send_json_success( __( 'All retrieval traces have been deleted.', 'fe-search-ai' ) );
+	}
+
+	/**
 	 * Renders the settings for the floating chat widget display rules.
 	 *
 	 * Controls login status visibility, device targeting, and per-template
@@ -1701,8 +1770,8 @@ class FE_Search_AI_Settings {
 	/**
 	 * Renders the numeric input for log retention days.
 	 *
-	 * Controls how many days system logs and conversation logs are kept before
-	 * being automatically deleted by the daily log rotation cron.
+	 * Controls how many days system diagnostic logs are kept before being
+	 * automatically deleted by the daily log rotation cron.
 	 *
 	 * @since 0.9.0
 	 * @return void
@@ -1710,9 +1779,7 @@ class FE_Search_AI_Settings {
 	public function log_retention_days_field_html() {
 		$advanced_options = $this->options['advanced'] ?? [];
 		$days             = isset( $advanced_options['log_retention_days'] ) ? (int) $advanced_options['log_retention_days'] : 30;
-		if ( $days < 0 ) {
-			$days = 30;
-		}
+		$days             = min( 365, max( 1, $days ) );
 		?>
 		<input
 			type="number"
@@ -1720,15 +1787,59 @@ class FE_Search_AI_Settings {
 			value="<?php echo esc_attr( $days ); ?>"
 			class="small-text"
 			min="1"
+			max="365"
 		/>
+		<?php esc_html_e( 'days', 'fe-search-ai' ); ?>
 		<p class="description">
 			<?php
 			esc_html_e(
-				'Number of days to keep system logs and conversation logs. Older entries will be deleted automatically by the daily log rotation. Leave blank or set to -1 to disable automatic deletion.',
+				'Number of days to keep system diagnostic logs. Older entries are deleted automatically by the daily rotation. Conversation log retention is configured separately in the Pro Privacy settings.',
 				'fe-search-ai'
 			);
 			?>
 		</p>
+		<?php
+	}
+
+	/**
+	 * Renders the retrieval trace persistence controls.
+	 *
+	 * Provides a checkbox to enable trace persistence and a numeric input for
+	 * how many days traces are kept before the daily rotation deletes them.
+	 *
+	 * @since 1.2.0
+	 * @return void
+	 */
+	public function retrieval_trace_field_html() {
+		$advanced_options = $this->options['advanced'] ?? [];
+		$is_enabled       = ! empty( $advanced_options['retrieval_trace_persistence'] );
+		$days             = isset( $advanced_options['retrieval_trace_retention_days'] ) ? (int) $advanced_options['retrieval_trace_retention_days'] : 30;
+		$days             = min( 365, max( 1, $days ) );
+		?>
+		<fieldset>
+			<label>
+				<input type="checkbox" name="fe_search_ai_settings[advanced][retrieval_trace_persistence]" value="1" <?php checked( $is_enabled ); ?>>
+				<?php esc_html_e( 'Store retrieval trace records in the database', 'fe-search-ai' ); ?>
+			</label>
+			<p>
+				<label for="fe_search_ai_retrieval_trace_retention_days">
+					<?php esc_html_e( 'Retention:', 'fe-search-ai' ); ?>
+				</label>
+				<input
+					type="number"
+					id="fe_search_ai_retrieval_trace_retention_days"
+					name="fe_search_ai_settings[advanced][retrieval_trace_retention_days]"
+					value="<?php echo esc_attr( $days ); ?>"
+					class="small-text"
+					min="1"
+					max="365"
+				/>
+				<?php esc_html_e( 'days', 'fe-search-ai' ); ?>
+			</p>
+			<p class="description">
+				<?php esc_html_e( 'Traces store hashed queries, post IDs, and ranking scores for search quality analysis — never question or answer text. Disabled by default.', 'fe-search-ai' ); ?>
+			</p>
+		</fieldset>
 		<?php
 	}
 
@@ -1878,7 +1989,7 @@ class FE_Search_AI_Settings {
 		$defaults += [
 			'key_color'        => '#E9E9E9',
 			'background_color' => '#FFFFFF',
-			'text_color'       => '#111111',
+			'text_color'       => '#333333',
 		];
 
 		$window_title       = $display_options['window_title'] ?? $defaults['window_title'];
@@ -1886,10 +1997,14 @@ class FE_Search_AI_Settings {
 		$placeholder_text   = $display_options['placeholder_text'] ?? $defaults['placeholder_text'];
 		$submit_button_text = $display_options['submit_button_text'] ?? $defaults['submit_button_text'];
 
-		$key_color        = $ui_options['key_color'] ?? $defaults['key_color'];
-		$background_color = $ui_options['background_color'] ?? $defaults['background_color'];
-		$text_color       = $ui_options['text_color'] ?? $defaults['text_color'];
-		$use_gradient     = $ui_options['use_gradient'] ?? false;
+		$key_color             = $ui_options['key_color'] ?? $defaults['key_color'];
+		$background_color      = $ui_options['background_color'] ?? $defaults['background_color'];
+		$text_color            = $ui_options['text_color'] ?? $defaults['text_color'];
+		$bubble_gradient       = $ui_options['bubble_gradient'] ?? true;
+		$bubble_gradient_start = $ui_options['bubble_gradient_start'] ?? '#00AFFE';
+		$bubble_gradient_end   = $ui_options['bubble_gradient_end'] ?? '#973CFF';
+		$bubble_gradient_angle = $ui_options['bubble_gradient_angle'] ?? 135;
+		$bubble_animation      = $ui_options['bubble_animation'] ?? true;
 		?>
 		<p>
 			<label for="fe_search_ai_window_title"><?php esc_html_e( 'Chat window title', 'fe-search-ai' ); ?></label>
@@ -1952,8 +2067,90 @@ class FE_Search_AI_Settings {
 				</div>
 				<div class="color-picker-box-right">
 					<label for="fe_search_ai_key_color"><?php esc_html_e( 'Bubble Color', 'fe-search-ai' ); ?></label>
-					<span class="description"><?php esc_html_e( 'Select the basic color for user speech balloons.', 'fe-search-ai' ); ?></span>
+					<span class="description"><?php esc_html_e( 'Base color applied to the floating chat bubble and the send button.', 'fe-search-ai' ); ?></span>
 				</div>
+			</div>
+
+			<div class="color-picker-text">
+				<label>
+					<input
+						type="checkbox"
+						id="fe_search_ai_bubble_gradient"
+						name="fe_search_ai_settings[display][ui][bubble_gradient]"
+						value="1"
+						<?php checked( (bool) $bubble_gradient ); ?>
+					>
+					<?php esc_html_e( 'Use a gradient for the bubble color', 'fe-search-ai' ); ?>
+				</label>
+				<span class="description"><?php esc_html_e( 'When enabled, the bubble color is rendered as a gradient between the start and end colors below.', 'fe-search-ai' ); ?></span>
+			</div>
+
+			<div id="fe_search_ai_bubble_gradient_options"<?php echo $bubble_gradient ? '' : ' style="display:none;"'; ?>>
+				<div class="color-picker-box">
+					<div class="color-picker-box-left">
+						<input
+							type="hidden"
+							id="fe_search_ai_bubble_gradient_start"
+							name="fe_search_ai_settings[display][ui][bubble_gradient_start]"
+							value="<?php echo esc_attr( $bubble_gradient_start ); ?>"
+						>
+						<div
+							class="fe-search-ai-color-picker"
+							data-target-input="fe_search_ai_bubble_gradient_start"
+							data-default-color="<?php echo esc_attr( $bubble_gradient_start ); ?>"
+						></div>
+					</div>
+					<div class="color-picker-box-right">
+						<label for="fe_search_ai_bubble_gradient_start"><?php esc_html_e( 'Gradient start color', 'fe-search-ai' ); ?></label>
+					</div>
+				</div>
+
+				<div class="color-picker-box">
+					<div class="color-picker-box-left">
+						<input
+							type="hidden"
+							id="fe_search_ai_bubble_gradient_end"
+							name="fe_search_ai_settings[display][ui][bubble_gradient_end]"
+							value="<?php echo esc_attr( $bubble_gradient_end ); ?>"
+						>
+						<div
+							class="fe-search-ai-color-picker"
+							data-target-input="fe_search_ai_bubble_gradient_end"
+							data-default-color="<?php echo esc_attr( $bubble_gradient_end ); ?>"
+						></div>
+					</div>
+					<div class="color-picker-box-right">
+						<label for="fe_search_ai_bubble_gradient_end"><?php esc_html_e( 'Gradient end color', 'fe-search-ai' ); ?></label>
+					</div>
+				</div>
+
+				<div class="color-picker-text">
+					<label for="fe_search_ai_bubble_gradient_angle"><?php esc_html_e( 'Gradient angle (degrees)', 'fe-search-ai' ); ?></label>
+					<input
+						type="number"
+						id="fe_search_ai_bubble_gradient_angle"
+						name="fe_search_ai_settings[display][ui][bubble_gradient_angle]"
+						value="<?php echo esc_attr( (string) (int) $bubble_gradient_angle ); ?>"
+						min="0"
+						max="360"
+						step="1"
+						class="small-text"
+					>
+				</div>
+			</div>
+
+			<div class="color-picker-text">
+				<label>
+					<input
+						type="checkbox"
+						id="fe_search_ai_bubble_animation"
+						name="fe_search_ai_settings[display][ui][bubble_animation]"
+						value="1"
+						<?php checked( (bool) $bubble_animation ); ?>
+					>
+					<?php esc_html_e( 'Animate the bubble', 'fe-search-ai' ); ?>
+				</label>
+				<span class="description"><?php esc_html_e( 'Slowly animates the bubble gradient to add subtle motion. The animation style is fixed.', 'fe-search-ai' ); ?></span>
 			</div>
 
 			<hr>
@@ -1999,28 +2196,6 @@ class FE_Search_AI_Settings {
 					<span class="description"><?php esc_html_e( 'Default text color used for chat content and labels.', 'fe-search-ai' ); ?></span>
 				</div>
 			</div>
-
-			<hr>
-
-			<?php
-			// Gradient feature temporarily disabled.
-			// TODO: Re-enable if gradient effects are improved.
-
-			/*
-			<div class="color-picker-text">
-				<label>
-					<input
-						type="checkbox"
-						name="fe_search_ai_settings[display][ui][use_gradient]"
-						value="1"
-						<?php checked( (bool) $use_gradient ); ?>
-					>
-					<?php esc_html_e( 'Display chat background and bubble color with gradients', 'fe-search-ai' ); ?>
-				</label>
-				<span class="description"><?php esc_html_e( 'When unchecked, the chat UI will use flat colors without gradients.', 'fe-search-ai' ); ?></span>
-			</div>
-			*/
-			?>
 
 		</div>
 
@@ -2421,6 +2596,9 @@ class FE_Search_AI_Settings {
 		$advanced_options = $this->options['advanced'] ?? [];
 		$is_enabled       = $advanced_options['debug_mode'] ?? false;
 		?>
+		<?php if ( $is_enabled ) : ?>
+			<div class="notice notice-warning inline"><p><?php esc_html_e( 'Debug Mode is active. Operational system logs are being stored. Review Privacy > Current Data Handling and delete logs when troubleshooting is complete.', 'fe-search-ai' ); ?></p></div>
+		<?php endif; ?>
 		<fieldset>
 			<label>
 				<input type="checkbox" name="fe_search_ai_settings[advanced][debug_mode]" value="1" <?php checked( $is_enabled ); ?>>
@@ -2652,8 +2830,11 @@ class FE_Search_AI_Settings {
 		$new_input['tokenizer']['ja']['yahoo_id'] = FE_Search_AI_Encryption_Helper::encrypt( sanitize_text_field( $tokenizer_input['yahoo_id'] ?? '' ) );
 
 		// Data Tab
-		$new_input['advanced']['delete_on_uninstall'] = ! empty( $input['advanced']['delete_on_uninstall'] );
-		$new_input['advanced']['debug_mode']          = ! empty( $input['advanced']['debug_mode'] );
+		$new_input['advanced']['delete_on_uninstall']            = ! empty( $input['advanced']['delete_on_uninstall'] );
+		$new_input['advanced']['debug_mode']                     = ! empty( $input['advanced']['debug_mode'] );
+		$new_input['advanced']['log_retention_days']             = min( 365, max( 1, absint( $input['advanced']['log_retention_days'] ?? 30 ) ) );
+		$new_input['advanced']['retrieval_trace_persistence']    = ! empty( $input['advanced']['retrieval_trace_persistence'] );
+		$new_input['advanced']['retrieval_trace_retention_days'] = min( 365, max( 1, absint( $input['advanced']['retrieval_trace_retention_days'] ?? 30 ) ) );
 
 		// License data is managed by a dedicated option (fe_search_ai_license).
 		// DB version is handled by the activator, not here.
@@ -2839,17 +3020,22 @@ class FE_Search_AI_Settings {
 		$new_input                     = [];
 		$new_input['key_color']        = sanitize_hex_color( $input['key_color'] ?? '#E9E9E9' );
 		$new_input['background_color'] = sanitize_hex_color( $input['background_color'] ?? '#FFFFFF' );
-		$new_input['text_color']       = sanitize_hex_color( $input['text_color'] ?? '#111111' );
+		$new_input['text_color']       = sanitize_hex_color( $input['text_color'] ?? '#333333' );
 		$new_input['animation_speed']  = absint( $input['animation_speed'] ?? 3 );
 		// Validate send_mode string (enter / shift_enter / cmd_enter).
 		$send_mode = $input['send_mode'] ?? 'enter';
 		if ( ! in_array( $send_mode, [ 'enter', 'shift_enter', 'cmd_enter' ], true ) ) {
 			$send_mode = 'enter';
 		}
-		$new_input['send_mode']    = $send_mode;
-		$new_input['enable_css']   = ! empty( $input['enable_css'] );
-		$new_input['enable_js']    = ! empty( $input['enable_js'] );
-		$new_input['use_gradient'] = ! empty( $input['use_gradient'] );
+		$new_input['send_mode']             = $send_mode;
+		$new_input['enable_css']            = ! empty( $input['enable_css'] );
+		$new_input['enable_js']             = ! empty( $input['enable_js'] );
+		$new_input['use_gradient']          = ! empty( $input['use_gradient'] );
+		$new_input['bubble_gradient']       = ! empty( $input['bubble_gradient'] );
+		$new_input['bubble_gradient_start'] = sanitize_hex_color( $input['bubble_gradient_start'] ?? '#00AFFE' );
+		$new_input['bubble_gradient_end']   = sanitize_hex_color( $input['bubble_gradient_end'] ?? '#973CFF' );
+		$new_input['bubble_gradient_angle'] = min( 360, max( 0, absint( $input['bubble_gradient_angle'] ?? 135 ) ) );
+		$new_input['bubble_animation']      = ! empty( $input['bubble_animation'] );
 
 		return $new_input;
 	}
@@ -2866,6 +3052,7 @@ class FE_Search_AI_Settings {
 		$new_input['greeting_message']   = sanitize_textarea_field( $input['greeting_message'] ?? '' );
 		$new_input['placeholder_text']   = sanitize_text_field( $input['placeholder_text'] ?? '' );
 		$new_input['submit_button_text'] = sanitize_text_field( $input['submit_button_text'] ?? '' );
+		$new_input['footer_notice']      = sanitize_textarea_field( $input['footer_notice'] ?? '' );
 		return $new_input;
 	}
 
@@ -2964,6 +3151,152 @@ class FE_Search_AI_Settings {
 					<?php esc_html_e( 'Cmd/Ctrl+Enter (Enter for newline)', 'fe-search-ai' ); ?>
 				</option>
 			</select>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Renders the HTML for the chat footer notice setting.
+	 *
+	 * This method outputs a textarea for customizing the notice displayed at
+	 * the bottom of the chat window, to the left of the settings (gear) icon.
+	 *
+	 * @since 1.3.0
+	 * @return void
+	 */
+	public function display_footer_notice_field_html() {
+		$display_options = $this->options['display']['text'] ?? [];
+		$defaults        = \FESearchAI\Core\FE_Search_AI_Defaults::get_display_text_defaults();
+		$footer_notice   = $display_options['footer_notice'] ?? '';
+		?>
+		<textarea
+			id="fe_search_ai_footer_notice_input"
+			name="fe_search_ai_settings[display][text][footer_notice]"
+			rows="3"
+			class="large-text"
+			placeholder="<?php echo esc_attr( $defaults['footer_notice'] ); ?>"
+		><?php echo esc_textarea( $footer_notice ); ?></textarea>
+		<p class="description">
+			<?php esc_html_e( 'Text shown at the bottom of the chat window, next to the settings icon. Leave blank to use the default text.', 'fe-search-ai' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Renders the current privacy and data handling summary.
+	 *
+	 * @since 1.2.0
+	 * @return void
+	 */
+	public function privacy_summary_field_html() {
+		$pro_settings = get_option( 'fe_search_ai_pro_settings', [] );
+		$recipients   = \FESearchAI\Core\FE_Search_AI_Privacy::get_active_recipients( $this->options, is_array( $pro_settings ) ? $pro_settings : [] );
+		$advanced     = isset( $this->options['advanced'] ) && is_array( $this->options['advanced'] ) ? $this->options['advanced'] : [];
+		?>
+		<div class="fe-search-ai-privacy-summary">
+			<p><?php esc_html_e( 'Chat input and recent conversation history are sent to the configured AI services to generate responses. Conversation history is also stored temporarily in the visitor’s browser session.', 'fe-search-ai' ); ?></p>
+			<?php if ( ! empty( $recipients ) ) : ?>
+				<ul>
+					<?php foreach ( $recipients as $recipient ) : ?>
+						<li>
+							<strong><?php echo esc_html( $recipient['label'] ?? '' ); ?></strong>
+							— <?php echo esc_html( str_replace( '_', ' ', (string) ( $recipient['purpose'] ?? '' ) ) ); ?>
+							<?php if ( ! empty( $recipient['user_content'] ) ) : ?>
+								— <?php esc_html_e( 'receives visitor input', 'fe-search-ai' ); ?>
+							<?php endif; ?>
+						</li>
+					<?php endforeach; ?>
+				</ul>
+			<?php endif; ?>
+
+			<?php
+			$privacy_pro          = is_array( $pro_settings ) && isset( $pro_settings['privacy'] ) && is_array( $pro_settings['privacy'] ) ? $pro_settings['privacy'] : null;
+			$pro_logs_enabled     = null !== $privacy_pro && ( ! empty( $privacy_pro['enable_conversation_analytics'] ) || ! empty( $privacy_pro['enable_diagnostic_conversation_summary'] ) );
+			$system_log_retention = isset( $advanced['log_retention_days'] ) ? (int) $advanced['log_retention_days'] : 30;
+			$trace_enabled        = ! empty( $advanced['retrieval_trace_persistence'] );
+			$trace_retention      = isset( $advanced['retrieval_trace_retention_days'] ) ? (int) $advanced['retrieval_trace_retention_days'] : 30;
+			$conv_log_retention   = null !== $privacy_pro && isset( $privacy_pro['conversation_log_retention_days'] ) ? (int) $privacy_pro['conversation_log_retention_days'] : 7;
+			$consent_retention    = null !== $privacy_pro && isset( $privacy_pro['consent_record_retention_days'] ) ? (int) $privacy_pro['consent_record_retention_days'] : 180;
+			?>
+			<table class="widefat striped">
+				<thead>
+					<tr>
+						<th scope="col"><?php esc_html_e( 'Server-side retention', 'fe-search-ai' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Period', 'fe-search-ai' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td><?php esc_html_e( 'System diagnostic logs', 'fe-search-ai' ); ?></td>
+						<td>
+							<?php
+							if ( ! empty( $advanced['debug_mode'] ) ) {
+								/* translators: %d: number of days */
+								echo esc_html( sprintf( __( '%d days', 'fe-search-ai' ), $system_log_retention ) );
+							} else {
+								esc_html_e( 'Disabled', 'fe-search-ai' );
+							}
+							?>
+						</td>
+					</tr>
+					<tr>
+						<td><?php esc_html_e( 'Retrieval traces', 'fe-search-ai' ); ?></td>
+						<td>
+							<?php
+							if ( $trace_enabled ) {
+								/* translators: %d: number of days */
+								echo esc_html( sprintf( __( '%d days', 'fe-search-ai' ), $trace_retention ) );
+							} else {
+								esc_html_e( 'Disabled', 'fe-search-ai' );
+							}
+							?>
+						</td>
+					</tr>
+					<tr>
+						<td><?php esc_html_e( 'Conversation logs (Pro)', 'fe-search-ai' ); ?></td>
+						<td>
+							<?php
+							if ( null === $privacy_pro ) {
+								esc_html_e( 'Not available (Pro)', 'fe-search-ai' );
+							} elseif ( $pro_logs_enabled ) {
+								/* translators: %d: number of days */
+								echo esc_html( sprintf( __( '%d days', 'fe-search-ai' ), $conv_log_retention ) );
+							} else {
+								esc_html_e( 'Disabled', 'fe-search-ai' );
+							}
+							?>
+						</td>
+					</tr>
+					<tr>
+						<td><?php esc_html_e( 'Consent records (Pro)', 'fe-search-ai' ); ?></td>
+						<td>
+							<?php
+							if ( null === $privacy_pro ) {
+								esc_html_e( 'Not available (Pro)', 'fe-search-ai' );
+							} else {
+								/* translators: %d: number of days */
+								echo esc_html( sprintf( __( '%d days after revocation/obsolescence', 'fe-search-ai' ), $consent_retention ) );
+							}
+							?>
+						</td>
+					</tr>
+					<tr>
+						<td><?php esc_html_e( 'Rate-limit counters', 'fe-search-ai' ); ?></td>
+						<td><?php esc_html_e( 'Keyed IP hash, 1 hour', 'fe-search-ai' ); ?></td>
+					</tr>
+				</tbody>
+			</table>
+			<p>
+				<strong><?php esc_html_e( 'System diagnostic logging:', 'fe-search-ai' ); ?></strong>
+				<?php echo ! empty( $advanced['debug_mode'] ) ? esc_html__( 'Enabled', 'fe-search-ai' ) : esc_html__( 'Disabled', 'fe-search-ai' ); ?>
+			</p>
+			<?php if ( is_array( $pro_settings ) && ! empty( $pro_settings ) ) : ?>
+				<?php $privacy = isset( $pro_settings['privacy'] ) && is_array( $pro_settings['privacy'] ) ? $pro_settings['privacy'] : []; ?>
+				<p><strong><?php esc_html_e( 'Optional conversation analytics:', 'fe-search-ai' ); ?></strong> <?php echo ! empty( $privacy['enable_conversation_analytics'] ) ? esc_html__( 'Available by visitor opt-in', 'fe-search-ai' ) : esc_html__( 'Disabled', 'fe-search-ai' ); ?></p>
+				<p><strong><?php esc_html_e( 'Diagnostic conversation summaries:', 'fe-search-ai' ); ?></strong> <?php echo ! empty( $privacy['enable_diagnostic_conversation_summary'] ) ? esc_html__( 'Enabled when Debug Mode is active', 'fe-search-ai' ) : esc_html__( 'Disabled', 'fe-search-ai' ); ?></p>
+			<?php endif; ?>
+			<p class="description"><?php esc_html_e( 'Review each provider’s terms, privacy policy, retention, and international transfer practices before enabling it. This summary is informational and does not replace a site-specific legal review.', 'fe-search-ai' ); ?></p>
+			<p><a href="#tab_advanced" class="fe-search-ai-tab-link"><?php esc_html_e( 'Open Advanced Data Management to delete stored plugin data.', 'fe-search-ai' ); ?></a></p>
 		</div>
 		<?php
 	}

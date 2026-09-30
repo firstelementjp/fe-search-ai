@@ -3,6 +3,7 @@
 - [🚀 Getting Started](start.md)
 - [📦 Installation](install.md)
 - [🔧 Configuration](config.md)
+- [Privacy and Data Handling](privacy.md)
 
 ### Usage
 

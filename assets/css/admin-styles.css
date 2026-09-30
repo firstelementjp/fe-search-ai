@@ -56,6 +56,10 @@ code {
 	padding: 0.5em 1em;
 }
 
+.form-table th {
+	padding: 15px 10px;
+}
+
 .form-table td p {
 	margin: 0 0 1em;
 }
@@ -791,6 +795,10 @@ details summary {
 	opacity: 1;
 }
 
+#tab_privacy table {
+	margin: 1rem 0;
+}
+
 #fe_search_ai_api_token_generator {
 	margin: 1em 0;
 }
@@ -837,12 +845,25 @@ details summary {
 	display: flex;
 	flex-direction: row;
 	align-items: center;
-	gap: 1em;
+	gap: 0.5em;
 	margin-bottom: 1em;
 }
 
 .color-picker-box-right {
-	padding: 0 1em;
+	padding-left: 0.5em;
+}
+.pickr {
+	border: 1px solid silver;
+	padding: 1px;
+	border-radius: 3px;
+}
+#fe_search_ai_bubble_gradient_options {
+	margin-left: calc(32px + 1em);
+	/* padding: 1rem 0; */
+}
+.color-picker-text {
+	margin-left: calc(32px + 1em);
+	margin-bottom: 1rem;
 }
 
 #fe_search_ai_pro_rate_limit_options h4 {

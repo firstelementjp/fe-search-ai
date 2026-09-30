@@ -49,6 +49,7 @@ class DefaultsTest extends TestCase {
 		$this->assertArrayHasKey( 'greeting_message', $defaults, 'Array should have greeting_message key' );
 		$this->assertArrayHasKey( 'placeholder_text', $defaults, 'Array should have placeholder_text key' );
 		$this->assertArrayHasKey( 'submit_button_text', $defaults, 'Array should have submit_button_text key' );
+		$this->assertArrayHasKey( 'footer_notice', $defaults, 'Array should have footer_notice key' );
 	}
 
 	/**
@@ -64,6 +65,7 @@ class DefaultsTest extends TestCase {
 		$this->assertIsString( $defaults['greeting_message'], 'greeting_message should be a string' );
 		$this->assertIsString( $defaults['placeholder_text'], 'placeholder_text should be a string' );
 		$this->assertIsString( $defaults['submit_button_text'], 'submit_button_text should be a string' );
+		$this->assertIsString( $defaults['footer_notice'], 'footer_notice should be a string' );
 	}
 
 	/**
@@ -79,5 +81,6 @@ class DefaultsTest extends TestCase {
 		$this->assertNotEmpty( $defaults['greeting_message'], 'greeting_message should not be empty' );
 		$this->assertNotEmpty( $defaults['placeholder_text'], 'placeholder_text should not be empty' );
 		$this->assertNotEmpty( $defaults['submit_button_text'], 'submit_button_text should not be empty' );
+		$this->assertNotEmpty( $defaults['footer_notice'], 'footer_notice should not be empty' );
 	}
 }

@@ -3,7 +3,7 @@
  * Plugin Name: FE Search AI
  * Plugin URI:  https://github.com/firstelementjp/fe-search-ai
  * Description: AI-powered search for WordPress.
- * Version:     1.1.2
+ * Version:     1.2.0
  * Author:      FirstElement K.K., Daijiro Miyazawa
  * Author URI:  https://www.firstelement.co.jp/
  * License:     GPLv2 or later
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'FE_SEARCH_AI_VERSION', '1.1.2' );
+define( 'FE_SEARCH_AI_VERSION', '1.2.0' );
 define( 'FE_SEARCH_AI_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FE_SEARCH_AI_PLUGIN_FILE', __FILE__ );
 define( 'FE_SEARCH_AI_PRO_URL', 'https://www.firstelement.co.jp/en/products/fe-search-ai-plugin/' );
@@ -91,6 +91,9 @@ add_action(
 
 		new FESearchAI\Admin\FE_Search_AI_Admin();
 		new FESearchAI\Admin\FE_Search_AI_License_Settings();
+		if ( is_admin() ) {
+			\FESearchAI\Admin\FE_Search_AI_Privacy_Policy::register();
+		}
 		new FESearchAI\Frontend\FE_Search_AI_Chat_UI( $assets_handler );
 		new FESearchAI\Ajax\FE_Search_AI_Chat_Handler( $sync_handler );
 
@@ -103,7 +106,27 @@ add_action(
 	'fe_search_ai_daily_log_rotation_event',
 	static function () {
 		\FESearchAI\Core\FE_Search_AI_Logger::rotate_logs();
+		\FESearchAI\Core\FE_Search_AI_Retrieval_Trace_Recorder::rotate();
 	}
+);
+
+/**
+ * Feeds the `advanced.log_retention_days` setting into the system log rotation.
+ *
+ * Registered at priority 5 so that site code hooked at the default priority 10
+ * can still override the configured value.
+ *
+ * @since 1.2.0
+ * @param int $days Default retention period in days.
+ * @return int Retention period in days.
+ */
+add_filter(
+	'fe_search_ai_log_retention_days',
+	static function ( $days ) {
+		$options = get_option( 'fe_search_ai_settings', [] );
+		return isset( $options['advanced']['log_retention_days'] ) ? max( 1, (int) $options['advanced']['log_retention_days'] ) : $days;
+	},
+	5
 );
 
 /**

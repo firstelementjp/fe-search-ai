@@ -10,18 +10,18 @@ FE Search AI is licensed under GPL-2.0 or later.
 
 FE Search AI communicates with external services selected by the site administrator.
 
-| Service | Data sent | Purpose |
-| --- | --- | --- |
-| OpenAI | Questions, selected context, or content for embeddings | Chat completions and embeddings |
-| Google | Questions, selected context, or content for embeddings | Gemini chat completions and embeddings |
-| Anthropic | Questions and selected context | Claude chat completions |
-| Qdrant | Vector data and metadata | Vector storage and retrieval |
-| Cohere | Retrieved content chunks | Optional reranking |
-| Yahoo! JAPAN Japanese MA API | Text for tokenization | Optional Japanese tokenization |
+| Service                      | Data sent                                              | Purpose                                |
+| ---------------------------- | ------------------------------------------------------ | -------------------------------------- |
+| OpenAI                       | Questions, selected context, or content for embeddings | Chat completions and embeddings        |
+| Google                       | Questions, selected context, or content for embeddings | Gemini chat completions and embeddings |
+| Anthropic                    | Questions and selected context                         | Claude chat completions                |
+| Qdrant                       | Vector data and metadata                               | Vector storage and retrieval           |
+| Cohere                       | Retrieved content chunks                               | Optional reranking                     |
+| Yahoo! JAPAN Japanese MA API | Text for tokenization                                  | Optional Japanese tokenization         |
 
 ## Administrator responsibility
 
-Site administrators should review each provider's terms, privacy policy, billing, data retention, and regional compliance requirements before enabling the service.
+Site administrators should review each provider's terms, privacy policy, billing, data retention, and regional compliance requirements before enabling the service. The plugin's Privacy tab and [Privacy and Data Handling](privacy.md) documentation are implementation aids and do not constitute legal advice.
 
 ## Pro license validation
 

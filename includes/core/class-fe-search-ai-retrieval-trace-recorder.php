@@ -41,19 +41,100 @@ class FE_Search_AI_Retrieval_Trace_Recorder {
 			return false;
 		}
 
+		$options        = get_option( 'fe_search_ai_settings', [] );
+		$default_enable = is_array( $options ) && ! empty( $options['advanced']['retrieval_trace_persistence'] );
+
 		/**
 		 * Filters whether retrieval trace persistence is enabled.
 		 *
 		 * @since 1.0.0
-		 * @param bool  $enabled Whether persistence is enabled.
+		 * @param bool  $enabled Whether persistence is enabled. Defaults to the
+		 *                       `advanced.retrieval_trace_persistence` setting.
 		 * @param array $trace   Safe retrieval trace payload.
 		 */
-		$enabled = (bool) apply_filters( 'fe_search_ai_enable_retrieval_trace_persistence', false, $trace );
+		$enabled = (bool) apply_filters( 'fe_search_ai_enable_retrieval_trace_persistence', $default_enable, $trace );
 		if ( ! $enabled ) {
 			return false;
 		}
 
 		return self::insert_trace( self::normalize_trace( $trace ) );
+	}
+
+	/**
+	 * Rotates retrieval traces by removing rows older than the retention period.
+	 *
+	 * Called by the daily cron event. The retention period defaults to 30 days,
+	 * can be configured via the `advanced.retrieval_trace_retention_days`
+	 * setting, and can be overridden by the
+	 * `fe_search_ai_retrieval_trace_retention_days` filter.
+	 *
+	 * @since 1.2.0
+	 * @return void
+	 */
+	public static function rotate() {
+		global $wpdb;
+
+		$tables = [ self::traces_table(), self::trace_items_table() ];
+
+		$options      = get_option( 'fe_search_ai_settings', [] );
+		$default_days = isset( $options['advanced']['retrieval_trace_retention_days'] ) ? (int) $options['advanced']['retrieval_trace_retention_days'] : 30;
+		/**
+		 * Filters the retrieval trace retention period in days.
+		 *
+		 * @since 1.2.0
+		 * @param int $days Number of days to keep retrieval traces.
+		 */
+		$retention_days = apply_filters( 'fe_search_ai_retrieval_trace_retention_days', $default_days );
+		$cutoff_date    = gmdate( 'Y-m-d H:i:s', time() - ( (int) $retention_days * DAY_IN_SECONDS ) );
+
+		foreach ( $tables as $table_name ) {
+			// Check if the table exists before attempting to rotate.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+			// Direct query required for custom table check.
+			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) !== $table_name ) {
+				continue;
+			}
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+			// Direct query required for custom table.
+			$wpdb->query(
+				$wpdb->prepare(
+					'DELETE FROM `' . esc_sql( $table_name ) . '` WHERE created_at < %s',
+					$cutoff_date
+				)
+			);
+		}
+	}
+
+	/**
+	 * Deletes all retrieval trace rows from both trace tables.
+	 *
+	 * Intended to be called from an admin-only context when the site owner
+	 * explicitly requests a full trace purge.
+	 *
+	 * @since 1.2.0
+	 * @return void
+	 */
+	public static function clear() {
+		global $wpdb;
+
+		foreach ( [ self::traces_table(), self::trace_items_table() ] as $table_name ) {
+			// Check if the table exists before attempting to truncate.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+			// Direct query required for custom table check.
+			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) !== $table_name ) {
+				continue;
+			}
+
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+			// Table name is interpolated but controlled internally.
+			$wpdb->query( "TRUNCATE TABLE `{$table_name}`" );
+		}
 	}
 
 	/**

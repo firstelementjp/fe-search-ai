@@ -6,14 +6,14 @@ FE Search AI settings are organized by provider, sync, display, and advanced opt
 
 Configure API keys for the services you want to use.
 
-| Provider | Purpose |
-| --- | --- |
-| OpenAI | Chat completions and embeddings |
-| Google | Gemini chat completions and embeddings |
-| Anthropic | Claude chat completions |
-| Cohere | Optional reranking |
-| Qdrant | Vector storage |
-| Yahoo! JAPAN Japanese MA API | Optional Japanese tokenization |
+| Provider                     | Purpose                                |
+| ---------------------------- | -------------------------------------- |
+| OpenAI                       | Chat completions and embeddings        |
+| Google                       | Gemini chat completions and embeddings |
+| Anthropic                    | Claude chat completions                |
+| Cohere                       | Optional reranking                     |
+| Qdrant                       | Vector storage                         |
+| Yahoo! JAPAN Japanese MA API | Optional Japanese tokenization         |
 
 ## Qdrant settings
 
@@ -48,6 +48,12 @@ Choose which post types should be indexed. Start with a small set of content, ve
 
 Customize frontend chat labels, colors, greeting text, placeholders, and floating chat behavior.
 
-## Privacy and rate limiting
+## Privacy
+
+Use the **Privacy** tab to review active data recipients, configure Terms of Service and Privacy Policy pages, and inspect browser and server-side storage. Pro adds required terms consent, optional masked conversation analytics, diagnostic summaries, and consent-record retention.
+
+See [Privacy and Data Handling](privacy.md) for details.
+
+## Rate limiting
 
 Use rate limiting to protect your API quota. Review external service terms and privacy policies before enabling providers.

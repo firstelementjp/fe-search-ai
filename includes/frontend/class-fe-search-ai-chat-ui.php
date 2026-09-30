@@ -241,6 +241,8 @@ class FE_Search_AI_Chat_UI {
 		$send_on_shift_enter = $ui_options['send_on_shift_enter'] ?? $is_cjk;
 		$terms_page_id       = $links_options['terms_page_id'] ?? 0;
 		$privacy_page_id     = $links_options['privacy_page_id'] ?? 0;
+		$pro_settings        = get_option( 'fe_search_ai_pro_settings', [] );
+		$privacy_config      = \FESearchAI\Core\FE_Search_AI_Privacy::get_frontend_config( $this->options, is_array( $pro_settings ) ? $pro_settings : [] );
 
 		// Ensure text fields fall back to shared defaults when empty or not set.
 		$defaults = \FESearchAI\Core\FE_Search_AI_Defaults::get_display_text_defaults();
@@ -265,6 +267,11 @@ class FE_Search_AI_Chat_UI {
 			$submit_button_text = $defaults['submit_button_text'];
 		}
 
+		$footer_notice = trim( $text_options['footer_notice'] ?? '' );
+		if ( '' === $footer_notice ) {
+			$footer_notice = $defaults['footer_notice'];
+		}
+
 		// Build the $args array for passing to the filter.
 		$args = [
 			'mode'                => $mode,
@@ -272,6 +279,7 @@ class FE_Search_AI_Chat_UI {
 			'greeting_message'    => $greeting_message,
 			'placeholder_text'    => $placeholder_text,
 			'submit_button_text'  => $submit_button_text,
+			'footer_notice'       => $footer_notice,
 			'send_on_shift_enter' => (bool) $send_on_shift_enter,
 			'terms_url'           => $terms_page_id ? get_permalink( $terms_page_id ) : '',
 			'privacy_url'         => $privacy_page_id ? get_permalink( $privacy_page_id ) : get_privacy_policy_url(),
@@ -320,31 +328,21 @@ class FE_Search_AI_Chat_UI {
 					</div>
 				</div>
 				<div id="fe_search_ai_chat_footer">
+					<div
+						id="fe_search_ai_input_resizer"
+						role="separator"
+						tabindex="0"
+						aria-orientation="horizontal"
+						aria-label="<?php esc_attr_e( 'Resize input area', 'fe-search-ai' ); ?>"
+					></div>
 					<form id="fe_search_ai_chat_form">
-						<textarea id="fe_search_ai_chat_input" placeholder="<?php echo esc_attr( $args['placeholder_text'] ); ?>" autocomplete="off"></textarea>
+						<textarea id="fe_search_ai_chat_input" rows="1" placeholder="<?php echo esc_attr( $args['placeholder_text'] ); ?>" autocomplete="off"></textarea>
 						<button type="submit"><?php echo esc_html( $args['submit_button_text'] ); ?></button>
 					</form>
 					<div id="fe_search_ai_chat_options">
-						<div id="fe_search_ai_privacy_notice">
-							<?php
-							$links = [];
-							if ( ! empty( $args['terms_url'] ) ) {
-								$links[] = sprintf( '<a href="%s" target="_blank">%s</a>', esc_url( $args['terms_url'] ), esc_html__( 'Terms of Service', 'fe-search-ai' ) );
-							}
-							if ( ! empty( $args['privacy_url'] ) ) {
-								$links[] = sprintf( '<a href="%s" target="_blank">%s</a>', esc_url( $args['privacy_url'] ), esc_html__( 'Privacy Policy', 'fe-search-ai' ) );
-							}
-							if ( ! empty( $links ) ) {
-								echo '<p>';
-								printf(
-									/* translators: %s: Links to terms of service and privacy policy. */
-									wp_kses_post( __( 'Please review our %s when using this chat.', 'fe-search-ai' ) ),
-									wp_kses_post( implode( ' ' . esc_html__( 'and', 'fe-search-ai' ) . ' ', $links ) )
-								);
-								echo '</p>';
-							}
-							?>
-						</div>
+						<?php if ( '' !== $args['footer_notice'] ) : ?>
+							<p id="fe_search_ai_footer_notice"><?php echo esc_html( $args['footer_notice'] ); ?></p>
+						<?php endif; ?>
 						<div id="fe_search_ai_chat_footer_actions">
 							<button id="fe_search_ai_options_toggle" title="<?php esc_attr_e( 'Settings', 'fe-search-ai' ); ?>">
 								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
@@ -352,20 +350,83 @@ class FE_Search_AI_Chat_UI {
 								</svg>
 							</button>
 							<div id="fe_search_ai_options_menu" class="hidden">
-								<label for="fe_search_ai_send_mode_toggle">
-									<?php esc_html_e( 'Send Key Settings:', 'fe-search-ai' ); ?>
-								</label>
-								<select id="fe_search_ai_send_mode_toggle">
-									<option value="enter">
-										<?php esc_html_e( 'Enter', 'fe-search-ai' ); ?>
-									</option>
-									<option value="shift_enter">
-										<?php esc_html_e( 'Shift+Enter', 'fe-search-ai' ); ?>
-									</option>
-									<option value="cmd_enter">
-										<?php esc_html_e( 'Cmd/Ctrl+Enter', 'fe-search-ai' ); ?>
-									</option>
-								</select>
+								<div class="fe-search-ai-options-menu-header">
+									<p class="fe-search-ai-menu-heading"><?php esc_html_e( 'Settings', 'fe-search-ai' ); ?></p>
+									<button type="button" id="fe_search_ai_options_menu_close" title="<?php esc_attr_e( 'Close settings', 'fe-search-ai' ); ?>">
+										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+											<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+										</svg>
+									</button>
+								</div>
+								<div class="fe-search-ai-options-menu-controls">
+									<label for="fe_search_ai_send_mode_toggle">
+										<?php esc_html_e( 'Send Key Settings', 'fe-search-ai' ); ?>
+									</label>
+									<select id="fe_search_ai_send_mode_toggle">
+										<option value="enter">
+											<?php esc_html_e( 'Enter', 'fe-search-ai' ); ?>
+										</option>
+										<option value="shift_enter">
+											<?php esc_html_e( 'Shift+Enter', 'fe-search-ai' ); ?>
+										</option>
+										<option value="cmd_enter">
+											<?php esc_html_e( 'Cmd/Ctrl+Enter', 'fe-search-ai' ); ?>
+										</option>
+									</select>
+									<p class="fe-search-ai-menu-heading">
+										<?php esc_html_e( 'Local chat history', 'fe-search-ai' ); ?>
+									</p>
+									<button type="button" id="fe_search_ai_clear_history" class="button-link"><?php esc_html_e( 'Clear', 'fe-search-ai' ); ?></button>
+									<?php if ( ! empty( $privacy_config['enable_consent'] ) ) : ?>
+										<div id="fe_search_ai_consent_menu_item">
+											<p class="fe-search-ai-menu-heading">
+												<?php esc_html_e( 'Privacy consent', 'fe-search-ai' ); ?>
+											</p>
+											<button type="button" id="fe_search_ai_withdraw_consent" class="button-link"><?php esc_html_e( 'Withdraw', 'fe-search-ai' ); ?></button>
+										</div>
+									<?php endif; ?>
+								</div>
+								<div class="fe-search-ai-privacy-section">
+									<p class="fe-search-ai-menu-heading"><?php esc_html_e( 'Privacy and Data Handling', 'fe-search-ai' ); ?></p>
+									<div id="fe_search_ai_privacy_notice">
+										<p>
+											<?php
+											esc_html_e( 'Your input and recent conversation history are sent to the configured AI services to generate a response. Chat history is stored temporarily in this browser session.', 'fe-search-ai' );
+											?>
+										</p>
+										<?php if ( ! empty( $privacy_config['diagnostic_enabled'] ) ) : ?>
+											<p class="fe-search-ai-logging-status"><?php esc_html_e( 'Conversation activity (excluding message text) is currently being recorded for system diagnostics.', 'fe-search-ai' ); ?></p>
+										<?php endif; ?>
+									</div>
+									<div id="fe_search_ai_privacy_active_services">
+										<p class="fe-search-ai-menu-heading"><?php esc_html_e( 'Active services', 'fe-search-ai' ); ?></p>
+										<?php if ( ! empty( $privacy_config['recipients'] ) ) : ?>
+											<p class="fe-search-ai-privacy-recipients">
+												<?php echo esc_html( implode( ', ', array_column( $privacy_config['recipients'], 'label' ) ) ); ?>
+											</p>
+										<?php endif; ?>
+									</div>
+									<div id="fe_search_ai_privacy_link">
+										<?php
+										$links = [];
+										if ( ! empty( $args['terms_url'] ) ) {
+											$links[] = sprintf( '<a href="%s" target="_blank">%s</a>', esc_url( $args['terms_url'] ), esc_html__( 'Terms of Service', 'fe-search-ai' ) );
+										}
+										if ( ! empty( $args['privacy_url'] ) ) {
+											$links[] = sprintf( '<a href="%s" target="_blank">%s</a>', esc_url( $args['privacy_url'] ), esc_html__( 'Privacy Policy', 'fe-search-ai' ) );
+										}
+										if ( ! empty( $links ) ) {
+											echo '<p>';
+											printf(
+												/* translators: %s: Links to terms of service and privacy policy. */
+												wp_kses_post( __( 'Please review our %s when using this chat.', 'fe-search-ai' ) ),
+												wp_kses_post( implode( ' ' . esc_html__( 'and', 'fe-search-ai' ) . ' ', $links ) )
+											);
+											echo '</p>';
+										}
+										?>
+									</div>
+								</div>
 							</div>
 						</div>
 					</div>

@@ -23,7 +23,7 @@ FE Search AI is designed for WordPress sites where visitors need quick, accurate
 
 ## Current release
 
-Version 1.1.2 hardens frontend chat rendering with DOMPurify sanitization for AI-generated Markdown HTML, safer link handling, and cryptographic chat session IDs. It also limits GitHub Actions permissions and keeps WordPress.org SVN deployment disabled until explicitly enabled after plugin approval.
+Version 1.2.0 is a privacy release: it adds a dedicated Privacy tab, versioned consent integration, and a documented Zero Data Retention posture — no server-side storage of conversation content by default, configurable retention for every record class, and verified uninstall cleanup. See [Privacy and Data Handling](privacy.md).
 
 ## Recommended reading
 
