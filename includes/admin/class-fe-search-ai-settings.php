@@ -278,11 +278,15 @@ class FE_Search_AI_Settings {
 						<?php do_settings_sections( 'fe_search_ai_data_section' ); ?>
 						<table class="form-table">
 							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_data_section' ); ?>
-							<?php
-							// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
-							// Hook name is properly prefixed with fe_search_ai_.
-							do_action( 'fe_search_ai_after_data_management_settings_fields', $is_pro );
-							?>
+						</table>
+						<?php
+						// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+						// Hook name is properly prefixed with fe_search_ai_.
+						do_action( 'fe_search_ai_after_data_management_settings_fields', $is_pro );
+						?>
+						<?php do_settings_sections( 'fe_search_ai_uninstall_section' ); ?>
+						<table class="form-table">
+							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_uninstall_section' ); ?>
 						</table>
 						<?php
 						// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
@@ -479,7 +483,10 @@ class FE_Search_AI_Settings {
 		add_settings_field( 'fe_search_ai_delete_vectors_ui', __( 'Delete Synced Data', 'fe-search-ai' ), [ $this, 'delete_vectors_ui_field_html' ], $page_slug, 'fe_search_ai_data_section' );
 		add_settings_field( 'fe_search_ai_delete_system_logs_ui', __( 'Delete System Logs', 'fe-search-ai' ), [ $this, 'delete_system_logs_ui_field_html' ], $page_slug, 'fe_search_ai_data_section' );
 		add_settings_field( 'fe_search_ai_delete_retrieval_traces_ui', __( 'Delete Retrieval Traces', 'fe-search-ai' ), [ $this, 'delete_retrieval_traces_ui_field_html' ], $page_slug, 'fe_search_ai_data_section' );
-		add_settings_field( 'fe_search_ai_delete_on_uninstall', __( 'Delete Data on Uninstall', 'fe-search-ai' ), [ $this, 'delete_on_uninstall_field_html' ], $page_slug, 'fe_search_ai_data_section' );
+
+		// Uninstall behavior is rendered after all delete actions, including Pro-injected rows.
+		add_settings_section( 'fe_search_ai_uninstall_section', null, null, $page_slug );
+		add_settings_field( 'fe_search_ai_delete_on_uninstall', __( 'Delete Data on Uninstall', 'fe-search-ai' ), [ $this, 'delete_on_uninstall_field_html' ], $page_slug, 'fe_search_ai_uninstall_section' );
 	}
 
 	/**

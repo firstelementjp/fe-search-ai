@@ -154,7 +154,7 @@ add_filter(
 | `fe_search_ai_after_display_embed_settings_fields`   | なし                                                  | 埋め込み表示項目後。                                                             |
 | `fe_search_ai_after_display_settings_fields`         | `bool $is_pro`                                        | 「表示」タブの全フィールド後。                                                   |
 | `fe_search_ai_after_prompt_settings_fields`          | なし                                                  | 「プロンプト」タブの全フィールド後。                                             |
-| `fe_search_ai_after_data_management_settings_fields` | `bool $is_pro`                                        | データ管理設定テーブル内。                                                       |
+| `fe_search_ai_after_data_management_settings_fields` | `bool $is_pro`                                        | データ管理設定テーブル後。                                                       |
 | `fe_search_ai_after_advanced_settings_fields`        | `bool $is_pro`                                        | 「高度な設定」タブの全フィールド後。                                             |
 | `fe_search_ai_api_keys_table_rows`                   | `FE_Search_AI_Settings $settings`                     | APIキーテーブル本体の末尾。                                                      |
 | `fe_search_ai_after_api_key_fields`                  | `FE_Search_AI_Settings $settings`                     | APIキーテーブル後。                                                              |

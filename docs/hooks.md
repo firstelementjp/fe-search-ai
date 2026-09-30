@@ -154,7 +154,7 @@ Callbacks that output markup must escape their output appropriately.
 | `fe_search_ai_after_display_embed_settings_fields`   | None                                                  | After embedded-display fields.                                                           |
 | `fe_search_ai_after_display_settings_fields`         | `bool $is_pro`                                        | After all fields in the Display tab.                                                     |
 | `fe_search_ai_after_prompt_settings_fields`          | None                                                  | After all fields in the Prompts tab.                                                     |
-| `fe_search_ai_after_data_management_settings_fields` | `bool $is_pro`                                        | Inside the data-management settings table.                                               |
+| `fe_search_ai_after_data_management_settings_fields` | `bool $is_pro`                                        | After the data-management settings table.                                                |
 | `fe_search_ai_after_advanced_settings_fields`        | `bool $is_pro`                                        | After all fields in the Advanced settings tab.                                           |
 | `fe_search_ai_api_keys_table_rows`                   | `FE_Search_AI_Settings $settings`                     | At the end of the API-keys table body.                                                   |
 | `fe_search_ai_after_api_key_fields`                  | `FE_Search_AI_Settings $settings`                     | After the API-keys table.                                                                |
