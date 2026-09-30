@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Privacy
+
+- Fixed versioned consent always failing for logged-in users whose admin locale differs from the site locale by excluding translated presentation fields (`terms_label`, `analytics_label`, recipient `label`) from the consent version hash
+- Changing the consent version hashing scheme invalidates previously issued consent tokens; visitors are asked to consent once again
+
+### Chat UI
+
+- Added Bubble Color gradient support with configurable start/end colors and angle, plus an optional fixed animation, applied to the floating chat bubble and send button
+- Wired the Bubble Color setting to the floating chat bubble and send button, replacing the hard-coded blue-purple gradient
+- Derived the chat input background from the background lightness (HSL shift) so the input field stays distinguishable on bright or custom colors
+
 ## 1.2.0 (2026-09-23)
 
 ### Zero Data Retention
