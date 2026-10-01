@@ -292,9 +292,9 @@ msgstr "基本文字色"
 msgid "Batch Size"
 msgstr "バッチサイズ"
 
-#: includes/admin/class-fe-search-ai-settings.php:2057
-msgid "Bubble Color"
-msgstr "吹き出しの色"
+#: includes/admin/class-fe-search-ai-settings.php:2069
+msgid "Bubble / Send Button Color"
+msgstr "バブル/送信ボタンの色"
 
 #: includes/admin/class-fe-search-ai-settings.php:1867
 #: includes/ajax/class-fe-search-ai-sync-handler.php:2671
@@ -1887,7 +1887,7 @@ msgstr "FE Search AI Pro で、さらに多くの機能を利用可能に"
 
 #: includes/admin/class-fe-search-ai-settings.php:2076
 msgid "Use a gradient for the bubble color"
-msgstr "吹き出しの色にグラデーションを使用する"
+msgstr "バブル/送信ボタンの色にグラデーションを使用する"
 
 #: includes/admin/class-fe-search-ai-settings.php:1918
 msgid ""
@@ -1939,8 +1939,8 @@ msgid ""
 "When enabled, the bubble color is rendered as a gradient between the start "
 "and end colors below."
 msgstr ""
-"有効にすると、吹き出しの色は以下の開始色と終了色の間のグラデーションで描"
-"画されます。"
+"有効にすると、バブル/送信ボタンの色は以下の開始色と終了色の間のグラデー"
+"ションで描画されます。"
 
 #: includes/admin/class-fe-search-ai-settings.php:339
 msgid ""

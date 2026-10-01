@@ -2066,7 +2066,7 @@ class FE_Search_AI_Settings {
 					></div>
 				</div>
 				<div class="color-picker-box-right">
-					<label for="fe_search_ai_key_color"><?php esc_html_e( 'Bubble Color', 'fe-search-ai' ); ?></label>
+					<label for="fe_search_ai_key_color"><?php esc_html_e( 'Bubble / Send Button Color', 'fe-search-ai' ); ?></label>
 					<span class="description"><?php esc_html_e( 'Base color applied to the floating chat bubble and the send button.', 'fe-search-ai' ); ?></span>
 				</div>
 			</div>

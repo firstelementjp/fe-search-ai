@@ -501,12 +501,6 @@
 	justify-content: flex-end;
 }
 
-.fe-search-ai-message-user p {
-	color: white;
-	border-top-right-radius: 4px;
-	background: var(--fe-search-ai-key-color);
-}
-
 /* Styling for Markdown elements */
 .fe-search-ai-message ul,
 .fe-search-ai-message ol {
@@ -553,9 +547,10 @@
 }
 
 .fe-search-ai-message-user p {
-	background: var(--feais-user-bubble-bg);
+	background: var(--feais-input-bg);
 	color: var(--feais-text);
 	align-self: flex-end;
+	border-top-right-radius: 4px;
 }
 
 .fe-search-ai-message-user p::after {
@@ -566,7 +561,7 @@
 	width: 0;
 	height: 0;
 	border: 8px solid transparent;
-	border-left-color: var(--feais-user-bubble-bg);
+	border-left-color: var(--feais-input-bg);
 	border-right: 0;
 }
 

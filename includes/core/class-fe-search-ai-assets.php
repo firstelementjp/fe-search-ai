@@ -347,13 +347,8 @@ class FE_Search_AI_Assets {
 		$input_bg_hex_sanitized                       = sanitize_hex_color( sprintf( '#%02x%02x%02x', $input_bg_r, $input_bg_g, $input_bg_b ) );
 		$input_bg_hex                                 = ! empty( $input_bg_hex_sanitized ) ? $input_bg_hex_sanitized : $background_color;
 
-		// Calculate the user chat bubble color by mixing a small amount (5%) of the accent color into the input color.
-		$user_bubble_mix           = 0.05;
-		$user_bubble_r             = (int) round( $input_bg_r * ( 1 - $user_bubble_mix ) + $accent_r * $user_bubble_mix );
-		$user_bubble_g             = (int) round( $input_bg_g * ( 1 - $user_bubble_mix ) + $accent_g * $user_bubble_mix );
-		$user_bubble_b             = (int) round( $input_bg_b * ( 1 - $user_bubble_mix ) + $accent_b * $user_bubble_mix );
-		$user_bubble_hex_sanitized = sanitize_hex_color( sprintf( '#%02x%02x%02x', $user_bubble_r, $user_bubble_g, $user_bubble_b ) );
-		$user_bubble_hex           = ! empty( $user_bubble_hex_sanitized ) ? $user_bubble_hex_sanitized : $key_color;
+		// The user chat bubble shares the input field background color.
+		$user_bubble_hex = $input_bg_hex;
 
 		$bg_factor_light     = 0.1;
 		$bg_factor_dark      = 0.05;

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Chat UI
+
+- Changed the user message bubble background to reuse the chat input background and renamed the "Bubble Color" display setting to "Bubble / Send Button Color"
+
 ## 1.2.0 (2026-09-30)
 
 ### Zero Data Retention
