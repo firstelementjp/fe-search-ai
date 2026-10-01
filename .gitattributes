@@ -15,6 +15,7 @@ package-lock.json export-ignore
 # Exclude development configuration
 phpcs.xml.dist export-ignore
 .eslintrc.json export-ignore
+eslint.config.mjs export-ignore
 .prettierrc export-ignore
 .prettierignore export-ignore
 .eslintignore export-ignore
