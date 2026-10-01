@@ -550,10 +550,10 @@
 	background: var(--feais-input-bg);
 	color: var(--feais-text);
 	align-self: flex-end;
-	border-top-right-radius: 4px;
+	/* border-top-right-radius: 4px; */
 }
 
-.fe-search-ai-message-user p::after {
+/* .fe-search-ai-message-user p::after {
 	content: '';
 	position: absolute;
 	top: 15px;
@@ -563,7 +563,7 @@
 	border: 8px solid transparent;
 	border-left-color: var(--feais-input-bg);
 	border-right: 0;
-}
+} */
 
 /* ==========================================================================
 	Privacy Consent Overlay
