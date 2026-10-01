@@ -289,8 +289,8 @@ msgstr ""
 msgid "Batch Size"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2057
-msgid "Bubble Color"
+#: includes/admin/class-fe-search-ai-settings.php:2069
+msgid "Bubble / Send Button Color"
 msgstr ""
 
 #: includes/admin/class-fe-search-ai-settings.php:1867

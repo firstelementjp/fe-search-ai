@@ -476,12 +476,6 @@ class FE_Search_AI_Chat_UI {
 			#fe_search_ai_chat_form button:hover {
 				background-color: var(--fe-search-ai-key-color-darker);
 			}
-			.fe-search-ai-message-user p {
-				background: var(--fe-search-ai-key-color);
-			}
-			.fe-search-ai-message-user p::after {
-				border-left-color: var(--fe-search-ai-key-color);
-			}
 		</style>
 		<?php
 		$default_css = ob_get_clean();
