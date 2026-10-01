@@ -2,7 +2,7 @@
 Contributors: firstelementjp
 Tags: ai, search, chat, semantic, vector
 Requires at least: 6.6
-Tested up to: 7.0
+Tested up to: 7.1.2
 Stable tag: 1.2.0
 Requires PHP: 7.4
 License: GPLv2 or later
