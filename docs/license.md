@@ -25,7 +25,7 @@ License keys are stored encrypted. License validation sends the site URL and key
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Providers | Additional providers (DeepSeek, Qwen planned), custom OpenAI-compatible endpoints (local LLMs, BGE embeddings), failover (planned)               |
 | Models    | Per-provider model selection, including embedding models                                                                                         |
-| Sync      | Custom field indexing, stop-word editing                                                                                                         |
+| Sync      | Custom field indexing, [custom stop words](config.md#tuning-pro)                                                                                 |
 | Prompts   | Per-provider custom prompts                                                                                                                      |
 | Display   | Fullscreen chat page, visitor consent for terms/privacy                                                                                          |
 | Security  | [Forbidden-word masking and rate limits](config.md#security-pro)                                                                                 |

@@ -85,6 +85,21 @@ Maximum number of posts synced, counted from the most recent. Default `100`; `-1
 
 Posts processed per AJAX batch. Default `10`, range 1–100. Lower values reduce timeout risk on shared hosting; higher values finish faster.
 
+### Tuning (Pro)
+
+A **Tuning** section is appended to the Sync tab when a Pro license is active.
+
+#### Custom Stop Words (Keyword Search)
+
+Comma-separated words excluded from the keyword index and from search-query tokenization. Stop words affect **BM25 keyword search only** — embeddings and vector search are unaffected.
+
+- The built-in per-language list is always applied; view it under **View Default Stop Words** — no need to re-add those.
+- Entries are normalized before merging: Japanese words get half-width/lowercase normalization, other languages lowercase only. Per-word normalization is filterable via `fe_search_ai_normalize_custom_stop_word`.
+- Useful for site-specific terms that appear everywhere and therefore hurt keyword ranking (e.g. your own company or product name).
+- After changing the list, run **Rebuild Index** so the keyword index is rebuilt without the new stop words.
+
+Developers can also modify the effective list programmatically with the `fe_search_ai_stop_words` filter (see [Developer Hooks](hooks.md)).
+
 ### Synchronization
 
 Index status and sync buttons — see [Sync System](sync.md).
