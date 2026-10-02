@@ -1,59 +1,203 @@
 # Configuration
 
-FE Search AI settings are organized by provider, sync, display, and advanced options.
+The settings screen (**FE Search AI** in the admin menu) is organized into tabs. This page is a field-by-field reference for each tab in the free plugin. Pro adds **Models** and **Security** tabs plus extra fields.
 
-## Provider settings
+- **Providers** — API keys and model provider selection
+- **Sync** — Content to index, storage backends, sync controls
+- **Prompts** — Site information and the base system prompt
+- **Display** — Floating chat, embed mode, and appearance
+- **Privacy** — Data-handling summary and legal document links
+- **Advanced settings** — Reranker, Qdrant, tokenizer, logging, and data management
 
-Configure API keys for the services you want to use.
+## Providers tab
 
-| Provider                     | Purpose                                |
-| ---------------------------- | -------------------------------------- |
-| OpenAI                       | Chat completions and embeddings        |
-| Google                       | Gemini chat completions and embeddings |
-| Anthropic                    | Claude chat completions                |
-| Cohere                       | Optional reranking                     |
-| Qdrant                       | Vector storage                         |
-| Yahoo! JAPAN Japanese MA API | Optional Japanese tokenization         |
+### API Keys
 
-## Qdrant settings
+One password field per provider. Keys are encrypted before being stored in the database. Each row has a **Test** button that verifies the key with a live API call, and shows the model currently in use.
 
-Qdrant stores vector embeddings for your site content.
+| Provider           | Purpose                         | Default model               |
+| ------------------ | ------------------------------- | --------------------------- |
+| OpenAI (GPT)       | Chat completions and embeddings | `gpt-5.4-mini`              |
+| Anthropic (Claude) | Chat completions                | `claude-haiku-4-5-20251001` |
+| Google (Gemini)    | Chat completions and embeddings | `gemini-2.5-flash`          |
+| Cohere (Rerank)    | Result reranking                | `rerank-v3.5`               |
 
-Required values usually include:
+Model selection is a Pro feature. Without Pro, the default model for each provider is used.
 
-- Endpoint URL
-- API key
-- Collection name
-- Vector size matching the selected embedding model
+Built-in rate limits protect your API quota: **50 requests per hour per IP address** and **1,000 requests per day per site**. Adjust them with the `fe_search_ai_rate_limit_settings` filter (see [Developer Hooks](hooks.md)).
 
-If you use Qdrant Cloud, confirm your cluster is active before syncing content.
+### Chat AI
 
-## Chat provider
+The provider that generates answers: OpenAI, Anthropic, or Google.
 
-Select the provider used to generate answers. The free version supports OpenAI, Google, and Anthropic. Pro may add more model choices and OpenAI-compatible custom endpoints.
+### Vectorization AI
 
-## Embedding provider
+The provider that converts content and questions into embedding vectors: OpenAI (`text-embedding-3`) or Google (`text-embedding-004`). The embedding provider determines the vector dimensions required by your Qdrant collection — changing it requires a compatible collection and a full reindex.
 
-Select the provider used to convert content into vectors. The embedding provider must match the vector size configured in Qdrant.
+### Rerank AI
 
-## Rerank provider
+The provider used for reranking. Only Cohere is supported in the free version. Requires a Cohere API key; see Reranker Settings in the Advanced tab.
 
-Cohere reranking is optional. It can improve answer quality by reordering retrieved chunks before they are sent to the chat model.
+## Sync tab
 
-## Sync settings
+See [Sync System](sync.md) for how indexing works end to end.
 
-Choose which post types should be indexed. Start with a small set of content, verify answer quality, then expand the scope.
+### Content to Sync
 
-## Display settings
+#### Sync Targets
 
-Customize frontend chat labels, colors, greeting text, placeholders, and floating chat behavior.
+An accordion with one entry per public post type (attachments excluded). For each post type:
 
-## Privacy
+- **Enabled checkbox** in the accordion title — include the post type in sync (posts and pages are enabled by default).
+- **Include in Chunk Data** — which fields are indexed: Post Title, Post Content, Post Date, Post Author, and each public taxonomy.
+- **Taxonomy options** — per taxonomy, choose _Include only specified term IDs_ or _Exclude specified term IDs_, with a comma-separated term ID list. Leave the list empty to include all terms.
 
-Use the **Privacy** tab to review active data recipients, configure Terms of Service and Privacy Policy pages, and inspect browser and server-side storage. Pro adds required terms consent, optional masked conversation analytics, diagnostic summaries, and consent-record retention.
+A post type is skipped entirely if none of its "Include in Chunk Data" items are checked.
 
-See [Privacy and Data Handling](privacy.md) for details.
+#### Only Sync Specific Posts
 
-## Rate limiting
+Comma-separated post IDs. When set, only these posts are synced — post-type rules are ignored, although each post type's metadata settings still apply.
 
-Use rate limiting to protect your API quota. Review external service terms and privacy policies before enabling providers.
+#### Exclude Specific Posts
+
+Comma-separated post IDs to skip even when they match the post-type rules.
+
+#### Data Storage
+
+Checkboxes for the storage backends used for chunks and vectors:
+
+- **WordPress database** — keyword index (BM25) in `{prefix}fe_search_ai_vectors` and `{prefix}fe_search_ai_keyword_index`. No external service required.
+- **Qdrant (external vector database)** — semantic vector search. Requires the Qdrant connection settings in the Advanced tab.
+
+#### Hybrid Search
+
+When enabled (default), retrieval combines the WordPress keyword index and Qdrant vector search, fused with Reciprocal Rank Fusion. Requires **both** storage backends.
+
+#### Embeddings from Summaries
+
+When enabled (default), each chunk is first summarized into structured topics, facts, entities, and keywords by the chat provider, and the summary — not the raw text — is embedded. Usually improves matching for broad queries, at the cost of extra API calls during sync.
+
+#### Sync Limit
+
+Maximum number of posts synced, counted from the most recent. Default `100`; `-1` syncs all eligible posts. Useful for trial syncs and cost control.
+
+#### Batch Size
+
+Posts processed per AJAX batch. Default `10`, range 1–100. Lower values reduce timeout risk on shared hosting; higher values finish faster.
+
+### Synchronization
+
+Index status and sync buttons — see [Sync System](sync.md).
+
+## Prompts tab
+
+| Field                  | Description                                                                                                                                                            |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Site Name (AI)**     | Name the AI should use for this site; fills the `{site_name}` placeholder. Defaults to the site title.                                                                 |
+| **Site Purpose (AI)**  | What the site provides and what users look for; fills the `{site_purpose}` placeholder. Defaults to the site tagline.                                                  |
+| **Base System Prompt** | Full instruction text sent to the chat model. Leave empty to use the built-in prompt. Placeholders such as `{site_name}` and `{site_purpose}` are expanded at runtime. |
+| **Structured Output**  | Request JSON-structured responses where the provider supports it; unsupported providers fall back to plain text. Off by default.                                       |
+
+## Display tab
+
+### Floating Mode Settings
+
+| Field                                  | Description                                                                                |
+| -------------------------------------- | ------------------------------------------------------------------------------------------ |
+| **Enable floating chat**               | Show the chat bubble across the site (on by default).                                      |
+| **Login status**                       | Show to logged-in users / non-logged-in users (both on by default).                        |
+| **Display device**                     | Show on PC / Mobile (both on by default).                                                  |
+| **Conditions for Displaying the Chat** | Page types: Home, Archive, Search result page, 404 page, Single pages (all on by default). |
+| **Display only with these post IDs**   | Comma-separated IDs. When set, all other display rules are ignored.                        |
+| **Do not display with these post IDs** | Comma-separated IDs to exclude.                                                            |
+
+### Embed Mode
+
+Displays the `[fe-search-ai]` shortcode for manual placement. See [Search Integration](search.md).
+
+### Chat UI Appearance
+
+**Text & Colors:**
+
+| Field                        | Default                                               |
+| ---------------------------- | ----------------------------------------------------- |
+| Chat window title            | `FE Search AI`                                        |
+| First greeting               | `Hello! I am FE Search AI. How can I help you today?` |
+| Input field placeholder      | `Ask a question about this site…`                     |
+| Submit button text           | `Send`                                                |
+| Bubble / Send Button Color   | `#E9E9E9`                                             |
+| Gradient (optional)          | start `#00AFFE`, end `#973CFF`, angle `135`°          |
+| Animate the bubble           | On; slowly animates the gradient                      |
+| Chat window background color | `#FFFFFF`                                             |
+| Base text color              | `#333333`                                             |
+
+**Interaction:**
+
+- **Typing Animation Speed** — slider 1 (smooth) to 10 (fast); default `7`.
+- **Send Key Settings (Default)** — `Enter`, `Shift+Enter`, or `Cmd/Ctrl+Enter` to send. Visitors can override this in the chat's own settings menu.
+
+**Footer Notice:** text shown at the bottom of the chat window, next to the settings icon. Blank uses the default AI-disclaimer text.
+
+## Privacy tab
+
+- **Current Data Handling** — a live summary of active recipients (which services receive visitor input), server-side retention periods for each record class, and whether diagnostic logging is enabled.
+- **Legal Documents** — Terms of Service and Privacy Policy pages shown in the chat's privacy notice. If no privacy page is selected, the page configured in WordPress's own privacy settings is used.
+
+See [Privacy and Data Handling](privacy.md) for the full data processing map.
+
+## Advanced settings tab
+
+### Reranker Settings
+
+Requires a Cohere API key in the Providers tab.
+
+| Field                              | Default | Range | Description                                                            |
+| ---------------------------------- | ------- | ----- | ---------------------------------------------------------------------- |
+| Enable reranker                    | On      | —     | Reorder retrieved chunks with Cohere before sending them to the LLM.   |
+| Top N chunks for LLM               | `5`     | 1–20  | Only the top N reranked chunks are sent to the model.                  |
+| Initial candidates (vector search) | `50`    | 5–200 | Candidates fetched from Qdrant before reranking.                       |
+| Hybrid candidate limit             | `50`    | 5–200 | Per-source candidates when hybrid search is on.                        |
+| Rerank timeout (sec)               | `15`    | 1–60  | Timeout for the Cohere request; on timeout the original order is kept. |
+
+### Qdrant Settings
+
+| Field               | Description                                                                                    |
+| ------------------- | ---------------------------------------------------------------------------------------------- |
+| **Qdrant Endpoint** | Base URL of the Qdrant HTTP API, including port (e.g. `https://your-instance.qdrant.io:6333`). |
+| **Qdrant API Key**  | Stored encrypted; leaving the field empty keeps the saved key.                                 |
+| **Collection Name** | Collection used for this site. The collection's vector size must match the embedding model.    |
+
+Note: Qdrant Cloud **free** clusters may delete collections after a period of inactivity.
+
+### Japanese Tokenizer
+
+Shown only when the site locale is `ja` / `ja_JP`. Affects keyword (BM25) indexing and search — not used when only a vector database is in use.
+
+- **Engine**: `Built-in (TinySegmenter)` (default, requires PHP 8.0+) or `Yahoo! Japanese MA API`. On PHP < 8.0, Yahoo! MA is forced and the selector is disabled.
+- **Yahoo! App ID**: stored encrypted; can be overridden by defining `FE_SEARCH_AI_YAHOO_APP_ID` in `wp-config.php`, which takes priority.
+
+### Advanced Settings
+
+| Field                              | Description                                                                                                                                                                                               |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Load default plugin CSS**        | On by default. Uncheck to style the chat UI entirely with your theme.                                                                                                                                     |
+| **Load default plugin JavaScript** | On by default. Uncheck only if you replace the chat UI HTML and handle API communication yourself.                                                                                                        |
+| **Debug Mode**                     | Writes operational logs to `{prefix}fe_search_ai_system_logs`. Enable only while troubleshooting; it can impact performance.                                                                              |
+| **Log Retention (days)**           | Days to keep system logs before the daily rotation deletes them. Default `30`, range 1–365.                                                                                                               |
+| **Retrieval Trace Persistence**    | Stores retrieval traces (hashed queries, post IDs, ranking scores — never question or answer text) for search-quality analysis. Off by default, with a configurable retention period (default `30` days). |
+
+### Data Management
+
+Destructive maintenance actions, each with an explicit button:
+
+- **Delete Synced Data** — removes all vectors and keyword indexes; AI search stops working until you sync again.
+- **Delete System Logs** — truncates `{prefix}fe_search_ai_system_logs`.
+- **Delete Retrieval Traces** — truncates `{prefix}fe_search_ai_retrieval_traces` and `{prefix}fe_search_ai_retrieval_trace_items`.
+
+### Delete Data on Uninstall
+
+When enabled, all plugin tables and settings are removed on uninstall. Leave it off to preserve settings and sync data across reinstalls.
+
+## Encryption
+
+All API keys and the Yahoo! App ID are encrypted before storage (`FE_Search_AI_Encryption_Helper`) and only decrypted at request time.
