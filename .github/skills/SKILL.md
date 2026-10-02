@@ -214,7 +214,7 @@ while ( $retry_count < $max_retries ) {
 **Solution**:
 
 - Verify plugin is active
-- Check shortcode syntax: `[fe_search_ai]`
+- Check shortcode syntax: `[fe-search-ai]` (the legacy `[fe_search_ai]` tag still works as an alias)
 - Check for JavaScript errors in browser console
 - Verify assets are enqueued
 

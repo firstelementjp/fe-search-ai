@@ -10,6 +10,8 @@ Add the shortcode to any post, page, or block editor content:
 [fe-search-ai]
 ```
 
+The legacy `[fe_search_ai]` tag (with underscores) is also supported for backward compatibility.
+
 ## Floating chat
 
 The floating chat UI can be enabled from the display settings. This is useful when you want the AI search assistant to be available across the site.
