@@ -67,12 +67,12 @@
 
 ## ログの確認場所
 
-| ツール                    | 場所                                                                  | 内容                                                             |
-| ------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| Debug Mode のシステムログ | `{prefix}fe_search_ai_system_logs` テーブル（Advanced settings タブ） | 動作イベント、retrieval traceスコア、エラー — 会話本文は含まない |
-| Retrieval trace           | `{prefix}fe_search_ai_retrieval_traces` / `_items`（任意の永続化）    | ハッシュ化されたクエリ、投稿ID、ソース別スコアとランク           |
-| WordPress デバッグログ    | `wp-content/debug.log`                                                | PHPエラーとプラグインの `error_log` 出力                         |
-| ブラウザコンソール        | DevTools                                                              | フロントエンドのJSエラーと失敗したRESTリクエスト                 |
+| ツール                          | 場所                                                                  | 内容                                                          |
+| ------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Debug Mode のシステムログ       | `{prefix}fe_search_ai_system_logs` テーブル（Advanced settings タブ） | 動作イベント、検索トレーススコア、エラー — 会話本文は含まない |
+| 検索トレース（Retrieval trace） | `{prefix}fe_search_ai_retrieval_traces` / `_items`（任意の永続化）    | ハッシュ化されたクエリ、投稿ID、ソース別スコアとランク        |
+| WordPress デバッグログ          | `wp-content/debug.log`                                                | PHPエラーとプラグインの `error_log` 出力                      |
+| ブラウザコンソール              | DevTools                                                              | フロントエンドのJSエラーと失敗したRESTリクエスト              |
 
 ## 問い合わせ先
 

@@ -62,9 +62,9 @@ Sync画面にはインデックスの状態が表示されます。
 
 同期が繰り返し止まる場合は Batch Size を下げ、PHP の `memory_limit` / `max_execution_time` を確認してください。
 
-## Retrieval trace
+## 検索トレース（Retrieval Trace）
 
-すべてのチャットリクエストで _retrieval trace_（どのチャンクがどのスコアで取得されたかのコンパクトな記録）が生成されます。検索品質の分析に使われ、質問・回答の本文は一切含まれません。
+すべてのチャットリクエストで _検索トレース_（どのチャンクがどのスコアで取得されたかのコンパクトな記録）が生成されます。検索品質の分析に使われ、質問・回答の本文は一切含まれません。
 
 トレースの内容:
 
@@ -76,7 +76,7 @@ Sync画面にはインデックスの状態が表示されます。
 
 ### トレースの確認方法
 
-- **Debug Mode** を有効にすると、`{prefix}fe_search_ai_system_logs` に `Retrieval trace scores captured.` というエントリで記録されます。
+- **Debug Mode** を有効にすると、`{prefix}fe_search_ai_system_logs` に `Retrieval trace scores captured.` というエントリで検索トレースが記録されます。
 - **Retrieval Trace Persistence**（Advanced settings タブ）を有効にすると、`{prefix}fe_search_ai_retrieval_traces` と `{prefix}fe_search_ai_retrieval_trace_items` に保存されます。設定した保持期間（デフォルト30日）を過ぎた分は日次ローテーションで削除され、**Delete Retrieval Traces** で一括削除、アンインストール時削除の設定にも従います。
 
 簡易ヘルスチェック: 最終トレースアイテムに `bm25_score` が無いのにキーワードインデックスに行がある場合、チャンクのトークン数がゼロになっている可能性が高いので **Rebuild Index** を実行してください。
