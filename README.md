@@ -23,11 +23,11 @@ AI-powered, conversational search for WordPress. This repository contains the pl
 
 FE Search AI replaces standard WordPress search with a conversational AI chat using RAG (Retrieval-Augmented Generation). It indexes your content into vector embeddings and keyword indexes, providing accurate answers based only on your website's content.
 
+This plugin is designed to be highly extensible and performant, running on standard MySQL databases without requiring external vector databases.
+
 ![Chat UI](docs/assets/images/v120-release-image-1@2x-100.jpg)
 
 ![Admin UI 1](docs/assets/images/v120-pro-admin-1.png)
-
-This plugin is designed to be highly extensible and performant, running on standard MySQL databases without requiring external vector databases.
 
 ## ⚡ Quick Links
 
