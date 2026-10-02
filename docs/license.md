@@ -28,7 +28,7 @@ License keys are stored encrypted. License validation sends the site URL and key
 | Sync      | Custom field indexing, stop-word editing                                                                                                         |
 | Prompts   | Per-provider custom prompts                                                                                                                      |
 | Display   | Fullscreen chat page, visitor consent for terms/privacy                                                                                          |
-| Security  | Blocked-word masking, configurable rate limits and admin notifications                                                                           |
+| Security  | [Forbidden-word masking and rate limits](config.md#security-pro)                                                                                 |
 | Advanced  | [MCP server](mcp.md) for AI agents, API token management for external clients (`/query` endpoint), detailed conversation logging with CSV export |
 
 When the license is active, extra **Models** and **Security** tabs appear in the settings screen, and Pro-only fields are injected into the existing tabs.

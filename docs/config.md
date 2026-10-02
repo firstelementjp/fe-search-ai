@@ -200,6 +200,27 @@ Destructive maintenance actions, each with an explicit button:
 
 When enabled, all plugin tables and settings are removed on uninstall. Leave it off to preserve settings and sync data across reinstalls.
 
+## Security (Pro)
+
+The **Security** tab appears when a Pro license is active.
+
+### Forbidden Words List
+
+A comma-separated list of words and phrases to redact. Matches are replaced with `[REDACTED]` (case-insensitive) in **both** visitor input and AI responses — the filter hooks `fe_search_ai_preprocess_user_question` and `fe_search_ai_preprocess_model_response`, so it also applies to the Pro REST `/query` and MCP endpoints. The list is stored encrypted (AES-256-CBC).
+
+- Basic injection phrases (e.g. "ignore previous instructions") are always filtered from a built-in language file, shown under **View Default Security Filters** — you do not need to add them.
+- If the custom list is left empty, a built-in English fallback list is used.
+- Use it for project names, internal terms, or injection phrases specific to your site.
+
+### API Rate Limiting
+
+| Field                       | Default           | Description                                              |
+| --------------------------- | ----------------- | -------------------------------------------------------- |
+| Per-user limit (IP-based)   | 50 requests/hour  | `-1` disables the limit.                                 |
+| Site-wide limit (global)    | 1000 requests/day | Safety valve against runaway API cost. `-1` disables.    |
+| Administrator notifications | 80%               | Email sent when the global limit reaches this threshold. |
+| Notification email          | Site admin email  | Recipient for the threshold notification.                |
+
 ## Encryption
 
 All API keys and the Yahoo! App ID are encrypted before storage (`FE_Search_AI_Encryption_Helper`) and only decrypted at request time.
