@@ -38,7 +38,7 @@ WordPress.org Plugin Directoryで公開された後は、**プラグイン → �
 
 - チャットプロバイダーのAPIキー
 - EmbeddingプロバイダーのAPIキー
-- QdrantのエンドポイントとAPIキー
+- QdrantのエンドポイントとAPIキー（クラスターとコレクションの作成は[外部サービスのセットアップ](services.md)を参照）
 - 同期対象の投稿タイプ
 - チャットUIの表示方法
 

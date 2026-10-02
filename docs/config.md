@@ -169,12 +169,14 @@ Requires a Cohere API key in the Providers tab.
 
 Note: Qdrant Cloud **free** clusters may delete collections after a period of inactivity.
 
+For creating a cluster and collection (including the required vector size), see [External Service Setup](services.md).
+
 ### Japanese Tokenizer
 
 Shown only when the site locale is `ja` / `ja_JP`. Affects keyword (BM25) indexing and search — not used when only a vector database is in use.
 
 - **Engine**: `Built-in (TinySegmenter)` (default, requires PHP 8.0+) or `Yahoo! Japanese MA API`. On PHP < 8.0, Yahoo! MA is forced and the selector is disabled.
-- **Yahoo! App ID**: stored encrypted; can be overridden by defining `FE_SEARCH_AI_YAHOO_APP_ID` in `wp-config.php`, which takes priority.
+- **Yahoo! App ID**: stored encrypted; can be overridden by defining `FE_SEARCH_AI_YAHOO_APP_ID` in `wp-config.php`, which takes priority. For how to obtain the ID, see [External Service Setup](services.md).
 
 ### Advanced Settings
 
