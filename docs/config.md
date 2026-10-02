@@ -24,6 +24,12 @@ One password field per provider. Keys are encrypted before being stored in the d
 
 Model selection is a Pro feature. Without Pro, the default model for each provider is used.
 
+**Pro additions to this table:**
+
+- **DeepSeek** — extra chat provider with its own API key and Test button. Hidden by default; enable it with the `fe_search_ai_show_deepseek_provider` filter.
+- **Custom Endpoint (Chat)** — OpenAI-compatible chat completions endpoint (e.g. a local LLM server). Endpoint URL plus an optional API key.
+- **Custom Endpoint (Embedding)** — OpenAI-compatible embeddings endpoint (e.g. `http://localhost:11434/v1/embeddings` for a self-hosted model). Adds a "Custom (OpenAI-Compatible)" choice to the Vectorization AI dropdown.
+
 Built-in rate limits protect your API quota: **50 requests per hour per IP address** and **1,000 requests per day per site**. Adjust them with the `fe_search_ai_rate_limit_settings` filter (see [Developer Hooks](hooks.md)).
 
 ### Chat AI
@@ -38,6 +44,23 @@ The provider that converts content and questions into embedding vectors: OpenAI 
 
 The provider used for reranking. Only Cohere is supported in the free version. Requires a Cohere API key; see Reranker Settings in the Advanced tab.
 
+## Models tab (Pro)
+
+Appears when a Pro license is active. Each provider gets a dropdown of preset models plus a custom model name field that overrides the preset.
+
+| Field                           | Presets                                                                    |
+| ------------------------------- | -------------------------------------------------------------------------- |
+| **OpenAI (GPT) Model**          | `gpt-5.4-mini` (default), `gpt-5.4`                                        |
+| **Anthropic (Claude) Model**    | `claude-haiku-4-5-20251001` (default), `claude-sonnet-4-6`                 |
+| **Google (Gemini) Model**       | `gemini-2.5-flash` (default), `gemini-2.5-pro`                             |
+| **Cohere Rerank Model**         | `rerank-v3.5` (default), `rerank-v4.0-fast`, `rerank-v4.0-pro`             |
+| **Custom chat model name**      | Model ID sent to the Custom Endpoint (Chat).                               |
+| **Custom embedding model name** | Model ID sent to the Custom Endpoint (Embedding), e.g. `nomic-embed-text`. |
+
+A **DeepSeek Model** row (`deepseek-chat`, `deepseek-coder`) appears only when the `fe_search_ai_show_deepseek_provider` filter is enabled.
+
+Changing the embedding model changes vector dimensions — see the note under Vectorization AI and rebuild the index after changing it.
+
 ## Sync tab
 
 See [Sync System](sync.md) for how indexing works end to end.
@@ -50,6 +73,7 @@ An accordion with one entry per public post type (attachments excluded). For eac
 
 - **Enabled checkbox** in the accordion title — include the post type in sync (posts and pages are enabled by default).
 - **Include in Chunk Data** — which fields are indexed: Post Title, Post Content, Post Date, Post Author, and each public taxonomy.
+- **Custom Fields (Post Meta)** (Pro) — checkbox plus a textarea for meta keys (comma- or newline-separated) to include in chunk data. Useful when essential content lives in ACF or other custom fields.
 - **Taxonomy options** — per taxonomy, choose _Include only specified term IDs_ or _Exclude specified term IDs_, with a comma-separated term ID list. Leave the list empty to include all terms.
 
 A post type is skipped entirely if none of its "Include in Chunk Data" items are checked.
@@ -146,6 +170,10 @@ Placeholders are expanded in the system prompt at request time:
 
 The built-in prompt instructs the model to answer only from the search results, cite results as Markdown links, say when information was not found, and respond in the question's language. The fully expanded prompt is filterable via `fe_search_ai_final_system_prompt` (see [Developer Hooks](hooks.md)).
 
+### Model-specific Custom Prompts (Pro)
+
+An accordion with one textarea per chat provider (OpenAI, Anthropic, Google, Custom OpenAI-compatible, and DeepSeek when enabled). Overrides the Base System Prompt for that provider only; blank entries fall back to the standard prompt. Use it to tune instruction style for each model's quirks.
+
 ## Display tab
 
 ### Floating Mode Settings
@@ -186,12 +214,32 @@ Displays the `[fe-search-ai]` shortcode for manual placement. See [Search Integr
 
 **Footer Notice:** text shown at the bottom of the chat window, next to the settings icon. Blank uses the default AI-disclaimer text.
 
+### Fullscreen Page (Pro)
+
+A page dropdown appended to the Display tab. When a static page is selected, visiting that page renders the chat UI full-screen — a dedicated "talk to the AI" page without a floating bubble.
+
 ## Privacy tab
 
 - **Current Data Handling** — a live summary of active recipients (which services receive visitor input), server-side retention periods for each record class, and whether diagnostic logging is enabled.
 - **Legal Documents** — Terms of Service and Privacy Policy pages shown in the chat's privacy notice. If no privacy page is selected, the page configured in WordPress's own privacy settings is used.
 
 See [Privacy and Data Handling](privacy.md) for the full data processing map.
+
+### User Consent (Pro)
+
+An opt-in consent layer shown to visitors before they use the chat.
+
+| Field                                                              | Default       | Description                                                                                                                                   |
+| ------------------------------------------------------------------ | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Require user consent on first use                                  | Off           | Visitors must agree to the Terms of Service and Privacy Policy before chatting. Requires both legal pages to be configured above.             |
+| Save diagnostic conversation summaries while Debug Mode is enabled | Off           | Stores lengths, context status, and operational metadata — never question/answer text.                                                        |
+| Offer optional conversation analytics consent                      | Off           | Visitors may opt in to storing PII- and forbidden-word-masked question/answer text for service improvement. Refusing does not block chat use. |
+| Conversation log retention                                         | 7 days        | Days before diagnostic summaries and opt-in analytics logs are deleted (1–365).                                                               |
+| Expired consent record retention                                   | 180 days      | Days before revoked/obsolete consent records are deleted (1–3650).                                                                            |
+| Required terms / optional analytics checkbox labels                | Built-in text | Labels shown next to each consent checkbox.                                                                                                   |
+| Consent screen message                                             | Built-in text | Notice text; `%s` placeholders expand to the Terms/Privacy URLs. HTML allowed.                                                                |
+
+The tab also shows the **current consent version** hash — it changes whenever disclosed terms change, and visitors are asked to consent again. See [Privacy and Data Handling](privacy.md) for what is stored.
 
 ## Advanced settings tab
 
@@ -236,6 +284,15 @@ Shown only when the site locale is `ja` / `ja_JP`. Affects keyword (BM25) indexi
 | **Log Retention (days)**           | Days to keep system logs before the daily rotation deletes them. Default `30`, range 1–365.                                                                                                               |
 | **Retrieval Trace Persistence**    | Stores retrieval traces (hashed queries, post IDs, ranking scores — never question or answer text) for search-quality analysis. Off by default, with a configurable retention period (default `30` days). |
 
+### External API (Pro)
+
+The Advanced tab gains two Pro sections:
+
+- **API Token Management** — generate and revoke named Bearer tokens (`fesai_tk_...`) for the `/query` and MCP endpoints.
+- **MCP Integration** — ready-to-paste MCP client configuration and the exposed tool list.
+
+See [MCP Integration](mcp.md) for setup and endpoint details.
+
 ### Data Management
 
 Destructive maintenance actions, each with an explicit button:
@@ -243,6 +300,8 @@ Destructive maintenance actions, each with an explicit button:
 - **Delete Synced Data** — removes all vectors and keyword indexes; AI search stops working until you sync again.
 - **Delete System Logs** — truncates `{prefix}fe_search_ai_system_logs`.
 - **Delete Retrieval Traces** — truncates `{prefix}fe_search_ai_retrieval_traces` and `{prefix}fe_search_ai_retrieval_trace_items`.
+- **Delete Conversation Logs** (Pro) — truncates `{prefix}fe_search_ai_logs`.
+- **Delete Consent Records** (Pro) — delete only revoked/obsolete consent records, or all records in `{prefix}fe_search_ai_consents`.
 
 ### Delete Data on Uninstall
 
@@ -268,6 +327,10 @@ A comma-separated list of words and phrases to redact. Matches are replaced with
 | Site-wide limit (global)    | 1000 requests/day | Safety valve against runaway API cost. `-1` disables.    |
 | Administrator notifications | 80%               | Email sent when the global limit reaches this threshold. |
 | Notification email          | Site admin email  | Recipient for the threshold notification.                |
+
+## System Logs page (Pro)
+
+Pro adds a **System Logs** submenu under the FE Search AI admin menu: a filterable list of `{prefix}fe_search_ai_system_logs` (and conversation logs) with a **CSV export** button for offline analysis.
 
 ## Encryption
 

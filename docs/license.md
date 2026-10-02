@@ -21,15 +21,15 @@ License keys are stored encrypted. License validation sends the site URL and key
 
 ## What Pro adds
 
-| Area      | Pro features                                                                                                                                     |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Providers | Additional providers (DeepSeek, Qwen planned), custom OpenAI-compatible endpoints (local LLMs, BGE embeddings), failover (planned)               |
-| Models    | Per-provider model selection, including embedding models                                                                                         |
-| Sync      | Custom field indexing, [custom stop words](config.md#tuning-pro)                                                                                 |
-| Prompts   | Per-provider custom prompts                                                                                                                      |
-| Display   | Fullscreen chat page, visitor consent for terms/privacy                                                                                          |
-| Security  | [Forbidden-word masking and rate limits](config.md#security-pro)                                                                                 |
-| Advanced  | [MCP server](mcp.md) for AI agents, API token management for external clients (`/query` endpoint), detailed conversation logging with CSV export |
+| Area      | Pro features                                                                                                                                                  |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Providers | [Additional providers](config.md#providers-tab) (DeepSeek, Qwen planned), custom OpenAI-compatible endpoints (local LLMs, BGE embeddings), failover (planned) |
+| Models    | [Per-provider model selection](config.md#models-tab-pro), including embedding models                                                                          |
+| Sync      | [Custom field indexing](config.md#sync-targets), [custom stop words](config.md#tuning-pro)                                                                    |
+| Prompts   | [Per-provider custom prompts](config.md#prompts-tab)                                                                                                          |
+| Display   | [Fullscreen chat page](config.md#display-tab), [visitor consent for terms/privacy](config.md#privacy-tab)                                                     |
+| Security  | [Forbidden-word masking and rate limits](config.md#security-pro)                                                                                              |
+| Advanced  | [MCP server](mcp.md) for AI agents, API token management for external clients (`/query` endpoint), detailed conversation logging with CSV export              |
 
 When the license is active, extra **Models** and **Security** tabs appear in the settings screen, and Pro-only fields are injected into the existing tabs.
 
