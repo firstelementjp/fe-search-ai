@@ -53,7 +53,7 @@ if ( function_exists( 'fe_search_ai' ) ) {
 POST /wp-json/fe-search-ai/v1/stream
 ```
 
-レスポンスはServer-Sent Events（SSE）で、回答がトークン単位でストリーミングされます。エンドポイントはIP・サイト単位でレート制限され（[設定](config.md)と `fe_search_ai_rate_limit_settings` フィルターを参照）、組み込みのnonceを検証し、パイプライン全体と同じプライバシー前処理を適用します。Pro版では `/query` エンドポイントと外部AIエージェント向けのMCPサーバーが追加されます。
+レスポンスはServer-Sent Events（SSE）で、回答がトークン単位でストリーミングされます。エンドポイントはIP・サイト単位でレート制限され（[設定](config.md)と `fe_search_ai_rate_limit_settings` フィルターを参照）、組み込みのnonceを検証し、パイプライン全体と同じプライバシー前処理を適用します。Pro版では `/query` エンドポイントと外部AIエージェント向けの[MCPサーバー](mcp.md)が追加されます。
 
 ## 訪問者向けの機能
 

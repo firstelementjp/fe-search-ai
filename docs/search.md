@@ -53,7 +53,7 @@ The chat UI communicates with a public REST endpoint:
 POST /wp-json/fe-search-ai/v1/stream
 ```
 
-Responses use Server-Sent Events (SSE) so answers stream in token by token. The endpoint is rate-limited per IP and per site (see [Configuration](config.md) and the `fe_search_ai_rate_limit_settings` filter), enforces the built-in request nonce, and applies the same privacy preprocessing as the rest of the pipeline. Pro adds a `/query` endpoint and an MCP server for external AI agents.
+Responses use Server-Sent Events (SSE) so answers stream in token by token. The endpoint is rate-limited per IP and per site (see [Configuration](config.md) and the `fe_search_ai_rate_limit_settings` filter), enforces the built-in request nonce, and applies the same privacy preprocessing as the rest of the pipeline. Pro adds a `/query` endpoint and an [MCP server](mcp.md) for external AI agents.
 
 ## Visitor-facing features
 

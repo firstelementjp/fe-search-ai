@@ -21,15 +21,15 @@ License keys are stored encrypted. License validation sends the site URL and key
 
 ## What Pro adds
 
-| Area      | Pro features                                                                                                                           |
-| --------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Providers | Additional providers (DeepSeek, Qwen planned), custom OpenAI-compatible endpoints (local LLMs, BGE embeddings), failover (planned)     |
-| Models    | Per-provider model selection, including embedding models                                                                               |
-| Sync      | Custom field indexing, stop-word editing                                                                                               |
-| Prompts   | Per-provider custom prompts                                                                                                            |
-| Display   | Fullscreen chat page, visitor consent for terms/privacy                                                                                |
-| Security  | Blocked-word masking, configurable rate limits and admin notifications                                                                 |
-| Advanced  | MCP server for AI agents, API token management for external clients (`/query` endpoint), detailed conversation logging with CSV export |
+| Area      | Pro features                                                                                                                                     |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Providers | Additional providers (DeepSeek, Qwen planned), custom OpenAI-compatible endpoints (local LLMs, BGE embeddings), failover (planned)               |
+| Models    | Per-provider model selection, including embedding models                                                                                         |
+| Sync      | Custom field indexing, stop-word editing                                                                                                         |
+| Prompts   | Per-provider custom prompts                                                                                                                      |
+| Display   | Fullscreen chat page, visitor consent for terms/privacy                                                                                          |
+| Security  | Blocked-word masking, configurable rate limits and admin notifications                                                                           |
+| Advanced  | [MCP server](mcp.md) for AI agents, API token management for external clients (`/query` endpoint), detailed conversation logging with CSV export |
 
 When the license is active, extra **Models** and **Security** tabs appear in the settings screen, and Pro-only fields are injected into the existing tabs.
 
