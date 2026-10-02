@@ -98,6 +98,20 @@ Index status and sync buttons — see [Sync System](sync.md).
 | **Base System Prompt** | Full instruction text sent to the chat model. Leave empty to use the built-in prompt. Placeholders such as `{site_name}` and `{site_purpose}` are expanded at runtime. |
 | **Structured Output**  | Request JSON-structured responses where the provider supports it; unsupported providers fall back to plain text. Off by default.                                       |
 
+### Prompt placeholders
+
+Placeholders are expanded in the system prompt at request time:
+
+| Placeholder         | Expanded value                                                                                                                                                                    |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `{site_name}`       | Site Name (AI), or the site title.                                                                                                                                                |
+| `{site_purpose}`    | Site Purpose (AI), or the site tagline.                                                                                                                                           |
+| `{site_url}`        | The site URL.                                                                                                                                                                     |
+| `{user_question}`   | The visitor's question (after PII/forbidden-word preprocessing).                                                                                                                  |
+| `{context_content}` | Retrieved content chunks (`Title` / `URL` / `Metadata` / `Content` per item), plus linked legal documents. `[No relevant information found for this query]` when nothing matched. |
+
+The built-in prompt instructs the model to answer only from the search results, cite results as Markdown links, say when information was not found, and respond in the question's language. The fully expanded prompt is filterable via `fe_search_ai_final_system_prompt` (see [Developer Hooks](hooks.md)).
+
 ## Display tab
 
 ### Floating Mode Settings
