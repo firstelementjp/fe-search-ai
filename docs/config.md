@@ -98,6 +98,25 @@ Index status and sync buttons — see [Sync System](sync.md).
 | **Base System Prompt** | Full instruction text sent to the chat model. Leave empty to use the built-in prompt. Placeholders such as `{site_name}` and `{site_purpose}` are expanded at runtime. |
 | **Structured Output**  | Request JSON-structured responses where the provider supports it; unsupported providers fall back to plain text. Off by default.                                       |
 
+Example of a **Site Purpose (AI)** description (for a job board site):
+
+```text
+This site is a job listing site.
+The main content type is job postings.
+
+Each piece of content may include the following metadata:
+- Region (prefecture, overseas)
+- Industry
+- Employment type (part-time, full-time, contract, temporary staffing, etc.)
+- Salary / compensation
+- Keywords / tags
+
+Users mainly ask questions to find jobs matching their preferred conditions.
+Where relevant, use the metadata to narrow down, compare, and summarize search results.
+```
+
+Describing the content types, available metadata, and users' typical goals improves how the AI interprets search results.
+
 ### Prompt placeholders
 
 Placeholders are expanded in the system prompt at request time:
