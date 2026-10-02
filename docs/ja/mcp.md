@@ -12,7 +12,7 @@ FE Search AI Proは、LM Studio、Cursor、Windsurf、Claude Desktopなどの外
 /wp-json/fesai/v1/mcp
 ```
 
-このエンドポイントは **MCP Streamable HTTP transport** を実装しており、新旧両方のプロトコルをサポートします。従来型クライアント（initializeハンドシェイク、プロトコルバージョン 2025-06-18 / 2025-11-25）と、新しいクライアント（リクエストごとの `_meta` メタデータ、プロトコルバージョン 2026-07-28以降）の両方に対応します。`GET`、`POST`、`DELETE` を受け付け、Bearerトークン認証が必要です。
+このエンドポイントは **MCP Streamable HTTP transport** を実装しており、新旧両方のプロトコルをサポートします。従来型クライアント（initializeハンドシェイク、プロトコルバージョン 2025-06-18 / 2025-11-25）と、新しいクライアント（リクエストごとの `_meta` メタデータ、プロトコルバージョン 2026-07-28以降）の両方に対応します。Bearerトークン認証が必要です。`GET`/`DELETE` リクエストは `405` を返し、JSON-RPCトラフィックは `POST` のみが担います。
 
 MCPクライアントはこのエンドポイント経由で **`site_search`** ツールを検出・呼び出せます。インデックス済みコンテンツに対してセマンティック検索を実行し、関連チャンクとURLを返します。
 
@@ -100,6 +100,36 @@ WordPressサイト内のコンテンツを検索します。クライアント�
 ```
 
 クライアントはエンドポイントに `tools/list` を呼ぶことでツール一覧を取得できます。
+
+## 関連: `/query` RESTエンドポイント
+
+同じAPIトークンは `POST /wp-json/fesai/v1/query` の認証にも使えます。MCPを話さないヘッドレスサイトや外部アプリケーション向けの、非ストリーミングのQ&Aエンドポイントです。
+
+```bash
+curl -X POST "https://example.com/wp-json/fesai/v1/query" \
+  -H "Authorization: Bearer fesai_tk_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "返金ポリシーを教えてください",
+    "history": []
+  }'
+```
+
+| パラメータ | 型                      | 必須   | 説明                                                                                           |
+| ---------- | ----------------------- | ------ | ---------------------------------------------------------------------------------------------- |
+| `question` | string                  | はい   | ユーザーの質問。検索前にPIIマスキング（`fe_search_ai_preprocess_user_question`）が適用されます |
+| `history`  | array または JSON文字列 | いいえ | 会話履歴。共有の `sanitize_chat_history()` パイプラインでサニタイズされます                    |
+
+レスポンス:
+
+```json
+{
+	"answer": "...",
+	"meta": { "context_found": true }
+}
+```
+
+無料版の `/stream` エンドポイントと異なり、`/query` は完全な回答を単一のJSONレスポンスで返し（SSEなし）、設定済みのチャットプロバイダーを使い、フロントエンドのnonceではなくBearerトークンを要求します。
 
 ## プライバシー
 

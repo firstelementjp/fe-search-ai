@@ -12,7 +12,7 @@ The plugin exposes an MCP-compatible HTTP endpoint:
 /wp-json/fesai/v1/mcp
 ```
 
-It implements **MCP Streamable HTTP transport** with dual-era protocol support: legacy clients (initialize handshake, protocol versions 2025-06-18 / 2025-11-25) and modern clients (per-request `_meta` metadata, protocol version 2026-07-28+). The endpoint accepts `GET`, `POST`, and `DELETE`, and requires Bearer token authentication.
+It implements **MCP Streamable HTTP transport** with dual-era protocol support: legacy clients (initialize handshake, protocol versions 2025-06-18 / 2025-11-25) and modern clients (per-request `_meta` metadata, protocol version 2026-07-28+). The endpoint requires Bearer token authentication; `GET`/`DELETE` requests return `405` — only `POST` carries JSON-RPC traffic.
 
 Through this endpoint, MCP clients can discover and call the **`site_search`** tool, which performs semantic search over your indexed content and returns relevant chunks with source URLs.
 
@@ -100,6 +100,36 @@ Searches the internal content of your WordPress site. The tool description sent 
 ```
 
 Clients can discover the tool list by calling `tools/list` on the endpoint.
+
+## Related: the `/query` REST endpoint
+
+The same API tokens also authenticate `POST /wp-json/fesai/v1/query` — a non-streaming Q&A endpoint for headless sites and external applications that do not speak MCP.
+
+```bash
+curl -X POST "https://example.com/wp-json/fesai/v1/query" \
+  -H "Authorization: Bearer fesai_tk_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "What is your refund policy?",
+    "history": []
+  }'
+```
+
+| Parameter  | Type                 | Required | Description                                                                                             |
+| ---------- | -------------------- | -------- | ------------------------------------------------------------------------------------------------------- |
+| `question` | string               | Yes      | The user's question. PII masking (`fe_search_ai_preprocess_user_question`) is applied before retrieval. |
+| `history`  | array or JSON string | No       | Conversation history, sanitized via the shared `sanitize_chat_history()` pipeline.                      |
+
+Response:
+
+```json
+{
+	"answer": "...",
+	"meta": { "context_found": true }
+}
+```
+
+Unlike the free `/stream` endpoint, `/query` returns the complete answer in a single JSON response (no SSE), uses the configured chat provider, and requires a Bearer token rather than a front-end nonce.
 
 ## Privacy
 
