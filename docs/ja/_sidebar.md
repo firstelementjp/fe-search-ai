@@ -3,8 +3,8 @@
 - [🚀 はじめに](ja/start.md)
 - [📦 インストール](ja/install.md)
 - [🔧 設定](ja/config.md)
-- [� 外部サービスのセットアップ](ja/services.md)
-- [�🔒 プライバシーとデータの取扱い](ja/privacy.md)
+- [🔌 外部サービスのセットアップ](ja/services.md)
+- [🔒 プライバシーとデータの取扱い](ja/privacy.md)
 - [🔑 ライセンスとPro](ja/license.md)
 
 ### 使用方法

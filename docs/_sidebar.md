@@ -3,8 +3,8 @@
 - [🚀 Getting Started](start.md)
 - [📦 Installation](install.md)
 - [🔧 Configuration](config.md)
-- [� External Service Setup](services.md)
-- [�🔒 Privacy and Data Handling](privacy.md)
+- [🔌 External Service Setup](services.md)
+- [🔒 Privacy and Data Handling](privacy.md)
 - [🔑 License and Pro](license.md)
 
 ### Usage
