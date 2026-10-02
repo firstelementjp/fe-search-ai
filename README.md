@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/badge/License-GPLv2%2B-blue.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
 [![WordPress](https://img.shields.io/badge/WordPress-6.6%2B-blue.svg)](https://wordpress.org/)
 [![PHP](https://img.shields.io/badge/PHP-7.4%2B-blue.svg)](https://www.php.net/)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/firstelementjp/fe-search-ai)
+[![Ask DeepWiki](https://img.shields.io/badge/Ask-DeepWiki-blue)](https://deepwiki.com/firstelementjp/fe-search-ai)
 
 AI-powered, conversational search for WordPress. This repository contains the plugin source code, tests, and developer resources. For end-user guides and full documentation, see the links below.
 
@@ -24,6 +24,10 @@ AI-powered, conversational search for WordPress. This repository contains the pl
 FE Search AI replaces standard WordPress search with a conversational AI chat using RAG (Retrieval-Augmented Generation). It indexes your content into vector embeddings and keyword indexes, providing accurate answers based only on your website's content.
 
 This plugin is designed to be highly extensible and performant, running on standard MySQL databases without requiring external vector databases.
+
+![Chat UI](docs/assets/images/v120-release-image-1@2x-100.jpg)
+
+![Admin UI 1](docs/assets/images/v120-pro-admin-1.png)
 
 ## ⚡ Quick Links
 

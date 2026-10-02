@@ -38,7 +38,7 @@ After activation, open the settings screen and configure these items first:
 
 - Chat provider API key
 - Embedding provider API key
-- Qdrant endpoint and API key
+- Qdrant endpoint and API key (see [External Service Setup](services.md) for creating a cluster and collection)
 - Sync target post types
 - Chat UI display mode
 

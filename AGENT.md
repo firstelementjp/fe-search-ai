@@ -188,6 +188,7 @@ When preparing a release, update the canonical versioned files:
 - `readme.txt` `Stable tag` and changelog section
 - `README.md` version badge and recent highlights if behavior changed
 - `docs/changes.md` and `docs/ja/changes.md`
+- `SECURITY.md` supported versions table
 - `docs/README.md` current release and highlights
 - `AGENT.md` and `.github/skills/SKILL.md` when architecture or troubleshooting guidance changes
 - `test-release.sh` `TAG` and `ZIP_NAME`

@@ -33,6 +33,7 @@ Version 1.2.0 is a privacy release: it adds a dedicated Privacy tab, versioned c
 - [Search Integration](search.md): Add the chat/search UI to your site.
 - [Sync System](sync.md): Build and maintain the content index.
 - [Troubleshooting](help.md): Resolve common setup and API issues.
+- [License and Pro](license.md): Activate a Pro license and see what it adds.
 
 ## Basic workflow
 

@@ -79,23 +79,25 @@ class FE_Search_AI_Chat_UI {
 	}
 
 	/**
-	 * Registers the [fe_search_ai] shortcode for manual chat placement.
+	 * Registers the [fe-search-ai] shortcode for manual chat placement.
 	 *
 	 * This method registers the WordPress shortcode that allows users to
 	 * manually place the chat interface anywhere in their content using
-	 * the [fe_search_ai] shortcode tag.
+	 * the [fe-search-ai] shortcode tag. The legacy [fe_search_ai] tag is
+	 * kept as an alias for backward compatibility.
 	 *
 	 * @since 0.9.0
 	 * @return void
 	 */
 	public function register_shortcode() {
+		add_shortcode( 'fe-search-ai', [ $this, 'render_chat_shortcode' ] );
 		add_shortcode( 'fe_search_ai', [ $this, 'render_chat_shortcode' ] );
 	}
 
 	/**
 	 * Renders the chat interface for shortcode output.
 	 *
-	 * This method outputs the chat interface HTML when the [fe_search_ai]
+	 * This method outputs the chat interface HTML when the [fe-search-ai]
 	 * shortcode is used. It prevents duplicate rendering and enqueues
 	 * necessary CSS/JS assets before returning the chat HTML.
 	 *

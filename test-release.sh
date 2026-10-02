@@ -42,18 +42,20 @@ composer install --no-dev --prefer-dist --quiet
 cd - > /dev/null
 
 # Copy built/minified assets from working directory into the release tree
+# Only copy git-tracked files so untracked build artifacts from other
+# branches (e.g. leftover *.min.js) cannot leak into the release ZIP.
 echo "=== Copy minified assets ==="
-mkdir -p "$TMPDIR/fe-search-ai/assets/js"
-mkdir -p "$TMPDIR/fe-search-ai/assets/css"
-cp -f assets/js/*.min.js "$TMPDIR/fe-search-ai/assets/js/" || true
-cp -f assets/css/*.min.css "$TMPDIR/fe-search-ai/assets/css/" || true
+git ls-files 'assets/js/*.min.js' 'assets/css/*.min.css' | while read -r f; do
+    mkdir -p "$TMPDIR/fe-search-ai/$(dirname "$f")"
+    cp -f "$f" "$TMPDIR/fe-search-ai/$f"
+done
 
 # Copy vendor assets (Pickr color picker)
 echo "=== Copy vendor assets ==="
-if [ -d "assets/vendor" ]; then
-    mkdir -p "$TMPDIR/fe-search-ai/assets/vendor"
-    cp -r assets/vendor/* "$TMPDIR/fe-search-ai/assets/vendor/"
-fi
+git ls-files 'assets/vendor/*' | while read -r f; do
+    mkdir -p "$TMPDIR/fe-search-ai/$(dirname "$f")"
+    cp -f "$f" "$TMPDIR/fe-search-ai/$f"
+done
 
 # Security checks in release tree
 echo "=== Security checks in release tree ==="

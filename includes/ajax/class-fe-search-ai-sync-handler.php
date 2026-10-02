@@ -2450,6 +2450,10 @@ class FE_Search_AI_Sync_Handler {
 	 * @return string Yahoo application ID.
 	 */
 	private function get_yahoo_app_id() {
+		if ( defined( 'FE_SEARCH_AI_YAHOO_APP_ID' ) && FE_SEARCH_AI_YAHOO_APP_ID ) {
+			return FE_SEARCH_AI_YAHOO_APP_ID;
+		}
+		// Legacy constant kept for backward compatibility.
 		if ( defined( 'FEAS_YAHOO_APP_ID' ) && FEAS_YAHOO_APP_ID ) {
 			return FEAS_YAHOO_APP_ID;
 		}

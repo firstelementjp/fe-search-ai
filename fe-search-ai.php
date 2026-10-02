@@ -133,11 +133,11 @@ add_filter(
  * Template Tag for displaying the AI Search interface.
  *
  * This function provides a simple template tag that can be used in themes
- * to display the AI search interface. It outputs the fe_search_ai shortcode.
+ * to display the AI search interface. It outputs the fe-search-ai shortcode.
  *
  * @since 0.9.0
  * @return void Outputs the AI search interface HTML
  */
 function fe_search_ai() {
-	echo do_shortcode( '[fe_search_ai]' );
+	echo do_shortcode( '[fe-search-ai]' );
 }
