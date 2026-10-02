@@ -4,6 +4,7 @@
 - [📦 インストール](ja/install.md)
 - [🔧 設定](ja/config.md)
 - [🔒 プライバシーとデータの取扱い](ja/privacy.md)
+- [🔑 ライセンスとPro](ja/license.md)
 
 ### 使用方法
 
