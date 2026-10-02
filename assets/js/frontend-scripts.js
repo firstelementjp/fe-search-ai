@@ -1306,7 +1306,7 @@ function initFEAIChat() {
 					question_length: questionLength,
 					answer: analyticsEnabled ? answer : '',
 					answer_length:
-						typeof answer === 'string' ? answer.replace(/<[^>]*>/g, '').length : 0,
+						typeof answer === 'string' ? answer.replace(/<|>/g, '').length : 0,
 					context_found: contextFound ? '1' : '0',
 				});
 
