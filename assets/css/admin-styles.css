@@ -384,6 +384,7 @@ a.nav-tab:last-of-type {
 	margin-left: 5px;
 	font-size: 12px;
 	vertical-align: middle;
+	word-break: break-all;
 }
 
 .fe-search-ai-api-keys-table .fe-search-ai-test-api {
