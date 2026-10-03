@@ -60,6 +60,8 @@ if ( $fe_search_ai_delete ) {
 		'fe_search_ai_exclude_post_ids',
 		'fe_search_ai_sync_limit',
 		'fe_search_ai_delete_on_uninstall',
+		'fe_search_ai_sync_queue',
+		'fe_search_ai_sync_queue_lock',
 	];
 
 	foreach ( $option_names as $option_name ) {
@@ -98,4 +100,5 @@ if ( $fe_search_ai_delete ) {
 
 	// Delete Cron Job.
 	wp_clear_scheduled_hook( 'fe_search_ai_daily_log_rotation_event' );
+	wp_clear_scheduled_hook( 'fe_search_ai_process_sync_queue' );
 }

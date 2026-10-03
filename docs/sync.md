@@ -33,7 +33,11 @@ Truncates `{prefix}fe_search_ai_vectors` and `{prefix}fe_search_ai_keyword_index
 
 ### Real-time sync
 
-When a post in an enabled post type is published or updated, it is automatically reindexed via `save_post`. Trashing or deleting a post (`wp_trash_post`, `delete_post`) removes it from the index. Only `publish` status is indexed; autosaves and revisions are skipped. The post language is detected via Polylang, WPML, or Bogo when available, falling back to the site locale (`fe_search_ai_post_language_code` filter).
+When a post in an enabled post type is published or updated, `save_post` queues it for reindexing. The post's existing index rows are removed immediately at save time, but the actual indexing work — chunking, optional summary generation, embedding API calls, and index writes — runs in the background via WP-Cron (`fe_search_ai_process_sync_queue`), so saving a post is not slowed down by external API calls. Trashing or deleting a post (`wp_trash_post`, `delete_post`) removes it from the queue and from the index synchronously.
+
+Only `publish` status is indexed; autosaves and revisions are skipped, and status and settings are re-validated when the queued job runs. The post language is detected via Polylang, WPML, or Bogo when available, falling back to the site locale (`fe_search_ai_post_language_code` filter).
+
+Related filters: `fe_search_ai_realtime_sync_background` (return `false` to index synchronously inside the save request) and `fe_search_ai_sync_queue_time_limit` (maximum seconds per queue run, default `50`).
 
 Full sync and real-time sync timestamps are tracked separately and shown as **Last Bulk Sync** and **Last Realtime Sync**.
 

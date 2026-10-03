@@ -74,6 +74,7 @@ class FE_Search_AI_Activator {
 	public static function deactivate() {
 		// Canceling Cron Job.
 		wp_clear_scheduled_hook( 'fe_search_ai_daily_log_rotation_event' );
+		wp_clear_scheduled_hook( 'fe_search_ai_process_sync_queue' );
 	}
 
 	/**

@@ -37,7 +37,7 @@ includes/
     class-fe-search-ai-privacy.php                  # Privacy registry, notices, and consent versioning
     class-fe-search-ai-retrieval-trace.php          # Retrieval trace data model
     class-fe-search-ai-retrieval-trace-recorder.php # Retrieval trace recording
-    class-fe-search-ai-sync-hooks.php               # Sync hooks and handlers
+    class-fe-search-ai-sync-hooks.php               # Sync hooks; queued background indexing via WP-Cron
   frontend/
     class-fe-search-ai-chat-ui.php                  # Frontend chat UI rendering
   i18n/                                             # Translation dictionaries
@@ -230,6 +230,7 @@ Required GitHub Secrets for WordPress.org SVN deploy:
 - `find_similar_chunks_via_keyword_index()` ranks results by BM25.
 - Filters: `fe_search_ai_bm25_candidate_limit`, `fe_search_ai_bm25_k1`, `fe_search_ai_bm25_b`.
 - Realtime indexing in `SyncHooks` stores the same metadata.
+- Realtime indexing is queued (`fe_search_ai_sync_queue` option) and processed in the background by the `fe_search_ai_process_sync_queue` WP-Cron event, so `save_post` never blocks on embedding/summary API calls. Set `fe_search_ai_realtime_sync_background` to `false` to index synchronously.
 
 ## GitHub Releases Updater
 
