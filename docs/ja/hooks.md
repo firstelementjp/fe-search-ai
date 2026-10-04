@@ -77,6 +77,8 @@ FE Search AIは、プロバイダー、検索、インデックス、チャッ�
 | `fe_search_ai_handle_custom_api_test`           | `array\|null $result`, `string $provider`, `string $api_key`                                          | カスタムプロバイダーのAPIキーテストを処理します。`['is_valid' => bool, 'message' => string]`、または組み込み処理を使う場合は`null`を返します。 |
 | `fe_search_ai_get_sync_handler_instance`        | 任意の値。通常は`apply_filters( 'fe_search_ai_get_sync_handler_instance', null )`として呼び出します。 | 連携コードへ有効な`FE_Search_AI_Sync_Handler`インスタンスを返します。無料版がこの連携フィルターのコールバックを提供します。                    |
 | `fe_search_ai_enable_github_updates`            | `bool $enabled`                                                                                       | GitHub Releases更新チェッカーを有効化します。初期値：`true`。                                                                                  |
+| `fe_search_ai_enable_multilingual_integration`  | `bool $enabled`                                                                                       | チャットUIテキスト向けのPolylang/WPML/Bogo文字列翻訳連携を有効化します。初期値：`true`。                                                       |
+| `fe_search_ai_multilingual_provider`            | `string $provider`                                                                                    | チャットUIテキストに使う多言語プロバイダーの自動検出を上書きします。`'polylang'`、`'wpml'`、`'bogo'`、または無効化する`''`。                   |
 | `fe_search_ai_admin_allowed_hooks`              | `array $hook_suffixes`                                                                                | FE Search AIの管理画面アセットを読み込む管理画面フックサフィックスを追加します。                                                               |
 
 ### カスタム埋め込みプロバイダーの例
@@ -98,6 +100,7 @@ add_filter(
 | フック                             | フィルター値・追加引数                    | 用途                                                                                                                                                          |
 | ---------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `fe_search_ai_should_display_chat` | `bool $should_display`                    | 現在のリクエストでフローティングチャットUIを表示するか変更します。                                                                                            |
+| `fe_search_ai_display_texts`       | `array $args`, `string $mode`             | HTML生成前に、チャットUIの構築に使う表示テキストとメタデータを変更します。Polylang/WPML/Bogo連携はこのフックの優先度5で動作します。                           |
 | `fe_search_ai_chat_ui_html`        | `string $html`, `array $args`             | フローティング表示と埋め込み表示のチャットUI HTML全体を変更します。                                                                                           |
 | `fe_search_ai_dynamic_styles_css`  | `string $style_html`, `string $key_color` | チャットUIが出力する動的な`<style>`ブロックを変更します。                                                                                                     |
 | `fe_search_ai_frontend_color_css`  | `string $css`, `array $colors`            | フロントエンドのインラインCSS変数を変更します。色配列には`accent`、`background`、`text`、`border`、グラデーション、入力欄、ユーザー吹き出しの色が含まれます。 |

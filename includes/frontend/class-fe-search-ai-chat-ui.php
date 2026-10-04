@@ -287,6 +287,22 @@ class FE_Search_AI_Chat_UI {
 			'privacy_url'         => $privacy_page_id ? get_permalink( $privacy_page_id ) : get_privacy_policy_url(),
 		];
 
+		/**
+		 * Filters the display texts and metadata used to build the chat UI.
+		 *
+		 * Allows multilingual plugins or site code to swap the configured texts
+		 * (e.g. the greeting message) per language before the HTML is rendered.
+		 *
+		 * @since 1.3.0
+		 *
+		 * @param array  $args Associative array with 'mode', 'window_title', 'greeting_message',
+		 *                     'placeholder_text', 'submit_button_text', 'footer_notice',
+		 *                     'send_on_shift_enter', 'terms_url' and 'privacy_url'.
+		 * @param string $mode The display mode ('float', 'fullscreen', or 'embed').
+		 */
+		// Hook name is properly prefixed with fe_search_ai_.
+		$args = wp_parse_args( apply_filters( 'fe_search_ai_display_texts', $args, $mode ), $args );
+
 		// Build the default HTML.
 		ob_start();
 		?>

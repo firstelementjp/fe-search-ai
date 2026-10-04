@@ -5,6 +5,7 @@
 ### Chat UI
 
 - Changed the user message bubble background to reuse the chat input background and renamed the "Bubble Color" display setting to "Bubble / Send Button Color"
+- Added the `fe_search_ai_display_texts` filter and automatic Polylang/WPML/Bogo String Translation integration for custom chat UI texts
 
 ## 1.2.0 (2026-09-30)
 

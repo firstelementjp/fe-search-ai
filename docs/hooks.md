@@ -79,6 +79,8 @@ FE Search AI exposes WordPress filters and actions for extending providers, retr
 | `fe_search_ai_handle_custom_api_test`           | `array\|null $result`, `string $provider`, `string $api_key`                                      | Handles API-key tests for custom providers. Return `['is_valid' => bool, 'message' => string]`, or `null` to use a built-in handler.                       |
 | `fe_search_ai_get_sync_handler_instance`        | mixed value, normally called as `apply_filters( 'fe_search_ai_get_sync_handler_instance', null )` | Returns the active `FE_Search_AI_Sync_Handler` instance to integrations. The free plugin supplies the callback for this integration filter.                |
 | `fe_search_ai_enable_github_updates`            | `bool $enabled`                                                                                   | Enables the GitHub Releases update checker. Default: `true`.                                                                                               |
+| `fe_search_ai_enable_multilingual_integration`  | `bool $enabled`                                                                                   | Enables the Polylang/WPML/Bogo string-translation integration for the chat UI texts. Default: `true`.                                                      |
+| `fe_search_ai_multilingual_provider`            | `string $provider`                                                                                | Overrides the detected multilingual provider used for chat UI texts: `'polylang'`, `'wpml'`, `'bogo'`, or `''` to disable.                                 |
 | `fe_search_ai_admin_allowed_hooks`              | `array $hook_suffixes`                                                                            | Adds admin page hook suffixes on which FE Search AI admin assets should load.                                                                              |
 
 ### Custom embedding provider example
@@ -97,12 +99,13 @@ add_filter(
 
 ## Frontend display filters
 
-| Hook                               | Filtered value and additional arguments   | Purpose                                                                                                                                            |
-| ---------------------------------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `fe_search_ai_should_display_chat` | `bool $should_display`                    | Changes whether the floating chat UI is rendered for the current request.                                                                          |
-| `fe_search_ai_chat_ui_html`        | `string $html`, `array $args`             | Changes the complete chat UI HTML for floating and embedded displays.                                                                              |
-| `fe_search_ai_dynamic_styles_css`  | `string $style_html`, `string $key_color` | Changes the dynamic `<style>` block printed by the chat UI.                                                                                        |
-| `fe_search_ai_frontend_color_css`  | `string $css`, `array $colors`            | Changes inline frontend CSS variables. The color array includes `accent`, `background`, `text`, `border`, gradient, input, and user-bubble colors. |
+| Hook                               | Filtered value and additional arguments   | Purpose                                                                                                                                                    |
+| ---------------------------------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fe_search_ai_should_display_chat` | `bool $should_display`                    | Changes whether the floating chat UI is rendered for the current request.                                                                                  |
+| `fe_search_ai_display_texts`       | `array $args`, `string $mode`             | Changes the display texts and metadata used to build the chat UI, before the HTML is rendered. The Polylang/WPML/Bogo integration runs here at priority 5. |
+| `fe_search_ai_chat_ui_html`        | `string $html`, `array $args`             | Changes the complete chat UI HTML for floating and embedded displays.                                                                                      |
+| `fe_search_ai_dynamic_styles_css`  | `string $style_html`, `string $key_color` | Changes the dynamic `<style>` block printed by the chat UI.                                                                                                |
+| `fe_search_ai_frontend_color_css`  | `string $css`, `array $colors`            | Changes inline frontend CSS variables. The color array includes `accent`, `background`, `text`, `border`, gradient, input, and user-bubble colors.         |
 
 ## Privacy and logging filters
 

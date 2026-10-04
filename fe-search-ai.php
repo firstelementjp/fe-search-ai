@@ -76,6 +76,7 @@ add_action(
 
 		\FESearchAI\Core\FE_Search_AI_Cohere_Reranker::register();
 		\FESearchAI\Core\FE_Search_AI_Retrieval_Trace_Recorder::register();
+		\FESearchAI\Core\FE_Search_AI_Multilingual::register();
 
 		if ( apply_filters( 'fe_search_ai_enable_github_updates', true ) ) {
 			$github_update_checker = new FESearchAI\Update\FE_Search_AI_GitHub_Update_Checker();
