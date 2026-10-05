@@ -36,6 +36,7 @@ FE Search AI exposes WordPress filters and actions for extending providers, retr
 | `fe_search_ai_hybrid_candidate_limit`             | `int $limit`, `string $question`                                             | Changes the per-source candidate limit used by hybrid retrieval. The configured value defaults to `50`.                                        |
 | `fe_search_ai_hybrid_rrf_k`                       | `int $k`, `string $question`                                                 | Changes the Reciprocal Rank Fusion constant. Default: `60`.                                                                                    |
 | `fe_search_ai_hybrid_search_limit`                | `int $limit`, `string $question`                                             | Changes the maximum number of merged hybrid results. Default: `100`.                                                                           |
+| `fe_search_ai_page_context_chunk_limit`           | `int $limit`, `string $question`                                             | Changes the maximum number of chunks merged from the page the visitor is currently viewing (Page Context feature). Default: `3`.               |
 | `fe_search_ai_retrieval_trace_payload`            | `array $payload`, `array $chunks`, `string $question`, `string $sequence_id` | Changes the safe retrieval trace payload before logging, dispatch, or optional persistence.                                                    |
 | `fe_search_ai_enable_retrieval_trace_persistence` | `bool $enabled`, `array $trace`                                              | Enables database persistence for retrieval traces. The filtered default comes from the Retrieval Trace Persistence setting (default: `false`). |
 
@@ -99,13 +100,14 @@ add_filter(
 
 ## Frontend display filters
 
-| Hook                               | Filtered value and additional arguments   | Purpose                                                                                                                                                    |
-| ---------------------------------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `fe_search_ai_should_display_chat` | `bool $should_display`                    | Changes whether the floating chat UI is rendered for the current request.                                                                                  |
-| `fe_search_ai_display_texts`       | `array $args`, `string $mode`             | Changes the display texts and metadata used to build the chat UI, before the HTML is rendered. The Polylang/WPML/Bogo integration runs here at priority 5. |
-| `fe_search_ai_chat_ui_html`        | `string $html`, `array $args`             | Changes the complete chat UI HTML for floating and embedded displays.                                                                                      |
-| `fe_search_ai_dynamic_styles_css`  | `string $style_html`, `string $key_color` | Changes the dynamic `<style>` block printed by the chat UI.                                                                                                |
-| `fe_search_ai_frontend_color_css`  | `string $css`, `array $colors`            | Changes inline frontend CSS variables. The color array includes `accent`, `background`, `text`, `border`, gradient, input, and user-bubble colors.         |
+| Hook                                | Filtered value and additional arguments   | Purpose                                                                                                                                                    |
+| ----------------------------------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fe_search_ai_should_display_chat`  | `bool $should_display`                    | Changes whether the floating chat UI is rendered for the current request.                                                                                  |
+| `fe_search_ai_page_context_post_id` | `int $post_id`, `string $mode`            | Changes the post offered as page context in the chat window. Return `0` to disable the chip for that render. The value is validated again server-side.     |
+| `fe_search_ai_display_texts`        | `array $args`, `string $mode`             | Changes the display texts and metadata used to build the chat UI, before the HTML is rendered. The Polylang/WPML/Bogo integration runs here at priority 5. |
+| `fe_search_ai_chat_ui_html`         | `string $html`, `array $args`             | Changes the complete chat UI HTML for floating and embedded displays.                                                                                      |
+| `fe_search_ai_dynamic_styles_css`   | `string $style_html`, `string $key_color` | Changes the dynamic `<style>` block printed by the chat UI.                                                                                                |
+| `fe_search_ai_frontend_color_css`   | `string $css`, `array $colors`            | Changes inline frontend CSS variables. The color array includes `accent`, `background`, `text`, `border`, gradient, input, and user-bubble colors.         |
 
 ## Privacy and logging filters
 

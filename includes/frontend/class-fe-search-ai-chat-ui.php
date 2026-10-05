@@ -274,6 +274,54 @@ class FE_Search_AI_Chat_UI {
 			$footer_notice = $defaults['footer_notice'];
 		}
 
+		// Resolve the page the visitor is currently viewing, so the chat can
+		// offer it as explicit context via a removable chip in the window.
+		$context_post_id    = 0;
+		$context_post_title = '';
+		$page_context_on    = $ui_options['page_context'] ?? true;
+		if ( $page_context_on ) {
+			$candidate_id = 'embed' === $mode ? (int) get_the_ID() : (int) get_queried_object_id();
+			$candidate    = $candidate_id ? get_post( $candidate_id ) : null;
+			if (
+				$candidate instanceof \WP_Post &&
+				'publish' === $candidate->post_status &&
+				'' === $candidate->post_password &&
+				is_post_type_viewable( $candidate->post_type )
+			) {
+				$context_post_id    = $candidate->ID;
+				$context_post_title = get_the_title( $candidate );
+			}
+		}
+
+		/**
+		 * Filters the post ID offered as page context in the chat window.
+		 *
+		 * Return 0 to disable the page context chip for this render, or another
+		 * post ID to override the detected page. The final value is validated
+		 * again server-side before it is used as context.
+		 *
+		 * @since 1.3.0
+		 *
+		 * @param int    $context_post_id The detected context post ID, or 0.
+		 * @param string $mode            The display mode ('float', 'fullscreen', or 'embed').
+		 */
+		// Hook name is properly prefixed with fe_search_ai_.
+		$context_post_id = (int) apply_filters( 'fe_search_ai_page_context_post_id', $context_post_id, $mode );
+		if ( $context_post_id > 0 ) {
+			$override = get_post( $context_post_id );
+			if (
+				$override instanceof \WP_Post &&
+				'publish' === $override->post_status &&
+				'' === $override->post_password &&
+				is_post_type_viewable( $override->post_type )
+			) {
+				$context_post_title = get_the_title( $override );
+			} else {
+				$context_post_id    = 0;
+				$context_post_title = '';
+			}
+		}
+
 		// Build the $args array for passing to the filter.
 		$args = [
 			'mode'                => $mode,
@@ -285,6 +333,8 @@ class FE_Search_AI_Chat_UI {
 			'send_on_shift_enter' => (bool) $send_on_shift_enter,
 			'terms_url'           => $terms_page_id ? get_permalink( $terms_page_id ) : '',
 			'privacy_url'         => $privacy_page_id ? get_permalink( $privacy_page_id ) : get_privacy_policy_url(),
+			'context_post_id'     => $context_post_id,
+			'context_post_title'  => $context_post_title,
 		];
 
 		/**
@@ -297,7 +347,8 @@ class FE_Search_AI_Chat_UI {
 		 *
 		 * @param array  $args Associative array with 'mode', 'window_title', 'greeting_message',
 		 *                     'placeholder_text', 'submit_button_text', 'footer_notice',
-		 *                     'send_on_shift_enter', 'terms_url' and 'privacy_url'.
+		 *                     'send_on_shift_enter', 'terms_url', 'privacy_url',
+		 *                     'context_post_id' and 'context_post_title'.
 		 * @param string $mode The display mode ('float', 'fullscreen', or 'embed').
 		 */
 		// Hook name is properly prefixed with fe_search_ai_.
@@ -340,6 +391,31 @@ class FE_Search_AI_Chat_UI {
 						</button>
 					</div>
 				</div>
+				<?php if ( ! empty( $args['context_post_id'] ) ) : ?>
+					<div id="fe_search_ai_context_bar">
+						<span id="fe_search_ai_context_chip" class="fe-search-ai-context-chip" data-post-id="<?php echo esc_attr( (string) $args['context_post_id'] ); ?>">
+							<span class="fe-search-ai-context-chip-label">
+								<?php
+								printf(
+									/* translators: %s: title of the page the visitor is currently viewing. */
+									esc_html__( 'Viewing: %s', 'fe-search-ai' ),
+									esc_html( $args['context_post_title'] )
+								);
+								?>
+							</span>
+							<button
+								type="button"
+								id="fe_search_ai_context_chip_remove"
+								class="fe-search-ai-context-chip-remove"
+								aria-label="<?php esc_attr_e( 'Stop using this page as context', 'fe-search-ai' ); ?>"
+							>
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+									<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+								</svg>
+							</button>
+						</span>
+					</div>
+				<?php endif; ?>
 				<div id="fe_search_ai_chat_messages">
 					<div class="fe-search-ai-message fe-search-ai-message-ai">
 						<p><?php echo esc_html( $args['greeting_message'] ); ?></p>
@@ -409,7 +485,7 @@ class FE_Search_AI_Chat_UI {
 									<div id="fe_search_ai_privacy_notice">
 										<p>
 											<?php
-											esc_html_e( 'Your input and recent conversation history are sent to the configured AI services to generate a response. Chat history is stored temporarily in this browser session.', 'fe-search-ai' );
+											esc_html_e( 'Your input, recent conversation history, and the page you are viewing (when shown as a context chip) are sent to the configured AI services to generate a response. Chat history is stored temporarily in this browser session.', 'fe-search-ai' );
 											?>
 										</p>
 										<?php if ( ! empty( $privacy_config['diagnostic_enabled'] ) ) : ?>

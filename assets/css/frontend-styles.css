@@ -457,6 +457,61 @@
 }
 
 /* ==========================================================================
+	Page Context Bar
+	========================================================================== */
+
+#fe_search_ai_context_bar {
+	padding: 0 15px 8px;
+}
+
+.fe-search-ai-context-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	max-width: 100%;
+	padding: 3px 4px 3px 10px;
+	border: 1px solid var(--feais-border);
+	border-radius: 999px;
+	font-size: 12px;
+	line-height: 1.4;
+	color: var(--feais-text);
+	background: var(--feais-bg);
+	opacity: 0.85;
+}
+
+.fe-search-ai-context-chip-label {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.fe-search-ai-context-chip-remove {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	width: 18px;
+	height: 18px;
+	padding: 0;
+	border: none;
+	border-radius: 50%;
+	background: none;
+	color: var(--feais-text);
+	cursor: pointer;
+}
+
+.fe-search-ai-context-chip-remove svg {
+	width: 12px;
+	height: 12px;
+	fill: currentColor;
+}
+
+.fe-search-ai-context-chip-remove:hover {
+	background: var(--feais-accent);
+	color: var(--feais-on-accent, #fff);
+}
+
+/* ==========================================================================
 	Chat Messages Area
 	========================================================================== */
 

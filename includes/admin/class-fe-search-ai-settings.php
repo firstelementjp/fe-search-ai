@@ -429,6 +429,7 @@ class FE_Search_AI_Settings {
 		add_settings_field( 'fe_search_ai_display_chat_text', __( 'Text & Colors', 'fe-search-ai' ), [ $this, 'display_text_color_field_html' ], $page_slug, 'fe_search_ai_display_appearance_section' );
 		add_settings_field( 'fe_search_ai_display_interaction', __( 'Interaction', 'fe-search-ai' ), [ $this, 'display_interaction_field_html' ], $page_slug, 'fe_search_ai_display_appearance_section' );
 		add_settings_field( 'fe_search_ai_display_footer_notice', __( 'Footer Notice', 'fe-search-ai' ), [ $this, 'display_footer_notice_field_html' ], $page_slug, 'fe_search_ai_display_appearance_section' );
+		add_settings_field( 'fe_search_ai_display_page_context', __( 'Page Context', 'fe-search-ai' ), [ $this, 'display_page_context_field_html' ], $page_slug, 'fe_search_ai_display_appearance_section' );
 
 		// Floating Mode Section
 		add_settings_section( 'fe_search_ai_display_floating_section', __( 'Floating Mode Settings', 'fe-search-ai' ), null, $page_slug );
@@ -3036,6 +3037,7 @@ class FE_Search_AI_Settings {
 		$new_input['bubble_gradient_end']   = sanitize_hex_color( $input['bubble_gradient_end'] ?? '#973CFF' );
 		$new_input['bubble_gradient_angle'] = min( 360, max( 0, absint( $input['bubble_gradient_angle'] ?? 135 ) ) );
 		$new_input['bubble_animation']      = ! empty( $input['bubble_animation'] );
+		$new_input['page_context']          = ! empty( $input['page_context'] );
 
 		return $new_input;
 	}
@@ -3179,6 +3181,39 @@ class FE_Search_AI_Settings {
 		<p class="description">
 			<?php esc_html_e( 'Text shown at the bottom of the chat window, next to the settings icon. Leave blank to use the default text.', 'fe-search-ai' ); ?>
 		</p>
+		<?php
+	}
+
+	/**
+	 * Renders the HTML for the Page Context setting.
+	 *
+	 * When enabled, the chat window shows a removable "viewing" chip on
+	 * singular posts and pages, and the currently viewed page is sent with
+	 * each question so that demonstratives such as "this" resolve to that
+	 * page during retrieval and answer generation.
+	 *
+	 * @since 1.3.0
+	 * @return void
+	 */
+	public function display_page_context_field_html() {
+		$ui_options   = $this->options['display']['ui'] ?? [];
+		$page_context = $ui_options['page_context'] ?? true;
+		?>
+		<fieldset>
+			<label>
+				<input
+					type="checkbox"
+					id="fe_search_ai_page_context"
+					name="fe_search_ai_settings[display][ui][page_context]"
+					value="1"
+					<?php checked( (bool) $page_context ); ?>
+				>
+				<?php esc_html_e( 'Use the current page as chat context', 'fe-search-ai' ); ?>
+			</label>
+			<p class="description">
+				<?php esc_html_e( 'When enabled, a "viewing" chip appears in the chat window on single posts and pages. The page content is prioritized as context so questions like "how much is this?" are answered for the page being viewed. Visitors can remove the chip to exclude the page from context.', 'fe-search-ai' ); ?>
+			</p>
+		</fieldset>
 		<?php
 	}
 
