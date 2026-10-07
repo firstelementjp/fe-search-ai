@@ -506,8 +506,11 @@
 	fill: currentColor;
 }
 
-.fe-search-ai-context-chip-remove:hover {
-	background: var(--feais-accent);
+.fe-search-ai-context-chip-remove:hover,
+.fe-search-ai-context-chip-remove:focus-visible {
+	background: var(--feais-accent-bg, var(--feais-accent));
+	background-size: var(--feais-accent-bg-size, 100% 100%);
+	animation: var(--feais-button-animation, none);
 	color: var(--feais-on-accent, #fff);
 }
 
