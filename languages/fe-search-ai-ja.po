@@ -1185,9 +1185,9 @@ msgstr "特定の投稿のみを同期する"
 msgid "Only the top N reranked chunks will be sent to the LLM."
 msgstr "リランキングされた上位N個のチャンクのみがLLMに送信されます。"
 
-#: includes/admin/class-fe-search-ai-settings.php:3194
-msgid "Open Advanced Data Management to delete stored plugin data."
-msgstr "保存されたプラグインデータを削除するには、高度なデータ管理画面を開いてください。"
+#: includes/admin/class-fe-search-ai-settings.php:3334
+msgid "Open the Advanced settings tab to delete stored plugin data."
+msgstr "保存されたプラグインデータを削除するには、詳細設定タブを開いてください。"
 
 #: includes/admin/class-fe-search-ai-settings.php:818
 msgid "OpenAI（GPT）"

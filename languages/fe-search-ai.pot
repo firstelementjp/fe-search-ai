@@ -1160,8 +1160,8 @@ msgstr ""
 msgid "Only the top N reranked chunks will be sent to the LLM."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3194
-msgid "Open Advanced Data Management to delete stored plugin data."
+#: includes/admin/class-fe-search-ai-settings.php:3334
+msgid "Open the Advanced settings tab to delete stored plugin data."
 msgstr ""
 
 #: includes/admin/class-fe-search-ai-settings.php:818

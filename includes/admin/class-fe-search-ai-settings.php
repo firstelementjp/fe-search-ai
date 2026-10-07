@@ -3331,7 +3331,7 @@ class FE_Search_AI_Settings {
 				<p><strong><?php esc_html_e( 'Diagnostic conversation summaries:', 'fe-search-ai' ); ?></strong> <?php echo ! empty( $privacy['enable_diagnostic_conversation_summary'] ) ? esc_html__( 'Enabled when Debug Mode is active', 'fe-search-ai' ) : esc_html__( 'Disabled', 'fe-search-ai' ); ?></p>
 			<?php endif; ?>
 			<p class="description"><?php esc_html_e( 'Review each provider’s terms, privacy policy, retention, and international transfer practices before enabling it. This summary is informational and does not replace a site-specific legal review.', 'fe-search-ai' ); ?></p>
-			<p><a href="#tab_advanced" class="fe-search-ai-tab-link"><?php esc_html_e( 'Open Advanced Data Management to delete stored plugin data.', 'fe-search-ai' ); ?></a></p>
+			<p><a href="#tab_advanced" class="fe-search-ai-tab-link"><?php esc_html_e( 'Open the Advanced settings tab to delete stored plugin data.', 'fe-search-ai' ); ?></a></p>
 		</div>
 		<?php
 	}
