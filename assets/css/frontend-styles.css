@@ -482,7 +482,7 @@
 .fe-search-ai-context-chip-label {
 	overflow: hidden;
 	text-overflow: ellipsis;
-	white-space: nowrap;
+	/* white-space: nowrap; */
 }
 
 .fe-search-ai-context-chip-remove {
