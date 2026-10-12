@@ -636,6 +636,7 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	background: var(--feais-bg); /* Fallback for browsers without color-mix() support */
 	background: color-mix(in srgb, var(--feais-bg) 92%, transparent);
 	color: var(--feais-text);
 	z-index: 20;
