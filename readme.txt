@@ -3,7 +3,7 @@ Contributors: firstelementjp
 Tags: ai, search, chat, semantic, vector
 Requires at least: 6.6
 Tested up to: 7.1.2
-Stable tag: 1.2.0
+Stable tag: 1.3.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -148,6 +148,17 @@ Yes, the plugin includes numerous customization options and filter hooks for dev
 
 == Changelog ==
 
+= 1.3.0 =
+* Migrated secret storage to libsodium authenticated encryption (sodium_crypto_secretbox) with a versioned feai:v2 format; stored API keys and license keys are re-encrypted transparently on upgrade or the next settings save
+* Added the FE_SEARCH_AI_ENCRYPTION_KEY constant as the canonical encryption key source, falling back to legacy FE_AI_SEARCH_ENCRYPTION_KEY and then AUTH_KEY; defining the constant keeps stored secrets valid across WordPress salt rotation
+* Changed real-time post indexing to run in the background via WP-Cron so publishing no longer waits on embedding or summary API calls
+* Added a page context bar in the chat window showing the current post/page as a removable chip
+* Added the fe_search_ai_display_texts filter and automatic Polylang/WPML/Bogo String Translation integration for custom chat UI texts
+* Registered [fe-search-ai] as the canonical chat shortcode
+* Changed the user message bubble background to reuse the chat input background and renamed the "Bubble Color" setting to "Bubble / Send Button Color"
+* Improved chat context chip styling, consent overlay readability, and admin API status message wrapping
+* Expanded the documentation site with Pro feature configuration, MCP integration, external service setup, and troubleshooting guides
+
 = 1.2.0 =
 * Added a dedicated Privacy settings tab with a current data-handling summary
 * Added persistent frontend disclosure of active AI services and browser session storage
@@ -217,6 +228,9 @@ Yes, the plugin includes numerous customization options and filter hooks for dev
 * Developer hooks and filters
 
 == Upgrade Notice ==
+
+= 1.3.0 =
+Security and workflow release. Stored secrets migrate to libsodium authenticated encryption transparently (no re-entry needed); consider defining FE_SEARCH_AI_ENCRYPTION_KEY in wp-config.php. Real-time indexing now runs via WP-Cron in the background.
 
 = 1.2.0 =
 Privacy release. Fixes uninstall cleanup and log retention settings, adds retrieval trace lifecycle controls, and documents the Zero Data Retention posture. Consent versions change on upgrade, so Pro visitors will be asked to re-accept.

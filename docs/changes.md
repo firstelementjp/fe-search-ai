@@ -1,11 +1,29 @@
 # Changelog
 
-## Unreleased
+## 1.3.0 (2026-10-21)
+
+### Security
+
+- Migrated secret storage to libsodium authenticated encryption (`sodium_crypto_secretbox`, XSalsa20-Poly1305) with a versioned `feai:v2:` format; API keys, license keys, and the Yahoo! App ID are re-encrypted transparently on upgrade or the next settings save
+- Legacy AES-256-CBC values remain decryptable by trying every candidate key, so existing installs keep working without re-entering keys
+- Added the `FE_SEARCH_AI_ENCRYPTION_KEY` constant as the canonical key source, falling back to legacy `FE_AI_SEARCH_ENCRYPTION_KEY` and then `AUTH_KEY`; defining the constant keeps stored secrets valid across WordPress salt rotation
+- Added the `fe_search_ai_migrate_secret_targets` filter so add-ons (e.g. Pro) can declare encrypted option paths for migration
+
+### Sync
+
+- Real-time post indexing now runs in the background via WP-Cron: `save_post` queues the work and the `fe_search_ai_process_sync_queue` event processes it, so publishing no longer blocks on embedding or summary API calls
 
 ### Chat UI
 
+- Added a page context bar that shows the current post/page as a removable chip in the chat window
 - Changed the user message bubble background to reuse the chat input background and renamed the "Bubble Color" display setting to "Bubble / Send Button Color"
 - Added the `fe_search_ai_display_texts` filter and automatic Polylang/WPML/Bogo String Translation integration for custom chat UI texts
+- Registered `[fe-search-ai]` as the canonical chat shortcode
+- Allowed context chip labels to wrap, matched the chip remove button hover to the send button accent, added an opaque fallback for the consent overlay, and added word-break to API status messages
+
+### Documentation
+
+- Expanded the docs site: Pro feature configuration reference, Pro Security tab, MCP integration guide, external service setup, settings field reference, index health, and troubleshooting
 
 ## 1.2.0 (2026-09-30)
 
