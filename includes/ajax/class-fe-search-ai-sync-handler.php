@@ -1396,9 +1396,10 @@ class FE_Search_AI_Sync_Handler {
 	 * @param string   $question    The end user's question text.
 	 * @param string   $sequence_id Optional log sequence ID.
 	 * @param int|null $max_chunks_override Optional result limit override.
+	 * @param int|null $post_id     Optional post ID to restrict matching chunks to a single post.
 	 * @return array An array of the most relevant text chunks and their permalinks.
 	 */
-	private function find_similar_chunks_via_keyword_index( $question, $sequence_id = '', $max_chunks_override = null ) {
+	private function find_similar_chunks_via_keyword_index( $question, $sequence_id = '', $max_chunks_override = null, $post_id = null ) {
 		global $wpdb;
 		$vectors_table = $wpdb->prefix . 'fe_search_ai_vectors';
 		$index_table   = $wpdb->prefix . 'fe_search_ai_keyword_index';
@@ -1457,14 +1458,21 @@ class FE_Search_AI_Sync_Handler {
 		}
 
 		$keyword_placeholders = implode( ', ', array_fill( 0, count( $valid_keywords ), '%s' ) );
+		$post_id_clause       = '';
+		$matched_row_params   = $valid_keywords;
+		if ( null !== $post_id ) {
+			$post_id_clause       = ' AND v.`post_id` = %d';
+			$matched_row_params[] = (int) $post_id;
+		}
+		$matched_row_params[] = $candidate_limit;
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
-		// Table names are interpolated but controlled internally, keywords and limit are prepared.
+		// Table names are interpolated but controlled internally, keywords, post ID and limit are prepared.
 		$matched_rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT i.`keyword`, i.`vector_id`, i.`term_frequency`, v.`keyword_token_count` FROM `{$index_table}` i INNER JOIN `{$vectors_table}` v ON v.`id` = i.`vector_id` WHERE i.`keyword` IN ( {$keyword_placeholders} ) LIMIT %d",
-				array_merge( $valid_keywords, [ $candidate_limit ] )
+				"SELECT i.`keyword`, i.`vector_id`, i.`term_frequency`, v.`keyword_token_count` FROM `{$index_table}` i INNER JOIN `{$vectors_table}` v ON v.`id` = i.`vector_id` WHERE i.`keyword` IN ( {$keyword_placeholders} ){$post_id_clause} LIMIT %d",
+				$matched_row_params
 			),
 			ARRAY_A
 		);
@@ -1597,6 +1605,67 @@ class FE_Search_AI_Sync_Handler {
 				'source'        => 'keyword',
 				'bm25_score'    => $vector_scores[ $vector_id ] ?? 0,
 				'bm25_rank'     => $bm25_rank,
+			];
+		}
+
+		return $results;
+	}
+
+	/**
+	 * Retrieves the most relevant chunks belonging to a single post.
+	 *
+	 * Used by the chat page-context feature to guarantee that the page the
+	 * visitor is currently viewing is represented in the LLM context. Chunks
+	 * are ranked by the same BM25 keyword index as regular retrieval, scoped
+	 * to the given post. When no keyword matches, the first chunks of the
+	 * post are returned so the page is always represented.
+	 *
+	 * @since 1.3.0
+	 * @param string $question The end user's question text.
+	 * @param int    $post_id  The post ID whose chunks should be returned.
+	 * @param int    $limit    Maximum number of chunks to return.
+	 * @return array An array of chunk rows in the same shape as find_similar_chunks().
+	 */
+	public function find_chunks_for_post( $question, $post_id, $limit = 3 ) {
+		global $wpdb;
+		$post_id = (int) $post_id;
+		$limit   = max( 1, (int) $limit );
+		if ( $post_id <= 0 ) {
+			return [];
+		}
+
+		$results = $this->find_similar_chunks_via_keyword_index( $question, '', $limit, $post_id );
+		if ( ! empty( $results ) ) {
+			foreach ( $results as &$chunk ) {
+				$chunk['source'] = 'current_page';
+			}
+			unset( $chunk );
+			return $results;
+		}
+
+		$vectors_table = $wpdb->prefix . 'fe_search_ai_vectors';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+		// Table name is interpolated but controlled internally, values are prepared.
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT `id`, `content_chunk`, `summary_text`, `post_id` FROM `{$vectors_table}` WHERE `post_id` = %d ORDER BY `id` ASC LIMIT %d",
+				$post_id,
+				$limit
+			),
+			ARRAY_A
+		);
+
+		$results = [];
+		$post    = get_post( $post_id );
+		foreach ( (array) $rows as $row ) {
+			$results[] = [
+				'content_chunk' => $row['content_chunk'],
+				'summary_text'  => (string) ( $row['summary_text'] ?? '' ),
+				'permalink'     => get_permalink( $post_id ),
+				'post_id'       => $post_id,
+				'title'         => $post ? $post->post_title : 'Untitled',
+				'source'        => 'current_page',
 			];
 		}
 

@@ -429,6 +429,7 @@ class FE_Search_AI_Settings {
 		add_settings_field( 'fe_search_ai_display_chat_text', __( 'Text & Colors', 'fe-search-ai' ), [ $this, 'display_text_color_field_html' ], $page_slug, 'fe_search_ai_display_appearance_section' );
 		add_settings_field( 'fe_search_ai_display_interaction', __( 'Interaction', 'fe-search-ai' ), [ $this, 'display_interaction_field_html' ], $page_slug, 'fe_search_ai_display_appearance_section' );
 		add_settings_field( 'fe_search_ai_display_footer_notice', __( 'Footer Notice', 'fe-search-ai' ), [ $this, 'display_footer_notice_field_html' ], $page_slug, 'fe_search_ai_display_appearance_section' );
+		add_settings_field( 'fe_search_ai_display_page_context', __( 'Page Context', 'fe-search-ai' ), [ $this, 'display_page_context_field_html' ], $page_slug, 'fe_search_ai_display_appearance_section' );
 
 		// Floating Mode Section
 		add_settings_section( 'fe_search_ai_display_floating_section', __( 'Floating Mode Settings', 'fe-search-ai' ), null, $page_slug );
@@ -1130,6 +1131,34 @@ class FE_Search_AI_Settings {
 		// Allow Pro version to add additional provider rows
 		do_action( 'fe_search_ai_after_api_key_fields', $this );
 		?>
+
+		<?php
+		$encryption_key_source = '';
+		if ( defined( 'FE_SEARCH_AI_ENCRYPTION_KEY' ) && ! empty( FE_SEARCH_AI_ENCRYPTION_KEY ) ) {
+			$encryption_key_source = 'FE_SEARCH_AI_ENCRYPTION_KEY';
+		} elseif ( defined( 'FE_AI_SEARCH_ENCRYPTION_KEY' ) && ! empty( FE_AI_SEARCH_ENCRYPTION_KEY ) ) {
+			$encryption_key_source = 'FE_AI_SEARCH_ENCRYPTION_KEY';
+		}
+		?>
+		<p class="description">
+			<?php if ( '' !== $encryption_key_source ) : ?>
+				<?php
+				printf(
+					/* translators: %s: The wp-config.php constant name wrapped in code tags. */
+					wp_kses_post( __( 'API keys are encrypted using the %s constant and stored in the database.', 'fe-search-ai' ) ),
+					'<code>' . esc_html( $encryption_key_source ) . '</code>'
+				);
+				?>
+			<?php else : ?>
+				<?php
+				printf(
+					/* translators: %s: The wp-config.php constant name wrapped in code tags. */
+					wp_kses_post( __( 'API keys are encrypted using WordPress\'s AUTH_KEY and stored in the database. Please re-save your API keys if WordPress salts are rotated. Define the %s constant in wp-config.php to take priority and stay unaffected by salt rotation.', 'fe-search-ai' ) ),
+					'<code>FE_SEARCH_AI_ENCRYPTION_KEY</code>'
+				);
+				?>
+			<?php endif; ?>
+		</p>
 		<?php
 	}
 
@@ -2903,7 +2932,7 @@ class FE_Search_AI_Settings {
 		}
 
 		$existing_plain = FE_Search_AI_Encryption_Helper::decrypt( $existing_value );
-		if ( '' !== $existing_value && hash_equals( (string) $existing_plain, (string) $new_value ) ) {
+		if ( '' !== $existing_value && FE_Search_AI_Encryption_Helper::is_v2_format( $existing_value ) && hash_equals( (string) $existing_plain, (string) $new_value ) ) {
 			return $existing_value;
 		}
 
@@ -3036,6 +3065,7 @@ class FE_Search_AI_Settings {
 		$new_input['bubble_gradient_end']   = sanitize_hex_color( $input['bubble_gradient_end'] ?? '#973CFF' );
 		$new_input['bubble_gradient_angle'] = min( 360, max( 0, absint( $input['bubble_gradient_angle'] ?? 135 ) ) );
 		$new_input['bubble_animation']      = ! empty( $input['bubble_animation'] );
+		$new_input['page_context']          = ! empty( $input['page_context'] );
 
 		return $new_input;
 	}
@@ -3183,6 +3213,39 @@ class FE_Search_AI_Settings {
 	}
 
 	/**
+	 * Renders the HTML for the Page Context setting.
+	 *
+	 * When enabled, the chat window shows a removable "viewing" chip on
+	 * singular posts and pages, and the currently viewed page is sent with
+	 * each question so that demonstratives such as "this" resolve to that
+	 * page during retrieval and answer generation.
+	 *
+	 * @since 1.3.0
+	 * @return void
+	 */
+	public function display_page_context_field_html() {
+		$ui_options   = $this->options['display']['ui'] ?? [];
+		$page_context = $ui_options['page_context'] ?? true;
+		?>
+		<fieldset>
+			<label>
+				<input
+					type="checkbox"
+					id="fe_search_ai_page_context"
+					name="fe_search_ai_settings[display][ui][page_context]"
+					value="1"
+					<?php checked( (bool) $page_context ); ?>
+				>
+				<?php esc_html_e( 'Use the current page as chat context', 'fe-search-ai' ); ?>
+			</label>
+			<p class="description">
+				<?php esc_html_e( 'When enabled, a "viewing" chip appears in the chat window on single posts and pages. The page content is prioritized as context so questions like "how much is this?" are answered for the page being viewed. Visitors can remove the chip to exclude the page from context.', 'fe-search-ai' ); ?>
+			</p>
+		</fieldset>
+		<?php
+	}
+
+	/**
 	 * Renders the current privacy and data handling summary.
 	 *
 	 * @since 1.2.0
@@ -3296,7 +3359,7 @@ class FE_Search_AI_Settings {
 				<p><strong><?php esc_html_e( 'Diagnostic conversation summaries:', 'fe-search-ai' ); ?></strong> <?php echo ! empty( $privacy['enable_diagnostic_conversation_summary'] ) ? esc_html__( 'Enabled when Debug Mode is active', 'fe-search-ai' ) : esc_html__( 'Disabled', 'fe-search-ai' ); ?></p>
 			<?php endif; ?>
 			<p class="description"><?php esc_html_e( 'Review each provider’s terms, privacy policy, retention, and international transfer practices before enabling it. This summary is informational and does not replace a site-specific legal review.', 'fe-search-ai' ); ?></p>
-			<p><a href="#tab_advanced" class="fe-search-ai-tab-link"><?php esc_html_e( 'Open Advanced Data Management to delete stored plugin data.', 'fe-search-ai' ); ?></a></p>
+			<p><a href="#tab_advanced" class="fe-search-ai-tab-link"><?php esc_html_e( 'Open the Advanced settings tab to delete stored plugin data.', 'fe-search-ai' ); ?></a></p>
 		</div>
 		<?php
 	}

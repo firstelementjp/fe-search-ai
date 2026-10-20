@@ -23,7 +23,7 @@ FE Search AI is designed for WordPress sites where visitors need quick, accurate
 
 ## Current release
 
-Version 1.2.0 is a privacy release: it adds a dedicated Privacy tab, versioned consent integration, and a documented Zero Data Retention posture — no server-side storage of conversation content by default, configurable retention for every record class, and verified uninstall cleanup. See [Privacy and Data Handling](privacy.md).
+Version 1.3.0 hardens secret storage with libsodium authenticated encryption (transparent migration from AES-256-CBC, dedicated `FE_SEARCH_AI_ENCRYPTION_KEY` constant), moves real-time indexing to a WP-Cron background queue so publishing is never blocked, and adds a page context bar plus multilingual string-translation support to the chat UI. See [Configuration](config.md) for the new encryption key option.
 
 ## Recommended reading
 

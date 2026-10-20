@@ -135,10 +135,6 @@
 	box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
-#fe_search_ai_chat_footer {
-	/* border-top: 1px solid #eee; */
-}
-
 #fe_search_ai_chat_footer_actions {
 	display: flex;
 	justify-content: flex-end;
@@ -457,6 +453,64 @@
 }
 
 /* ==========================================================================
+	Page Context Bar
+	========================================================================== */
+
+#fe_search_ai_context_bar {
+	padding: 0 15px 8px;
+}
+
+.fe-search-ai-context-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	max-width: 100%;
+	padding: 3px 4px 3px 10px;
+	border: 1px solid var(--feais-border);
+	border-radius: 999px;
+	font-size: 12px;
+	line-height: 1.4;
+	color: var(--feais-text);
+	background: var(--feais-bg);
+	opacity: 0.85;
+}
+
+.fe-search-ai-context-chip-label {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	/* white-space: nowrap; */
+}
+
+.fe-search-ai-context-chip-remove {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	width: 18px;
+	height: 18px;
+	padding: 0;
+	border: none;
+	border-radius: 50%;
+	background: none;
+	color: var(--feais-text);
+	cursor: pointer;
+}
+
+.fe-search-ai-context-chip-remove svg {
+	width: 12px;
+	height: 12px;
+	fill: currentColor;
+}
+
+.fe-search-ai-context-chip-remove:hover,
+.fe-search-ai-context-chip-remove:focus-visible {
+	background: var(--feais-accent-bg, var(--feais-accent));
+	background-size: var(--feais-accent-bg-size, 100% 100%);
+	animation: var(--feais-button-animation, none);
+	color: var(--feais-on-accent, #fff);
+}
+
+/* ==========================================================================
 	Chat Messages Area
 	========================================================================== */
 
@@ -578,6 +632,7 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	background: var(--feais-bg); /* Fallback for browsers without color-mix() support */
 	background: color-mix(in srgb, var(--feais-bg) 92%, transparent);
 	color: var(--feais-text);
 	z-index: 20;

@@ -313,7 +313,7 @@ Proライセンスが有効な場合、「セキュリティ」タブが表示�
 
 ### 禁止ワードリスト（Forbidden Words List）
 
-カンマ区切りで禁止ワード・フレーズを登録します。一致箇所は訪問者の入力・AIの回答の**両方**で `[REDACTED]` に置き換えられます（大文字小文字を区別しません）。フィルターは `fe_search_ai_preprocess_user_question` / `fe_search_ai_preprocess_model_response` にフックされるため、Pro版のREST `/query` とMCPエンドポイントにも適用されます。リストはAES-256-CBCで暗号化して保存されます。
+カンマ区切りで禁止ワード・フレーズを登録します。一致箇所は訪問者の入力・AIの回答の**両方**で `[REDACTED]` に置き換えられます（大文字小文字を区別しません）。フィルターは `fe_search_ai_preprocess_user_question` / `fe_search_ai_preprocess_model_response` にフックされるため、Pro版のREST `/query` とMCPエンドポイントにも適用されます。リストはlibsodium（XSalsa20-Poly1305）で暗号化して保存されます。
 
 - 「ignore previous instructions」などの基本的なインジェクション用フレーズは内蔵の言語ファイルで常時フィルターされます（**View Default Security Filters** で確認可能）。カスタムリストへの追加は不要です。
 - カスタムリストを空にすると、内蔵の英語フォールバックリストが使われます。
@@ -335,3 +335,20 @@ Pro版では管理メニューの FE Search AI の下に「System Logs」サブ�
 ## 暗号化
 
 すべてのAPIキーとYahoo! App IDは `FE_Search_AI_Encryption_Helper` で暗号化されて保存され、リクエスト時のみ復号されます。
+
+新規に保存される値は libsodium の `sodium_crypto_secretbox()`（XSalsa20-Poly1305、認証付き暗号）で暗号化されます。旧バージョンで保存された AES-256-CBC の値はそのまま透過的に復号でき、プラグインのアップグレード時または次回の設定保存時に新形式へ自動で再暗号化されます。
+
+鍵素材は以下の優先順位で解決されます:
+
+1. `wp-config.php` で定義した `FE_SEARCH_AI_ENCRYPTION_KEY` 定数（推奨。WordPress の salt ローテーションで保存済みキーが無効化されるのも防げます）
+2. 旧称 `FE_AI_SEARCH_ENCRYPTION_KEY` 定数（プラグイン旧名称との後方互換のため残存）
+3. WordPress の `AUTH_KEY`（フォールバック）
+
+さらに強化する場合、環境変数経由で鍵を注入できます:
+
+```php
+// wp-config.php
+define( 'FE_SEARCH_AI_ENCRYPTION_KEY', getenv( 'FE_SEARCH_AI_ENCRYPTION_KEY' ) ?: 'your-long-random-key' );
+```
+
+鍵素材を変更・削除すると既存の暗号文は復号できなくなり、影響を受けるAPIキーの再入力が必要になります。

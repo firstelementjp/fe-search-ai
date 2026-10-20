@@ -313,7 +313,7 @@ The **Security** tab appears when a Pro license is active.
 
 ### Forbidden Words List
 
-A comma-separated list of words and phrases to redact. Matches are replaced with `[REDACTED]` (case-insensitive) in **both** visitor input and AI responses — the filter hooks `fe_search_ai_preprocess_user_question` and `fe_search_ai_preprocess_model_response`, so it also applies to the Pro REST `/query` and MCP endpoints. The list is stored encrypted (AES-256-CBC).
+A comma-separated list of words and phrases to redact. Matches are replaced with `[REDACTED]` (case-insensitive) in **both** visitor input and AI responses — the filter hooks `fe_search_ai_preprocess_user_question` and `fe_search_ai_preprocess_model_response`, so it also applies to the Pro REST `/query` and MCP endpoints. The list is stored encrypted (libsodium / XSalsa20-Poly1305).
 
 - Basic injection phrases (e.g. "ignore previous instructions") are always filtered from a built-in language file, shown under **View Default Security Filters** — you do not need to add them.
 - If the custom list is left empty, a built-in English fallback list is used.
@@ -335,3 +335,20 @@ Pro adds a **System Logs** submenu under the FE Search AI admin menu: a filterab
 ## Encryption
 
 All API keys and the Yahoo! App ID are encrypted before storage (`FE_Search_AI_Encryption_Helper`) and only decrypted at request time.
+
+New values are encrypted with libsodium's `sodium_crypto_secretbox()` (XSalsa20-Poly1305, authenticated encryption). Values written by older versions used AES-256-CBC; they still decrypt transparently and are re-encrypted in the new format on plugin upgrade or the next settings save.
+
+The key material is resolved in this order:
+
+1. The `FE_SEARCH_AI_ENCRYPTION_KEY` constant in `wp-config.php` (recommended — it also keeps stored keys valid when WordPress salts are rotated)
+2. The legacy `FE_AI_SEARCH_ENCRYPTION_KEY` constant (kept for backward compatibility with the plugin's former name)
+3. WordPress `AUTH_KEY` (fallback)
+
+For extra hardening, the key can be injected from an environment variable:
+
+```php
+// wp-config.php
+define( 'FE_SEARCH_AI_ENCRYPTION_KEY', getenv( 'FE_SEARCH_AI_ENCRYPTION_KEY' ) ?: 'your-long-random-key' );
+```
+
+Changing or removing the key material makes existing ciphertext undecryptable, and the affected API keys must be re-entered.

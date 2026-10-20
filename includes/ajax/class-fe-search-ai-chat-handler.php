@@ -59,6 +59,15 @@ class FE_Search_AI_Chat_Handler {
 	private $sync_handler;
 
 	/**
+	 * Post the visitor is currently viewing, resolved from the
+	 * context_post_id request parameter for the active request.
+	 *
+	 * @since 1.3.0
+	 * @var \WP_Post|null
+	 */
+	private $context_post = null;
+
+	/**
 	 * Constructor: Initializes the chat handler with dependencies and hooks.
 	 *
 	 * Sets up the chat functionality by loading plugin options, checking license
@@ -266,6 +275,9 @@ class FE_Search_AI_Chat_Handler {
 			}
 			$history = $this->sanitize_chat_history( $history );
 
+			// Resolve the page the visitor was viewing when the question was sent.
+			$this->context_post = $this->resolve_context_post( $request->get_param( 'context_post_id' ) );
+
 			// Log processing start
 			\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
 				'INFO',
@@ -306,6 +318,35 @@ class FE_Search_AI_Chat_Handler {
 				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 				// Hook name is properly prefixed with fe_search_ai_.
 				$similar_chunks = apply_filters( 'fe_search_ai_retrieved_chunks', $similar_chunks, $question );
+
+				// Guarantee that chunks from the page the visitor is viewing are
+				// represented in the context, so demonstratives like "this"
+				// resolve to that page even when retrieval prefers other content.
+				if ( $this->context_post instanceof \WP_Post && $this->sync_handler ) {
+					// Hook name is properly prefixed with fe_search_ai_.
+					$page_limit  = max( 1, (int) apply_filters( 'fe_search_ai_page_context_chunk_limit', 3, $question ) );
+					$page_chunks = $this->sync_handler->find_chunks_for_post( $question, $this->context_post->ID, $page_limit );
+					if ( ! empty( $page_chunks ) ) {
+						$seen = [];
+						foreach ( (array) $similar_chunks as $chunk ) {
+							$seen[ md5( (string) ( $chunk['content_chunk'] ?? '' ) ) ] = true;
+						}
+						$page_chunks    = array_values(
+							array_filter(
+								$page_chunks,
+								function ( $chunk ) use ( &$seen ) {
+									$key = md5( (string) ( $chunk['content_chunk'] ?? '' ) );
+									if ( isset( $seen[ $key ] ) ) {
+										return false;
+									}
+									$seen[ $key ] = true;
+									return true;
+								}
+							)
+						);
+						$similar_chunks = array_merge( $page_chunks, (array) $similar_chunks );
+					}
+				}
 
 				\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
 					'INFO',
@@ -431,6 +472,42 @@ class FE_Search_AI_Chat_Handler {
 		} finally {
 			exit;
 		}
+	}
+
+	/**
+	 * Resolves and validates the page-context post sent by the frontend.
+	 *
+	 * The visitor's browser reports the ID of the page being viewed via the
+	 * context_post_id parameter. It is only honored when the Page Context
+	 * display setting is enabled and the post is publicly viewable
+	 * (published, not password protected, public post type).
+	 *
+	 * @since 1.3.0
+	 * @param mixed $post_id_raw Raw context_post_id request parameter.
+	 * @return \WP_Post|null The validated context post, or null.
+	 */
+	private function resolve_context_post( $post_id_raw ) {
+		$post_id = absint( $post_id_raw );
+		if ( $post_id <= 0 ) {
+			return null;
+		}
+
+		$ui_options = isset( $this->options['display']['ui'] ) && is_array( $this->options['display']['ui'] ) ? $this->options['display']['ui'] : [];
+		if ( isset( $ui_options['page_context'] ) && empty( $ui_options['page_context'] ) ) {
+			return null;
+		}
+
+		$post = get_post( $post_id );
+		if (
+			! $post instanceof \WP_Post ||
+			'publish' !== $post->post_status ||
+			'' !== $post->post_password ||
+			! is_post_type_viewable( $post->post_type )
+		) {
+			return null;
+		}
+
+		return $post;
 	}
 
 	/**
@@ -1782,6 +1859,17 @@ class FE_Search_AI_Chat_Handler {
 		$system_prompt .= "\n\n## Language Rule\n" .
 			"All of your responses must be written in the language corresponding to the current WordPress locale code '{$answer_lang_code}'. ";
 
+		// Append the page the visitor is currently viewing so that demonstratives
+		// such as "this" resolve to that page even without an explicit referent.
+		if ( $this->context_post instanceof \WP_Post ) {
+			$context_title     = get_the_title( $this->context_post );
+			$context_permalink = get_permalink( $this->context_post );
+			$system_prompt    .= "\n\n## Current Page\n" .
+				"The user is currently viewing the page titled \"{$context_title}\" ({$context_permalink}). " .
+				"When the user's question uses a demonstrative such as \"this\", \"this page\", \"これ\", \"この\", \"その\", or \"こちら\" without an explicit referent, interpret it as referring to this page. " .
+				'Search Results items marked "Source: current page" are excerpts from this page; prioritize them when the question concerns the page.';
+		}
+
 		// Add Gemini-specific constraints to prevent hallucination
 		// @TODO: Temporarily commented out for testing
 
@@ -1870,6 +1958,9 @@ class FE_Search_AI_Chat_Handler {
 				$context_str .= "Title: {$post_title}\n";
 				$context_str .= "URL: {$chunk['permalink']}\n";
 				$context_str .= "Date: {$post_date}\n";
+				if ( 'current_page' === ( $chunk['source'] ?? '' ) ) {
+					$context_str .= "Source: current page\n";
+				}
 				if ( ! empty( $metadata ) ) {
 					$context_str .= 'Metadata: ' . implode( '', $metadata ) . "\n";
 				}

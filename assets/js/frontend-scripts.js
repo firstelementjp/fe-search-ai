@@ -219,6 +219,9 @@ function getChatDOMElements() {
 	const optionsMenu = document.getElementById('fe_search_ai_options_menu');
 	const shiftEnterToggle = document.getElementById('fe_search_ai_send_mode_toggle');
 	const inputResizer = document.getElementById('fe_search_ai_input_resizer');
+	const contextBar = document.getElementById('fe_search_ai_context_bar');
+	const contextChip = document.getElementById('fe_search_ai_context_chip');
+	const contextChipRemove = document.getElementById('fe_search_ai_context_chip_remove');
 
 	return {
 		bubble,
@@ -233,6 +236,9 @@ function getChatDOMElements() {
 		optionsMenu,
 		shiftEnterToggle,
 		inputResizer,
+		contextBar,
+		contextChip,
+		contextChipRemove,
 	};
 }
 
@@ -533,6 +539,9 @@ function initFEAIChat() {
 		container,
 		shiftEnterToggle,
 		inputResizer,
+		contextBar,
+		contextChip,
+		contextChipRemove,
 	} = domElements;
 
 	// Prevent duplicate initialization
@@ -549,6 +558,14 @@ function initFEAIChat() {
 
 	// Session Management
 	const { sessionId, sessionHistory } = initializeSessionManagement();
+
+	// Page context: the chip shown on singular posts/pages carries the post ID
+	// that is sent as context_post_id until the visitor removes the chip.
+	let contextPostId = contextChip ? parseInt(contextChip.dataset.postId, 10) || 0 : 0;
+	contextChipRemove?.addEventListener('click', () => {
+		contextPostId = 0;
+		contextBar?.remove();
+	});
 
 	// State Variables
 	let characterQueue = [];
@@ -842,6 +859,7 @@ function initFEAIChat() {
 			body: new URLSearchParams({
 				question,
 				history: JSON.stringify(recentHistory),
+				...(contextPostId > 0 ? { context_post_id: String(contextPostId) } : {}),
 			}),
 		})
 			.then(response => {

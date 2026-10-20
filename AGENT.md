@@ -7,7 +7,7 @@
 **FE Search AI** is a WordPress plugin that provides AI-powered semantic search.
 Uses vector embeddings and AI reranking for intelligent content discovery.
 
-- **Version**: 1.2.0
+- **Version**: 1.3.0
 - **License**: GPL-2.0+
 - **PHP**: >= 7.4
 - **Repository**: https://github.com/firstelementjp/fe-search-ai
@@ -34,10 +34,11 @@ includes/
     class-fe-search-ai-license-handler.php          # License validation
     class-fe-search-ai-license.php                  # License model
     class-fe-search-ai-logger.php                   # Logging utilities
+    class-fe-search-ai-multilingual.php             # Polylang/WPML/Bogo string-translation integration for chat UI texts
     class-fe-search-ai-privacy.php                  # Privacy registry, notices, and consent versioning
     class-fe-search-ai-retrieval-trace.php          # Retrieval trace data model
     class-fe-search-ai-retrieval-trace-recorder.php # Retrieval trace recording
-    class-fe-search-ai-sync-hooks.php               # Sync hooks and handlers
+    class-fe-search-ai-sync-hooks.php               # Sync hooks; queued background indexing via WP-Cron
   frontend/
     class-fe-search-ai-chat-ui.php                  # Frontend chat UI rendering
   i18n/                                             # Translation dictionaries
@@ -138,6 +139,11 @@ $encrypted = Encryption_Helper::encrypt( $api_key );
 $decrypted = Encryption_Helper::decrypt( $encrypted );
 ```
 
+- New values use libsodium `sodium_crypto_secretbox()` (XSalsa20-Poly1305) with a `feai:v2:` prefix; legacy AES-256-CBC values are decrypted transparently by trying every candidate key.
+- Key material: `FE_SEARCH_AI_ENCRYPTION_KEY` constant → legacy `FE_AI_SEARCH_ENCRYPTION_KEY` (pre-rename constant) → `AUTH_KEY` fallback. Recommend the constant in docs/UI since AUTH_KEY rotation breaks stored ciphertext.
+- `FE_Search_AI_Encryption_Helper::migrate_stored_secrets()` re-encrypts stored secrets on plugin upgrade; `sanitize_encrypted_secret()` also upgrades the format on save.
+- Add-ons (e.g. Pro) can declare secret locations via the `fe_search_ai_migrate_secret_targets` filter (option name => list of key paths; `[]` = the option value itself, `'*'` = iterate all elements) or call `FE_Search_AI_Encryption_Helper::migrate_option_secrets()` directly.
+
 ## UI Structure
 
 - **Admin Settings**: Tabs for General, Sync, License
@@ -230,6 +236,7 @@ Required GitHub Secrets for WordPress.org SVN deploy:
 - `find_similar_chunks_via_keyword_index()` ranks results by BM25.
 - Filters: `fe_search_ai_bm25_candidate_limit`, `fe_search_ai_bm25_k1`, `fe_search_ai_bm25_b`.
 - Realtime indexing in `SyncHooks` stores the same metadata.
+- Realtime indexing is queued (`fe_search_ai_sync_queue` option) and processed in the background by the `fe_search_ai_process_sync_queue` WP-Cron event, so `save_post` never blocks on embedding/summary API calls. Set `fe_search_ai_realtime_sync_background` to `false` to index synchronously.
 
 ## GitHub Releases Updater
 

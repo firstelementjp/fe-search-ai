@@ -44,7 +44,7 @@ ZDR on the **provider side** (for example, Anthropic or OpenAI not storing promp
 
 ## Required processing
 
-To generate a response, the plugin may send the visitor's question, recent conversation history, and selected site context to the configured chat provider. Search processing may also use an embedding provider, Yahoo! JAPAN Japanese MA API, Cohere Rerank, or Qdrant when enabled.
+To generate a response, the plugin may send the visitor's question, recent conversation history, and selected site context to the configured chat provider. When the Page Context feature is enabled, the title, URL, and content excerpts of the page the visitor is currently viewing are also sent; visitors can remove the "viewing" chip in the chat window to exclude the page. Search processing may also use an embedding provider, Yahoo! JAPAN Japanese MA API, Cohere Rerank, or Qdrant when enabled.
 
 Free displays this processing as a persistent notice without blocking chat use. Pro can require acceptance of the site's Terms of Service before chat use.
 
