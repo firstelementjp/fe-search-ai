@@ -152,30 +152,20 @@ if ( ! empty( $api_key ) ) {
 
 **Solution**:
 
-- Use OpenSSL encryption for API keys
+- Use libsodium authenticated encryption (`sodium_crypto_secretbox`) for API keys via `FE_Search_AI_Encryption_Helper`
 - Store encrypted keys in options
 - Decrypt only when needed
+- Key material: `FE_SEARCH_AI_ENCRYPTION_KEY` constant → legacy `FE_AI_SEARCH_ENCRYPTION_KEY` → `AUTH_KEY`; decryption tries every candidate key so values encrypted under a previous source still work
+- Legacy AES-256-CBC values remain decryptable and are re-encrypted on upgrade or next save
 
 **Code Pattern**:
 
 ```php
 // Encrypt
-$encrypted = openssl_encrypt(
-    $api_key,
-    'AES-256-CBC',
-    $key,
-    0,
-    $iv
-);
+$encrypted = \FESearchAI\Core\FE_Search_AI_Encryption_Helper::encrypt( $api_key );
 
 // Decrypt
-$decrypted = openssl_decrypt(
-    $encrypted,
-    'AES-256-CBC',
-    $key,
-    0,
-    $iv
-);
+$decrypted = \FESearchAI\Core\FE_Search_AI_Encryption_Helper::decrypt( $encrypted );
 ```
 
 ### API Rate Limits

@@ -1131,6 +1131,34 @@ class FE_Search_AI_Settings {
 		// Allow Pro version to add additional provider rows
 		do_action( 'fe_search_ai_after_api_key_fields', $this );
 		?>
+
+		<?php
+		$encryption_key_source = '';
+		if ( defined( 'FE_SEARCH_AI_ENCRYPTION_KEY' ) && ! empty( FE_SEARCH_AI_ENCRYPTION_KEY ) ) {
+			$encryption_key_source = 'FE_SEARCH_AI_ENCRYPTION_KEY';
+		} elseif ( defined( 'FE_AI_SEARCH_ENCRYPTION_KEY' ) && ! empty( FE_AI_SEARCH_ENCRYPTION_KEY ) ) {
+			$encryption_key_source = 'FE_AI_SEARCH_ENCRYPTION_KEY';
+		}
+		?>
+		<p class="description">
+			<?php if ( '' !== $encryption_key_source ) : ?>
+				<?php
+				printf(
+					/* translators: %s: The wp-config.php constant name wrapped in code tags. */
+					wp_kses_post( __( 'API keys are encrypted using the %s constant and stored in the database.', 'fe-search-ai' ) ),
+					'<code>' . esc_html( $encryption_key_source ) . '</code>'
+				);
+				?>
+			<?php else : ?>
+				<?php
+				printf(
+					/* translators: %s: The wp-config.php constant name wrapped in code tags. */
+					wp_kses_post( __( 'API keys are encrypted using WordPress\'s AUTH_KEY and stored in the database. Please re-save your API keys if WordPress salts are rotated. Define the %s constant in wp-config.php to take priority and stay unaffected by salt rotation.', 'fe-search-ai' ) ),
+					'<code>FE_SEARCH_AI_ENCRYPTION_KEY</code>'
+				);
+				?>
+			<?php endif; ?>
+		</p>
 		<?php
 	}
 
@@ -2904,7 +2932,7 @@ class FE_Search_AI_Settings {
 		}
 
 		$existing_plain = FE_Search_AI_Encryption_Helper::decrypt( $existing_value );
-		if ( '' !== $existing_value && hash_equals( (string) $existing_plain, (string) $new_value ) ) {
+		if ( '' !== $existing_value && FE_Search_AI_Encryption_Helper::is_v2_format( $existing_value ) && hash_equals( (string) $existing_plain, (string) $new_value ) ) {
 			return $existing_value;
 		}
 

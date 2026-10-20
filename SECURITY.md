@@ -77,7 +77,7 @@ FE Search AI includes several security measures:
 - **WordPress nonce protection** for all AJAX requests
 - **Capability checking** for search and sync operations
 - **Input sanitization** for all user input
-- **API key encryption** using OpenSSL
+- **API key encryption** using libsodium (`sodium_crypto_secretbox`)
 - **Rate limiting** for API calls
 - **Batch processing** to avoid timeout issues
 - **Error handling** with graceful degradation

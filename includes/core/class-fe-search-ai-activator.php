@@ -44,7 +44,7 @@ class FE_Search_AI_Activator {
 	 *
 	 * @since 0.9.0
 	 */
-	const DB_VERSION = '1.4';
+	const DB_VERSION = '1.5';
 
 	/**
 	 * Fired when the plugin is activated.
@@ -58,6 +58,7 @@ class FE_Search_AI_Activator {
 		self::create_tables();
 		self::schedule_cron_jobs();
 		self::set_default_settings();
+		FE_Search_AI_Encryption_Helper::migrate_stored_secrets();
 
 		$options                           = get_option( 'fe_search_ai_settings', [] );
 		$options['advanced']['db_version'] = self::DB_VERSION;
@@ -94,7 +95,12 @@ class FE_Search_AI_Activator {
 			// Version is old, call the static method create_tables.
 			self::create_tables();
 
-			// Update the DB version in the master options array.
+			// Re-encrypt stored secrets with the current encryption format.
+			FE_Search_AI_Encryption_Helper::migrate_stored_secrets();
+
+			// Update the DB version in the master options array. Re-fetch the
+			// option as the secrets migration may have rewritten it.
+			$options                           = get_option( 'fe_search_ai_settings', [] );
 			$options['advanced']['db_version'] = self::DB_VERSION;
 			update_option( 'fe_search_ai_settings', $options );
 		}

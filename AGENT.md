@@ -139,6 +139,11 @@ $encrypted = Encryption_Helper::encrypt( $api_key );
 $decrypted = Encryption_Helper::decrypt( $encrypted );
 ```
 
+- New values use libsodium `sodium_crypto_secretbox()` (XSalsa20-Poly1305) with a `feai:v2:` prefix; legacy AES-256-CBC values are decrypted transparently by trying every candidate key.
+- Key material: `FE_SEARCH_AI_ENCRYPTION_KEY` constant → legacy `FE_AI_SEARCH_ENCRYPTION_KEY` (pre-rename constant) → `AUTH_KEY` fallback. Recommend the constant in docs/UI since AUTH_KEY rotation breaks stored ciphertext.
+- `FE_Search_AI_Encryption_Helper::migrate_stored_secrets()` re-encrypts stored secrets on plugin upgrade; `sanitize_encrypted_secret()` also upgrades the format on save.
+- Add-ons (e.g. Pro) can declare secret locations via the `fe_search_ai_migrate_secret_targets` filter (option name => list of key paths; `[]` = the option value itself, `'*'` = iterate all elements) or call `FE_Search_AI_Encryption_Helper::migrate_option_secrets()` directly.
+
 ## UI Structure
 
 - **Admin Settings**: Tabs for General, Sync, License
