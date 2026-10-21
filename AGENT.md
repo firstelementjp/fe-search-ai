@@ -229,6 +229,12 @@ Required GitHub Secrets for WordPress.org SVN deploy:
 - `SVN_USERNAME`
 - `SVN_PASSWORD`
 
+Optional announcement integrations (announce job in release.yml, all opt-in):
+
+- Variables: `WP_BASE_URL` (company site URL), `WP_CATEGORY_ID` (optional post category), `ENABLE_X_POST` (`true` to post to X; otherwise draft texts go to the job summary)
+- Secrets: `WP_USERNAME` + `WP_APP_PASSWORD` (WordPress Application Password; creates JA/EN draft posts, linked via Polylang Pro REST `translations` field), `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`, `X_ACCESS_TOKEN_SECRET` (X API OAuth 1.0a user context)
+- Scripts: `.github/scripts/announce-release.sh`, `.github/scripts/post-x.mjs`
+
 ## BM25 Keyword Search
 
 - DB schema uses `fe_search_ai_vectors.keyword_token_count` and `fe_search_ai_keyword_index.term_frequency`.
