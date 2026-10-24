@@ -2251,6 +2251,19 @@ msgstr "フィードバックありがとうございます！"
 msgid "References"
 msgstr "参照元"
 
+#: includes/frontend/class-fe-search-ai-chat-ui.php:439
+#: includes/frontend/class-fe-search-ai-chat-ui.php:440
+msgid "Stop generating response"
+msgstr "応答の生成を停止"
+
+#: includes/frontend/class-fe-search-ai-chat-ui.php:445
+msgid "Stop"
+msgstr "停止"
+
+#: assets/js/frontend-scripts.js:873 assets/js/frontend-scripts.js:878
+msgid "Response stopped."
+msgstr "応答を停止しました。"
+
 #~ msgid ""
 #~ "API keys are encrypted before being stored in the database. For stronger "
 #~ "protection, define %s in wp-config.php (an environment variable can be "

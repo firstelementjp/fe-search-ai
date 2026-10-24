@@ -791,6 +791,28 @@
 	cursor: not-allowed;
 }
 
+#fe_search_ai_chat_form button.hidden {
+	display: none;
+}
+
+#fe_search_ai_stop_button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+}
+
+#fe_search_ai_stop_button svg {
+	display: block;
+}
+
+.fe-search-ai-stopped-note {
+	margin-top: 4px;
+	font-size: 0.8em;
+	color: var(--feais-text);
+	opacity: 0.6;
+}
+
 #fe_search_ai_chat_options {
 	display: flex;
 	flex-direction: row;

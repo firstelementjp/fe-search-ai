@@ -2,16 +2,16 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: FE Search AI 1.2.0\n"
+"Project-Id-Version: FE Search AI 1.3.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/fe-search-ai\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-20T00:50:45+00:00\n"
+"POT-Creation-Date: 2026-10-24T03:49:00+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"X-Generator: WP-CLI 2.11.0\n"
+"X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: fe-search-ai\n"
 
 #. Plugin Name of the plugin
@@ -123,8 +123,8 @@ msgstr ""
 
 #: includes/admin/class-fe-search-ai-admin.php:268
 #: includes/admin/class-fe-search-ai-admin.php:269
-#: includes/frontend/class-fe-search-ai-chat-ui.php:441
-#: includes/frontend/class-fe-search-ai-chat-ui.php:448
+#: includes/frontend/class-fe-search-ai-chat-ui.php:453
+#: includes/frontend/class-fe-search-ai-chat-ui.php:460
 msgid "Settings"
 msgstr ""
 
@@ -318,6 +318,7 @@ msgstr ""
 
 #. translators: 1: expiration date, 2: remaining days
 #: includes/admin/class-fe-search-ai-license-settings.php:335
+#, php-format
 msgid "License expiration date: %1$s (remaining %2$s days)"
 msgstr ""
 
@@ -331,6 +332,7 @@ msgstr ""
 
 #. translators: 1: times activated, 2: max activations
 #: includes/admin/class-fe-search-ai-license-settings.php:356
+#, php-format
 msgid "Activation count: %1$s / %2$s"
 msgstr ""
 
@@ -352,11 +354,13 @@ msgstr ""
 
 #. translators: %s: comma-separated list of external service names
 #: includes/admin/class-fe-search-ai-privacy-policy.php:69
+#, php-format
 msgid "This site uses FE Search AI to answer visitor questions. When you use the chat, your question and recent conversation history in the current browser session are sent to the following external services to generate a response: %s."
 msgstr ""
 
 #. translators: %s: comma-separated list of external service names
 #: includes/admin/class-fe-search-ai-privacy-policy.php:74
+#, php-format
 msgid "Other external services used by this feature that do not receive your input: %s."
 msgstr ""
 
@@ -374,6 +378,7 @@ msgstr ""
 
 #. translators: %d: number of days
 #: includes/admin/class-fe-search-ai-privacy-policy.php:85
+#, php-format
 msgid "If you opt in to conversation analytics, question and answer text is stored after personal-data masking for service improvement, and deleted after %d days. You can withdraw this consent at any time from the chat privacy menu."
 msgstr ""
 
@@ -495,7 +500,7 @@ msgid "Interaction"
 msgstr ""
 
 #: includes/admin/class-fe-search-ai-settings.php:431
-#: includes/core/class-fe-search-ai-multilingual.php:183
+#: includes/core/class-fe-search-ai-multilingual.php:212
 msgid "Footer Notice"
 msgstr ""
 
@@ -540,7 +545,7 @@ msgid "Structured Output"
 msgstr ""
 
 #: includes/admin/class-fe-search-ai-settings.php:454
-#: includes/frontend/class-fe-search-ai-chat-ui.php:484
+#: includes/frontend/class-fe-search-ai-chat-ui.php:496
 msgid "Privacy and Data Handling"
 msgstr ""
 
@@ -617,6 +622,7 @@ msgstr ""
 
 #. translators: %s: Cohere Rerank API keys URL
 #: includes/admin/class-fe-search-ai-settings.php:525
+#, php-format
 msgid "<a href=\"%s\" target=\"_blank\" rel=\"noopener\">Cohere Rerank</a> free account Trial keys can be used for free but have rate limits and are not licensed for commercial use. Please obtain a Production key for commercial purposes."
 msgstr ""
 
@@ -626,6 +632,7 @@ msgstr ""
 
 #. translators: 1: opening link tag, 2: closing link tag
 #: includes/admin/class-fe-search-ai-settings.php:550
+#, php-format
 msgid "Please configure the Cohere API key in the %1$sAPI Keys section%2$s."
 msgstr ""
 
@@ -675,6 +682,7 @@ msgstr ""
 
 #. translators: 1: opening link tag, 2: closing link tag
 #: includes/admin/class-fe-search-ai-settings.php:666
+#, php-format
 msgid "Please configure the Qdrant endpoint, API key, and collection in the %1$sAdvanced settings tab%2$s."
 msgstr ""
 
@@ -696,11 +704,13 @@ msgstr ""
 
 #. translators: %s: Link to Qdrant Cloud
 #: includes/admin/class-fe-search-ai-settings.php:739
+#, php-format
 msgid "Configure the connection to your %1$s or self-hosted Qdrant instance."
 msgstr ""
 
 #. translators: %s: 'free' in bold
 #: includes/admin/class-fe-search-ai-settings.php:749
+#, php-format
 msgid "With Qdrant Cloud %s accounts, collections may be deleted after a period of inactivity."
 msgstr ""
 
@@ -798,6 +808,7 @@ msgstr ""
 
 #. translators: 1: opening code tag, 2: closing code tag, 3: opening link tag, 4: closing link tag.
 #: includes/admin/class-fe-search-ai-settings.php:1019
+#, php-format
 msgid "You can change these limits from your theme or another plugin using the %1$sfe_search_ai_rate_limit_settings%2$s filter hook. For full sample code, please refer to the %3$sdocumentation%4$s."
 msgstr ""
 
@@ -831,6 +842,7 @@ msgstr ""
 
 #. translators: %s: Link to the Pro version.
 #: includes/admin/class-fe-search-ai-settings.php:1117
+#, php-format
 msgid "Model selection available in %s version."
 msgstr ""
 
@@ -840,11 +852,13 @@ msgstr ""
 
 #. translators: %s: The wp-config.php constant name wrapped in code tags.
 #: includes/admin/class-fe-search-ai-settings.php:1148
+#, php-format
 msgid "API keys are encrypted using the %s constant and stored in the database."
 msgstr ""
 
 #. translators: %s: The wp-config.php constant name wrapped in code tags.
 #: includes/admin/class-fe-search-ai-settings.php:1156
+#, php-format
 msgid "API keys are encrypted using WordPress's AUTH_KEY and stored in the database. Please re-save your API keys if WordPress salts are rotated. Define the %s constant in wp-config.php to take priority and stay unaffected by salt rotation."
 msgstr ""
 
@@ -867,6 +881,7 @@ msgstr ""
 #: includes/admin/class-fe-search-ai-settings.php:1255
 #: includes/admin/class-fe-search-ai-settings.php:1268
 #: includes/admin/class-fe-search-ai-settings.php:1296
+#, php-format
 msgid "%1$s (%2$s)"
 msgstr ""
 
@@ -922,7 +937,7 @@ msgstr ""
 
 #: includes/admin/class-fe-search-ai-settings.php:1432
 #: includes/admin/class-fe-search-ai-settings.php:2352
-#: includes/admin/class-fe-search-ai-settings.php:2612
+#: includes/admin/class-fe-search-ai-settings.php:2615
 msgid "posts"
 msgstr ""
 
@@ -1095,6 +1110,7 @@ msgstr ""
 
 #. translators: 1: current PHP version, 2: required PHP version
 #: includes/admin/class-fe-search-ai-settings.php:1919
+#, php-format
 msgid "Your server is running PHP %1$s. The built-in TinySegmenter requires PHP %2$s or higher. Please configure the Yahoo! Japanese MA API below for Japanese tokenization."
 msgstr ""
 
@@ -1124,6 +1140,7 @@ msgstr ""
 
 #. translators: 1: constant name, 2: truncated value
 #: includes/admin/class-fe-search-ai-settings.php:1963
+#, php-format
 msgid "%1$s is defined in wp-config.php and will be used with priority over this field. (Current constant starts with: %2$s)"
 msgstr ""
 
@@ -1136,22 +1153,22 @@ msgid "Instead of automatically displaying the floating chat window based on the
 msgstr ""
 
 #: includes/admin/class-fe-search-ai-settings.php:2039
-#: includes/core/class-fe-search-ai-multilingual.php:179
+#: includes/core/class-fe-search-ai-multilingual.php:208
 msgid "Chat window title"
 msgstr ""
 
 #: includes/admin/class-fe-search-ai-settings.php:2050
-#: includes/core/class-fe-search-ai-multilingual.php:180
+#: includes/core/class-fe-search-ai-multilingual.php:209
 msgid "First greeting"
 msgstr ""
 
 #: includes/admin/class-fe-search-ai-settings.php:2060
-#: includes/core/class-fe-search-ai-multilingual.php:181
+#: includes/core/class-fe-search-ai-multilingual.php:210
 msgid "Input field placeholders"
 msgstr ""
 
 #: includes/admin/class-fe-search-ai-settings.php:2071
-#: includes/core/class-fe-search-ai-multilingual.php:182
+#: includes/core/class-fe-search-ai-multilingual.php:211
 msgid "Submit button text"
 msgstr ""
 
@@ -1267,230 +1284,232 @@ msgstr ""
 msgid "The {answer_language} placeholder in the Language Rule section is replaced with the resolved answer language code. Keep the section to let the plugin choose the language, or rewrite/remove it to control the answer language yourself."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2580
+#: includes/admin/class-fe-search-ai-settings.php:2583
 msgid "Enable structured output when supported by the selected AI provider."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2583
+#: includes/admin/class-fe-search-ai-settings.php:2586
 msgid "When enabled, the plugin requests structured data (JSON format) from providers that support Structured Output. Unsupported providers or models will be requested to respond in standard text format."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2614
+#: includes/admin/class-fe-search-ai-settings.php:2617
 msgid "Enter the number of posts to process in one batch during synchronization. A smaller number is less likely to cause timeouts on shared servers. (Default: 10, Recommended: 10-100)"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2629
+#: includes/admin/class-fe-search-ai-settings.php:2632
 msgid "Debug Mode is active. Operational system logs are being stored. Review Privacy > Current Data Handling and delete logs when troubleshooting is complete."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2634
+#: includes/admin/class-fe-search-ai-settings.php:2637
 msgid "Enable Debug Mode"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2642
+#: includes/admin/class-fe-search-ai-settings.php:2645
 msgid "When enabled, detailed operational logs will be saved to the `{prefix}fe_search_ai_system_logs` table (e.g. wp_fe_search_ai_system_logs if your table prefix is wp_). Only enable this when troubleshooting issues, as it can impact performance."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2662
+#: includes/admin/class-fe-search-ai-settings.php:2665
 msgid "The name of the site you want the AI to recognize. If left blank, the site title will be used."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2681
+#: includes/admin/class-fe-search-ai-settings.php:2684
 msgid "Example:"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2682
+#: includes/admin/class-fe-search-ai-settings.php:2685
 msgid "This website provides [type of content or service]."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2683
+#: includes/admin/class-fe-search-ai-settings.php:2686
 msgid "The main content consists of [articles, products, job listings, FAQs, documentation, etc.]."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2685
+#: includes/admin/class-fe-search-ai-settings.php:2688
 msgid "Each item may include metadata such as:"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2686
+#: includes/admin/class-fe-search-ai-settings.php:2689
 msgid "- [Metadata field 1]"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2687
+#: includes/admin/class-fe-search-ai-settings.php:2690
 msgid "- [Metadata field 2]"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2688
+#: includes/admin/class-fe-search-ai-settings.php:2691
 msgid "- [Metadata field 3]"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2690
+#: includes/admin/class-fe-search-ai-settings.php:2693
 msgid "Users typically ask questions to [main user intent]."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2691
+#: includes/admin/class-fe-search-ai-settings.php:2694
 msgid "When relevant, use the metadata to filter, compare, and summarize the results."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:2697
+#: includes/admin/class-fe-search-ai-settings.php:2700
 msgid "Describe what this site provides, what kind of content is searchable, which metadata fields are important, and what users are usually trying to find. If left blank, the site tagline will be used."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3150
+#: includes/admin/class-fe-search-ai-settings.php:3153
 msgid "Typing Animation Speed"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3152
+#: includes/admin/class-fe-search-ai-settings.php:3155
 msgid "Smooth"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3160
+#: includes/admin/class-fe-search-ai-settings.php:3163
 msgid "Fast"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3167
+#: includes/admin/class-fe-search-ai-settings.php:3170
 msgid "Adjust the typing animation speed of the AI's response."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3172
+#: includes/admin/class-fe-search-ai-settings.php:3175
 msgid "Send Key Settings (Default)"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3175
+#: includes/admin/class-fe-search-ai-settings.php:3178
 msgid "Enter (Shift+Enter for newline)"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3178
+#: includes/admin/class-fe-search-ai-settings.php:3181
 msgid "Shift+Enter (Enter for newline)"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3181
+#: includes/admin/class-fe-search-ai-settings.php:3184
 msgid "Cmd/Ctrl+Enter (Enter for newline)"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3210
+#: includes/admin/class-fe-search-ai-settings.php:3213
 msgid "Text shown at the bottom of the chat window, next to the settings icon. Leave blank to use the default text."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3239
+#: includes/admin/class-fe-search-ai-settings.php:3242
 msgid "Use the current page as chat context"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3242
+#: includes/admin/class-fe-search-ai-settings.php:3245
 msgid "When enabled, a \"viewing\" chip appears in the chat window on single posts and pages. The page content is prioritized as context so questions like \"how much is this?\" are answered for the page being viewed. Visitors can remove the chip to exclude the page from context."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3260
+#: includes/admin/class-fe-search-ai-settings.php:3263
 msgid "Chat input and recent conversation history are sent to the configured AI services to generate responses. Conversation history is also stored temporarily in the visitor’s browser session."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3268
+#: includes/admin/class-fe-search-ai-settings.php:3271
 msgid "receives visitor input"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3287
+#: includes/admin/class-fe-search-ai-settings.php:3290
 msgid "Server-side retention"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3288
+#: includes/admin/class-fe-search-ai-settings.php:3291
 msgid "Period"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3293
+#: includes/admin/class-fe-search-ai-settings.php:3296
 msgid "System diagnostic logs"
 msgstr ""
 
 #. translators: %d: number of days
-#: includes/admin/class-fe-search-ai-settings.php:3298
-#: includes/admin/class-fe-search-ai-settings.php:3311
-#: includes/admin/class-fe-search-ai-settings.php:3326
+#: includes/admin/class-fe-search-ai-settings.php:3301
+#: includes/admin/class-fe-search-ai-settings.php:3314
+#: includes/admin/class-fe-search-ai-settings.php:3329
+#, php-format
 msgid "%d days"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3300
-#: includes/admin/class-fe-search-ai-settings.php:3313
-#: includes/admin/class-fe-search-ai-settings.php:3328
-#: includes/admin/class-fe-search-ai-settings.php:3354
-#: includes/admin/class-fe-search-ai-settings.php:3358
-#: includes/admin/class-fe-search-ai-settings.php:3359
+#: includes/admin/class-fe-search-ai-settings.php:3303
+#: includes/admin/class-fe-search-ai-settings.php:3316
+#: includes/admin/class-fe-search-ai-settings.php:3331
+#: includes/admin/class-fe-search-ai-settings.php:3357
+#: includes/admin/class-fe-search-ai-settings.php:3361
+#: includes/admin/class-fe-search-ai-settings.php:3362
 msgid "Disabled"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3306
+#: includes/admin/class-fe-search-ai-settings.php:3309
 msgid "Retrieval traces"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3319
+#: includes/admin/class-fe-search-ai-settings.php:3322
 msgid "Conversation logs (Pro)"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3323
-#: includes/admin/class-fe-search-ai-settings.php:3338
+#: includes/admin/class-fe-search-ai-settings.php:3326
+#: includes/admin/class-fe-search-ai-settings.php:3341
 msgid "Not available (Pro)"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3334
+#: includes/admin/class-fe-search-ai-settings.php:3337
 msgid "Consent records (Pro)"
 msgstr ""
 
 #. translators: %d: number of days
-#: includes/admin/class-fe-search-ai-settings.php:3341
+#: includes/admin/class-fe-search-ai-settings.php:3344
+#, php-format
 msgid "%d days after revocation/obsolescence"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3347
+#: includes/admin/class-fe-search-ai-settings.php:3350
 msgid "Rate-limit counters"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3348
+#: includes/admin/class-fe-search-ai-settings.php:3351
 msgid "Keyed IP hash, 1 hour"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3353
+#: includes/admin/class-fe-search-ai-settings.php:3356
 msgid "System diagnostic logging:"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3354
+#: includes/admin/class-fe-search-ai-settings.php:3357
 msgid "Enabled"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3358
+#: includes/admin/class-fe-search-ai-settings.php:3361
 msgid "Optional conversation analytics:"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3358
+#: includes/admin/class-fe-search-ai-settings.php:3361
 msgid "Available by visitor opt-in"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3359
+#: includes/admin/class-fe-search-ai-settings.php:3362
 msgid "Diagnostic conversation summaries:"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3359
+#: includes/admin/class-fe-search-ai-settings.php:3362
 msgid "Enabled when Debug Mode is active"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3361
+#: includes/admin/class-fe-search-ai-settings.php:3364
 msgid "Review each provider’s terms, privacy policy, retention, and international transfer practices before enabling it. This summary is informational and does not replace a site-specific legal review."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3362
+#: includes/admin/class-fe-search-ai-settings.php:3365
 msgid "Open the Advanced settings tab to delete stored plugin data."
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3381
+#: includes/admin/class-fe-search-ai-settings.php:3384
 msgid "Terms of Service Page"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3391
-#: includes/admin/class-fe-search-ai-settings.php:3409
+#: includes/admin/class-fe-search-ai-settings.php:3394
+#: includes/admin/class-fe-search-ai-settings.php:3412
 msgid "Not selected"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3399
+#: includes/admin/class-fe-search-ai-settings.php:3402
 msgid "Privacy Policy Page"
 msgstr ""
 
-#: includes/admin/class-fe-search-ai-settings.php:3416
+#: includes/admin/class-fe-search-ai-settings.php:3419
 msgid "If not selected, the page set in WordPress's standard privacy settings will be used."
 msgstr ""
 
@@ -1502,90 +1521,90 @@ msgstr ""
 msgid "The site-wide request limit for today has been reached."
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:248
+#: includes/ajax/class-fe-search-ai-chat-handler.php:252
 msgid "Privacy consent is required before using this chat."
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:680
+#: includes/ajax/class-fe-search-ai-chat-handler.php:690
 msgid "Error: OpenAI API key not set."
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:809
+#: includes/ajax/class-fe-search-ai-chat-handler.php:819
 msgid "Error: Connection failed."
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:826
+#: includes/ajax/class-fe-search-ai-chat-handler.php:836
 msgid "Error: API request failed."
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:960
+#: includes/ajax/class-fe-search-ai-chat-handler.php:974
 msgid "Error: Failed to receive a response from the AI provider."
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:1365
+#: includes/ajax/class-fe-search-ai-chat-handler.php:1379
 msgid "Error: Google API key is not set."
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:1619
+#: includes/ajax/class-fe-search-ai-chat-handler.php:1637
 msgid "Error: Anthropic API key not set."
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:2302
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2439
 msgid "Session ID is required."
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:2357
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2494
 msgid "Log ID is required."
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:2362
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2499
 msgid "Invalid rating."
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:2369
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2506
 msgid "Conversation log table is not available."
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:2375
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2512
 msgid "This conversation log is not available."
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:2393
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2530
 msgid "Failed to save rating."
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:2422
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2559
 msgid "Provider missing."
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:2452
-#: includes/ajax/class-fe-search-ai-chat-handler.php:2498
-#: includes/ajax/class-fe-search-ai-chat-handler.php:2541
-#: includes/ajax/class-fe-search-ai-chat-handler.php:2603
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2589
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2635
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2678
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2740
 msgid "API key is missing."
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:2464
-#: includes/ajax/class-fe-search-ai-chat-handler.php:2507
-#: includes/ajax/class-fe-search-ai-chat-handler.php:2566
-#: includes/ajax/class-fe-search-ai-chat-handler.php:2615
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2601
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2644
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2703
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2752
 msgid "Authentication failed."
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:2620
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2757
 msgid "Unknown provider."
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:2626
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2763
 msgid "Connection successful"
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:2628
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2765
 msgid "Connection failed"
 msgstr ""
 
-#: includes/ajax/class-fe-search-ai-chat-handler.php:2667
-#: includes/ajax/class-fe-search-ai-chat-handler.php:2720
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2804
+#: includes/ajax/class-fe-search-ai-chat-handler.php:2857
 msgid "[REDACTED]"
 msgstr ""
 
@@ -1652,7 +1671,7 @@ msgstr ""
 msgid "(You have reached the request limit. Please wait a while before trying again.)"
 msgstr ""
 
-#: includes/core/class-fe-search-ai-assets.php:296
+#: includes/core/class-fe-search-ai-assets.php:297
 msgid "Conversation content from this browser is currently being recorded for conversation analytics (personal information is masked)."
 msgstr ""
 
@@ -1701,7 +1720,7 @@ msgid "Yahoo! JAPAN Japanese MA API"
 msgstr ""
 
 #: includes/core/class-fe-search-ai-privacy.php:205
-#: assets/js/frontend-scripts.js:707
+#: assets/js/frontend-scripts.js:712
 msgid "I agree to the Terms of Service."
 msgstr ""
 
@@ -1711,6 +1730,7 @@ msgstr ""
 
 #. translators: %s: title of the page the visitor is currently viewing.
 #: includes/frontend/class-fe-search-ai-chat-ui.php:401
+#, php-format
 msgid "Viewing: %s"
 msgstr ""
 
@@ -1722,68 +1742,78 @@ msgstr ""
 msgid "Resize input area"
 msgstr ""
 
-#: includes/frontend/class-fe-search-ai-chat-ui.php:449
-msgid "Close settings"
+#: includes/frontend/class-fe-search-ai-chat-ui.php:439
+#: includes/frontend/class-fe-search-ai-chat-ui.php:440
+msgid "Stop generating response"
 msgstr ""
 
-#: includes/frontend/class-fe-search-ai-chat-ui.php:457
-msgid "Send Key Settings"
+#: includes/frontend/class-fe-search-ai-chat-ui.php:445
+msgid "Stop"
 msgstr ""
 
 #: includes/frontend/class-fe-search-ai-chat-ui.php:461
-msgid "Enter"
+msgid "Close settings"
 msgstr ""
 
-#: includes/frontend/class-fe-search-ai-chat-ui.php:464
-msgid "Shift+Enter"
-msgstr ""
-
-#: includes/frontend/class-fe-search-ai-chat-ui.php:467
-msgid "Cmd/Ctrl+Enter"
-msgstr ""
-
-#: includes/frontend/class-fe-search-ai-chat-ui.php:471
-msgid "Local chat history"
+#: includes/frontend/class-fe-search-ai-chat-ui.php:469
+msgid "Send Key Settings"
 msgstr ""
 
 #: includes/frontend/class-fe-search-ai-chat-ui.php:473
-msgid "Clear"
+msgid "Enter"
 msgstr ""
 
-#: includes/frontend/class-fe-search-ai-chat-ui.php:477
-msgid "Privacy consent"
+#: includes/frontend/class-fe-search-ai-chat-ui.php:476
+msgid "Shift+Enter"
 msgstr ""
 
 #: includes/frontend/class-fe-search-ai-chat-ui.php:479
+msgid "Cmd/Ctrl+Enter"
+msgstr ""
+
+#: includes/frontend/class-fe-search-ai-chat-ui.php:483
+msgid "Local chat history"
+msgstr ""
+
+#: includes/frontend/class-fe-search-ai-chat-ui.php:485
+msgid "Clear"
+msgstr ""
+
+#: includes/frontend/class-fe-search-ai-chat-ui.php:489
+msgid "Privacy consent"
+msgstr ""
+
+#: includes/frontend/class-fe-search-ai-chat-ui.php:491
 msgid "Withdraw"
 msgstr ""
 
-#: includes/frontend/class-fe-search-ai-chat-ui.php:488
+#: includes/frontend/class-fe-search-ai-chat-ui.php:500
 msgid "Your input, recent conversation history, and the page you are viewing (when shown as a context chip) are sent to the configured AI services to generate a response. Chat history is stored temporarily in this browser session."
 msgstr ""
 
-#: includes/frontend/class-fe-search-ai-chat-ui.php:492
+#: includes/frontend/class-fe-search-ai-chat-ui.php:504
 msgid "Conversation activity (excluding message text) is currently being recorded for system diagnostics."
 msgstr ""
 
-#: includes/frontend/class-fe-search-ai-chat-ui.php:496
+#: includes/frontend/class-fe-search-ai-chat-ui.php:508
 msgid "Active services"
 msgstr ""
 
-#: includes/frontend/class-fe-search-ai-chat-ui.php:507
+#: includes/frontend/class-fe-search-ai-chat-ui.php:519
 msgid "Terms of Service"
 msgstr ""
 
-#: includes/frontend/class-fe-search-ai-chat-ui.php:510
+#: includes/frontend/class-fe-search-ai-chat-ui.php:522
 msgid "Privacy Policy"
 msgstr ""
 
 #. translators: %s: Links to terms of service and privacy policy.
-#: includes/frontend/class-fe-search-ai-chat-ui.php:516
+#: includes/frontend/class-fe-search-ai-chat-ui.php:528
+#, php-format
 msgid "Please review our %s when using this chat."
 msgstr ""
 
-#: includes/frontend/class-fe-search-ai-chat-ui.php:517
+#: includes/frontend/class-fe-search-ai-chat-ui.php:529
 msgid "and"
 msgstr ""
 
@@ -1824,7 +1854,7 @@ msgid "Network error occurred. Please check your connection."
 msgstr ""
 
 #: assets/js/frontend-scripts.js:90
-#: assets/js/frontend-scripts.js:1536
+#: assets/js/frontend-scripts.js:1643
 msgid "Rate limit exceeded. Please try again later."
 msgstr ""
 
@@ -1837,7 +1867,7 @@ msgid "Data parsing error occurred. Please try again."
 msgstr ""
 
 #: assets/js/frontend-scripts.js:96
-#: assets/js/frontend-scripts.js:1528
+#: assets/js/frontend-scripts.js:1635
 msgid "An error occurred. Please try again."
 msgstr ""
 
@@ -1845,19 +1875,24 @@ msgstr ""
 msgid "Error"
 msgstr ""
 
-#: assets/js/frontend-scripts.js:727
+#: assets/js/frontend-scripts.js:732
 msgid "Start chat"
 msgstr ""
 
-#: assets/js/frontend-scripts.js:817
+#: assets/js/frontend-scripts.js:827
 msgid "You have reached the message limit for this session. Please refresh the page to start a new conversation."
 msgstr ""
 
-#: assets/js/frontend-scripts.js:1077
-#: assets/js/frontend-scripts.js:1272
+#: assets/js/frontend-scripts.js:869
+#: assets/js/frontend-scripts.js:874
+msgid "Response stopped."
+msgstr ""
+
+#: assets/js/frontend-scripts.js:1164
+#: assets/js/frontend-scripts.js:1359
 msgid "Thank you for your feedback!"
 msgstr ""
 
-#: assets/js/frontend-scripts.js:1189
+#: assets/js/frontend-scripts.js:1276
 msgid "References"
 msgstr ""

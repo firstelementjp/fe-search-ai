@@ -220,6 +220,10 @@ class FE_Search_AI_Chat_Handler {
 			ob_end_flush();
 		}
 
+		// Stop this request when the client disconnects (e.g. the visitor
+		// pressed the stop button) so upstream generation is cancelled too.
+		ignore_user_abort( false );
+
 		// Set UTF-8 encoding headers for streaming
 		header( 'Content-Type: text/event-stream; charset=UTF-8' );
 		header( 'Cache-Control: no-cache' );
@@ -423,6 +427,12 @@ class FE_Search_AI_Chat_Handler {
 				]
 			) . "\n\n";
 			flush();
+
+			// Bail out before the paid completion call when the client has
+			// already disconnected while the context was being retrieved.
+			if ( connection_aborted() ) {
+				return;
+			}
 
 			// Check if structured output is enabled.
 			$custom_prompts    = get_option( 'fe_search_ai_custom_prompts', [] );
@@ -875,6 +885,10 @@ class FE_Search_AI_Chat_Handler {
 			$ch,
 			CURLOPT_WRITEFUNCTION,
 			function ( $curl, $data ) use ( &$received_text ) {
+				if ( connection_aborted() ) {
+					// The visitor stopped the response; abort the upstream transfer.
+					return 0;
+				}
 				static $stream_buffer = '';
 				$stream_buffer       .= $data;
 
@@ -1503,6 +1517,10 @@ class FE_Search_AI_Chat_Handler {
 			$ch,
 			CURLOPT_WRITEFUNCTION,
 			function ( $curl, $data ) {
+				if ( connection_aborted() ) {
+					// The visitor stopped the response; abort the upstream transfer.
+					return 0;
+				}
 
 				$lines = explode( "\n", $data );
 
@@ -1699,6 +1717,10 @@ class FE_Search_AI_Chat_Handler {
 			$ch,
 			CURLOPT_WRITEFUNCTION,
 			function ( $curl, $data ) {
+				if ( connection_aborted() ) {
+					// The visitor stopped the response; abort the upstream transfer.
+					return 0;
+				}
 
 				$lines = explode( "\n", $data );
 
