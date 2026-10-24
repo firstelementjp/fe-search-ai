@@ -23,7 +23,7 @@ FE Search AI is designed for WordPress sites where visitors need quick, accurate
 
 ## Current release
 
-Version 1.3.0 hardens secret storage with libsodium authenticated encryption (transparent migration from AES-256-CBC, dedicated `FE_SEARCH_AI_ENCRYPTION_KEY` constant), moves real-time indexing to a WP-Cron background queue so publishing is never blocked, and adds a page context bar plus multilingual string-translation support to the chat UI. See [Configuration](config.md) for the new encryption key option.
+Version 1.4.0 adds a stop button that aborts streaming chat responses (also cancelling the upstream provider request so no further tokens are generated), fixes answer-language detection on multilingual sites via an explicit `lang` request parameter, and moves the forced language rule into a `{answer_language}` placeholder in the default system prompt so custom prompts can control it.
 
 ## Recommended reading
 

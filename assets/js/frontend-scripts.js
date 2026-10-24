@@ -222,6 +222,7 @@ function getChatDOMElements() {
 	const contextBar = document.getElementById('fe_search_ai_context_bar');
 	const contextChip = document.getElementById('fe_search_ai_context_chip');
 	const contextChipRemove = document.getElementById('fe_search_ai_context_chip_remove');
+	const stopBtn = document.getElementById('fe_search_ai_stop_button');
 
 	return {
 		bubble,
@@ -239,6 +240,7 @@ function getChatDOMElements() {
 		contextBar,
 		contextChip,
 		contextChipRemove,
+		stopBtn,
 	};
 }
 
@@ -542,6 +544,7 @@ function initFEAIChat() {
 		contextBar,
 		contextChip,
 		contextChipRemove,
+		stopBtn,
 	} = domElements;
 
 	// Prevent duplicate initialization
@@ -572,6 +575,8 @@ function initFEAIChat() {
 	let renderInterval;
 	let currentAiMessageElement = null;
 	let fullResponse = '';
+	// Controller for the in-flight stream request; aborting it stops generation.
+	let activeAbortController = null;
 	// Typing animation configuration, derived from PHP setting animation_speed (1-10).
 	let typingCharsPerTick = 3;
 	let typingInterval = 50;
@@ -797,6 +802,11 @@ function initFEAIChat() {
 		window.location.reload();
 	});
 
+	// Abort the in-flight request when the visitor presses the stop button.
+	stopBtn?.addEventListener('click', () => {
+		activeAbortController?.abort();
+	});
+
 	/**
 	 * Handles the actual form submission ("Worker").
 	 * This is triggered by the 'keydown' listener or the send button.
@@ -834,6 +844,58 @@ function initFEAIChat() {
 		input.value = '';
 		input.style.height = 'auto'; // Reset height
 		disableForm();
+		showStopControl();
+
+		// Aborting this controller cancels the fetch, which also propagates
+		// upstream: the PHP stream detects the disconnect and stops the
+		// provider request, preventing further token generation.
+		activeAbortController = new AbortController();
+		const requestSignal = activeAbortController.signal;
+
+		/**
+		 * Finalizes the UI after the visitor aborts the response.
+		 * Renders any partially received text, drops the unanswered exchange
+		 * from the session history, and restores the input form.
+		 */
+		function finalizeAbortedRequest() {
+			// Ignore stale callbacks once a newer request has taken over.
+			if (activeAbortController && activeAbortController.signal !== requestSignal) {
+				return;
+			}
+			clearInterval(renderInterval);
+			// Flush chunks that arrived but were still queued for rendering.
+			if (characterQueue.length > 0) {
+				fullResponse += characterQueue.join('');
+				characterQueue = [];
+			}
+			if ('' === fullResponse.trim()) {
+				aiMessageWrapperForFeedback.remove();
+				addMessage(__('Response stopped.', 'fe-search-ai'), 'system');
+			} else {
+				setMarkdownContent(aiMessageWrapperForFeedback, fullResponse);
+				const stoppedNote = document.createElement('div');
+				stoppedNote.className = 'fe-search-ai-stopped-note';
+				stoppedNote.textContent = __('Response stopped.', 'fe-search-ai');
+				aiMessageWrapperForFeedback.appendChild(stoppedNote);
+			}
+			// The aborted exchange is not part of the conversation: remove the
+			// question from history and skip logging and feedback entirely.
+			if (
+				sessionHistory.length > 0 &&
+				sessionHistory[sessionHistory.length - 1].role === 'user'
+			) {
+				sessionHistory.pop();
+				safeExecute(
+					() =>
+						sessionStorage.setItem(
+							FE_SEARCH_AI_CONFIG.STORAGE.CHAT_HISTORY,
+							JSON.stringify(sessionHistory)
+						),
+					'finalizeAbortedRequest.persist_history'
+				);
+			}
+			enableForm();
+		}
 
 		const aiMessageWrapperForFeedback = addMessage('', 'ai');
 		currentAiMessageElement = aiMessageWrapperForFeedback.querySelector('p');
@@ -849,8 +911,16 @@ function initFEAIChat() {
 
 		startRenderingQueue();
 
-		fetch(fe_search_ai_ajax_obj.rest_url, {
+		// Send the page language so REST requests resolve the correct locale;
+		// multilingual plugins cannot detect it on unauthenticated requests.
+		const streamUrl = new URL(fe_search_ai_ajax_obj.rest_url);
+		if (fe_search_ai_ajax_obj.rest_lang) {
+			streamUrl.searchParams.set('lang', fe_search_ai_ajax_obj.rest_lang);
+		}
+
+		fetch(streamUrl.toString(), {
 			method: 'POST',
+			signal: requestSignal,
 			headers: {
 				'X-WP-Nonce': fe_search_ai_ajax_obj.rest_nonce,
 				'X-FE-AI-Session': sessionId,
@@ -867,6 +937,7 @@ function initFEAIChat() {
 					clearInterval(renderInterval);
 					if (response.status === 403 && privacyConfig.enable_consent) {
 						localStorage.removeItem(consentStorageKey);
+						hideStopControl();
 						ensureConsentUI();
 						return;
 					}
@@ -909,6 +980,10 @@ function initFEAIChat() {
 								}
 							});
 							waitForQueueToEmpty().then(() => {
+								if (requestSignal.aborted) {
+									finalizeAbortedRequest();
+									return;
+								}
 								clearInterval(renderInterval);
 								setMarkdownContent(aiMessageWrapperForFeedback, fullResponse);
 								appendReferences(aiMessageWrapperForFeedback, references);
@@ -926,6 +1001,10 @@ function initFEAIChat() {
 							});
 						})
 						.catch(error => {
+							if (requestSignal.aborted || error?.name === 'AbortError') {
+								finalizeAbortedRequest();
+								return;
+							}
 							clearInterval(renderInterval);
 							handleError(error, 'stream_fallback');
 							enableForm();
@@ -942,6 +1021,10 @@ function initFEAIChat() {
 						.then(({ done, value }) => {
 							if (done) {
 								waitForQueueToEmpty().then(() => {
+									if (requestSignal.aborted) {
+										finalizeAbortedRequest();
+										return;
+									}
 									clearInterval(renderInterval);
 									// Replace the spinner wrapper with the final, parsed content
 									setMarkdownContent(aiMessageWrapperForFeedback, fullResponse);
@@ -1034,6 +1117,10 @@ function initFEAIChat() {
 							processStream();
 						})
 						.catch(error => {
+							if (requestSignal.aborted || error?.name === 'AbortError') {
+								finalizeAbortedRequest();
+								return;
+							}
 							// Handle stream errors gracefully.
 							handleStreamError(error);
 						});
@@ -1041,8 +1128,13 @@ function initFEAIChat() {
 				processStream();
 			})
 			.catch(error => {
+				if (requestSignal.aborted || error?.name === 'AbortError') {
+					finalizeAbortedRequest();
+					return;
+				}
 				// Handle fetch errors gracefully.
 				handleError(error, 'fetch_request');
+				enableForm();
 			});
 	});
 
@@ -1506,7 +1598,7 @@ function initFEAIChat() {
 	 */
 	function disableForm() {
 		input.disabled = true;
-		form.querySelector('button').disabled = true;
+		form.querySelector('button[type="submit"]').disabled = true;
 	}
 
 	/**
@@ -1514,8 +1606,28 @@ function initFEAIChat() {
 	 */
 	function enableForm() {
 		input.disabled = false;
-		form.querySelector('button').disabled = false;
+		form.querySelector('button[type="submit"]').disabled = false;
+		activeAbortController = null;
+		hideStopControl();
 		input.focus();
+	}
+
+	/**
+	 * Replaces the submit button with the stop button while a response streams.
+	 */
+	function showStopControl() {
+		if (!stopBtn) return;
+		form.querySelector('button[type="submit"]')?.classList.add('hidden');
+		stopBtn.classList.remove('hidden');
+	}
+
+	/**
+	 * Restores the submit button once a response finishes or is aborted.
+	 */
+	function hideStopControl() {
+		if (!stopBtn) return;
+		stopBtn.classList.add('hidden');
+		form.querySelector('button[type="submit"]')?.classList.remove('hidden');
 	}
 
 	/**

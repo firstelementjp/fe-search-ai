@@ -3,7 +3,7 @@ Contributors: firstelementjp
 Tags: ai, search, chat, semantic, vector
 Requires at least: 6.6
 Tested up to: 7.1
-Stable tag: 1.3.0
+Stable tag: 1.4.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -148,6 +148,13 @@ Yes, the plugin includes numerous customization options and filter hooks for dev
 
 == Changelog ==
 
+= 1.4.0 =
+* Added a stop button to the chat form that aborts streaming responses; aborting also cancels the upstream AI provider request so no further tokens are consumed
+* Aborted responses render any partially received text with a "Response stopped." note and are removed from session history, logging, and feedback
+* Fixed the answer language not being detected on multilingual sites: chat requests now carry the page language via a lang parameter, and language resolution checks the question's script, the active multilingual plugin, and the WordPress locale
+* Moved the forced language rule into the default system prompt as a "Language Rule" section with an {answer_language} placeholder; custom prompts can now keep, move, rewrite, or remove it
+* Added an opt-in announcement job to the release workflow for WordPress draft posts and X posts
+
 = 1.3.0 =
 * Migrated secret storage to libsodium authenticated encryption (sodium_crypto_secretbox) with a versioned feai:v2 format; stored API keys and license keys are re-encrypted transparently on upgrade or the next settings save
 * Added the FE_SEARCH_AI_ENCRYPTION_KEY constant as the canonical encryption key source, falling back to legacy FE_AI_SEARCH_ENCRYPTION_KEY and then AUTH_KEY; defining the constant keeps stored secrets valid across WordPress salt rotation
@@ -228,6 +235,9 @@ Yes, the plugin includes numerous customization options and filter hooks for dev
 * Developer hooks and filters
 
 == Upgrade Notice ==
+
+= 1.4.0 =
+Feature release. The chat UI gains a stop button for streaming responses, and the answer language is now resolved from the question text and the active multilingual plugin. Sites using a custom system prompt should review the new "Language Rule" section and the {answer_language} placeholder.
 
 = 1.3.0 =
 Security and workflow release. Stored secrets migrate to libsodium authenticated encryption transparently (no re-entry needed); consider defining FE_SEARCH_AI_ENCRYPTION_KEY in wp-config.php. Real-time indexing now runs via WP-Cron in the background.

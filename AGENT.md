@@ -7,7 +7,7 @@
 **FE Search AI** is a WordPress plugin that provides AI-powered semantic search.
 Uses vector embeddings and AI reranking for intelligent content discovery.
 
-- **Version**: 1.3.0
+- **Version**: 1.4.0
 - **License**: GPL-2.0+
 - **PHP**: >= 7.4
 - **Repository**: https://github.com/firstelementjp/fe-search-ai
@@ -228,6 +228,12 @@ Required GitHub Secrets for WordPress.org SVN deploy:
 
 - `SVN_USERNAME`
 - `SVN_PASSWORD`
+
+Optional announcement integrations (announce job in release.yml, all opt-in):
+
+- Variables: `WP_BASE_URL` (company site URL), `WP_CATEGORY_ID` (optional post category), `ENABLE_X_POST` (`true` to post to X; otherwise draft texts go to the job summary)
+- Secrets: `WP_USERNAME` + `WP_APP_PASSWORD` (WordPress Application Password; creates JA/EN draft posts, linked via Polylang Pro REST `translations` field), `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`, `X_ACCESS_TOKEN_SECRET` (X API OAuth 1.0a user context)
+- Scripts: `.github/scripts/announce-release.sh`, `.github/scripts/post-x.mjs`
 
 ## BM25 Keyword Search
 

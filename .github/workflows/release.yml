@@ -151,6 +151,64 @@ jobs:
                   draft: false
                   prerelease: false
 
+    announce:
+        name: Announce Release
+        runs-on: ubuntu-latest
+        needs: create-release
+        # Announcement integrations are opt-in via repository variables/secrets.
+        if: vars.WP_BASE_URL != '' || vars.ENABLE_X_POST == 'true'
+        env:
+            PLUGIN_NAME: FE Search AI
+            WP_BASE_URL: ${{ vars.WP_BASE_URL }}
+            WP_CATEGORY_ID: ${{ vars.WP_CATEGORY_ID }}
+            WP_USERNAME: ${{ secrets.WP_USERNAME }}
+            WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+            X_API_KEY: ${{ secrets.X_API_KEY }}
+            X_API_SECRET: ${{ secrets.X_API_SECRET }}
+            X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+            X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+            ENABLE_X_POST: ${{ vars.ENABLE_X_POST }}
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v7
+
+            - name: Create WordPress draft posts
+              if: env.WP_BASE_URL != '' && env.WP_USERNAME != '' && env.WP_APP_PASSWORD != ''
+              run: bash .github/scripts/announce-release.sh
+
+            - name: Post to X (or write draft texts to summary)
+              run: |
+                  RELEASE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/tag/${GITHUB_REF_NAME}"
+
+                  JA_TEXT="${PLUGIN_NAME} ${GITHUB_REF_NAME} をリリースしました。
+                  詳細はリリースノートをご覧ください。
+                  ${RELEASE_URL}
+                  #WordPress #AI"
+                  EN_TEXT="${PLUGIN_NAME} ${GITHUB_REF_NAME} is now available.
+                  See the release notes for details:
+                  ${RELEASE_URL}
+                  #WordPress #AI"
+
+                  if [ "${ENABLE_X_POST}" = "true" ] && [ -n "${X_API_KEY}" ]; then
+                      npm install --silent twitter-api-v2@1
+                      POST_TEXT="${JA_TEXT}" node .github/scripts/post-x.mjs
+                      POST_TEXT="${EN_TEXT}" node .github/scripts/post-x.mjs
+                  else
+                      {
+                          echo "### Draft X posts (review and post manually)"
+                          echo ''
+                          echo '```'
+                          echo "${JA_TEXT}"
+                          echo '```'
+                          echo ''
+                          echo '```'
+                          echo "${EN_TEXT}"
+                          echo '```'
+                      } >> "${GITHUB_STEP_SUMMARY}"
+                      echo "X auto-post disabled or credentials missing; draft texts written to the job summary."
+                  fi
+
     deploy-to-svn:
         name: Deploy to WordPress.org SVN
         runs-on: ubuntu-latest

@@ -333,4 +333,159 @@ class ChatHandlerTest extends TestCase {
 
 		$this->assertTrue( is_callable( [ $handler, 'filter_personal_data' ] ), 'filter_personal_data should be callable' );
 	}
+
+	/**
+	 * Test detect_text_language detects scripts that map to one language.
+	 *
+	 * @since 1.4.0
+	 * @return void
+	 */
+	public function test_detect_text_language() {
+		$sync_handler = $this->createMock( 'FESearchAI\Ajax\FE_Search_AI_Sync_Handler' );
+		$handler      = new \FESearchAI\Ajax\FE_Search_AI_Chat_Handler( $sync_handler );
+		$method       = new ReflectionMethod( $handler, 'detect_text_language' );
+		$method->setAccessible( true );
+
+		$this->assertSame( 'ja', $method->invoke( $handler, '最新情報はありますか？' ), 'Japanese kana should resolve to ja' );
+		$this->assertSame( 'ja', $method->invoke( $handler, 'FE Search AIについて教えて' ), 'Mixed Latin text with kana should resolve to ja' );
+		$this->assertSame( 'ko', $method->invoke( $handler, '업데이트가 있나요?' ), 'Hangul should resolve to ko' );
+		$this->assertSame( 'ru', $method->invoke( $handler, 'Есть обновления?' ), 'Cyrillic should resolve to ru' );
+		$this->assertSame( 'ar', $method->invoke( $handler, 'هل هناك تحديثات؟' ), 'Arabic should resolve to ar' );
+
+		// Ambiguous scripts must not guess.
+		$this->assertSame( '', $method->invoke( $handler, '店頭販売' ), 'Han-only text is ambiguous between ja and zh' );
+		$this->assertSame( '', $method->invoke( $handler, 'Any updates?' ), 'Latin-only text cannot be attributed reliably' );
+		$this->assertSame( '', $method->invoke( $handler, '' ), 'Empty text should return an empty code' );
+	}
+
+	/**
+	 * Test resolve_answer_lang_code honours the lang request parameter.
+	 *
+	 * @since 1.4.0
+	 * @return void
+	 */
+	public function test_resolve_answer_lang_code_uses_request_lang() {
+		$sync_handler = $this->createMock( 'FESearchAI\Ajax\FE_Search_AI_Sync_Handler' );
+		$handler      = new \FESearchAI\Ajax\FE_Search_AI_Chat_Handler( $sync_handler );
+		$method       = new ReflectionMethod( $handler, 'resolve_answer_lang_code' );
+		$method->setAccessible( true );
+
+		$previous_lang = $_GET['lang'] ?? null;
+		$_GET['lang']  = 'en';
+
+		try {
+			$this->assertSame( 'en', $method->invoke( $handler, 'Any updates?' ), 'The lang request parameter should win over the site locale' );
+			$this->assertSame( 'ja', $method->invoke( $handler, '更新はありますか？' ), 'Question language detection should win over the lang parameter' );
+		} finally {
+			if ( null === $previous_lang ) {
+				unset( $_GET['lang'] );
+			} else {
+				$_GET['lang'] = $previous_lang;
+			}
+		}
+	}
+
+	/**
+	 * Test resolve_answer_lang_code falls back to the WordPress locale.
+	 *
+	 * @since 1.4.0
+	 * @return void
+	 */
+	public function test_resolve_answer_lang_code_falls_back_to_locale() {
+		$sync_handler = $this->createMock( 'FESearchAI\Ajax\FE_Search_AI_Sync_Handler' );
+		$handler      = new \FESearchAI\Ajax\FE_Search_AI_Chat_Handler( $sync_handler );
+		$method       = new ReflectionMethod( $handler, 'resolve_answer_lang_code' );
+		$method->setAccessible( true );
+
+		$previous_lang = $_GET['lang'] ?? null;
+		unset( $_GET['lang'] );
+
+		try {
+			$expected = strstr( get_locale(), '_', true );
+			$expected = false !== $expected ? $expected : get_locale();
+			$this->assertSame( $expected, $method->invoke( $handler, 'Any updates?' ), 'An ambiguous question should fall back to the WordPress locale' );
+		} finally {
+			if ( null !== $previous_lang ) {
+				$_GET['lang'] = $previous_lang;
+			}
+		}
+	}
+
+	/**
+	 * Test the default system prompt ships the Language Rule placeholder.
+	 *
+	 * @since 1.4.0
+	 * @return void
+	 */
+	public function test_default_prompt_contains_answer_language_placeholder() {
+		$prompt = \FESearchAI\Ajax\FE_Search_AI_Chat_Handler::get_default_system_prompt();
+
+		$this->assertStringContainsString( '{answer_language}', $prompt, 'Default prompt should contain the {answer_language} placeholder' );
+		$this->assertStringContainsString( 'Language Rule', $prompt, 'Default prompt should contain the Language Rule section' );
+	}
+
+	/**
+	 * Test build_prompt_messages replaces {answer_language} with the resolved code.
+	 *
+	 * @since 1.4.0
+	 * @return void
+	 */
+	public function test_build_prompt_messages_replaces_answer_language() {
+		$sync_handler = $this->createMock( 'FESearchAI\Ajax\FE_Search_AI_Sync_Handler' );
+		$handler      = new \FESearchAI\Ajax\FE_Search_AI_Chat_Handler( $sync_handler );
+
+		$previous = get_option( 'fe_search_ai_custom_prompts', [] );
+		update_option( 'fe_search_ai_custom_prompts', [] );
+
+		try {
+			$messages = $handler->build_prompt_messages( '更新はありますか？', [], [], false, 'openai', '' );
+
+			$system = '';
+			foreach ( $messages as $message ) {
+				if ( isset( $message['role'] ) && 'system' === $message['role'] ) {
+					$system = $message['content'];
+					break;
+				}
+			}
+
+			$this->assertStringNotContainsString( '{answer_language}', $system, 'Placeholder should be replaced' );
+			$this->assertStringContainsString( "language code 'ja'", $system, 'A Japanese question should resolve the placeholder to ja' );
+		} finally {
+			update_option( 'fe_search_ai_custom_prompts', $previous );
+		}
+	}
+
+	/**
+	 * Test a custom prompt without the placeholder keeps full control.
+	 *
+	 * @since 1.4.0
+	 * @return void
+	 */
+	public function test_build_prompt_messages_respects_custom_prompt_language() {
+		$sync_handler = $this->createMock( 'FESearchAI\Ajax\FE_Search_AI_Sync_Handler' );
+		$handler      = new \FESearchAI\Ajax\FE_Search_AI_Chat_Handler( $sync_handler );
+
+		$previous = get_option( 'fe_search_ai_custom_prompts', [] );
+		update_option(
+			'fe_search_ai_custom_prompts',
+			[ 'system_prompt' => 'Always answer in English. Question: {user_question} Results: {context_content}' ]
+		);
+
+		try {
+			$messages = $handler->build_prompt_messages( '更新はありますか？', [], [], false, 'openai', '' );
+
+			$system = '';
+			foreach ( $messages as $message ) {
+				if ( isset( $message['role'] ) && 'system' === $message['role'] ) {
+					$system = $message['content'];
+					break;
+				}
+			}
+
+			$this->assertStringNotContainsString( 'Language Rule', $system, 'No Language Rule should be injected into a custom prompt' );
+			$this->assertStringContainsString( 'Always answer in English.', $system, 'The custom prompt text should be used verbatim' );
+		} finally {
+			update_option( 'fe_search_ai_custom_prompts', $previous );
+		}
+	}
 }

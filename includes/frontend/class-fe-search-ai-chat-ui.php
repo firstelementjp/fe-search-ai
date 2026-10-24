@@ -432,6 +432,18 @@ class FE_Search_AI_Chat_UI {
 					<form id="fe_search_ai_chat_form">
 						<textarea id="fe_search_ai_chat_input" rows="1" placeholder="<?php echo esc_attr( $args['placeholder_text'] ); ?>" autocomplete="off"></textarea>
 						<button type="submit"><?php echo esc_html( $args['submit_button_text'] ); ?></button>
+						<button
+							type="button"
+							id="fe_search_ai_stop_button"
+							class="hidden"
+							title="<?php esc_attr_e( 'Stop generating response', 'fe-search-ai' ); ?>"
+							aria-label="<?php esc_attr_e( 'Stop generating response', 'fe-search-ai' ); ?>"
+						>
+							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
+								<rect x="6" y="6" width="12" height="12" rx="2"/>
+							</svg>
+							<span><?php esc_html_e( 'Stop', 'fe-search-ai' ); ?></span>
+						</button>
 					</form>
 					<div id="fe_search_ai_chat_options">
 						<?php if ( '' !== $args['footer_notice'] ) : ?>

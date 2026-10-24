@@ -2,7 +2,7 @@
 
 ![FE Search AI Banner](docs/assets/images/img-sns-banner-100.jpg)
 
-[![Version](https://img.shields.io/badge/version-1.3.0-green.svg)](https://github.com/firstelementjp/fe-search-ai/releases)
+[![Version](https://img.shields.io/badge/version-1.4.0-green.svg)](https://github.com/firstelementjp/fe-search-ai/releases)
 [![License](https://img.shields.io/badge/License-GPLv2%2B-blue.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
 [![WordPress](https://img.shields.io/badge/WordPress-6.6%2B-blue.svg)](https://wordpress.org/)
 [![PHP](https://img.shields.io/badge/PHP-7.4%2B-blue.svg)](https://www.php.net/)
@@ -12,6 +12,8 @@ AI-powered, conversational search for WordPress. This repository contains the pl
 
 ## ✨ Recent Highlights
 
+- Stop button for streaming chat responses: aborting also cancels the upstream AI provider request, and partial text is kept with a "Response stopped." note
+- Reliable answer-language detection on multilingual sites: chat requests carry the page language via a `lang` parameter, and the `{answer_language}` prompt placeholder can be customized or removed
 - Zero Data Retention posture: no server-side storage of conversation content by default, configurable retention for every record class, verified uninstall cleanup — see docs/privacy.md
 - Hardened frontend chat rendering with DOMPurify sanitization and safer link handling
 - Strengthened chat session IDs with cryptographic random generation

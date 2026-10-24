@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.4.0 (2026-10-24)
+
+### Chat UI
+
+- Added a stop button that aborts streaming responses mid-generation; pressing it also cancels the upstream AI provider request, so no further tokens are generated
+- Aborted responses render any partially received text with a "Response stopped." note, and the unanswered exchange is removed from session history and excluded from logging and feedback
+
+### Multilingual
+
+- Fixed the answer language not being detected on multilingual sites: chat REST requests now carry the rendered page's language slug via a `lang` parameter, which Polylang, WPML, and Bogo all understand
+- Answer language resolution order is now: script detected from the question text (Japanese, Korean, Russian, Arabic), then the multilingual plugin language (`lang` parameter, context post language, runtime API), then the WordPress locale, with Japanese as the final fallback
+- Moved the forced language rule into the default system prompt as a "Language Rule" section containing the `{answer_language}` placeholder; sites with custom prompts can keep, move, rewrite, or remove the section, and no language rule is injected when the placeholder is absent
+
+### Build and Release
+
+- Added an opt-in `announce` job to the release workflow that creates WordPress draft posts and posts to X, gated by repository variables and secrets
+- Updated development dependencies via Dependabot
+
+### Tests
+
+- Added unit tests for answer-language resolution and `{answer_language}` placeholder replacement
+
 ## 1.3.0 (2026-10-21)
 
 ### Security

@@ -284,6 +284,7 @@ class FE_Search_AI_Assets {
 			[
 				'ajax_url'                 => admin_url( 'admin-ajax.php' ),
 				'rest_url'                 => rest_url( 'fe-search-ai/v1/stream' ),
+				'rest_lang'                => FE_Search_AI_Multilingual::get_current_language_slug(),
 				'rest_nonce'               => wp_create_nonce( 'wp_rest' ),
 				'nonce'                    => wp_create_nonce( 'fe_search_ai_ajax_nonce' ),
 				'animation_speed'          => (int) $animation_speed,

@@ -1532,6 +1532,18 @@ msgstr ""
 "AI アシスタントへの指示（システムプロンプト）をカスタマイズします。空欄のまま"
 "にすると、標準のプロンプトが使用されます。"
 
+#: includes/admin/class-fe-search-ai-settings.php:2560
+msgid ""
+"The {answer_language} placeholder in the Language Rule section is replaced "
+"with the resolved answer language code. Keep the section to let the plugin "
+"choose the language, or rewrite/remove it to control the answer language "
+"yourself."
+msgstr ""
+"Language Rule セクション内の {answer_language} プレースホルダーは、解決さ"
+"れた回答言語コードに置き換えられます。プラグインに言語を選択させる場合は"
+"このセクションを残し、自分で回答言語を制御する場合は書き換えるか削除して"
+"ください。"
+
 #: includes/admin/class-fe-search-ai-settings.php:2580
 msgid "Enable structured output when supported by the selected AI provider."
 msgstr "選択したAIプロバイダーが対応している場合、構造化出力を有効にします。"
@@ -2238,6 +2250,19 @@ msgstr "フィードバックありがとうございます！"
 #: assets/js/frontend-scripts.js:1189
 msgid "References"
 msgstr "参照元"
+
+#: includes/frontend/class-fe-search-ai-chat-ui.php:439
+#: includes/frontend/class-fe-search-ai-chat-ui.php:440
+msgid "Stop generating response"
+msgstr "応答の生成を停止"
+
+#: includes/frontend/class-fe-search-ai-chat-ui.php:445
+msgid "Stop"
+msgstr "停止"
+
+#: assets/js/frontend-scripts.js:873 assets/js/frontend-scripts.js:878
+msgid "Response stopped."
+msgstr "応答を停止しました。"
 
 #~ msgid ""
 #~ "API keys are encrypted before being stored in the database. For stronger "

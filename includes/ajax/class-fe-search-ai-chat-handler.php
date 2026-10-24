@@ -220,6 +220,10 @@ class FE_Search_AI_Chat_Handler {
 			ob_end_flush();
 		}
 
+		// Stop this request when the client disconnects (e.g. the visitor
+		// pressed the stop button) so upstream generation is cancelled too.
+		ignore_user_abort( false );
+
 		// Set UTF-8 encoding headers for streaming
 		header( 'Content-Type: text/event-stream; charset=UTF-8' );
 		header( 'Cache-Control: no-cache' );
@@ -423,6 +427,12 @@ class FE_Search_AI_Chat_Handler {
 				]
 			) . "\n\n";
 			flush();
+
+			// Bail out before the paid completion call when the client has
+			// already disconnected while the context was being retrieved.
+			if ( connection_aborted() ) {
+				return;
+			}
 
 			// Check if structured output is enabled.
 			$custom_prompts    = get_option( 'fe_search_ai_custom_prompts', [] );
@@ -875,6 +885,10 @@ class FE_Search_AI_Chat_Handler {
 			$ch,
 			CURLOPT_WRITEFUNCTION,
 			function ( $curl, $data ) use ( &$received_text ) {
+				if ( connection_aborted() ) {
+					// The visitor stopped the response; abort the upstream transfer.
+					return 0;
+				}
 				static $stream_buffer = '';
 				$stream_buffer       .= $data;
 
@@ -1503,6 +1517,10 @@ class FE_Search_AI_Chat_Handler {
 			$ch,
 			CURLOPT_WRITEFUNCTION,
 			function ( $curl, $data ) {
+				if ( connection_aborted() ) {
+					// The visitor stopped the response; abort the upstream transfer.
+					return 0;
+				}
 
 				$lines = explode( "\n", $data );
 
@@ -1699,6 +1717,10 @@ class FE_Search_AI_Chat_Handler {
 			$ch,
 			CURLOPT_WRITEFUNCTION,
 			function ( $curl, $data ) {
+				if ( connection_aborted() ) {
+					// The visitor stopped the response; abort the upstream transfer.
+					return 0;
+				}
 
 				$lines = explode( "\n", $data );
 
@@ -1824,40 +1846,18 @@ class FE_Search_AI_Chat_Handler {
 		$site_purpose = $site_info['site_purpose'] ?? get_bloginfo( 'description' );
 		$site_url     = home_url( '/' );
 
-		// Detect the language that should be used for answers, based on the current
-		// WordPress locale and, if available, the active multilingual plugin.
-		$answer_locale = get_locale();
-		if ( function_exists( 'pll_current_language' ) ) {
-			// Polylang: try to get the current locale (e.g. ja, en_US, etc.).
-			$pll_locale = pll_current_language( 'locale' );
-			if ( ! empty( $pll_locale ) ) {
-				$answer_locale = $pll_locale;
-			}
-		} elseif ( function_exists( 'wpml_get_language_information' ) && defined( 'ICL_LANGUAGE_CODE' ) ) {
-			// WPML: language code like 'en', 'ja'. Map it to a pseudo-locale.
-			$lang_code = ICL_LANGUAGE_CODE;
-			if ( ! empty( $lang_code ) ) {
-				$answer_locale = $lang_code;
-			}
-		} elseif ( function_exists( 'bogo_get_locale' ) ) {
-			// Bogo: site locale per request.
-			$bogo_locale = bogo_get_locale();
-			if ( ! empty( $bogo_locale ) ) {
-				$answer_locale = $bogo_locale;
-			}
+		// Resolve the language the answer should be written in, but only when
+		// the effective system prompt contains the {answer_language}
+		// placeholder. The default prompt ships a "## Language Rule" section
+		// with the placeholder; site owners can move, edit, or remove that
+		// section in a custom prompt to control the answer language
+		// themselves. Resolution order: language detected from the question,
+		// then the language provided by an active multilingual plugin, then
+		// the WordPress locale, with Japanese as the final fallback.
+		$answer_lang_code = '';
+		if ( false !== strpos( $system_prompt, '{answer_language}' ) ) {
+			$answer_lang_code = $this->resolve_answer_lang_code( (string) $question );
 		}
-
-		$answer_lang_code_extracted = strstr( $answer_locale, '_', true );
-		if ( false !== $answer_lang_code_extracted ) {
-			$answer_lang_code = $answer_lang_code_extracted;
-		} else {
-			$answer_lang_code = $answer_locale;
-		}
-
-		// Append a language rule so the model knows which language to use
-		// for this particular request.
-		$system_prompt .= "\n\n## Language Rule\n" .
-			"All of your responses must be written in the language corresponding to the current WordPress locale code '{$answer_lang_code}'. ";
 
 		// Append the page the visitor is currently viewing so that demonstratives
 		// such as "this" resolve to that page even without an explicit referent.
@@ -2018,6 +2018,7 @@ class FE_Search_AI_Chat_Handler {
 		$system_prompt = str_replace( '{site_url}', $site_url, $system_prompt );
 		$system_prompt = str_replace( '{context_content}', $context_str, $system_prompt );
 		$system_prompt = str_replace( '{user_question}', $question, $system_prompt );
+		$system_prompt = str_replace( '{answer_language}', $answer_lang_code, $system_prompt );
 
 		/**
 		 * Filters the final system prompt after all placeholders have been replaced.
@@ -2106,6 +2107,139 @@ class FE_Search_AI_Chat_Handler {
 	}
 
 	/**
+	 * Resolves the language code the assistant should answer in.
+	 *
+	 * The priority order is: (1) the language detected from the user's
+	 * question text, (2) the language provided by an active multilingual
+	 * plugin (explicit `lang` request parameter, the context post's
+	 * language, or the plugin's request-time API), (3) the WordPress
+	 * locale, and (4) Japanese as a last resort.
+	 *
+	 * @since 1.4.0
+	 * @param string $question The end user's question.
+	 * @return string Language code such as 'ja' or 'en'.
+	 */
+	private function resolve_answer_lang_code( string $question ): string {
+		$locale = self::detect_text_language( $question );
+
+		if ( '' === $locale ) {
+			$locale = $this->resolve_plugin_locale();
+		}
+
+		if ( '' === $locale ) {
+			$locale = (string) get_locale();
+		}
+
+		$code = strstr( $locale, '_', true );
+		if ( false === $code ) {
+			$code = $locale;
+		}
+
+		return '' !== $code ? $code : 'ja';
+	}
+
+	/**
+	 * Detects the language of a text from its Unicode script ranges.
+	 *
+	 * Only scripts that map to a single language are reported. Han-only
+	 * text is ambiguous between Japanese and Chinese, and Latin-only text
+	 * cannot be attributed reliably, so both return an empty string and
+	 * leave the decision to the lower-priority resolvers.
+	 *
+	 * @since 1.4.0
+	 * @param string $text Text to inspect.
+	 * @return string Language code ('ja', 'ko', 'ru', 'ar'), or '' when ambiguous.
+	 */
+	private static function detect_text_language( string $text ): string {
+		if ( '' === $text ) {
+			return '';
+		}
+
+		// Hiragana, Katakana, and Katakana phonetic extensions occur only in Japanese.
+		if ( preg_match( '/[\x{3040}-\x{30FF}\x{31F0}-\x{31FF}]/u', $text ) ) {
+			return 'ja';
+		}
+		// Hangul jamo and syllables.
+		if ( preg_match( '/[\x{1100}-\x{11FF}\x{AC00}-\x{D7AF}]/u', $text ) ) {
+			return 'ko';
+		}
+		// Cyrillic.
+		if ( preg_match( '/[\x{0400}-\x{04FF}]/u', $text ) ) {
+			return 'ru';
+		}
+		// Arabic.
+		if ( preg_match( '/[\x{0600}-\x{06FF}\x{0750}-\x{077F}]/u', $text ) ) {
+			return 'ar';
+		}
+
+		return '';
+	}
+
+	/**
+	 * Resolves the answer locale provided by an active multilingual plugin.
+	 *
+	 * Chat requests are served through the REST API, where multilingual
+	 * plugins do not reliably set their current language, so the explicit
+	 * `lang` request parameter and the context post's language are checked
+	 * before the plugin's request-time APIs.
+	 *
+	 * @since 1.4.0
+	 * @return string Locale such as 'en_US' or language slug such as 'en',
+	 *                or '' when no language is found.
+	 */
+	private function resolve_plugin_locale(): string {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only language hint sent by the frontend; sanitised below.
+		$req_lang = isset( $_GET['lang'] ) ? sanitize_key( wp_unslash( $_GET['lang'] ) ) : '';
+
+		if ( '' !== $req_lang ) {
+			if ( function_exists( 'PLL' ) && isset( PLL()->model ) ) {
+				$language = PLL()->model->get_language( $req_lang );
+				if ( ! empty( $language ) && ! empty( $language->locale ) ) {
+					return (string) $language->locale;
+				}
+			}
+			if ( function_exists( 'bogo_get_closest_locale' ) ) {
+				$closest = (string) bogo_get_closest_locale( $req_lang );
+				if ( '' !== $closest ) {
+					return $closest;
+				}
+			}
+			// WPML resolves the slug itself via ICL_LANGUAGE_CODE, but a
+			// raw slug is already a usable language code as a fallback.
+			return $req_lang;
+		}
+
+		// The post currently displayed to the visitor carries its own language.
+		if ( $this->context_post instanceof \WP_Post ) {
+			if ( function_exists( 'pll_get_post_language' ) ) {
+				$post_locale = pll_get_post_language( $this->context_post->ID, 'locale' );
+				if ( is_string( $post_locale ) && '' !== $post_locale ) {
+					return $post_locale;
+				}
+			}
+			if ( function_exists( 'bogo_get_post_locale' ) ) {
+				$post_locale = bogo_get_post_locale( $this->context_post->ID );
+				if ( is_string( $post_locale ) && '' !== $post_locale ) {
+					return $post_locale;
+				}
+			}
+		}
+
+		// Request-time plugin APIs.
+		if ( function_exists( 'pll_current_language' ) ) {
+			$pll_locale = pll_current_language( 'locale' );
+			if ( ! empty( $pll_locale ) ) {
+				return (string) $pll_locale;
+			}
+		}
+		if ( function_exists( 'wpml_get_language_information' ) && defined( 'ICL_LANGUAGE_CODE' ) && '' !== ICL_LANGUAGE_CODE ) {
+			return (string) ICL_LANGUAGE_CODE;
+		}
+
+		return '';
+	}
+
+	/**
 	 * Returns the default system prompt.
 	 *
 	 * @return string
@@ -2133,7 +2267,10 @@ Your task is to answer the user's question using only the provided search result
 4. When a result includes a Title and URL, cite it as a Markdown link.
 5. Use Metadata fields when they are relevant to the user's question.
 6. If the Search Results do not contain enough information, say that the information was not found in the available site content.
-7. Respond in the same language as the user's question, unless the user asks for another language.";
+7. Respond in the same language as the user's question, unless the user asks for another language.
+
+## Language Rule
+All of your responses must be written in the language corresponding to the language code '{answer_language}'.";
 	}
 
 	/**
