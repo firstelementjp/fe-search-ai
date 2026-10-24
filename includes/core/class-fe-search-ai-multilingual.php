@@ -166,6 +166,35 @@ class FE_Search_AI_Multilingual {
 	}
 
 	/**
+	 * Returns the language slug of the page currently being rendered.
+	 *
+	 * Multilingual plugins do not reliably expose the current language
+	 * during unauthenticated REST requests, so this value is captured at
+	 * page render time and sent back with chat requests as the `lang`
+	 * parameter, which Polylang, WPML, and Bogo all understand.
+	 *
+	 * @since 1.3.1
+	 * @return string Language slug such as 'en' or 'ja', or '' when no
+	 *                multilingual provider is active or the language is unknown.
+	 */
+	public static function get_current_language_slug(): string {
+		switch ( self::get_active_provider() ) {
+			case 'polylang':
+				if ( ! function_exists( 'pll_current_language' ) ) {
+					return '';
+				}
+				$slug = pll_current_language( 'slug' );
+				return is_string( $slug ) ? $slug : '';
+			case 'wpml':
+				return defined( 'ICL_LANGUAGE_CODE' ) ? (string) ICL_LANGUAGE_CODE : '';
+			case 'bogo':
+				return function_exists( 'bogo_lang_slug' ) ? (string) bogo_lang_slug( determine_locale() ) : '';
+		}
+
+		return '';
+	}
+
+	/**
 	 * Returns the translated labels for the chat UI text fields.
 	 *
 	 * Reuses the same msgids as the settings screen so no new translation

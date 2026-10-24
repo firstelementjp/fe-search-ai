@@ -849,7 +849,14 @@ function initFEAIChat() {
 
 		startRenderingQueue();
 
-		fetch(fe_search_ai_ajax_obj.rest_url, {
+		// Send the page language so REST requests resolve the correct locale;
+		// multilingual plugins cannot detect it on unauthenticated requests.
+		const streamUrl = new URL(fe_search_ai_ajax_obj.rest_url);
+		if (fe_search_ai_ajax_obj.rest_lang) {
+			streamUrl.searchParams.set('lang', fe_search_ai_ajax_obj.rest_lang);
+		}
+
+		fetch(streamUrl.toString(), {
 			method: 'POST',
 			headers: {
 				'X-WP-Nonce': fe_search_ai_ajax_obj.rest_nonce,

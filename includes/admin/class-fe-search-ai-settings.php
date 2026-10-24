@@ -2556,6 +2556,9 @@ class FE_Search_AI_Settings {
 		<p class="description">
 			<?php esc_html_e( 'Customize the instructions (system prompts) for the AI assistant. If left blank, the standard prompt will be used.', 'fe-search-ai' ); ?>
 		</p>
+		<p class="description">
+			<?php esc_html_e( 'The {answer_language} placeholder in the Language Rule section is replaced with the resolved answer language code. Keep the section to let the plugin choose the language, or rewrite/remove it to control the answer language yourself.', 'fe-search-ai' ); ?>
+		</p>
 		<?php
 	}
 

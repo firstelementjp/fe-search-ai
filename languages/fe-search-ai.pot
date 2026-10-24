@@ -1263,6 +1263,10 @@ msgstr ""
 msgid "Customize the instructions (system prompts) for the AI assistant. If left blank, the standard prompt will be used."
 msgstr ""
 
+#: includes/admin/class-fe-search-ai-settings.php:2560
+msgid "The {answer_language} placeholder in the Language Rule section is replaced with the resolved answer language code. Keep the section to let the plugin choose the language, or rewrite/remove it to control the answer language yourself."
+msgstr ""
+
 #: includes/admin/class-fe-search-ai-settings.php:2580
 msgid "Enable structured output when supported by the selected AI provider."
 msgstr ""
