@@ -2115,7 +2115,7 @@ class FE_Search_AI_Chat_Handler {
 	 * language, or the plugin's request-time API), (3) the WordPress
 	 * locale, and (4) Japanese as a last resort.
 	 *
-	 * @since 1.3.1
+	 * @since 1.4.0
 	 * @param string $question The end user's question.
 	 * @return string Language code such as 'ja' or 'en'.
 	 */
@@ -2146,7 +2146,7 @@ class FE_Search_AI_Chat_Handler {
 	 * cannot be attributed reliably, so both return an empty string and
 	 * leave the decision to the lower-priority resolvers.
 	 *
-	 * @since 1.3.1
+	 * @since 1.4.0
 	 * @param string $text Text to inspect.
 	 * @return string Language code ('ja', 'ko', 'ru', 'ar'), or '' when ambiguous.
 	 */
@@ -2183,7 +2183,7 @@ class FE_Search_AI_Chat_Handler {
 	 * `lang` request parameter and the context post's language are checked
 	 * before the plugin's request-time APIs.
 	 *
-	 * @since 1.3.1
+	 * @since 1.4.0
 	 * @return string Locale such as 'en_US' or language slug such as 'en',
 	 *                or '' when no language is found.
 	 */

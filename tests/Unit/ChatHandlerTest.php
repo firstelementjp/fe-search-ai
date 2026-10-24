@@ -337,7 +337,7 @@ class ChatHandlerTest extends TestCase {
 	/**
 	 * Test detect_text_language detects scripts that map to one language.
 	 *
-	 * @since 1.3.1
+	 * @since 1.4.0
 	 * @return void
 	 */
 	public function test_detect_text_language() {
@@ -361,7 +361,7 @@ class ChatHandlerTest extends TestCase {
 	/**
 	 * Test resolve_answer_lang_code honours the lang request parameter.
 	 *
-	 * @since 1.3.1
+	 * @since 1.4.0
 	 * @return void
 	 */
 	public function test_resolve_answer_lang_code_uses_request_lang() {
@@ -388,7 +388,7 @@ class ChatHandlerTest extends TestCase {
 	/**
 	 * Test resolve_answer_lang_code falls back to the WordPress locale.
 	 *
-	 * @since 1.3.1
+	 * @since 1.4.0
 	 * @return void
 	 */
 	public function test_resolve_answer_lang_code_falls_back_to_locale() {
@@ -414,7 +414,7 @@ class ChatHandlerTest extends TestCase {
 	/**
 	 * Test the default system prompt ships the Language Rule placeholder.
 	 *
-	 * @since 1.3.1
+	 * @since 1.4.0
 	 * @return void
 	 */
 	public function test_default_prompt_contains_answer_language_placeholder() {
@@ -427,7 +427,7 @@ class ChatHandlerTest extends TestCase {
 	/**
 	 * Test build_prompt_messages replaces {answer_language} with the resolved code.
 	 *
-	 * @since 1.3.1
+	 * @since 1.4.0
 	 * @return void
 	 */
 	public function test_build_prompt_messages_replaces_answer_language() {
@@ -458,7 +458,7 @@ class ChatHandlerTest extends TestCase {
 	/**
 	 * Test a custom prompt without the placeholder keeps full control.
 	 *
-	 * @since 1.3.1
+	 * @since 1.4.0
 	 * @return void
 	 */
 	public function test_build_prompt_messages_respects_custom_prompt_language() {

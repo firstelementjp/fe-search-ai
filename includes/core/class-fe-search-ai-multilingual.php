@@ -173,7 +173,7 @@ class FE_Search_AI_Multilingual {
 	 * page render time and sent back with chat requests as the `lang`
 	 * parameter, which Polylang, WPML, and Bogo all understand.
 	 *
-	 * @since 1.3.1
+	 * @since 1.4.0
 	 * @return string Language slug such as 'en' or 'ja', or '' when no
 	 *                multilingual provider is active or the language is unknown.
 	 */

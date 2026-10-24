@@ -9,6 +9,7 @@ export default [
 			'node_modules/',
 			'vendor/',
 			'_deprecated/',
+			'.github/scripts/',
 			'**/*.min.js',
 			'**/*.min.css',
 			'assets/css/*.min.css',
