@@ -153,7 +153,9 @@ jobs:
 
     announce:
         name: Announce Release
-        runs-on: ubuntu-latest
+        # Self-hosted runner: the company site blocks overseas IPs, and
+        # GitHub-hosted runners run in Azure US regions.
+        runs-on: [self-hosted, macOS]
         needs: create-release
         # Announcement integrations are opt-in via repository variables/secrets.
         if: vars.WP_BASE_URL != '' || vars.ENABLE_X_POST == 'true'
