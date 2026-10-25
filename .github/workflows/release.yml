@@ -163,6 +163,8 @@ jobs:
             PLUGIN_NAME: FE Search AI
             WP_BASE_URL: ${{ vars.WP_BASE_URL }}
             WP_CATEGORY_ID: ${{ vars.WP_CATEGORY_ID }}
+            WP_JA_CATEGORY_ID: ${{ vars.WP_JA_CATEGORY_ID }}
+            WP_EN_CATEGORY_ID: ${{ vars.WP_EN_CATEGORY_ID }}
             WP_USERNAME: ${{ secrets.WP_USERNAME }}
             WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
             X_API_KEY: ${{ secrets.X_API_KEY }}

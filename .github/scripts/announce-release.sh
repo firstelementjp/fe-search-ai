@@ -9,7 +9,8 @@
 #
 # Required env: WP_BASE_URL, WP_USERNAME, WP_APP_PASSWORD, PLUGIN_NAME,
 #               GITHUB_REF_NAME, GITHUB_REPOSITORY
-# Optional env: WP_CATEGORY_ID
+# Optional env: WP_CATEGORY_ID (fallback for both languages),
+#               WP_JA_CATEGORY_ID, WP_EN_CATEGORY_ID (per-language term IDs)
 set -euo pipefail
 
 VERSION="${GITHUB_REF_NAME#v}"
@@ -35,15 +36,16 @@ md_to_html() {
 }
 
 # Creates a draft post and prints the API response JSON.
-# Args: title content lang [translations-json]
+# Args: title content lang [translations-json] [category-term-id]
 create_draft() {
     local title="$1" content="$2" lang="$3" translations="${4:-null}"
+    local category="${5:-${WP_CATEGORY_ID:-null}}"
     local payload
     payload="$(jq -n \
         --arg title "${title}" \
         --arg content "${content}" \
         --arg lang "${lang}" \
-        --argjson category "${WP_CATEGORY_ID:-null}" \
+        --argjson category "${category}" \
         --argjson translations "${translations}" \
         '{
             title: $title,
@@ -67,7 +69,7 @@ if [ -f "docs/ja/changes.md" ]; then
         JA_NOTES_HTML="$(md_to_html "${JA_NOTES_MD}")"
         JA_TITLE="${PLUGIN_NAME} ${GITHUB_REF_NAME} をリリースしました"
         JA_CONTENT="<p>${PLUGIN_NAME} ${VERSION} をリリースしました。主な変更点は以下の通りです。</p>${JA_NOTES_HTML}<p>ダウンロード: <a href=\"${RELEASE_URL}\">GitHub Releases</a></p>"
-        JA_POST_ID="$(create_draft "${JA_TITLE}" "${JA_CONTENT}" "ja" | jq -r '.id // empty')"
+        JA_POST_ID="$(create_draft "${JA_TITLE}" "${JA_CONTENT}" "ja" "null" "${WP_JA_CATEGORY_ID:-}" | jq -r '.id // empty')"
         echo "Japanese draft created: id=${JA_POST_ID:-unknown}"
     else
         echo "::warning::No changelog section found in docs/ja/changes.md for ${VERSION}"
@@ -89,7 +91,7 @@ TRANSLATIONS="null"
 if [ -n "${JA_POST_ID}" ]; then
     TRANSLATIONS="{\"ja\": ${JA_POST_ID}}"
 fi
-EN_POST_ID="$(create_draft "${EN_TITLE}" "${EN_CONTENT}" "en" "${TRANSLATIONS}" | jq -r '.id // empty')"
+EN_POST_ID="$(create_draft "${EN_TITLE}" "${EN_CONTENT}" "en" "${TRANSLATIONS}" "${WP_EN_CATEGORY_ID:-}" | jq -r '.id // empty')"
 echo "English draft created: id=${EN_POST_ID:-unknown}"
 
 if [ -n "${JA_POST_ID}" ]; then
