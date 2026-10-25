@@ -11,11 +11,19 @@
 #               GITHUB_REF_NAME, GITHUB_REPOSITORY
 # Optional env: WP_CATEGORY_ID (fallback for both languages),
 #               WP_JA_CATEGORY_ID, WP_EN_CATEGORY_ID (per-language term IDs)
+#
+# Post titles are "<fixed prefix> <tag> <suffix>" with an optional
+# release highlight appended after a pipe. Highlights are read from
+# single-line files created during release prep:
+#   .github/announce/<tag>.ja.txt
+#   .github/announce/<tag>.en.txt
+# The pipe and highlight are omitted when the file is absent.
 set -euo pipefail
 
 VERSION="${GITHUB_REF_NAME#v}"
 RELEASE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/tag/${GITHUB_REF_NAME}"
 API_URL="${WP_BASE_URL%/}/wp-json/wp/v2/posts"
+ANNOUNCE_DIR=".github/announce"
 
 # Prints the changelog body for VERSION from the given changes file.
 extract_section() {
@@ -67,7 +75,10 @@ if [ -f "docs/ja/changes.md" ]; then
     JA_NOTES_MD="$(extract_section docs/ja/changes.md)"
     if [ -n "${JA_NOTES_MD}" ]; then
         JA_NOTES_HTML="$(md_to_html "${JA_NOTES_MD}")"
-        JA_TITLE="${PLUGIN_NAME} ${GITHUB_REF_NAME} をリリースしました"
+        JA_TITLE="WordPress向けAI検索「${PLUGIN_NAME}」${GITHUB_REF_NAME} 提供開始"
+        if [ -f "${ANNOUNCE_DIR}/${GITHUB_REF_NAME}.ja.txt" ]; then
+            JA_TITLE="${JA_TITLE}｜$(head -n 1 "${ANNOUNCE_DIR}/${GITHUB_REF_NAME}.ja.txt")"
+        fi
         JA_CONTENT="<p>${PLUGIN_NAME} ${VERSION} をリリースしました。主な変更点は以下の通りです。</p>${JA_NOTES_HTML}<p>ダウンロード: <a href=\"${RELEASE_URL}\">GitHub Releases</a></p>"
         JA_POST_ID="$(create_draft "${JA_TITLE}" "${JA_CONTENT}" "ja" "null" "${WP_JA_CATEGORY_ID:-}" | jq -r '.id // empty')"
         echo "Japanese draft created: id=${JA_POST_ID:-unknown}"
@@ -85,6 +96,10 @@ if [ -z "${EN_NOTES_MD}" ]; then
 fi
 EN_NOTES_HTML="$(md_to_html "${EN_NOTES_MD}")"
 EN_TITLE="${PLUGIN_NAME} ${GITHUB_REF_NAME} Released"
+EN_TITLE_FILE="${ANNOUNCE_DIR}/${GITHUB_REF_NAME}.en.txt"
+if [ -f "${EN_TITLE_FILE}" ]; then
+    EN_TITLE="${EN_TITLE} | $(head -n 1 "${EN_TITLE_FILE}")"
+fi
 EN_CONTENT="<p>${PLUGIN_NAME} ${VERSION} is now available. Highlights:</p>${EN_NOTES_HTML}<p>Download: <a href=\"${RELEASE_URL}\">GitHub Releases</a></p>"
 
 TRANSLATIONS="null"
