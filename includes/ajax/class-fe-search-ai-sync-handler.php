@@ -238,6 +238,7 @@ class FE_Search_AI_Sync_Handler {
 
 		$args = [
 			'post_status'    => 'publish',
+			'has_password'   => false,
 			'fields'         => 'ids',
 			'cache_results'  => false,
 			'posts_per_page' => $limit,
@@ -390,6 +391,7 @@ class FE_Search_AI_Sync_Handler {
 					'posts_per_page' => -1,
 					'fields'         => 'ids',
 					'post_status'    => 'publish',
+					'has_password'   => false,
 				]
 			)
 		);
@@ -425,6 +427,7 @@ class FE_Search_AI_Sync_Handler {
 				'post_type'      => $post_types_to_sync,
 				'posts_per_page' => -1,
 				'fields'         => 'ids',
+				'has_password'   => false,
 				'date_query'     => [
 					[
 						'column' => 'post_modified_gmt',
@@ -546,6 +549,7 @@ class FE_Search_AI_Sync_Handler {
 					'posts_per_page'      => count( $batch_ids ),
 					'ignore_sticky_posts' => 1,
 					'post_status'         => 'publish',
+					'has_password'        => false,
 				]
 			);
 
@@ -1313,6 +1317,8 @@ class FE_Search_AI_Sync_Handler {
 			];
 		}
 
+		$results = $this->filter_chunks_by_post_visibility( $results );
+
 		// Log Qdrant search completion
 		\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
 			'INFO',
@@ -1608,7 +1614,7 @@ class FE_Search_AI_Sync_Handler {
 			];
 		}
 
-		return $results;
+		return $this->filter_chunks_by_post_visibility( $results );
 	}
 
 	/**
@@ -1669,7 +1675,64 @@ class FE_Search_AI_Sync_Handler {
 			];
 		}
 
-		return $results;
+		return $this->filter_chunks_by_post_visibility( $results );
+	}
+
+	/**
+	 * Removes chunks belonging to posts that are not publicly viewable.
+	 *
+	 * Defense in depth: indexing excludes unpublished and password-protected
+	 * posts, but stale rows can linger when a post is protected or unpublished
+	 * after indexing. Chunks whose post is missing, not published, or password
+	 * protected are dropped before they reach the LLM prompt. Chunks without a
+	 * resolvable post ID are dropped as well because their visibility cannot
+	 * be verified.
+	 *
+	 * @since 1.4.1
+	 * @param array $chunks Retrieved chunk rows; each may contain a 'post_id' key.
+	 * @return array Chunks limited to publicly viewable posts.
+	 */
+	public function filter_chunks_by_post_visibility( $chunks ) {
+		if ( ! is_array( $chunks ) || empty( $chunks ) ) {
+			return [];
+		}
+
+		$post_ids = [];
+		foreach ( $chunks as $chunk ) {
+			if ( isset( $chunk['post_id'] ) && (int) $chunk['post_id'] > 0 ) {
+				$post_ids[] = (int) $chunk['post_id'];
+			}
+		}
+
+		if ( empty( $post_ids ) ) {
+			return [];
+		}
+
+		$post_ids      = array_values( array_unique( $post_ids ) );
+		$viewable_ids  = array_map(
+			'intval',
+			get_posts(
+				[
+					'post__in'            => $post_ids,
+					'post_type'           => 'any',
+					'post_status'         => 'publish',
+					'has_password'        => false,
+					'posts_per_page'      => count( $post_ids ),
+					'fields'              => 'ids',
+					'ignore_sticky_posts' => true,
+				]
+			)
+		);
+		$viewable_keys = array_fill_keys( $viewable_ids, true );
+
+		return array_values(
+			array_filter(
+				$chunks,
+				function ( $chunk ) use ( $viewable_keys ) {
+					return isset( $viewable_keys[ (int) ( $chunk['post_id'] ?? 0 ) ] );
+				}
+			)
+		);
 	}
 
 	/**

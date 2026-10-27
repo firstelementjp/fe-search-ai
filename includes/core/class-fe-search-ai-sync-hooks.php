@@ -136,10 +136,16 @@ class FE_Search_AI_Sync_Hooks {
 
 		if (
 			empty( $pt_options['enabled'] ) ||
-			'publish' !== $post->post_status ||
 			wp_is_post_autosave( $post_id ) ||
 			wp_is_post_revision( $post_id )
 		) {
+			return;
+		}
+
+		// A post that is no longer publicly viewable (unpublished or password
+		// protected) must not remain in the index.
+		if ( 'publish' !== $post->post_status || '' !== $post->post_password ) {
+			$this->remove_post_from_sync( $post_id );
 			return;
 		}
 
@@ -315,7 +321,14 @@ class FE_Search_AI_Sync_Hooks {
 		$sync_targets = $this->options['sync']['targets'] ?? [];
 		$pt_options   = $sync_targets[ $post->post_type ] ?? [];
 
-		if ( empty( $pt_options['enabled'] ) || 'publish' !== $post->post_status ) {
+		if ( empty( $pt_options['enabled'] ) ) {
+			return;
+		}
+
+		// Drop stale rows when the post is no longer publicly viewable
+		// (unpublished or password protected), then skip indexing.
+		if ( 'publish' !== $post->post_status || '' !== $post->post_password ) {
+			$this->delete_post_from_index( $post_id );
 			return;
 		}
 

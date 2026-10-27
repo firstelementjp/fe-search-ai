@@ -264,4 +264,126 @@ class SyncHooksTest extends TestCase {
 			'Queue lock should be released after processing'
 		);
 	}
+
+	/**
+	 * Test sync_single_post_on_update does not queue a password-protected post
+	 *
+	 * @since 1.4.1
+	 * @return void
+	 */
+	public function test_sync_single_post_on_update_skips_password_protected_post() {
+		update_option(
+			'fe_search_ai_settings',
+			[
+				'sync' => [
+					'targets' => [
+						'post' => [ 'enabled' => true ],
+					],
+				],
+			]
+		);
+
+		$sync_handler = $this->createMock( 'FESearchAI\Ajax\FE_Search_AI_Sync_Handler' );
+		$sync_hooks   = new \FESearchAI\Core\FE_Search_AI_Sync_Hooks( $sync_handler );
+
+		$post_id = wp_insert_post(
+			[
+				'post_title'    => 'test_password_protected_post',
+				'post_content'  => 'Secret content',
+				'post_status'   => 'publish',
+				'post_password' => 'secret-pass',
+			]
+		);
+
+		$sync_hooks->sync_single_post_on_update( $post_id, get_post( $post_id ) );
+
+		$queue = get_option( 'fe_search_ai_sync_queue', [] );
+		$this->assertArrayNotHasKey( $post_id, $queue, 'Password-protected post should not be queued for indexing' );
+
+		wp_delete_post( $post_id, true );
+	}
+
+	/**
+	 * Test sync_single_post_on_update removes a queued post once it becomes protected
+	 *
+	 * @since 1.4.1
+	 * @return void
+	 */
+	public function test_sync_single_post_on_update_removes_post_when_protected() {
+		update_option(
+			'fe_search_ai_settings',
+			[
+				'sync' => [
+					'targets' => [
+						'post' => [ 'enabled' => true ],
+					],
+				],
+			]
+		);
+
+		$sync_handler = $this->createMock( 'FESearchAI\Ajax\FE_Search_AI_Sync_Handler' );
+		$sync_hooks   = new \FESearchAI\Core\FE_Search_AI_Sync_Hooks( $sync_handler );
+
+		$post_id = wp_insert_post(
+			[
+				'post_title'   => 'test_post_becoming_protected',
+				'post_content' => 'Content',
+				'post_status'  => 'publish',
+			]
+		);
+
+		$sync_hooks->enqueue_post_for_sync( $post_id );
+		$queue = get_option( 'fe_search_ai_sync_queue', [] );
+		$this->assertArrayHasKey( $post_id, $queue, 'Post should be queued before protection' );
+
+		wp_update_post(
+			[
+				'ID'            => $post_id,
+				'post_password' => 'secret-pass',
+			]
+		);
+
+		$sync_hooks->sync_single_post_on_update( $post_id, get_post( $post_id ) );
+
+		$queue = get_option( 'fe_search_ai_sync_queue', [] );
+		$this->assertArrayNotHasKey( $post_id, $queue, 'Protected post should be removed from the sync queue' );
+
+		wp_delete_post( $post_id, true );
+	}
+
+	/**
+	 * Test index_post never chunks a password-protected post
+	 *
+	 * @since 1.4.1
+	 * @return void
+	 */
+	public function test_index_post_skips_password_protected_post() {
+		update_option(
+			'fe_search_ai_settings',
+			[
+				'sync' => [
+					'targets' => [
+						'post' => [ 'enabled' => true ],
+					],
+				],
+			]
+		);
+
+		$sync_handler = $this->createMock( 'FESearchAI\Ajax\FE_Search_AI_Sync_Handler' );
+		$sync_handler->expects( $this->never() )->method( 'create_chunks_from_post' );
+		$sync_hooks = new \FESearchAI\Core\FE_Search_AI_Sync_Hooks( $sync_handler );
+
+		$post_id = wp_insert_post(
+			[
+				'post_title'    => 'test_index_skip_protected',
+				'post_content'  => 'Secret content',
+				'post_status'   => 'publish',
+				'post_password' => 'secret-pass',
+			]
+		);
+
+		$sync_hooks->index_post( $post_id );
+
+		wp_delete_post( $post_id, true );
+	}
 }

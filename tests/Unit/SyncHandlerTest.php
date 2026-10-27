@@ -290,4 +290,75 @@ class SyncHandlerTest extends TestCase {
 		$handler = new \FESearchAI\Ajax\FE_Search_AI_Sync_Handler();
 		$this->assertTrue( method_exists( $handler, 'get_embeddings_via_selected_provider' ), 'get_embeddings_via_selected_provider method should exist' );
 	}
+
+	/**
+	 * Test filter_chunks_by_post_visibility drops non-public posts.
+	 *
+	 * Chunks referencing password-protected, unpublished, or deleted posts
+	 * must be removed before they reach the LLM prompt.
+	 *
+	 * @since 1.4.1
+	 * @return void
+	 */
+	public function test_filter_chunks_by_post_visibility_drops_non_public_posts() {
+		$handler = new \FESearchAI\Ajax\FE_Search_AI_Sync_Handler();
+
+		$public_id    = wp_insert_post(
+			[
+				'post_title'   => 'test_visibility_public',
+				'post_content' => 'Public content',
+				'post_status'  => 'publish',
+			]
+		);
+		$protected_id = wp_insert_post(
+			[
+				'post_title'    => 'test_visibility_protected',
+				'post_content'  => 'Secret content',
+				'post_status'   => 'publish',
+				'post_password' => 'secret-pass',
+			]
+		);
+		$draft_id     = wp_insert_post(
+			[
+				'post_title'   => 'test_visibility_draft',
+				'post_content' => 'Draft content',
+				'post_status'  => 'draft',
+			]
+		);
+
+		$chunks = [
+			[ 'post_id' => $public_id, 'content_chunk' => 'public chunk' ],
+			[ 'post_id' => $protected_id, 'content_chunk' => 'protected chunk' ],
+			[ 'post_id' => $draft_id, 'content_chunk' => 'draft chunk' ],
+			[ 'post_id' => 999999999, 'content_chunk' => 'missing post chunk' ],
+			[ 'post_id' => 0, 'content_chunk' => 'unresolvable chunk' ],
+		];
+
+		$filtered = $handler->filter_chunks_by_post_visibility( $chunks );
+		$ids      = array_map(
+			function ( $chunk ) {
+				return (int) $chunk['post_id'];
+			},
+			$filtered
+		);
+
+		$this->assertSame( [ $public_id ], array_values( $ids ), 'Only publicly viewable post chunks should remain' );
+
+		wp_delete_post( $public_id, true );
+		wp_delete_post( $protected_id, true );
+		wp_delete_post( $draft_id, true );
+	}
+
+	/**
+	 * Test filter_chunks_by_post_visibility handles empty input.
+	 *
+	 * @since 1.4.1
+	 * @return void
+	 */
+	public function test_filter_chunks_by_post_visibility_empty_input() {
+		$handler = new \FESearchAI\Ajax\FE_Search_AI_Sync_Handler();
+
+		$this->assertSame( [], $handler->filter_chunks_by_post_visibility( [] ), 'Empty array should return empty array' );
+		$this->assertSame( [], $handler->filter_chunks_by_post_visibility( null ), 'Non-array input should return empty array' );
+	}
 }
