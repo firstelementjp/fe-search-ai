@@ -1,0 +1,1 @@
+Security fixes (input caps, XSS, nonce split)
