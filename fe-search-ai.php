@@ -75,6 +75,7 @@ add_action(
 		$sync_handler   = new FESearchAI\Ajax\FE_Search_AI_Sync_Handler();
 
 		\FESearchAI\Core\FE_Search_AI_Cohere_Reranker::register();
+		\FESearchAI\Core\FE_Search_AI_Contextual_Retrieval::register();
 		\FESearchAI\Core\FE_Search_AI_Retrieval_Trace_Recorder::register();
 		\FESearchAI\Core\FE_Search_AI_Multilingual::register();
 

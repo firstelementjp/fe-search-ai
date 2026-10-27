@@ -320,7 +320,24 @@ class FE_Search_AI_Chat_Handler {
 					$sequence_id
 				);
 
-				$similar_chunks = $this->sync_handler->find_similar_chunks( $question );
+				// Expand the retrieval query with entities from recent history so
+				// context-dependent follow-ups ("Is there a cheaper plan?") still
+				// anchor retrieval to the topic under discussion. The original
+				// question remains what is logged and sent to the AI provider.
+				$retrieval_question = \FESearchAI\Core\FE_Search_AI_Contextual_Retrieval::build_retrieval_query( $question, $history, is_array( $this->options ) ? $this->options : [] );
+				if ( $retrieval_question !== $question ) {
+					\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
+						'DEBUG',
+						'Retrieval query expanded with conversation context.',
+						[
+							'question_length'        => strlen( $question ),
+							'retrieval_query_length' => strlen( $retrieval_question ),
+						],
+						$sequence_id
+					);
+				}
+
+				$similar_chunks = $this->sync_handler->find_similar_chunks( $retrieval_question );
 
 				/**
 				 * Filters the array of retrieved context chunks.
@@ -339,7 +356,7 @@ class FE_Search_AI_Chat_Handler {
 				$GLOBALS['fe_search_ai_current_sequence_id'] = $sequence_id;
 				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 				// Hook name is properly prefixed with fe_search_ai_.
-				$similar_chunks = apply_filters( 'fe_search_ai_retrieved_chunks', $similar_chunks, $question );
+				$similar_chunks = apply_filters( 'fe_search_ai_retrieved_chunks', $similar_chunks, $retrieval_question );
 
 				// Guarantee that chunks from the page the visitor is viewing are
 				// represented in the context, so demonstratives like "this"

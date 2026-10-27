@@ -27,19 +27,25 @@ FE Search AIは、プロバイダー、検索、インデックス、チャッ�
 
 ## 検索・ランキングフィルター
 
-| フック                                            | フィルター値・追加引数                                                       | 用途                                                                                                                               |
-| ------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `fe_search_ai_qdrant_search_limit`                | `int $limit`, `string $question`                                             | Qdrantから取得する候補数を変更します。初期値は設定済みのリランク初期候補数です。                                                   |
-| `fe_search_ai_max_chunks_for_llm`                 | `int $max_chunks`, `string $question`                                        | モデルのコンテキスト用に返すBM25チャンクの最大数を変更します。初期値：`100`。                                                      |
-| `fe_search_ai_bm25_candidate_limit`               | `int $limit`, `string $question`                                             | BM25スコアリング前に評価するキーワードインデックス行数を変更します。初期値：`500`と`$max_chunks * 20`の大きい方。                  |
-| `fe_search_ai_bm25_k1`                            | `float $k1`, `string $question`                                              | BM25の単語頻度飽和パラメーターを変更します。初期値：`1.2`。0以下は初期値に戻ります。                                               |
-| `fe_search_ai_bm25_b`                             | `float $b`, `string $question`                                               | BM25の文書長正規化パラメーターを変更します。初期値：`0.75`。有効範囲は`0`から`1`です。                                             |
-| `fe_search_ai_hybrid_candidate_limit`             | `int $limit`, `string $question`                                             | ハイブリッド検索で各検索元から取得する候補数を変更します。設定値の初期値は`50`です。                                               |
-| `fe_search_ai_hybrid_rrf_k`                       | `int $k`, `string $question`                                                 | Reciprocal Rank Fusionの定数を変更します。初期値：`60`。                                                                           |
-| `fe_search_ai_hybrid_search_limit`                | `int $limit`, `string $question`                                             | 統合後のハイブリッド検索結果の最大数を変更します。初期値：`100`。                                                                  |
-| `fe_search_ai_page_context_chunk_limit`           | `int $limit`, `string $question`                                             | 訪問者が閲覧中のページからマージするチャンクの最大数を変更します（Page Context機能）。初期値：`3`。                                |
-| `fe_search_ai_retrieval_trace_payload`            | `array $payload`, `array $chunks`, `string $question`, `string $sequence_id` | ログ記録、アクション発火、任意のDB保存より前に、安全化された検索トレースペイロードを変更します。                                   |
-| `fe_search_ai_enable_retrieval_trace_persistence` | `bool $enabled`, `array $trace`                                              | 検索トレースのDB保存を有効にします。フィルター前の既定値は「Retrieval Trace Persistence」設定から取得されます（初期値：`false`）。 |
+| フック                                            | フィルター値・追加引数                                                                | 用途                                                                                                                                 |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `fe_search_ai_qdrant_search_limit`                | `int $limit`, `string $question`                                                      | Qdrantから取得する候補数を変更します。初期値は設定済みのリランク初期候補数です。                                                     |
+| `fe_search_ai_max_chunks_for_llm`                 | `int $max_chunks`, `string $question`                                                 | モデルのコンテキスト用に返すBM25チャンクの最大数を変更します。初期値：`100`。                                                        |
+| `fe_search_ai_bm25_candidate_limit`               | `int $limit`, `string $question`                                                      | BM25スコアリング前に評価するキーワードインデックス行数を変更します。初期値：`500`と`$max_chunks * 20`の大きい方。                    |
+| `fe_search_ai_bm25_k1`                            | `float $k1`, `string $question`                                                       | BM25の単語頻度飽和パラメーターを変更します。初期値：`1.2`。0以下は初期値に戻ります。                                                 |
+| `fe_search_ai_bm25_b`                             | `float $b`, `string $question`                                                        | BM25の文書長正規化パラメーターを変更します。初期値：`0.75`。有効範囲は`0`から`1`です。                                               |
+| `fe_search_ai_hybrid_candidate_limit`             | `int $limit`, `string $question`                                                      | ハイブリッド検索で各検索元から取得する候補数を変更します。設定値の初期値は`50`です。                                                 |
+| `fe_search_ai_hybrid_rrf_k`                       | `int $k`, `string $question`                                                          | Reciprocal Rank Fusionの定数を変更します。初期値：`60`。                                                                             |
+| `fe_search_ai_hybrid_search_limit`                | `int $limit`, `string $question`                                                      | 統合後のハイブリッド検索結果の最大数を変更します。初期値：`100`。                                                                    |
+| `fe_search_ai_page_context_chunk_limit`           | `int $limit`, `string $question`                                                      | 訪問者が閲覧中のページからマージするチャンクの最大数を変更します（Page Context機能）。初期値：`3`。                                  |
+| `fe_search_ai_max_chunks_per_post`                | `int $max`, `string $question`                                                        | リランク前に1投稿あたり保持する検索チャンク数の上限を変更します。初期値：`2`。`0`以下で無効化されます。                              |
+| `fe_search_ai_contextual_query_enabled`           | `bool $enabled`, `array $settings`                                                    | 文脈を考慮したクエリ拡張を有効化します。フィルター前の既定値は「Contextual Query Expansion」設定から取得されます（初期値：`true`）。 |
+| `fe_search_ai_contextual_query_history_messages`  | `int $messages`, `string $question`                                                   | エンティティ候補を抽出する対象となる直近の会話履歴メッセージ数を変更します。初期値：`6`。                                            |
+| `fe_search_ai_contextual_query_max_entities`      | `int $max_entities`, `string $question`                                               | 検索クエリへ追加する履歴由来エンティティ語の最大数を変更します。初期値：`3`。`0`で追加しません。                                     |
+| `fe_search_ai_contextual_query_stop_terms`        | `string[] $stop_terms`, `string $text`                                                | 会話履歴から抽出するエンティティ候補から除外する汎用語の一覧を変更します。                                                           |
+| `fe_search_ai_contextual_retrieval_query`         | `string $retrieval_query`, `string $question`, `string[] $entities`, `array $history` | 検索に使用する拡張クエリを変更します。AIへ送られるプロンプトは元の質問のままです。                                                   |
+| `fe_search_ai_retrieval_trace_payload`            | `array $payload`, `array $chunks`, `string $question`, `string $sequence_id`          | ログ記録、アクション発火、任意のDB保存より前に、安全化された検索トレースペイロードを変更します。                                     |
+| `fe_search_ai_enable_retrieval_trace_persistence` | `bool $enabled`, `array $trace`                                                       | 検索トレースのDB保存を有効にします。フィルター前の既定値は「Retrieval Trace Persistence」設定から取得されます（初期値：`false`）。   |
 
 ## 同期・チャンク・要約フィルター
 

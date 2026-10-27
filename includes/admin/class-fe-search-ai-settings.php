@@ -478,6 +478,7 @@ class FE_Search_AI_Settings {
 		add_settings_field( 'fe_search_ai_debug_mode_enabled', __( 'Debug Mode', 'fe-search-ai' ), [ $this, 'debug_mode_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
 		add_settings_field( 'fe_search_ai_log_retention_days', __( 'Log Retention (days)', 'fe-search-ai' ), [ $this, 'log_retention_days_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
 		add_settings_field( 'fe_search_ai_retrieval_trace', __( 'Retrieval Trace Persistence', 'fe-search-ai' ), [ $this, 'retrieval_trace_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
+		add_settings_field( 'fe_search_ai_contextual_query', __( 'Contextual Query Expansion', 'fe-search-ai' ), [ $this, 'contextual_query_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
 
 		// Data delete
 		add_settings_section( 'fe_search_ai_data_section', __( 'Data Management', 'fe-search-ai' ), null, $page_slug );
@@ -1873,6 +1874,33 @@ class FE_Search_AI_Settings {
 	}
 
 	/**
+	 * Renders the HTML for the contextual query expansion setting.
+	 *
+	 * Provides a checkbox to enable or disable deterministic entity expansion
+	 * of retrieval queries from recent conversation history. Enabled by
+	 * default so context-dependent follow-up questions retrieve relevant
+	 * content even when they omit the subject.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function contextual_query_field_html() {
+		$advanced_options = $this->options['advanced'] ?? [];
+		$is_enabled       = ! isset( $advanced_options['contextual_query'] ) || ! empty( $advanced_options['contextual_query'] );
+		?>
+		<fieldset>
+			<label>
+				<input type="checkbox" name="fe_search_ai_settings[advanced][contextual_query]" value="1" <?php checked( $is_enabled ); ?>>
+				<?php esc_html_e( 'Expand retrieval queries with conversation context', 'fe-search-ai' ); ?>
+			</label>
+			<p class="description">
+				<?php esc_html_e( 'When a follow-up question omits the subject (e.g. "Is there a cheaper plan?"), entity terms from recent conversation history are appended to the retrieval query. Enabled by default. The expanded query is used only for search — the AI still receives the original question.', 'fe-search-ai' ); ?>
+			</p>
+		</fieldset>
+		<?php
+	}
+
+	/**
 	 * Renders the HTML for the Japanese tokenizer settings section.
 	 *
 	 * This method outputs form fields for selecting the Japanese tokenization
@@ -2867,6 +2895,7 @@ class FE_Search_AI_Settings {
 		$new_input['advanced']['log_retention_days']             = min( 365, max( 1, absint( $input['advanced']['log_retention_days'] ?? 30 ) ) );
 		$new_input['advanced']['retrieval_trace_persistence']    = ! empty( $input['advanced']['retrieval_trace_persistence'] );
 		$new_input['advanced']['retrieval_trace_retention_days'] = min( 365, max( 1, absint( $input['advanced']['retrieval_trace_retention_days'] ?? 30 ) ) );
+		$new_input['advanced']['contextual_query']               = ! empty( $input['advanced']['contextual_query'] );
 
 		// License data is managed by a dedicated option (fe_search_ai_license).
 		// DB version is handled by the activator, not here.
