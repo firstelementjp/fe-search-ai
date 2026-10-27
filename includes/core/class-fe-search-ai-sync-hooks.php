@@ -294,6 +294,7 @@ class FE_Search_AI_Sync_Hooks {
 		}
 
 		$this->delete_post_from_index( $post_id );
+		$this->sync_handler->delete_vectors_from_qdrant( $post_id );
 	}
 
 	/**
@@ -329,6 +330,7 @@ class FE_Search_AI_Sync_Hooks {
 		// (unpublished or password protected), then skip indexing.
 		if ( 'publish' !== $post->post_status || '' !== $post->post_password ) {
 			$this->delete_post_from_index( $post_id );
+			$this->sync_handler->delete_vectors_from_qdrant( $post_id );
 			return;
 		}
 
@@ -459,9 +461,9 @@ class FE_Search_AI_Sync_Hooks {
 		 * Allows developers using other multilingual plugins to provide the correct language code.
 		 *
 		 * @since 0.9.0
-		 * @param  string  $lang_code The detected language code (e.g., 'en', 'ja').
-		 * @param  int     $post_id   The ID of the post being indexed.
-		 * @param  WP_Post $post      The post object.
+		 * @param  string   $lang_code The detected language code (e.g., 'en', 'ja').
+		 * @param  int      $post_id   The ID of the post being indexed.
+		 * @param  \WP_Post $post      The post object.
 		 */
 		// Hook name is properly prefixed with fe_search_ai_.
 		return apply_filters( 'fe_search_ai_post_language_code', $lang_code, $post_id, $post );

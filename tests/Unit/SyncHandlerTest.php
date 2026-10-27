@@ -361,4 +361,107 @@ class SyncHandlerTest extends TestCase {
 		$this->assertSame( [], $handler->filter_chunks_by_post_visibility( [] ), 'Empty array should return empty array' );
 		$this->assertSame( [], $handler->filter_chunks_by_post_visibility( null ), 'Non-array input should return empty array' );
 	}
+
+	/**
+	 * Test delete_vectors_from_qdrant sends a filtered points/delete request.
+	 *
+	 * @since 1.4.1
+	 * @return void
+	 */
+	public function test_delete_vectors_from_qdrant_sends_delete_request() {
+		$previous_options = get_option( 'fe_search_ai_settings', [] );
+		update_option(
+			'fe_search_ai_settings',
+			[
+				'vector' => [
+					'store'  => 'qdrant',
+					'qdrant' => [
+						'endpoint'   => 'https://qdrant.example.test',
+						'collection' => 'feai_test',
+						'api_key'    => \FESearchAI\Core\FE_Search_AI_Encryption_Helper::encrypt( 'test-qdrant-key' ),
+					],
+				],
+			]
+		);
+
+		$captured    = null;
+		$http_filter = function ( $preempt, $args, $url ) use ( &$captured ) {
+			$captured = [
+				'args' => $args,
+				'url'  => $url,
+			];
+			return [
+				'headers'  => [],
+				'body'     => '{"result":true}',
+				'response' => [
+					'code'    => 200,
+					'message' => 'OK',
+				],
+				'cookies'  => [],
+				'filename' => null,
+			];
+		};
+		add_filter( 'pre_http_request', $http_filter, 10, 3 );
+
+		try {
+			$handler = new \FESearchAI\Ajax\FE_Search_AI_Sync_Handler();
+			$handler->delete_vectors_from_qdrant( 42 );
+
+			$this->assertNotNull( $captured, 'A delete request should be sent to Qdrant' );
+			$this->assertSame(
+				'https://qdrant.example.test/collections/feai_test/points/delete',
+				$captured['url'],
+				'Request should target the points/delete endpoint'
+			);
+
+			$body = json_decode( $captured['args']['body'], true );
+			$must = $body['filter']['must'] ?? [];
+			$this->assertContains(
+				[ 'key' => 'post_id', 'match' => [ 'value' => 42 ] ],
+				$must,
+				'Filter should match the post_id payload field'
+			);
+			$this->assertContains(
+				[ 'key' => 'site_id', 'match' => [ 'value' => get_current_blog_id() ] ],
+				$must,
+				'Filter should be scoped to the current site'
+			);
+		} finally {
+			remove_filter( 'pre_http_request', $http_filter, 10 );
+			update_option( 'fe_search_ai_settings', $previous_options );
+		}
+	}
+
+	/**
+	 * Test delete_vectors_from_qdrant is a no-op when Qdrant is disabled.
+	 *
+	 * @since 1.4.1
+	 * @return void
+	 */
+	public function test_delete_vectors_from_qdrant_noop_when_disabled() {
+		$previous_options = get_option( 'fe_search_ai_settings', [] );
+		update_option(
+			'fe_search_ai_settings',
+			[
+				'vector' => [ 'store' => 'mariadb' ],
+			]
+		);
+
+		$requested   = false;
+		$http_filter = function ( $preempt ) use ( &$requested ) {
+			$requested = true;
+			return $preempt;
+		};
+		add_filter( 'pre_http_request', $http_filter, 10, 1 );
+
+		try {
+			$handler = new \FESearchAI\Ajax\FE_Search_AI_Sync_Handler();
+			$handler->delete_vectors_from_qdrant( 42 );
+
+			$this->assertFalse( $requested, 'No HTTP request should be made when Qdrant is disabled' );
+		} finally {
+			remove_filter( 'pre_http_request', $http_filter, 10 );
+			update_option( 'fe_search_ai_settings', $previous_options );
+		}
+	}
 }

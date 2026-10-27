@@ -183,6 +183,10 @@ class FE_Search_AI_Sync_Handler {
 		// Table name is interpolated but controlled internally.
 		$wpdb->query( "TRUNCATE TABLE `{$index_table}`" );
 
+		// Drop all Qdrant points for this site so that posts no longer
+		// eligible (protected, unpublished, excluded) do not linger.
+		$this->delete_all_site_vectors_from_qdrant();
+
 		// Normalize sync options structure to a safe array using new schema.
 		$sync_root = $this->options['sync'] ?? [];
 		if ( ! is_array( $sync_root ) ) {
@@ -400,6 +404,7 @@ class FE_Search_AI_Sync_Handler {
 		if ( ! empty( $deleted_post_ids ) ) {
 			foreach ( $deleted_post_ids as $post_id ) {
 				$GLOBALS['fe_search_ai_sync_hooks']->delete_post_from_index( $post_id );
+				$this->delete_vectors_from_qdrant( $post_id );
 			}
 		}
 
@@ -842,6 +847,129 @@ class FE_Search_AI_Sync_Handler {
 				'Qdrant upsert returned non-2xx status.',
 				[
 					'post_id'              => $post->ID,
+					'http_status'          => $status_code,
+					'response_body_length' => mb_strlen( $body_text ),
+					'error_summary'        => mb_substr( $body_text, 0, 300 ),
+				]
+			);
+		}
+	}
+
+	/**
+	 * Deletes all Qdrant points associated with a post.
+	 *
+	 * Points are removed via a payload filter on `post_id` (and `site_id` so
+	 * shared collections on multisite installs are not affected), since the
+	 * exact point IDs depend on the chunk count at indexing time. Failures
+	 * are logged but never interrupt the caller: retrieval-time visibility
+	 * filtering keeps stale points out of answers regardless.
+	 *
+	 * @since 1.4.1
+	 * @param int $post_id The post ID whose points should be deleted.
+	 * @return void
+	 */
+	public function delete_vectors_from_qdrant( $post_id ) {
+		$post_id = (int) $post_id;
+		if ( $post_id <= 0 ) {
+			return;
+		}
+
+		$this->delete_qdrant_points(
+			[
+				[
+					'key'   => 'post_id',
+					'match' => [ 'value' => $post_id ],
+				],
+				[
+					'key'   => 'site_id',
+					'match' => [ 'value' => get_current_blog_id() ],
+				],
+			]
+		);
+	}
+
+	/**
+	 * Deletes every Qdrant point belonging to the current site.
+	 *
+	 * Called during a full rebuild so that points for posts no longer
+	 * eligible for indexing (e.g. newly password-protected posts) do not
+	 * linger in the collection.
+	 *
+	 * @since 1.4.1
+	 * @return void
+	 */
+	private function delete_all_site_vectors_from_qdrant() {
+		$this->delete_qdrant_points(
+			[
+				[
+					'key'   => 'site_id',
+					'match' => [ 'value' => get_current_blog_id() ],
+				],
+			]
+		);
+	}
+
+	/**
+	 * Issues a Qdrant points/delete request for the given must-conditions.
+	 *
+	 * No-op when Qdrant is not configured or not enabled as a vector store.
+	 *
+	 * @since 1.4.1
+	 * @param array $must List of Qdrant filter conditions combined with AND.
+	 * @return void
+	 */
+	private function delete_qdrant_points( $must ) {
+		$settings      = get_option( 'fe_search_ai_settings', [] );
+		$vector_config = isset( $settings['vector'] ) && is_array( $settings['vector'] ) ? $settings['vector'] : [];
+		$qdrant_config = isset( $vector_config['qdrant'] ) && is_array( $vector_config['qdrant'] ) ? $vector_config['qdrant'] : [];
+		$vector_store  = $vector_config['store'] ?? 'mariadb';
+		$stores        = isset( $vector_config['stores'] ) && is_array( $vector_config['stores'] ) ? $vector_config['stores'] : [];
+		$qdrant_store  = isset( $stores['qdrant'] ) ? ! empty( $stores['qdrant'] ) : ( 'qdrant' === $vector_store );
+
+		$endpoint   = isset( $qdrant_config['endpoint'] ) ? rtrim( $qdrant_config['endpoint'], '/' ) : '';
+		$collection = $qdrant_config['collection'] ?? '';
+		$api_key    = isset( $qdrant_config['api_key'] ) && ! empty( $qdrant_config['api_key'] )
+			? \FESearchAI\Core\FE_Search_AI_Encryption_Helper::decrypt( $qdrant_config['api_key'] )
+			: '';
+
+		if ( ! $qdrant_store || empty( $endpoint ) || empty( $collection ) || empty( $api_key ) ) {
+			return;
+		}
+
+		$body     = [ 'filter' => [ 'must' => $must ] ];
+		$url      = $endpoint . '/collections/' . rawurlencode( $collection ) . '/points/delete';
+		$response = wp_remote_request(
+			$url,
+			[
+				'method'  => 'POST',
+				'headers' => [
+					'Content-Type' => 'application/json',
+					'api-key'      => $api_key,
+				],
+				'body'    => wp_json_encode( $body ),
+				'timeout' => 20,
+			]
+		);
+
+		if ( is_wp_error( $response ) ) {
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
+				'ERROR',
+				'Qdrant delete request failed.',
+				[
+					'error_code'    => $response->get_error_code(),
+					'error_message' => $response->get_error_message(),
+				]
+			);
+			return;
+		}
+
+		$status_code = (int) wp_remote_retrieve_response_code( $response );
+		if ( $status_code < 200 || $status_code >= 300 ) {
+			$body_text = wp_remote_retrieve_body( $response );
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
+				'ERROR',
+				'Qdrant delete returned non-2xx status.',
+				[
 					'http_status'          => $status_code,
 					'response_body_length' => mb_strlen( $body_text ),
 					'error_summary'        => mb_substr( $body_text, 0, 300 ),
