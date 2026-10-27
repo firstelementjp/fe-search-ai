@@ -488,4 +488,172 @@ class ChatHandlerTest extends TestCase {
 			update_option( 'fe_search_ai_custom_prompts', $previous );
 		}
 	}
+
+	/**
+	 * Test sanitize_chat_history keeps only the most recent messages.
+	 *
+	 * @since 1.4.1
+	 * @return void
+	 */
+	public function test_sanitize_chat_history_limits_message_count() {
+		$sync_handler = $this->createMock( 'FESearchAI\Ajax\FE_Search_AI_Sync_Handler' );
+		$handler      = new \FESearchAI\Ajax\FE_Search_AI_Chat_Handler( $sync_handler );
+
+		$history = [];
+		for ( $i = 0; $i < 15; $i++ ) {
+			$history[] = [
+				'role'    => 'user',
+				'content' => 'message ' . $i,
+			];
+		}
+
+		$sanitized = $handler->sanitize_chat_history( $history );
+
+		$this->assertCount( 10, $sanitized, 'History should be capped at the default 10 messages' );
+		$this->assertSame( 'message 5', $sanitized[0]['content'], 'The oldest messages should be dropped first' );
+		$this->assertSame( 'message 14', $sanitized[9]['content'], 'The most recent message should be kept' );
+	}
+
+	/**
+	 * Test sanitize_chat_history truncates oversized message content.
+	 *
+	 * User messages pass through the question-length cap (1000 chars) while
+	 * assistant messages are bound by the per-message cap (2000 chars).
+	 *
+	 * @since 1.4.1
+	 * @return void
+	 */
+	public function test_sanitize_chat_history_truncates_long_messages() {
+		$sync_handler = $this->createMock( 'FESearchAI\Ajax\FE_Search_AI_Sync_Handler' );
+		$handler      = new \FESearchAI\Ajax\FE_Search_AI_Chat_Handler( $sync_handler );
+
+		$history = [
+			[
+				'role'    => 'user',
+				'content' => str_repeat( 'a', 5000 ),
+			],
+			[
+				'role'    => 'assistant',
+				'content' => str_repeat( 'b', 5000 ),
+			],
+		];
+
+		$sanitized = $handler->sanitize_chat_history( $history );
+
+		$this->assertCount( 2, $sanitized );
+		$this->assertSame( 1000, mb_strlen( $sanitized[0]['content'] ), 'User content should be capped by the question length limit' );
+		$this->assertSame( 2000, mb_strlen( $sanitized[1]['content'] ), 'Assistant content should be capped by the per-message limit' );
+	}
+
+	/**
+	 * Test sanitize_chat_history enforces the combined character budget.
+	 *
+	 * @since 1.4.1
+	 * @return void
+	 */
+	public function test_sanitize_chat_history_enforces_total_chars() {
+		$sync_handler = $this->createMock( 'FESearchAI\Ajax\FE_Search_AI_Sync_Handler' );
+		$handler      = new \FESearchAI\Ajax\FE_Search_AI_Chat_Handler( $sync_handler );
+
+		$history = [];
+		for ( $i = 0; $i < 10; $i++ ) {
+			$history[] = [
+				'role'    => 'assistant',
+				'content' => str_repeat( 'a', 1990 ) . $i,
+			];
+		}
+
+		$sanitized = $handler->sanitize_chat_history( $history );
+
+		$total = 0;
+		foreach ( $sanitized as $message ) {
+			$total += mb_strlen( $message['content'] );
+		}
+
+		$this->assertLessThanOrEqual( 16000, $total, 'Combined history content should stay within the total cap' );
+		$this->assertSame( str_repeat( 'a', 1990 ) . '9', $sanitized[ count( $sanitized ) - 1 ]['content'], 'The most recent message should be kept intact' );
+	}
+
+	/**
+	 * Test the chat input limits can be adjusted via filter.
+	 *
+	 * @since 1.4.1
+	 * @return void
+	 */
+	public function test_sanitize_chat_history_limits_are_filterable() {
+		$sync_handler = $this->createMock( 'FESearchAI\Ajax\FE_Search_AI_Sync_Handler' );
+		$handler      = new \FESearchAI\Ajax\FE_Search_AI_Chat_Handler( $sync_handler );
+
+		$history = [];
+		for ( $i = 0; $i < 5; $i++ ) {
+			$history[] = [
+				'role'    => 'user',
+				'content' => 'message ' . $i,
+			];
+		}
+
+		$override = function ( $limits ) {
+			$limits['history_max_messages'] = 3;
+			return $limits;
+		};
+		add_filter( 'fe_search_ai_chat_input_limits', $override );
+
+		try {
+			$sanitized = $handler->sanitize_chat_history( $history );
+			$this->assertCount( 3, $sanitized, 'Filtered message cap should apply' );
+			$this->assertSame( 'message 2', $sanitized[0]['content'], 'The newest messages should be kept' );
+		} finally {
+			remove_filter( 'fe_search_ai_chat_input_limits', $override );
+		}
+	}
+
+	/**
+	 * Test a zero message limit disables history forwarding entirely.
+	 *
+	 * @since 1.4.1
+	 * @return void
+	 */
+	public function test_sanitize_chat_history_zero_limit_disables_history() {
+		$sync_handler = $this->createMock( 'FESearchAI\Ajax\FE_Search_AI_Sync_Handler' );
+		$handler      = new \FESearchAI\Ajax\FE_Search_AI_Chat_Handler( $sync_handler );
+
+		$override = function ( $limits ) {
+			$limits['history_max_messages'] = 0;
+			return $limits;
+		};
+		add_filter( 'fe_search_ai_chat_input_limits', $override );
+
+		try {
+			$sanitized = $handler->sanitize_chat_history(
+				[
+					[
+						'role'    => 'user',
+						'content' => 'hello',
+					],
+				]
+			);
+			$this->assertSame( [], $sanitized, 'A zero message limit should drop all history' );
+		} finally {
+			remove_filter( 'fe_search_ai_chat_input_limits', $override );
+		}
+	}
+
+	/**
+	 * Test user questions are truncated through the shared preprocess filter.
+	 *
+	 * @since 1.4.1
+	 * @return void
+	 */
+	public function test_question_length_is_capped_by_preprocess_filter() {
+		$sync_handler = $this->createMock( 'FESearchAI\Ajax\FE_Search_AI_Sync_Handler' );
+		new \FESearchAI\Ajax\FE_Search_AI_Chat_Handler( $sync_handler );
+
+		$long_question = str_repeat( 'あ', 1500 );
+		$filtered      = apply_filters( 'fe_search_ai_preprocess_user_question', $long_question );
+
+		$this->assertSame( 1000, mb_strlen( $filtered ), 'Questions should be truncated to the configured cap' );
+
+		$short = apply_filters( 'fe_search_ai_preprocess_user_question', 'short question' );
+		$this->assertSame( 'short question', $short, 'Short questions should pass through unchanged' );
+	}
 }

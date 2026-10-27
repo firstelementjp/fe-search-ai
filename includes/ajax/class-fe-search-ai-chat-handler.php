@@ -96,6 +96,7 @@ class FE_Search_AI_Chat_Handler {
 		add_action( 'wp_ajax_fe_search_ai_manage_license', [ $this, 'ajax_manage_license' ] );
 		add_filter( 'fe_search_ai_preprocess_user_question', [ $this, 'filter_personal_data' ], 10 );
 		add_filter( 'fe_search_ai_preprocess_user_question', [ $this, 'filter_basic_injection_phrases' ], 20 );
+		add_filter( 'fe_search_ai_preprocess_user_question', [ $this, 'limit_question_length' ], 100 );
 		add_filter( 'fe_search_ai_preprocess_model_response', [ $this, 'filter_basic_injection_phrases' ], 20 );
 	}
 
@@ -257,8 +258,25 @@ class FE_Search_AI_Chat_Handler {
 			// Provider is selected from the provider.chat setting (e.g. openai/google/anthropic).
 			$provider = $this->options['provider']['chat'] ?? 'openai';
 
-			$question = sanitize_text_field( $request->get_param( 'question' ) );
-			$history  = json_decode( stripslashes( $request->get_param( 'history' ) ?? '[]' ), true );
+			$question     = sanitize_text_field( $request->get_param( 'question' ) );
+			$input_limits = $this->get_chat_input_limits();
+
+			// Cap the raw history payload before decoding so an oversized
+			// request cannot force a large json_decode() call. Requests that
+			// exceed the byte cap simply lose their conversation history.
+			$history     = [];
+			$history_raw = $request->get_param( 'history' ) ?? '';
+			if ( is_array( $history_raw ) ) {
+				$history = $history_raw;
+			} elseif ( is_string( $history_raw ) && '' !== $history_raw ) {
+				$max_bytes = (int) $input_limits['history_max_input_bytes'];
+				if ( $max_bytes < 0 || strlen( $history_raw ) <= $max_bytes ) {
+					$decoded = json_decode( stripslashes( $history_raw ), true );
+					if ( is_array( $decoded ) ) {
+						$history = $decoded;
+					}
+				}
+			}
 
 			/**
 			 * Filters the user's question right before it is processed.
@@ -521,6 +539,78 @@ class FE_Search_AI_Chat_Handler {
 	}
 
 	/**
+	 * Returns the input size limits applied to chat requests.
+	 *
+	 * These caps bound the volume of user-supplied text forwarded to paid AI
+	 * providers so anonymous visitors cannot inflate API costs with oversized
+	 * questions or conversation histories (cost-amplification mitigation).
+	 * A limit of 0 disables that input entirely; a negative value removes
+	 * the cap.
+	 *
+	 * @since 1.4.1
+	 * @return array {
+	 *     Chat input limits.
+	 *
+	 *     @type int $question_max_chars        Maximum characters allowed in a single question. Default 1000.
+	 *     @type int $history_max_messages      Maximum number of history messages kept. Default 10.
+	 *     @type int $history_max_message_chars Maximum characters kept per history message. Default 2000.
+	 *     @type int $history_max_total_chars   Maximum combined characters across kept history messages. Default 16000.
+	 *     @type int $history_max_input_bytes   Maximum byte size of the raw history request parameter. Default 262144.
+	 * }
+	 */
+	private function get_chat_input_limits() {
+		$default_limits = [
+			'question_max_chars'        => 1000,
+			'history_max_messages'      => 10,
+			'history_max_message_chars' => 2000,
+			'history_max_total_chars'   => 16000,
+			'history_max_input_bytes'   => 262144,
+		];
+
+		/**
+		 * Filters the input size limits applied to chat requests.
+		 *
+		 * Use this hook to relax or tighten the caps that bound the amount of
+		 * user-supplied text sent to paid AI providers. A value of 0 disables
+		 * the corresponding input; a negative value removes the cap.
+		 *
+		 * @since 1.4.1
+		 * @param array $default_limits The default input limits. See get_chat_input_limits() for keys.
+		 */
+		// Hook name is properly prefixed with fe_search_ai_.
+		$limits = apply_filters( 'fe_search_ai_chat_input_limits', $default_limits );
+
+		return wp_parse_args( is_array( $limits ) ? $limits : [], $default_limits );
+	}
+
+	/**
+	 * Truncates user-supplied question text to the configured maximum length.
+	 *
+	 * Runs on the `fe_search_ai_preprocess_user_question` filter at priority 100,
+	 * after PII masking and injection filtering, so every endpoint that routes
+	 * user text through that filter shares the same length cap. This bounds the
+	 * billable token volume a single request can send to paid AI providers.
+	 *
+	 * @since 1.4.1
+	 * @param mixed $text The question text being preprocessed.
+	 * @return mixed The (possibly truncated) question text.
+	 */
+	public function limit_question_length( $text ) {
+		if ( ! is_string( $text ) || '' === $text ) {
+			return $text;
+		}
+
+		$limits = $this->get_chat_input_limits();
+		$max    = (int) $limits['question_max_chars'];
+
+		if ( $max >= 0 && mb_strlen( $text ) > $max ) {
+			$text = mb_substr( $text, 0, $max );
+		}
+
+		return $text;
+	}
+
+	/**
 	 * Sanitizes conversation history before it is sent to an AI provider.
 	 *
 	 * Applies PII masking via filter_personal_data() and the
@@ -528,14 +618,34 @@ class FE_Search_AI_Chat_Handler {
 	 * filters. This is the required entry point for any integration (REST, MCP,
 	 * Pro) that forwards conversation history to an AI provider.
 	 *
+	 * Since 1.4.1 the history is also bounded by the chat input limits: only
+	 * the most recent messages are kept, each message is truncated to the
+	 * per-message character cap, and the combined content is truncated to the
+	 * total character cap. This prevents cost-amplification attacks that replay
+	 * huge fabricated transcripts against paid AI providers.
+	 *
 	 * @since 0.9.0
 	 * @since 1.2.0 Visibility changed from private to public.
+	 * @since 1.4.1 History size is bounded by the chat input limits.
 	 * @param mixed $history Raw conversation history.
 	 * @return array Sanitized conversation messages.
 	 */
 	public function sanitize_chat_history( $history ) {
 		if ( ! is_array( $history ) ) {
 			return [];
+		}
+
+		$limits = $this->get_chat_input_limits();
+
+		$max_messages      = (int) $limits['history_max_messages'];
+		$max_message_chars = (int) $limits['history_max_message_chars'];
+		$max_total_chars   = (int) $limits['history_max_total_chars'];
+
+		if ( 0 === $max_messages ) {
+			return [];
+		}
+		if ( $max_messages > 0 && count( $history ) > $max_messages ) {
+			$history = array_slice( $history, -$max_messages );
 		}
 
 		$sanitized_history = [];
@@ -549,7 +659,14 @@ class FE_Search_AI_Chat_Handler {
 				continue;
 			}
 
-			$content = $this->filter_personal_data( $message['content'] );
+			// Truncate before filtering so PII masking never runs on
+			// unbounded attacker-controlled text.
+			$content = $message['content'];
+			if ( $max_message_chars >= 0 && mb_strlen( $content ) > $max_message_chars ) {
+				$content = mb_substr( $content, 0, $max_message_chars );
+			}
+
+			$content = $this->filter_personal_data( $content );
 			if ( 'user' === $role ) {
 				$content = apply_filters( 'fe_search_ai_preprocess_user_question', $content );
 			} else {
@@ -560,10 +677,36 @@ class FE_Search_AI_Chat_Handler {
 				continue;
 			}
 
+			// Enforce the cap again in case a filter expanded the content.
+			if ( $max_message_chars >= 0 && mb_strlen( $content ) > $max_message_chars ) {
+				$content = mb_substr( $content, 0, $max_message_chars );
+			}
+
 			$sanitized_history[] = [
 				'role'    => $role,
 				'content' => $content,
 			];
+		}
+
+		// Bound the combined history size, keeping the most recent messages
+		// and truncating the oldest kept message to the remaining budget.
+		if ( $max_total_chars >= 0 ) {
+			$kept  = [];
+			$total = 0;
+			foreach ( array_reverse( $sanitized_history ) as $message ) {
+				$remaining = $max_total_chars - $total;
+				if ( $remaining <= 0 ) {
+					break;
+				}
+				$length = mb_strlen( $message['content'] );
+				if ( $length > $remaining ) {
+					$message['content'] = mb_substr( $message['content'], 0, $remaining );
+					$length             = $remaining;
+				}
+				$total += $length;
+				$kept[] = $message;
+			}
+			$sanitized_history = array_reverse( $kept );
 		}
 
 		return $sanitized_history;
