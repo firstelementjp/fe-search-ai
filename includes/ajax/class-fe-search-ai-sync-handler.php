@@ -171,7 +171,10 @@ class FE_Search_AI_Sync_Handler {
 	 * @return void
 	 */
 	public function ajax_start_sync() {
-		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
+		check_ajax_referer( 'fe_search_ai_admin_nonce', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+		}
 
 		global $wpdb;
 		$vectors_table = $wpdb->prefix . 'fe_search_ai_vectors';
@@ -305,7 +308,7 @@ class FE_Search_AI_Sync_Handler {
 	 * @return void
 	 */
 	public function ajax_start_smart_sync() {
-		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
+		check_ajax_referer( 'fe_search_ai_admin_nonce', 'nonce' );
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( [ 'message' => 'Permission denied.' ] );
 		}
@@ -473,7 +476,10 @@ class FE_Search_AI_Sync_Handler {
 	 * This is called after a successful sync process.
 	 */
 	public function ajax_update_settings_hash() {
-		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
+		check_ajax_referer( 'fe_search_ai_admin_nonce', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+		}
 
 		// Pull the freshest static sync configuration from the main settings.
 		$options   = get_option( 'fe_search_ai_settings', [] );
@@ -526,7 +532,10 @@ class FE_Search_AI_Sync_Handler {
 			set_time_limit( 0 );
 			ob_start();
 
-			check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
+			check_ajax_referer( 'fe_search_ai_admin_nonce', 'nonce' );
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+			}
 
 			// Process input data
 			$page = isset( $_POST['page'] ) ? absint( $_POST['page'] ) : 1;
@@ -684,7 +693,10 @@ class FE_Search_AI_Sync_Handler {
 	 * @return void
 	 */
 	public function ajax_update_sync_timestamp() {
-		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
+		check_ajax_referer( 'fe_search_ai_admin_nonce', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+		}
 
 		$now = time();
 
@@ -713,7 +725,10 @@ class FE_Search_AI_Sync_Handler {
 	 * @return void
 	 */
 	public function ajax_delete_vectors() {
-		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
+		check_ajax_referer( 'fe_search_ai_admin_nonce', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+		}
 
 		global $wpdb;
 		$vectors_table = $wpdb->prefix . 'fe_search_ai_vectors';

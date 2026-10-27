@@ -231,7 +231,7 @@ class FE_Search_AI_Admin {
 			'fe_search_ai_sync_obj',
 			[
 				'ajax_url' => admin_url( 'admin-ajax.php' ),
-				'nonce'    => wp_create_nonce( 'fe_search_ai_ajax_nonce' ),
+				'nonce'    => wp_create_nonce( 'fe_search_ai_admin_nonce' ),
 				'i18n'     => [
 					'processing_posts'       => __( 'Processing posts…', 'fe-search-ai' ),
 					'preparing_sync'         => __( 'Preparing for synchronization…', 'fe-search-ai' ),

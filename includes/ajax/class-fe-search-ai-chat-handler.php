@@ -2551,7 +2551,12 @@ All of your responses must be written in the language corresponding to the langu
 	 * @hook wp_ajax_fe_search_ai_test_api_key
 	 */
 	public function ajax_test_api_key() {
-		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
+		check_ajax_referer( 'fe_search_ai_admin_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( [ 'message' => 'Permission denied.' ], 403 );
+		}
+
 		$provider = isset( $_POST['provider'] ) ? sanitize_key( wp_unslash( $_POST['provider'] ) ) : '';
 		$api_key  = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
 
@@ -2875,7 +2880,7 @@ All of your responses must be written in the language corresponding to the langu
 	 * @hook wp_ajax_fe_search_ai_manage_license
 	 */
 	public function ajax_manage_license() {
-		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
+		check_ajax_referer( 'fe_search_ai_admin_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( [ 'message' => 'Permission denied.' ] );

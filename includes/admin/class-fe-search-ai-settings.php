@@ -1566,7 +1566,7 @@ class FE_Search_AI_Settings {
 	 * @return void
 	 */
 	public function ajax_delete_system_logs() {
-		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
+		check_ajax_referer( 'fe_search_ai_admin_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( __( 'You do not have sufficient permissions to perform this action.', 'fe-search-ai' ) );
@@ -1606,7 +1606,7 @@ class FE_Search_AI_Settings {
 	 * @return void
 	 */
 	public function ajax_delete_retrieval_traces() {
-		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
+		check_ajax_referer( 'fe_search_ai_admin_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( __( 'You do not have sufficient permissions to perform this action.', 'fe-search-ai' ) );
