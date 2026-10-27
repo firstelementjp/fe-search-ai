@@ -423,9 +423,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			try {
 				const response = await wpPost('fe_search_ai_test_api_key', postData);
-				status.innerHTML = response.data;
+				const data = response.data;
+				const isValid = true === response.success;
+				// Render the status as plain text only. The message may contain
+				// remote endpoint output, so colours are toggled via CSS classes
+				// instead of inserting server-provided HTML.
+				let message = '';
+				if (typeof data === 'string') {
+					message = data;
+				} else if (data && typeof data.message === 'string') {
+					message = data.message;
+				}
+				status.classList.remove('is-success', 'is-error');
+				status.classList.add(isValid ? 'is-success' : 'is-error');
+				status.textContent = `${isValid ? '✔' : '✖'} ${message}`;
 			} catch {
-				status.innerHTML = `<span style="color:red;">${__('A communication error has occurred.', 'fe-search-ai')}</span>`;
+				status.classList.remove('is-success', 'is-error');
+				status.classList.add('is-error');
+				status.textContent = `✖ ${__('A communication error has occurred.', 'fe-search-ai')}`;
 			} finally {
 				spinner.style.visibility = 'hidden';
 			}

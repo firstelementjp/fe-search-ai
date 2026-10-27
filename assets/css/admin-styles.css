@@ -387,6 +387,14 @@ a.nav-tab:last-of-type {
 	word-break: break-all;
 }
 
+.fe-search-ai-api-status.is-success {
+	color: green;
+}
+
+.fe-search-ai-api-status.is-error {
+	color: red;
+}
+
 .fe-search-ai-api-keys-table .fe-search-ai-test-api {
 	vertical-align: middle;
 	margin-top: 0;

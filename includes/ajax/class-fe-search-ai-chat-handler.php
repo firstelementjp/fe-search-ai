@@ -2907,10 +2907,23 @@ All of your responses must be written in the language corresponding to the langu
 			$result = [ 'is_valid' => $is_valid, 'message' => $error_message ];
 		}
 
+		// Return structured data instead of HTML. The message can contain
+		// remote endpoint output, so the admin JavaScript renders it through
+		// textContent only to prevent stored/reflected XSS in the dashboard.
 		if ( $result['is_valid'] ) {
-			wp_send_json_success( '<span style="color: green;">✔ ' . __( 'Connection successful', 'fe-search-ai' ) . '</span>' );
+			wp_send_json_success(
+				[
+					'is_valid' => true,
+					'message'  => __( 'Connection successful', 'fe-search-ai' ),
+				]
+			);
 		} else {
-			wp_send_json_error( '<span style="color: red;">✖ ' . __( 'Connection failed', 'fe-search-ai' ) . ': ' . $result['message'] . '</span>' );
+			wp_send_json_error(
+				[
+					'is_valid' => false,
+					'message'  => __( 'Connection failed', 'fe-search-ai' ) . ': ' . $result['message'],
+				]
+			);
 		}
 	}
 
