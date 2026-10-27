@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.4.1 (2026-10-27)
+
+### Security
+
+- Bounded chat request input sizes to prevent cost amplification (denial of wallet): questions are capped at 1000 characters, conversation history is limited to the most recent 10 messages with per-message (2000 characters) and combined (16000 characters) budgets, and the raw history payload is byte-capped before decoding. All limits are adjustable via the new `fe_search_ai_chat_input_limits` filter
+- Fixed an admin-side XSS vector in the API key connection test: the AJAX endpoint now returns structured status data and the admin script renders it via `textContent` with `is-success` / `is-error` CSS classes instead of inserting remote endpoint output as HTML
+- Split admin and public AJAX nonces: `fe_search_ai_admin_nonce` now guards admin-only endpoints together with `current_user_can( 'manage_options' )` checks, while the public nonce remains only for visitor-facing chat endpoints
+
+### Search and Sync
+
+- Password-protected posts are no longer indexed or returned as chat context, and their index rows and Qdrant points are deleted when a post becomes protected or unpublished
+- Realtime post indexing now mirrors vectors to Qdrant (delete-then-upsert), so the external vector store no longer retains stale chunks
+
+### Documentation and Tests
+
+- Documented the `fe_search_ai_chat_input_limits` filter in the hooks reference (English and Japanese)
+- Added unit tests covering chat input limits, post visibility exclusion, Qdrant cleanup, and realtime mirroring
+
 ## 1.4.0 (2026-10-24)
 
 ### Chat UI

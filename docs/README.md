@@ -23,7 +23,7 @@ FE Search AI is designed for WordPress sites where visitors need quick, accurate
 
 ## Current release
 
-Version 1.4.0 adds a stop button that aborts streaming chat responses (also cancelling the upstream provider request so no further tokens are generated), fixes answer-language detection on multilingual sites via an explicit `lang` request parameter, and moves the forced language rule into a `{answer_language}` placeholder in the default system prompt so custom prompts can control it.
+Version 1.4.1 is a security release: it bounds chat input sizes to prevent AI API cost amplification, fixes an admin XSS vector in the API key connection test, splits admin and public AJAX nonces, and excludes password-protected posts from indexing and chat context.
 
 ## Recommended reading
 

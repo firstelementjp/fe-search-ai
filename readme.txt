@@ -3,7 +3,7 @@ Contributors: firstelementjp
 Tags: ai, search, chat, semantic, vector
 Requires at least: 6.6
 Tested up to: 7.1
-Stable tag: 1.4.0
+Stable tag: 1.4.1
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -148,6 +148,13 @@ Yes, the plugin includes numerous customization options and filter hooks for dev
 
 == Changelog ==
 
+= 1.4.1 =
+* Fixed a cost-amplification (denial of wallet) issue where anonymous visitors could send unbounded questions and conversation history to paid AI providers; questions and history are now capped, with limits adjustable via the fe_search_ai_chat_input_limits filter
+* Fixed an admin-side XSS vector in the API key connection test by returning structured status data rendered via textContent instead of inserting remote endpoint output as HTML
+* Split admin and public AJAX nonces and added missing manage_options capability checks to admin-only endpoints
+* Password-protected posts are no longer indexed or used as chat context, and stale index rows and Qdrant points are removed when posts become protected or unpublished
+* Realtime indexing now mirrors vectors to Qdrant so stale chunks are not retained in the external vector store
+
 = 1.4.0 =
 * Added a stop button to the chat form that aborts streaming responses; aborting also cancels the upstream AI provider request so no further tokens are consumed
 * Aborted responses render any partially received text with a "Response stopped." note and are removed from session history, logging, and feedback
@@ -235,6 +242,9 @@ Yes, the plugin includes numerous customization options and filter hooks for dev
 * Developer hooks and filters
 
 == Upgrade Notice ==
+
+= 1.4.1 =
+Security release. Bounds chat input sizes to prevent AI API cost amplification, fixes an admin XSS vector in the API key connection test, splits admin/public AJAX nonces, and excludes password-protected posts from indexing. Updating is recommended.
 
 = 1.4.0 =
 Feature release. The chat UI gains a stop button for streaming responses, and the answer language is now resolved from the question text and the active multilingual plugin. Sites using a custom system prompt should review the new "Language Rule" section and the {answer_language} placeholder.
