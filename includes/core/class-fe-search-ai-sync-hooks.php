@@ -417,6 +417,15 @@ class FE_Search_AI_Sync_Hooks {
 			// Update last_realtime_sync_timestamp for individual post syncs.
 			$state['status']['last_realtime_sync_timestamp'] = time();
 			update_option( 'fe_search_ai_sync_state', $state );
+
+			// Mirror vectors to Qdrant when enabled. Existing points for the
+			// post are deleted first so stale chunks left by a longer
+			// previous version do not linger in the collection.
+			$qdrant_config = $this->sync_handler->get_enabled_qdrant_config();
+			if ( null !== $qdrant_config ) {
+				$this->sync_handler->delete_vectors_from_qdrant( $post_id );
+				$this->sync_handler->upsert_vectors_to_qdrant( $post, $lang_code, $chunks_with_meta, $vectors_data, $qdrant_config );
+			}
 		}
 	}
 

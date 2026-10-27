@@ -752,7 +752,7 @@ class FE_Search_AI_Sync_Handler {
 	 * @param array    $qdrant_config    Qdrant configuration from Pro settings.
 	 * @return void
 	 */
-	private function upsert_vectors_to_qdrant( $post, $lang_code, $chunks_with_meta, $vectors_data, $qdrant_config ) {
+	public function upsert_vectors_to_qdrant( $post, $lang_code, $chunks_with_meta, $vectors_data, $qdrant_config ) {
 		\FESearchAI\Core\FE_Search_AI_Logger::log(
 			'INFO',
 			'Qdrant upsert invoked.',
@@ -910,15 +910,16 @@ class FE_Search_AI_Sync_Handler {
 	}
 
 	/**
-	 * Issues a Qdrant points/delete request for the given must-conditions.
+	 * Returns the Qdrant configuration when the Qdrant store is enabled.
 	 *
-	 * No-op when Qdrant is not configured or not enabled as a vector store.
+	 * The returned array contains the raw settings values, including the
+	 * still-encrypted API key; callers decrypt it as needed. Returns null
+	 * when the Qdrant store is disabled or the configuration is incomplete.
 	 *
 	 * @since 1.4.1
-	 * @param array $must List of Qdrant filter conditions combined with AND.
-	 * @return void
+	 * @return array|null Qdrant configuration array, or null.
 	 */
-	private function delete_qdrant_points( $must ) {
+	public function get_enabled_qdrant_config() {
 		$settings      = get_option( 'fe_search_ai_settings', [] );
 		$vector_config = isset( $settings['vector'] ) && is_array( $settings['vector'] ) ? $settings['vector'] : [];
 		$qdrant_config = isset( $vector_config['qdrant'] ) && is_array( $vector_config['qdrant'] ) ? $vector_config['qdrant'] : [];
@@ -933,8 +934,30 @@ class FE_Search_AI_Sync_Handler {
 			: '';
 
 		if ( ! $qdrant_store || empty( $endpoint ) || empty( $collection ) || empty( $api_key ) ) {
+			return null;
+		}
+
+		return $qdrant_config;
+	}
+
+	/**
+	 * Issues a Qdrant points/delete request for the given must-conditions.
+	 *
+	 * No-op when Qdrant is not configured or not enabled as a vector store.
+	 *
+	 * @since 1.4.1
+	 * @param array $must List of Qdrant filter conditions combined with AND.
+	 * @return void
+	 */
+	private function delete_qdrant_points( $must ) {
+		$qdrant_config = $this->get_enabled_qdrant_config();
+		if ( null === $qdrant_config ) {
 			return;
 		}
+
+		$endpoint   = rtrim( $qdrant_config['endpoint'], '/' );
+		$collection = $qdrant_config['collection'];
+		$api_key    = \FESearchAI\Core\FE_Search_AI_Encryption_Helper::decrypt( $qdrant_config['api_key'] );
 
 		$body     = [ 'filter' => [ 'must' => $must ] ];
 		$url      = $endpoint . '/collections/' . rawurlencode( $collection ) . '/points/delete';
