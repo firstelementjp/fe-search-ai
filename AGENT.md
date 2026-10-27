@@ -89,6 +89,7 @@ npm run format         # Prettier
 - Add PHPDoc to all classes, functions, and methods
 - Comments in English
 - Use `sanitize_text_field()`, `intval()`, `check_ajax_referer()` for security
+- AJAX nonces are split: `fe_search_ai_ajax_nonce` is public (localized to all visitors, for `nopriv` chat endpoints only); admin-only AJAX must verify `fe_search_ai_admin_nonce` (sent via `fe_search_ai_sync_obj.nonce`) and must also check `current_user_can( 'manage_options' )`
 - Use `wp_send_json_success()` / `wp_send_json_error()` for AJAX responses
 - Use Yoda conditions where appropriate (e.g., `0 === $var`)
 

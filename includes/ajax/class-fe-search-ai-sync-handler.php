@@ -171,7 +171,10 @@ class FE_Search_AI_Sync_Handler {
 	 * @return void
 	 */
 	public function ajax_start_sync() {
-		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
+		check_ajax_referer( 'fe_search_ai_admin_nonce', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+		}
 
 		global $wpdb;
 		$vectors_table = $wpdb->prefix . 'fe_search_ai_vectors';
@@ -182,6 +185,10 @@ class FE_Search_AI_Sync_Handler {
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		// Table name is interpolated but controlled internally.
 		$wpdb->query( "TRUNCATE TABLE `{$index_table}`" );
+
+		// Drop all Qdrant points for this site so that posts no longer
+		// eligible (protected, unpublished, excluded) do not linger.
+		$this->delete_all_site_vectors_from_qdrant();
 
 		// Normalize sync options structure to a safe array using new schema.
 		$sync_root = $this->options['sync'] ?? [];
@@ -238,6 +245,7 @@ class FE_Search_AI_Sync_Handler {
 
 		$args = [
 			'post_status'    => 'publish',
+			'has_password'   => false,
 			'fields'         => 'ids',
 			'cache_results'  => false,
 			'posts_per_page' => $limit,
@@ -300,7 +308,7 @@ class FE_Search_AI_Sync_Handler {
 	 * @return void
 	 */
 	public function ajax_start_smart_sync() {
-		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
+		check_ajax_referer( 'fe_search_ai_admin_nonce', 'nonce' );
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( [ 'message' => 'Permission denied.' ] );
 		}
@@ -390,6 +398,7 @@ class FE_Search_AI_Sync_Handler {
 					'posts_per_page' => -1,
 					'fields'         => 'ids',
 					'post_status'    => 'publish',
+					'has_password'   => false,
 				]
 			)
 		);
@@ -398,6 +407,7 @@ class FE_Search_AI_Sync_Handler {
 		if ( ! empty( $deleted_post_ids ) ) {
 			foreach ( $deleted_post_ids as $post_id ) {
 				$GLOBALS['fe_search_ai_sync_hooks']->delete_post_from_index( $post_id );
+				$this->delete_vectors_from_qdrant( $post_id );
 			}
 		}
 
@@ -425,6 +435,7 @@ class FE_Search_AI_Sync_Handler {
 				'post_type'      => $post_types_to_sync,
 				'posts_per_page' => -1,
 				'fields'         => 'ids',
+				'has_password'   => false,
 				'date_query'     => [
 					[
 						'column' => 'post_modified_gmt',
@@ -465,7 +476,10 @@ class FE_Search_AI_Sync_Handler {
 	 * This is called after a successful sync process.
 	 */
 	public function ajax_update_settings_hash() {
-		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
+		check_ajax_referer( 'fe_search_ai_admin_nonce', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+		}
 
 		// Pull the freshest static sync configuration from the main settings.
 		$options   = get_option( 'fe_search_ai_settings', [] );
@@ -518,7 +532,10 @@ class FE_Search_AI_Sync_Handler {
 			set_time_limit( 0 );
 			ob_start();
 
-			check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
+			check_ajax_referer( 'fe_search_ai_admin_nonce', 'nonce' );
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+			}
 
 			// Process input data
 			$page = isset( $_POST['page'] ) ? absint( $_POST['page'] ) : 1;
@@ -546,6 +563,7 @@ class FE_Search_AI_Sync_Handler {
 					'posts_per_page'      => count( $batch_ids ),
 					'ignore_sticky_posts' => 1,
 					'post_status'         => 'publish',
+					'has_password'        => false,
 				]
 			);
 
@@ -675,7 +693,10 @@ class FE_Search_AI_Sync_Handler {
 	 * @return void
 	 */
 	public function ajax_update_sync_timestamp() {
-		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
+		check_ajax_referer( 'fe_search_ai_admin_nonce', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+		}
 
 		$now = time();
 
@@ -704,7 +725,10 @@ class FE_Search_AI_Sync_Handler {
 	 * @return void
 	 */
 	public function ajax_delete_vectors() {
-		check_ajax_referer( 'fe_search_ai_ajax_nonce', 'nonce' );
+		check_ajax_referer( 'fe_search_ai_admin_nonce', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+		}
 
 		global $wpdb;
 		$vectors_table = $wpdb->prefix . 'fe_search_ai_vectors';
@@ -743,7 +767,7 @@ class FE_Search_AI_Sync_Handler {
 	 * @param array    $qdrant_config    Qdrant configuration from Pro settings.
 	 * @return void
 	 */
-	private function upsert_vectors_to_qdrant( $post, $lang_code, $chunks_with_meta, $vectors_data, $qdrant_config ) {
+	public function upsert_vectors_to_qdrant( $post, $lang_code, $chunks_with_meta, $vectors_data, $qdrant_config ) {
 		\FESearchAI\Core\FE_Search_AI_Logger::log(
 			'INFO',
 			'Qdrant upsert invoked.',
@@ -838,6 +862,152 @@ class FE_Search_AI_Sync_Handler {
 				'Qdrant upsert returned non-2xx status.',
 				[
 					'post_id'              => $post->ID,
+					'http_status'          => $status_code,
+					'response_body_length' => mb_strlen( $body_text ),
+					'error_summary'        => mb_substr( $body_text, 0, 300 ),
+				]
+			);
+		}
+	}
+
+	/**
+	 * Deletes all Qdrant points associated with a post.
+	 *
+	 * Points are removed via a payload filter on `post_id` (and `site_id` so
+	 * shared collections on multisite installs are not affected), since the
+	 * exact point IDs depend on the chunk count at indexing time. Failures
+	 * are logged but never interrupt the caller: retrieval-time visibility
+	 * filtering keeps stale points out of answers regardless.
+	 *
+	 * @since 1.4.1
+	 * @param int $post_id The post ID whose points should be deleted.
+	 * @return void
+	 */
+	public function delete_vectors_from_qdrant( $post_id ) {
+		$post_id = (int) $post_id;
+		if ( $post_id <= 0 ) {
+			return;
+		}
+
+		$this->delete_qdrant_points(
+			[
+				[
+					'key'   => 'post_id',
+					'match' => [ 'value' => $post_id ],
+				],
+				[
+					'key'   => 'site_id',
+					'match' => [ 'value' => get_current_blog_id() ],
+				],
+			]
+		);
+	}
+
+	/**
+	 * Deletes every Qdrant point belonging to the current site.
+	 *
+	 * Called during a full rebuild so that points for posts no longer
+	 * eligible for indexing (e.g. newly password-protected posts) do not
+	 * linger in the collection.
+	 *
+	 * @since 1.4.1
+	 * @return void
+	 */
+	private function delete_all_site_vectors_from_qdrant() {
+		$this->delete_qdrant_points(
+			[
+				[
+					'key'   => 'site_id',
+					'match' => [ 'value' => get_current_blog_id() ],
+				],
+			]
+		);
+	}
+
+	/**
+	 * Returns the Qdrant configuration when the Qdrant store is enabled.
+	 *
+	 * The returned array contains the raw settings values, including the
+	 * still-encrypted API key; callers decrypt it as needed. Returns null
+	 * when the Qdrant store is disabled or the configuration is incomplete.
+	 *
+	 * @since 1.4.1
+	 * @return array|null Qdrant configuration array, or null.
+	 */
+	public function get_enabled_qdrant_config() {
+		$settings      = get_option( 'fe_search_ai_settings', [] );
+		$vector_config = isset( $settings['vector'] ) && is_array( $settings['vector'] ) ? $settings['vector'] : [];
+		$qdrant_config = isset( $vector_config['qdrant'] ) && is_array( $vector_config['qdrant'] ) ? $vector_config['qdrant'] : [];
+		$vector_store  = $vector_config['store'] ?? 'mariadb';
+		$stores        = isset( $vector_config['stores'] ) && is_array( $vector_config['stores'] ) ? $vector_config['stores'] : [];
+		$qdrant_store  = isset( $stores['qdrant'] ) ? ! empty( $stores['qdrant'] ) : ( 'qdrant' === $vector_store );
+
+		$endpoint   = isset( $qdrant_config['endpoint'] ) ? rtrim( $qdrant_config['endpoint'], '/' ) : '';
+		$collection = $qdrant_config['collection'] ?? '';
+		$api_key    = isset( $qdrant_config['api_key'] ) && ! empty( $qdrant_config['api_key'] )
+			? \FESearchAI\Core\FE_Search_AI_Encryption_Helper::decrypt( $qdrant_config['api_key'] )
+			: '';
+
+		if ( ! $qdrant_store || empty( $endpoint ) || empty( $collection ) || empty( $api_key ) ) {
+			return null;
+		}
+
+		return $qdrant_config;
+	}
+
+	/**
+	 * Issues a Qdrant points/delete request for the given must-conditions.
+	 *
+	 * No-op when Qdrant is not configured or not enabled as a vector store.
+	 *
+	 * @since 1.4.1
+	 * @param array $must List of Qdrant filter conditions combined with AND.
+	 * @return void
+	 */
+	private function delete_qdrant_points( $must ) {
+		$qdrant_config = $this->get_enabled_qdrant_config();
+		if ( null === $qdrant_config ) {
+			return;
+		}
+
+		$endpoint   = rtrim( $qdrant_config['endpoint'], '/' );
+		$collection = $qdrant_config['collection'];
+		$api_key    = \FESearchAI\Core\FE_Search_AI_Encryption_Helper::decrypt( $qdrant_config['api_key'] );
+
+		$body     = [ 'filter' => [ 'must' => $must ] ];
+		$url      = $endpoint . '/collections/' . rawurlencode( $collection ) . '/points/delete';
+		$response = wp_remote_request(
+			$url,
+			[
+				'method'  => 'POST',
+				'headers' => [
+					'Content-Type' => 'application/json',
+					'api-key'      => $api_key,
+				],
+				'body'    => wp_json_encode( $body ),
+				'timeout' => 20,
+			]
+		);
+
+		if ( is_wp_error( $response ) ) {
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
+				'ERROR',
+				'Qdrant delete request failed.',
+				[
+					'error_code'    => $response->get_error_code(),
+					'error_message' => $response->get_error_message(),
+				]
+			);
+			return;
+		}
+
+		$status_code = (int) wp_remote_retrieve_response_code( $response );
+		if ( $status_code < 200 || $status_code >= 300 ) {
+			$body_text = wp_remote_retrieve_body( $response );
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
+				'ERROR',
+				'Qdrant delete returned non-2xx status.',
+				[
 					'http_status'          => $status_code,
 					'response_body_length' => mb_strlen( $body_text ),
 					'error_summary'        => mb_substr( $body_text, 0, 300 ),
@@ -1313,6 +1483,8 @@ class FE_Search_AI_Sync_Handler {
 			];
 		}
 
+		$results = $this->filter_chunks_by_post_visibility( $results );
+
 		// Log Qdrant search completion
 		\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
 			'INFO',
@@ -1608,7 +1780,7 @@ class FE_Search_AI_Sync_Handler {
 			];
 		}
 
-		return $results;
+		return $this->filter_chunks_by_post_visibility( $results );
 	}
 
 	/**
@@ -1669,7 +1841,64 @@ class FE_Search_AI_Sync_Handler {
 			];
 		}
 
-		return $results;
+		return $this->filter_chunks_by_post_visibility( $results );
+	}
+
+	/**
+	 * Removes chunks belonging to posts that are not publicly viewable.
+	 *
+	 * Defense in depth: indexing excludes unpublished and password-protected
+	 * posts, but stale rows can linger when a post is protected or unpublished
+	 * after indexing. Chunks whose post is missing, not published, or password
+	 * protected are dropped before they reach the LLM prompt. Chunks without a
+	 * resolvable post ID are dropped as well because their visibility cannot
+	 * be verified.
+	 *
+	 * @since 1.4.1
+	 * @param array $chunks Retrieved chunk rows; each may contain a 'post_id' key.
+	 * @return array Chunks limited to publicly viewable posts.
+	 */
+	public function filter_chunks_by_post_visibility( $chunks ) {
+		if ( ! is_array( $chunks ) || empty( $chunks ) ) {
+			return [];
+		}
+
+		$post_ids = [];
+		foreach ( $chunks as $chunk ) {
+			if ( isset( $chunk['post_id'] ) && (int) $chunk['post_id'] > 0 ) {
+				$post_ids[] = (int) $chunk['post_id'];
+			}
+		}
+
+		if ( empty( $post_ids ) ) {
+			return [];
+		}
+
+		$post_ids      = array_values( array_unique( $post_ids ) );
+		$viewable_ids  = array_map(
+			'intval',
+			get_posts(
+				[
+					'post__in'            => $post_ids,
+					'post_type'           => 'any',
+					'post_status'         => 'publish',
+					'has_password'        => false,
+					'posts_per_page'      => count( $post_ids ),
+					'fields'              => 'ids',
+					'ignore_sticky_posts' => true,
+				]
+			)
+		);
+		$viewable_keys = array_fill_keys( $viewable_ids, true );
+
+		return array_values(
+			array_filter(
+				$chunks,
+				function ( $chunk ) use ( $viewable_keys ) {
+					return isset( $viewable_keys[ (int) ( $chunk['post_id'] ?? 0 ) ] );
+				}
+			)
+		);
 	}
 
 	/**

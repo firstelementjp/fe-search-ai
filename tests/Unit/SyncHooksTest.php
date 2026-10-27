@@ -264,4 +264,233 @@ class SyncHooksTest extends TestCase {
 			'Queue lock should be released after processing'
 		);
 	}
+
+	/**
+	 * Test sync_single_post_on_update does not queue a password-protected post
+	 *
+	 * @since 1.4.1
+	 * @return void
+	 */
+	public function test_sync_single_post_on_update_skips_password_protected_post() {
+		update_option(
+			'fe_search_ai_settings',
+			[
+				'sync' => [
+					'targets' => [
+						'post' => [ 'enabled' => true ],
+					],
+				],
+			]
+		);
+
+		$sync_handler = $this->createMock( 'FESearchAI\Ajax\FE_Search_AI_Sync_Handler' );
+		$sync_hooks   = new \FESearchAI\Core\FE_Search_AI_Sync_Hooks( $sync_handler );
+
+		$post_id = wp_insert_post(
+			[
+				'post_title'    => 'test_password_protected_post',
+				'post_content'  => 'Secret content',
+				'post_status'   => 'publish',
+				'post_password' => 'secret-pass',
+			]
+		);
+
+		$sync_hooks->sync_single_post_on_update( $post_id, get_post( $post_id ) );
+
+		$queue = get_option( 'fe_search_ai_sync_queue', [] );
+		$this->assertArrayNotHasKey( $post_id, $queue, 'Password-protected post should not be queued for indexing' );
+
+		wp_delete_post( $post_id, true );
+	}
+
+	/**
+	 * Test sync_single_post_on_update removes a queued post once it becomes protected
+	 *
+	 * @since 1.4.1
+	 * @return void
+	 */
+	public function test_sync_single_post_on_update_removes_post_when_protected() {
+		update_option(
+			'fe_search_ai_settings',
+			[
+				'sync' => [
+					'targets' => [
+						'post' => [ 'enabled' => true ],
+					],
+				],
+			]
+		);
+
+		$sync_handler = $this->createMock( 'FESearchAI\Ajax\FE_Search_AI_Sync_Handler' );
+		$sync_hooks   = new \FESearchAI\Core\FE_Search_AI_Sync_Hooks( $sync_handler );
+
+		$post_id = wp_insert_post(
+			[
+				'post_title'   => 'test_post_becoming_protected',
+				'post_content' => 'Content',
+				'post_status'  => 'publish',
+			]
+		);
+
+		$sync_hooks->enqueue_post_for_sync( $post_id );
+		$queue = get_option( 'fe_search_ai_sync_queue', [] );
+		$this->assertArrayHasKey( $post_id, $queue, 'Post should be queued before protection' );
+
+		wp_update_post(
+			[
+				'ID'            => $post_id,
+				'post_password' => 'secret-pass',
+			]
+		);
+
+		$sync_hooks->sync_single_post_on_update( $post_id, get_post( $post_id ) );
+
+		$queue = get_option( 'fe_search_ai_sync_queue', [] );
+		$this->assertArrayNotHasKey( $post_id, $queue, 'Protected post should be removed from the sync queue' );
+
+		wp_delete_post( $post_id, true );
+	}
+
+	/**
+	 * Test index_post never chunks a password-protected post
+	 *
+	 * @since 1.4.1
+	 * @return void
+	 */
+	public function test_index_post_skips_password_protected_post() {
+		update_option(
+			'fe_search_ai_settings',
+			[
+				'sync' => [
+					'targets' => [
+						'post' => [ 'enabled' => true ],
+					],
+				],
+			]
+		);
+
+		$sync_handler = $this->createMock( 'FESearchAI\Ajax\FE_Search_AI_Sync_Handler' );
+		$sync_handler->expects( $this->never() )->method( 'create_chunks_from_post' );
+		$sync_hooks = new \FESearchAI\Core\FE_Search_AI_Sync_Hooks( $sync_handler );
+
+		$post_id = wp_insert_post(
+			[
+				'post_title'    => 'test_index_skip_protected',
+				'post_content'  => 'Secret content',
+				'post_status'   => 'publish',
+				'post_password' => 'secret-pass',
+			]
+		);
+
+		$sync_hooks->index_post( $post_id );
+
+		wp_delete_post( $post_id, true );
+	}
+
+	/**
+	 * Test index_post mirrors vectors to Qdrant when the Qdrant store is enabled.
+	 *
+	 * Stale points for the post must be deleted before the upsert so chunks
+	 * left by a longer previous version do not linger.
+	 *
+	 * @since 1.4.1
+	 * @return void
+	 */
+	public function test_index_post_mirrors_to_qdrant_when_enabled() {
+		update_option(
+			'fe_search_ai_settings',
+			[
+				'provider' => [ 'embedding' => 'openai' ],
+				'sync'     => [
+					'targets' => [
+						'post' => [ 'enabled' => true ],
+					],
+				],
+				'vector'   => [
+					'store'  => 'qdrant',
+					'qdrant' => [
+						'endpoint'   => 'https://qdrant.example.test',
+						'collection' => 'feai_test',
+						'api_key'    => \FESearchAI\Core\FE_Search_AI_Encryption_Helper::encrypt( 'test-qdrant-key' ),
+					],
+				],
+			]
+		);
+
+		$sync_handler = new \FESearchAI\Ajax\FE_Search_AI_Sync_Handler();
+		$sync_hooks   = new \FESearchAI\Core\FE_Search_AI_Sync_Hooks( $sync_handler );
+
+		$embedding_filter = function () {
+			return [
+				'data'            => [ [ 'embedding' => [ 0.1, 0.2, 0.3 ] ] ],
+				'embedding_model' => 'test-embedding',
+				'embedding_dim'   => 3,
+			];
+		};
+		add_filter( 'fe_search_ai_embedding_result_for_openai', $embedding_filter );
+
+		$requests    = [];
+		$http_filter = function ( $preempt, $args, $url ) use ( &$requests ) {
+			$requests[] = [
+				'method' => $args['method'] ?? 'POST',
+				'url'    => $url,
+				'body'   => $args['body'] ?? '',
+			];
+			return [
+				'headers'  => [],
+				'body'     => '{"result":true}',
+				'response' => [
+					'code'    => 200,
+					'message' => 'OK',
+				],
+				'cookies'  => [],
+				'filename' => null,
+			];
+		};
+		add_filter( 'pre_http_request', $http_filter, 10, 3 );
+
+		$post_id = wp_insert_post(
+			[
+				'post_title'   => 'test_qdrant_mirror',
+				'post_content' => 'Qdrant mirror test content.',
+				'post_status'  => 'publish',
+			]
+		);
+
+		try {
+			$sync_hooks->index_post( $post_id );
+
+			$delete_calls = array_filter(
+				$requests,
+				function ( $request ) {
+					return false !== strpos( $request['url'], '/points/delete' );
+				}
+			);
+			$upsert_calls = array_filter(
+				$requests,
+				function ( $request ) {
+					return 'PUT' === $request['method'] && false !== strpos( $request['url'], '/points' );
+				}
+			);
+
+			$this->assertNotEmpty( $delete_calls, 'Existing points should be deleted before upsert' );
+			$this->assertNotEmpty( $upsert_calls, 'Vectors should be upserted to Qdrant' );
+
+			$delete_body = json_decode( array_values( $delete_calls )[0]['body'], true );
+			$this->assertContains(
+				[ 'key' => 'post_id', 'match' => [ 'value' => $post_id ] ],
+				$delete_body['filter']['must'] ?? [],
+				'Delete request should target the post_id payload field'
+			);
+
+			$upsert_body = json_decode( array_values( $upsert_calls )[0]['body'], true );
+			$this->assertSame( $post_id * 10000, $upsert_body['points'][0]['id'] ?? 0, 'Point ID should be derived from post ID' );
+			$this->assertSame( $post_id, $upsert_body['points'][0]['payload']['post_id'] ?? 0, 'Payload should carry the post ID' );
+		} finally {
+			remove_filter( 'pre_http_request', $http_filter, 10 );
+			remove_filter( 'fe_search_ai_embedding_result_for_openai', $embedding_filter );
+			wp_delete_post( $post_id, true );
+			delete_option( 'fe_search_ai_settings' );
+		}
+	}
 }
