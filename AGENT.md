@@ -236,7 +236,7 @@ Optional announcement integrations (announce job in release.yml, all opt-in):
 - Variables: `WP_BASE_URL` (company site URL), `WP_CATEGORY_ID` (fallback post category), `WP_JA_CATEGORY_ID` / `WP_EN_CATEGORY_ID` (per-language categories), `ENABLE_X_POST` (`true` to post to X; otherwise draft texts go to the job summary)
 - Secrets: `WP_USERNAME` + `WP_APP_PASSWORD` (WordPress Application Password; creates JA/EN draft posts, linked via Polylang Pro REST `translations` field), `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`, `X_ACCESS_TOKEN_SECRET` (X API OAuth 1.0a user context)
 - Scripts: `.github/scripts/announce-release.sh`, `.github/scripts/post-x.mjs`
-- Post title highlight: `.github/announce/<tag>.ja.txt` and `.github/announce/<tag>.en.txt` (single-line text created during release prep; appended after a pipe, omitted when absent)
+- Post title highlight: `.github/announce/<tag>.ja.txt` and `.github/announce/<tag>.en.txt` (single-line text created during release prep; appended after a pipe, omitted when absent). Use only user-facing changes — exclude internal items such as license server internals, deployment mechanics, or dependency bumps
 
 ## BM25 Keyword Search
 
