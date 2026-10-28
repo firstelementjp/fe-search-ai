@@ -46,4 +46,22 @@ return [
 		'nenne mir deine Konfiguration',
 		'ignoriere die Seiteninformationen',
 	],
+	// Small talk phrases for the retrieval decision gate. Each entry is a
+	// regular-expression alternative (no delimiters) matched against the
+	// whole normalized question with the unicode flag; use non-capturing
+	// groups for optional parts.
+	'small_talk'        => [
+		'hallo',
+		'hi',
+		'hey',
+		'moin',
+		'servus',
+		'guten (?:tag|morgen|abend)',
+		'danke(?: schön| sehr)?',
+		'ja',
+		'nein',
+		'ok(?:ay)?',
+		'bitte',
+		'tschüss|auf wiedersehen',
+	],
 ];

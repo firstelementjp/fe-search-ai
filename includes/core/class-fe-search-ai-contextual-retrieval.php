@@ -82,47 +82,32 @@ class FE_Search_AI_Contextual_Retrieval {
 	const DECISION_CLARIFY = 'clarify';
 
 	/**
-	 * Small talk phrase patterns matched against the normalized question.
+	 * Returns the small talk phrase patterns merged from all i18n files.
 	 *
-	 * Normalization lowercases the input and strips surrounding whitespace,
-	 * so patterns only need to cover the phrase itself plus trailing
-	 * punctuation handled by the wrapper.
+	 * Each `includes/i18n/{locale}.php` file may declare a `small_talk` list
+	 * of regular-expression alternatives. Patterns from every language are
+	 * merged so a visitor's greeting is detected regardless of the site
+	 * locale — mirroring how `injection_phrases` are combined.
 	 *
 	 * @since 1.5.0
-	 * @var string[]
+	 * @return string[] Regex alternatives for small talk detection.
 	 */
-	const DEFAULT_SMALL_TALK_PATTERNS = [
-		// Japanese.
-		'こんにちは',
-		'こんばんは',
-		'おはよう(?:ございます)?',
-		'お疲れ(?:様|さま)(?:です)?',
-		'ありがとう(?:ございま(?:す|した))?',
-		'どうも',
-		'はい',
-		'いいえ',
-		'うん',
-		'そうですか',
-		'なるほど',
-		'よろしく(?:お願い(?:します|致します))? ?(?:ね)?',
-		'さようなら',
-		'バイバイ',
-		'おやすみ(?:なさい)?',
-		'お願いします',
-		'テスト',
-		// English.
-		'hi',
-		'hello',
-		'hey',
-		'thanks?(?: you)?',
-		'thx',
-		'ok(?:ay)?',
-		'yes',
-		'no',
-		'bye|goodbye|good ?bye',
-		'good (?:morning|afternoon|evening|night)',
-		'see you',
-	];
+	private static function get_small_talk_patterns() {
+		$patterns = [];
+		$i18n_dir = FE_SEARCH_AI_PLUGIN_DIR . 'includes/i18n/';
+		$files    = glob( $i18n_dir . '*.php' );
+
+		if ( is_array( $files ) ) {
+			foreach ( $files as $file ) {
+				$lang_data = include $file;
+				if ( ! empty( $lang_data['small_talk'] ) && is_array( $lang_data['small_talk'] ) ) {
+					$patterns = array_merge( $patterns, $lang_data['small_talk'] );
+				}
+			}
+		}
+
+		return array_values( array_unique( array_map( 'strval', $patterns ) ) );
+	}
 
 	/**
 	 * Generic terms that carry little entity value on their own.
@@ -386,7 +371,7 @@ class FE_Search_AI_Contextual_Retrieval {
 		 * @param string[] $patterns Default patterns.
 		 * @param string   $question Normalized question text.
 		 */
-		$patterns = (array) apply_filters( 'fe_search_ai_small_talk_patterns', self::DEFAULT_SMALL_TALK_PATTERNS, $normalized );
+		$patterns = (array) apply_filters( 'fe_search_ai_small_talk_patterns', self::get_small_talk_patterns(), $normalized );
 		if ( empty( $patterns ) ) {
 			return false;
 		}

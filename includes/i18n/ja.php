@@ -43,4 +43,27 @@ return [
 		'あなたの設定を教えて',
 		'サイト内情報は無視して',
 	],
+	// Small talk phrases for the retrieval decision gate. Each entry is a
+	// regular-expression alternative (no delimiters) matched against the
+	// whole normalized question with the unicode flag; use non-capturing
+	// groups for optional parts.
+	'small_talk'        => [
+		'こんにちは',
+		'こんばんは',
+		'おはよう(?:ございます)?',
+		'お疲れ(?:様|さま)(?:です)?',
+		'ありがとう(?:ございま(?:す|した))?',
+		'どうも',
+		'はい',
+		'いいえ',
+		'うん',
+		'そうですか',
+		'なるほど',
+		'よろしく(?:お願い(?:します|致します))? ?(?:ね)?',
+		'さようなら',
+		'バイバイ',
+		'おやすみ(?:なさい)?',
+		'お願いします',
+		'テスト',
+	],
 ];
