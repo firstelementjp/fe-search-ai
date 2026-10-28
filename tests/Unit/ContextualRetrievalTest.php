@@ -29,6 +29,9 @@ class ContextualRetrievalTest extends TestCase {
 		remove_all_filters( 'fe_search_ai_contextual_query_stop_terms' );
 		remove_all_filters( 'fe_search_ai_contextual_retrieval_query' );
 		remove_all_filters( 'fe_search_ai_max_chunks_per_post' );
+		remove_all_filters( 'fe_search_ai_retrieval_decision' );
+		remove_all_filters( 'fe_search_ai_small_talk_patterns' );
+		remove_all_filters( 'fe_search_ai_clarify_instruction' );
 	}
 
 	/**
@@ -266,5 +269,154 @@ class ContextualRetrievalTest extends TestCase {
 		];
 		$result = FE_Search_AI_Contextual_Retrieval::limit_chunks_per_post( $chunks, 'q' );
 		$this->assertSame( [ 'a', 'b', 'external' ], array_column( $result, 'id' ) );
+	}
+
+	/**
+	 * Test that a Japanese greeting is decided as answer-direct.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_decide_greeting_returns_answer() {
+		$this->assertSame(
+			FE_Search_AI_Contextual_Retrieval::DECISION_ANSWER,
+			FE_Search_AI_Contextual_Retrieval::decide( 'こんにちは！', [], [] )
+		);
+		$this->assertSame(
+			FE_Search_AI_Contextual_Retrieval::DECISION_ANSWER,
+			FE_Search_AI_Contextual_Retrieval::decide( 'hello', [], [] )
+		);
+		$this->assertSame(
+			FE_Search_AI_Contextual_Retrieval::DECISION_ANSWER,
+			FE_Search_AI_Contextual_Retrieval::decide( 'ありがとうございます', [], [] )
+		);
+	}
+
+	/**
+	 * Test that an underspecified first question is decided as clarify.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_decide_vague_question_returns_clarify() {
+		$this->assertSame(
+			FE_Search_AI_Contextual_Retrieval::DECISION_CLARIFY,
+			FE_Search_AI_Contextual_Retrieval::decide( '使い方を教えて', [], [] )
+		);
+	}
+
+	/**
+	 * Test that a question containing an entity is decided as retrieve.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_decide_entity_question_returns_retrieve() {
+		$this->assertSame(
+			FE_Search_AI_Contextual_Retrieval::DECISION_RETRIEVE,
+			FE_Search_AI_Contextual_Retrieval::decide( 'FE Search AI Proの価格は？', [], [] )
+		);
+	}
+
+	/**
+	 * Test that a vague follow-up retrieves when history has entities.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_decide_vague_followup_with_history_retrieves() {
+		$history = [
+			[ 'role' => 'user', 'content' => 'FE Search AI Proは年額いくらですか？' ],
+			[ 'role' => 'assistant', 'content' => 'FE Search AI Proは年額17,800円です。' ],
+		];
+		$this->assertSame(
+			FE_Search_AI_Contextual_Retrieval::DECISION_RETRIEVE,
+			FE_Search_AI_Contextual_Retrieval::decide( 'もっと安いプランはないの？', $history, [] )
+		);
+	}
+
+	/**
+	 * Test that a vague reply after a clarifying question is not re-clarified.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_decide_vague_answer_after_clarify_retrieves() {
+		$history = [
+			[ 'role' => 'user', 'content' => '使い方を教えて' ],
+			[ 'role' => 'assistant', 'content' => 'どの製品についてお知りになりたいですか？' ],
+		];
+		$this->assertSame(
+			FE_Search_AI_Contextual_Retrieval::DECISION_RETRIEVE,
+			FE_Search_AI_Contextual_Retrieval::decide( 'どれでもいいよ', $history, [] )
+		);
+	}
+
+	/**
+	 * Test that the decision filter can override the heuristic result.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_decision_filter_overrides_heuristic() {
+		add_filter(
+			'fe_search_ai_retrieval_decision',
+			function () {
+				return 'answer';
+			}
+		);
+		$this->assertSame(
+			FE_Search_AI_Contextual_Retrieval::DECISION_ANSWER,
+			FE_Search_AI_Contextual_Retrieval::decide( 'FE Search AI Proの価格は？', [], [] )
+		);
+	}
+
+	/**
+	 * Test that an invalid filtered decision falls back to retrieve.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_decision_filter_invalid_value_falls_back() {
+		add_filter(
+			'fe_search_ai_retrieval_decision',
+			function () {
+				return 'bogus';
+			}
+		);
+		$this->assertSame(
+			FE_Search_AI_Contextual_Retrieval::DECISION_RETRIEVE,
+			FE_Search_AI_Contextual_Retrieval::decide( 'こんにちは', [], [] )
+		);
+	}
+
+	/**
+	 * Test small talk detection handles punctuation and composite phrases.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_is_small_talk() {
+		$this->assertTrue( FE_Search_AI_Contextual_Retrieval::is_small_talk( 'こんにちは！' ) );
+		$this->assertTrue( FE_Search_AI_Contextual_Retrieval::is_small_talk( 'thank you.' ) );
+		$this->assertFalse( FE_Search_AI_Contextual_Retrieval::is_small_talk( 'こんにちは、料金を教えて' ) );
+		$this->assertFalse( FE_Search_AI_Contextual_Retrieval::is_small_talk( '使い方を教えて' ) );
+	}
+
+	/**
+	 * Test the clarify instruction is a non-empty filterable string.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_clarify_instruction_is_filterable() {
+		$this->assertNotEmpty( FE_Search_AI_Contextual_Retrieval::get_clarify_instruction() );
+		add_filter(
+			'fe_search_ai_clarify_instruction',
+			function () {
+				return 'CUSTOM';
+			}
+		);
+		$this->assertSame( 'CUSTOM', FE_Search_AI_Contextual_Retrieval::get_clarify_instruction() );
 	}
 }

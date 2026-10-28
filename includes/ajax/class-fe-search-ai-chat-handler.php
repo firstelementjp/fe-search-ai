@@ -68,6 +68,17 @@ class FE_Search_AI_Chat_Handler {
 	private $context_post = null;
 
 	/**
+	 * Instruction appended to the system prompt for the current request.
+	 *
+	 * Set when the retrieval decision is "clarify" so the AI asks the visitor
+	 * what topic they mean instead of guessing.
+	 *
+	 * @since 1.5.0
+	 * @var string
+	 */
+	private $turn_instruction = '';
+
+	/**
 	 * Constructor: Initializes the chat handler with dependencies and hooks.
 	 *
 	 * Sets up the chat functionality by loading plugin options, checking license
@@ -297,6 +308,14 @@ class FE_Search_AI_Chat_Handler {
 			}
 			$history = $this->sanitize_chat_history( $history );
 
+			// Decide whether retrieval should run at all. Small talk is
+			// answered without context; underspecified questions get a
+			// clarifying instruction instead of a wasted search.
+			$retrieval_decision = \FESearchAI\Core\FE_Search_AI_Contextual_Retrieval::decide( $question, $history, is_array( $this->options ) ? $this->options : [] );
+			if ( \FESearchAI\Core\FE_Search_AI_Contextual_Retrieval::DECISION_CLARIFY === $retrieval_decision ) {
+				$this->turn_instruction = \FESearchAI\Core\FE_Search_AI_Contextual_Retrieval::get_clarify_instruction();
+			}
+
 			// Resolve the page the visitor was viewing when the question was sent.
 			$this->context_post = $this->resolve_context_post( $request->get_param( 'context_post_id' ) );
 
@@ -311,130 +330,147 @@ class FE_Search_AI_Chat_Handler {
 				$sequence_id
 			);
 
-			// Context retrieval (keyword/vector search)
-			try {
+			$similar_chunks  = [];
+			$retrieval_start = microtime( true );
+
+			if ( \FESearchAI\Core\FE_Search_AI_Contextual_Retrieval::DECISION_RETRIEVE !== $retrieval_decision ) {
 				\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
 					'INFO',
-					'Starting context retrieval',
-					[],
+					'Context retrieval skipped by decision gate.',
+					[
+						'decision'        => $retrieval_decision,
+						'question_length' => strlen( $question ),
+					],
 					$sequence_id
 				);
+			} else {
 
-				// Expand the retrieval query with entities from recent history so
-				// context-dependent follow-ups ("Is there a cheaper plan?") still
-				// anchor retrieval to the topic under discussion. The original
-				// question remains what is logged and sent to the AI provider.
-				$retrieval_question = \FESearchAI\Core\FE_Search_AI_Contextual_Retrieval::build_retrieval_query( $question, $history, is_array( $this->options ) ? $this->options : [] );
-				if ( $retrieval_question !== $question ) {
+				// Context retrieval (keyword/vector search)
+				try {
 					\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
-						'DEBUG',
-						'Retrieval query expanded with conversation context.',
+						'INFO',
+						'Starting context retrieval',
+						[],
+						$sequence_id
+					);
+
+					// Expand the retrieval query with entities from recent history so
+					// context-dependent follow-ups ("Is there a cheaper plan?") still
+					// anchor retrieval to the topic under discussion. The original
+					// question remains what is logged and sent to the AI provider.
+					$retrieval_question = \FESearchAI\Core\FE_Search_AI_Contextual_Retrieval::build_retrieval_query( $question, $history, is_array( $this->options ) ? $this->options : [] );
+					if ( $retrieval_question !== $question ) {
+						\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
+							'DEBUG',
+							'Retrieval query expanded with conversation context.',
+							[
+								'question_length'        => strlen( $question ),
+								'retrieval_query_length' => strlen( $retrieval_question ),
+							],
+							$sequence_id
+						);
+					}
+
+					$similar_chunks = $this->sync_handler->find_similar_chunks( $retrieval_question );
+
+					/**
+					 * Filters the array of retrieved context chunks.
+					 *
+					 * This hook is applied after the database search (both keyword and vector)
+					 * is complete, but before the chunks are passed to the AI. It allows for
+					 * advanced manipulation of the context, such as re-ranking, filtering,
+					 * or adding external data.
+					 *
+					 * @since 0.9.0
+					 *
+					 * @param array  $similar_chunks An array of the retrieved chunk items.
+					 * @param string $question       The original user's question.
+					 */
+					// Make sequence ID available to filter callbacks
+					$GLOBALS['fe_search_ai_current_sequence_id'] = $sequence_id;
+					// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+					// Hook name is properly prefixed with fe_search_ai_.
+					$similar_chunks = apply_filters( 'fe_search_ai_retrieved_chunks', $similar_chunks, $retrieval_question );
+
+					// Guarantee that chunks from the page the visitor is viewing are
+					// represented in the context, so demonstratives like "this"
+					// resolve to that page even when retrieval prefers other content.
+					if ( $this->context_post instanceof \WP_Post && $this->sync_handler ) {
+						// Hook name is properly prefixed with fe_search_ai_.
+						$page_limit  = max( 1, (int) apply_filters( 'fe_search_ai_page_context_chunk_limit', 3, $question ) );
+						$page_chunks = $this->sync_handler->find_chunks_for_post( $question, $this->context_post->ID, $page_limit );
+						if ( ! empty( $page_chunks ) ) {
+							$seen = [];
+							foreach ( (array) $similar_chunks as $chunk ) {
+								$seen[ md5( (string) ( $chunk['content_chunk'] ?? '' ) ) ] = true;
+							}
+							$page_chunks    = array_values(
+								array_filter(
+									$page_chunks,
+									function ( $chunk ) use ( &$seen ) {
+										$key = md5( (string) ( $chunk['content_chunk'] ?? '' ) );
+										if ( isset( $seen[ $key ] ) ) {
+											return false;
+										}
+										$seen[ $key ] = true;
+										return true;
+									}
+								)
+							);
+							$similar_chunks = array_merge( $page_chunks, (array) $similar_chunks );
+						}
+					}
+
+					\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
+						'INFO',
+						'Context retrieval completed',
 						[
-							'question_length'        => strlen( $question ),
-							'retrieval_query_length' => strlen( $retrieval_question ),
+							'chunks_found' => count( $similar_chunks ),
+							'elapsed_ms'   => (int) round( ( microtime( true ) - $retrieval_start ) * 1000 ),
 						],
 						$sequence_id
 					);
-				}
 
-				$similar_chunks = $this->sync_handler->find_similar_chunks( $retrieval_question );
+					$retrieval_trace = \FESearchAI\Core\FE_Search_AI_Retrieval_Trace::build_payload(
+						is_array( $similar_chunks ) ? $similar_chunks : [],
+						$question,
+						$sequence_id,
+						[
+							'provider' => $provider,
+						]
+					);
 
-				/**
-				 * Filters the array of retrieved context chunks.
-				 *
-				 * This hook is applied after the database search (both keyword and vector)
-				 * is complete, but before the chunks are passed to the AI. It allows for
-				 * advanced manipulation of the context, such as re-ranking, filtering,
-				 * or adding external data.
-				 *
-				 * @since 0.9.0
-				 *
-				 * @param array  $similar_chunks An array of the retrieved chunk items.
-				 * @param string $question       The original user's question.
-				 */
-				// Make sequence ID available to filter callbacks
-				$GLOBALS['fe_search_ai_current_sequence_id'] = $sequence_id;
-				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
-				// Hook name is properly prefixed with fe_search_ai_.
-				$similar_chunks = apply_filters( 'fe_search_ai_retrieved_chunks', $similar_chunks, $retrieval_question );
+					\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
+						'DEBUG',
+						'Retrieval trace scores captured.',
+						[ 'retrieval_trace' => $retrieval_trace ],
+						$sequence_id
+					);
 
-				// Guarantee that chunks from the page the visitor is viewing are
-				// represented in the context, so demonstratives like "this"
-				// resolve to that page even when retrieval prefers other content.
-				if ( $this->context_post instanceof \WP_Post && $this->sync_handler ) {
+					/**
+					 * Fires after a safe retrieval trace payload is built.
+					 *
+					 * @since 1.0.0
+					 * @param array $retrieval_trace Safe retrieval trace payload.
+					 */
+					// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 					// Hook name is properly prefixed with fe_search_ai_.
-					$page_limit  = max( 1, (int) apply_filters( 'fe_search_ai_page_context_chunk_limit', 3, $question ) );
-					$page_chunks = $this->sync_handler->find_chunks_for_post( $question, $this->context_post->ID, $page_limit );
-					if ( ! empty( $page_chunks ) ) {
-						$seen = [];
-						foreach ( (array) $similar_chunks as $chunk ) {
-							$seen[ md5( (string) ( $chunk['content_chunk'] ?? '' ) ) ] = true;
-						}
-						$page_chunks    = array_values(
-							array_filter(
-								$page_chunks,
-								function ( $chunk ) use ( &$seen ) {
-									$key = md5( (string) ( $chunk['content_chunk'] ?? '' ) );
-									if ( isset( $seen[ $key ] ) ) {
-										return false;
-									}
-									$seen[ $key ] = true;
-									return true;
-								}
-							)
-						);
-						$similar_chunks = array_merge( $page_chunks, (array) $similar_chunks );
-					}
+					do_action( 'fe_search_ai_retrieval_trace', $retrieval_trace );
+
+				} catch ( \Throwable $t ) {
+					// Fail safely: log the error and continue without context.
+					\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
+						'ERROR',
+						'Context retrieval failed in stream_handler.',
+						[
+							'error_message' => $t->getMessage(),
+							'file'          => $t->getFile(),
+							'line'          => $t->getLine(),
+						],
+						$sequence_id
+					);
+					$similar_chunks = [];
 				}
-
-				\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
-					'INFO',
-					'Context retrieval completed',
-					[
-						'chunks_found' => count( $similar_chunks ),
-					],
-					$sequence_id
-				);
-
-				$retrieval_trace = \FESearchAI\Core\FE_Search_AI_Retrieval_Trace::build_payload(
-					is_array( $similar_chunks ) ? $similar_chunks : [],
-					$question,
-					$sequence_id,
-					[
-						'provider' => $provider,
-					]
-				);
-
-				\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
-					'DEBUG',
-					'Retrieval trace scores captured.',
-					[ 'retrieval_trace' => $retrieval_trace ],
-					$sequence_id
-				);
-
-				/**
-				 * Fires after a safe retrieval trace payload is built.
-				 *
-				 * @since 1.0.0
-				 * @param array $retrieval_trace Safe retrieval trace payload.
-				 */
-				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
-				// Hook name is properly prefixed with fe_search_ai_.
-				do_action( 'fe_search_ai_retrieval_trace', $retrieval_trace );
-
-			} catch ( \Throwable $t ) {
-				// Fail safely: log the error and continue without context.
-				\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
-					'ERROR',
-					'Context retrieval failed in stream_handler.',
-					[
-						'error_message' => $t->getMessage(),
-						'file'          => $t->getFile(),
-						'line'          => $t->getLine(),
-					],
-					$sequence_id
-				);
-				$similar_chunks = [];
 			}
 
 			$context_found = ! empty( $similar_chunks );
@@ -2028,6 +2064,10 @@ class FE_Search_AI_Chat_Handler {
 				"The user is currently viewing the page titled \"{$context_title}\" ({$context_permalink}). " .
 				"When the user's question uses a demonstrative such as \"this\", \"this page\", \"これ\", \"この\", \"その\", or \"こちら\" without an explicit referent, interpret it as referring to this page. " .
 				'Search Results items marked "Source: current page" are excerpts from this page; prioritize them when the question concerns the page.';
+		}
+
+		if ( '' !== $this->turn_instruction ) {
+			$system_prompt .= $this->turn_instruction;
 		}
 
 		// Add Gemini-specific constraints to prevent hallucination

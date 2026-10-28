@@ -58,6 +58,73 @@ class FE_Search_AI_Contextual_Retrieval {
 	const DEFAULT_MAX_CHUNKS_PER_POST = 2;
 
 	/**
+	 * Decision: run the normal retrieval pipeline.
+	 *
+	 * @since 1.5.0
+	 * @var string
+	 */
+	const DECISION_RETRIEVE = 'retrieve';
+
+	/**
+	 * Decision: skip retrieval and answer directly (small talk).
+	 *
+	 * @since 1.5.0
+	 * @var string
+	 */
+	const DECISION_ANSWER = 'answer';
+
+	/**
+	 * Decision: skip retrieval and ask the visitor to clarify the topic.
+	 *
+	 * @since 1.5.0
+	 * @var string
+	 */
+	const DECISION_CLARIFY = 'clarify';
+
+	/**
+	 * Small talk phrase patterns matched against the normalized question.
+	 *
+	 * Normalization lowercases the input and strips surrounding whitespace,
+	 * so patterns only need to cover the phrase itself plus trailing
+	 * punctuation handled by the wrapper.
+	 *
+	 * @since 1.5.0
+	 * @var string[]
+	 */
+	const DEFAULT_SMALL_TALK_PATTERNS = [
+		// Japanese.
+		'こんにちは',
+		'こんばんは',
+		'おはよう(?:ございます)?',
+		'お疲れ(?:様|さま)(?:です)?',
+		'ありがとう(?:ございま(?:す|した))?',
+		'どうも',
+		'はい',
+		'いいえ',
+		'うん',
+		'そうですか',
+		'なるほど',
+		'よろしく(?:お願い(?:します|致します))? ?(?:ね)?',
+		'さようなら',
+		'バイバイ',
+		'おやすみ(?:なさい)?',
+		'お願いします',
+		'テスト',
+		// English.
+		'hi',
+		'hello',
+		'hey',
+		'thanks?(?: you)?',
+		'thx',
+		'ok(?:ay)?',
+		'yes',
+		'no',
+		'bye|goodbye|good ?bye',
+		'good (?:morning|afternoon|evening|night)',
+		'see you',
+	];
+
+	/**
 	 * Generic terms that carry little entity value on their own.
 	 *
 	 * @since 1.5.0
@@ -229,6 +296,175 @@ class FE_Search_AI_Contextual_Retrieval {
 		 * @param array    $history         Sanitized conversation history.
 		 */
 		return (string) apply_filters( 'fe_search_ai_contextual_retrieval_query', $retrieval_query, $question, $entities, $history );
+	}
+
+	/**
+	 * Decides how a question should be handled before retrieval runs.
+	 *
+	 * Heuristic order:
+	 * 1. Small talk (greetings, thanks, acknowledgements) -> answer directly.
+	 * 2. No entity candidates in the question or recent history -> ask the
+	 *    visitor to clarify what they want, unless the previous assistant turn
+	 *    was already a clarifying question.
+	 * 3. Everything else -> run retrieval.
+	 *
+	 * The `fe_search_ai_retrieval_decision` filter can override the result,
+	 * e.g. to plug in a model-based decision such as TypeSafe's Jev.
+	 *
+	 * @since 1.5.0
+	 * @param string $question Sanitized user question.
+	 * @param array  $history  Sanitized conversation history.
+	 * @param array  $settings Plugin settings array.
+	 * @return string One of the DECISION_* constants.
+	 */
+	public static function decide( $question, array $history, array $settings ) {
+		$question = (string) $question;
+		$decision = self::DECISION_RETRIEVE;
+
+		if ( '' !== $question ) {
+			if ( self::is_small_talk( $question ) ) {
+				$decision = self::DECISION_ANSWER;
+			} else {
+				$question_entities = self::extract_entities( $question );
+				$history_entities  = self::extract_history_entities( $history );
+				if ( empty( $question_entities ) && empty( $history_entities ) ) {
+					$decision = self::last_assistant_was_clarifying( $history )
+						? self::DECISION_RETRIEVE
+						: self::DECISION_CLARIFY;
+				}
+			}
+		}
+
+		/**
+		 * Filters the retrieval decision for the current question.
+		 *
+		 * External decision models (e.g. TypeSafe Jev) can hook here to replace
+		 * the heuristic result.
+		 *
+		 * @since 1.5.0
+		 *
+		 * @param string $decision One of the DECISION_* constants.
+		 * @param string $question Sanitized user question.
+		 * @param array  $history  Sanitized conversation history.
+		 * @param array  $settings Plugin settings array.
+		 */
+		$decision = (string) apply_filters( 'fe_search_ai_retrieval_decision', $decision, $question, $history, $settings );
+
+		if ( ! in_array( $decision, [ self::DECISION_RETRIEVE, self::DECISION_ANSWER, self::DECISION_CLARIFY ], true ) ) {
+			$decision = self::DECISION_RETRIEVE;
+		}
+
+		return $decision;
+	}
+
+	/**
+	 * Whether the question is small talk that needs no retrieval context.
+	 *
+	 * Matches the normalized question (lowercased, punctuation trimmed)
+	 * against a list of greeting/thanks/acknowledgement patterns.
+	 *
+	 * @since 1.5.0
+	 * @param string $question Sanitized user question.
+	 * @return bool
+	 */
+	public static function is_small_talk( $question ) {
+		$normalized = mb_strtolower( trim( (string) $question ) );
+		// Strip trailing punctuation and emoji-ish marks so "こんにちは！" matches.
+		$normalized = preg_replace( '/[\s!！?？.。．〜～…、,]+$/u', '', $normalized );
+		if ( '' === $normalized ) {
+			return false;
+		}
+
+		/**
+		 * Filters the small talk phrase patterns.
+		 *
+		 * Each entry is used as a regular-expression alternative and must
+		 * match the whole normalized question.
+		 *
+		 * @since 1.5.0
+		 *
+		 * @param string[] $patterns Default patterns.
+		 * @param string   $question Normalized question text.
+		 */
+		$patterns = (array) apply_filters( 'fe_search_ai_small_talk_patterns', self::DEFAULT_SMALL_TALK_PATTERNS, $normalized );
+		if ( empty( $patterns ) ) {
+			return false;
+		}
+
+		return (bool) preg_match( '/^(?:' . implode( '|', $patterns ) . ')$/u', $normalized );
+	}
+
+	/**
+	 * Returns the instruction appended to the system prompt in clarify mode.
+	 *
+	 * @since 1.5.0
+	 * @return string
+	 */
+	public static function get_clarify_instruction() {
+		$instruction = "\n\n## Current Turn Instruction\n" .
+			'The user\'s question does not specify what product, page, or topic it refers to. ' .
+			'Do NOT attempt to answer it yet. Reply with a short question asking what they would like to know about, ' .
+			'and suggest one or two likely topics if helpful.';
+
+		/**
+		 * Filters the instruction injected into the system prompt when the
+		 * retrieval decision is `clarify`.
+		 *
+		 * @since 1.5.0
+		 *
+		 * @param string $instruction Default instruction text.
+		 */
+		return (string) apply_filters( 'fe_search_ai_clarify_instruction', $instruction );
+	}
+
+	/**
+	 * Extracts entity candidates from recent history messages.
+	 *
+	 * @since 1.5.0
+	 * @param array $history Sanitized conversation history.
+	 * @return string[] Candidate terms found in recent history.
+	 */
+	private static function extract_history_entities( array $history ) {
+		if ( empty( $history ) ) {
+			return [];
+		}
+		$entities = [];
+		foreach ( array_slice( $history, -self::DEFAULT_HISTORY_MESSAGES ) as $message ) {
+			if ( ! is_array( $message ) || empty( $message['content'] ) || ! is_string( $message['content'] ) ) {
+				continue;
+			}
+			foreach ( self::extract_entities( $message['content'] ) as $entity ) {
+				$entities[ mb_strtolower( $entity ) ] = $entity;
+			}
+		}
+		return array_values( $entities );
+	}
+
+	/**
+	 * Whether the last assistant message looks like a clarifying question.
+	 *
+	 * Used to avoid asking for clarification twice in a row when the visitor
+	 * answers with entity-free text such as "うん".
+	 *
+	 * @since 1.5.0
+	 * @param array $history Sanitized conversation history.
+	 * @return bool
+	 */
+	private static function last_assistant_was_clarifying( array $history ) {
+		for ( $i = count( $history ) - 1; $i >= 0; --$i ) {
+			$message = $history[ $i ];
+			if ( ! is_array( $message ) || 'assistant' !== ( $message['role'] ?? '' ) ) {
+				continue;
+			}
+			$content = isset( $message['content'] ) && is_string( $message['content'] ) ? trim( $message['content'] ) : '';
+			if ( '' === $content ) {
+				return false;
+			}
+			// A turn ending with a question mark or containing typical
+			// interrogative endings counts as a clarifying question.
+			return (bool) preg_match( '/[?？]\s*$|(?:ですか|ますか|でしょうか|お聞かせ|教えて(?:ください)?[.。]?\s*$)/u', $content );
+		}
+		return false;
 	}
 
 	/**
