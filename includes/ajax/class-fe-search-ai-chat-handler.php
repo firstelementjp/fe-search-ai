@@ -313,14 +313,20 @@ class FE_Search_AI_Chat_Handler {
 			// clarifying instruction instead of a wasted search.
 			$decision_details   = \FESearchAI\Core\FE_Search_AI_Contextual_Retrieval::decide_with_details( $question, $history, is_array( $this->options ) ? $this->options : [] );
 			$retrieval_decision = $decision_details['decision'];
+			$decision_log       = [
+				'decision'              => $retrieval_decision,
+				'reason'                => $decision_details['reason'],
+				'question_entity_count' => $decision_details['question_entity_count'],
+				'history_entity_count'  => $decision_details['history_entity_count'],
+			];
+			if ( 'filter_override' === $decision_details['reason'] ) {
+				$decision_log['heuristic_decision'] = $decision_details['heuristic_decision'];
+				$decision_log['heuristic_reason']   = $decision_details['heuristic_reason'];
+			}
 			\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
 				'INFO',
 				'Retrieval decision made.',
-				[
-					'decision'              => $retrieval_decision,
-					'question_entity_count' => $decision_details['question_entity_count'],
-					'history_entity_count'  => $decision_details['history_entity_count'],
-				],
+				$decision_log,
 				$sequence_id
 			);
 			if ( \FESearchAI\Core\FE_Search_AI_Contextual_Retrieval::DECISION_CLARIFY === $retrieval_decision ) {

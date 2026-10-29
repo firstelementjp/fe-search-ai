@@ -513,14 +513,51 @@ class ContextualRetrievalTest extends TestCase {
 		];
 		$details = FE_Search_AI_Contextual_Retrieval::decide_with_details( 'もっと安いのは？', $history, [] );
 		$this->assertSame( FE_Search_AI_Contextual_Retrieval::DECISION_RETRIEVE, $details['decision'] );
+		$this->assertSame( 'entities', $details['reason'] );
 		$this->assertSame( 0, $details['question_entity_count'] );
 		$this->assertGreaterThan( 0, $details['history_entity_count'] );
 
 		// Small talk leaves both counts at zero.
 		$details = FE_Search_AI_Contextual_Retrieval::decide_with_details( 'こんにちは', $history, [] );
 		$this->assertSame( FE_Search_AI_Contextual_Retrieval::DECISION_ANSWER, $details['decision'] );
+		$this->assertSame( 'small_talk', $details['reason'] );
 		$this->assertSame( 0, $details['question_entity_count'] );
 		$this->assertSame( 0, $details['history_entity_count'] );
+	}
+
+	/**
+	 * Test the reason explains a clarify-guard retrieve and a filter override.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_decide_with_details_reasons() {
+		// Entity-free reply after an assistant question -> clarify_guard retrieve.
+		$history = [
+			[ 'role' => 'user', 'content' => '使い方を教えて' ],
+			[ 'role' => 'assistant', 'content' => 'どの製品についてお知りになりたいですか？' ],
+		];
+		$details = FE_Search_AI_Contextual_Retrieval::decide_with_details( 'どれでもいいよ', $history, [] );
+		$this->assertSame( FE_Search_AI_Contextual_Retrieval::DECISION_RETRIEVE, $details['decision'] );
+		$this->assertSame( 'clarify_guard', $details['reason'] );
+
+		// Entity-free first turn -> clarify.
+		$details = FE_Search_AI_Contextual_Retrieval::decide_with_details( '使い方を教えて', [], [] );
+		$this->assertSame( FE_Search_AI_Contextual_Retrieval::DECISION_CLARIFY, $details['decision'] );
+		$this->assertSame( 'entity_free', $details['reason'] );
+
+		// Filter override keeps the heuristic values alongside the reason.
+		add_filter(
+			'fe_search_ai_retrieval_decision',
+			function () {
+				return 'retrieve';
+			}
+		);
+		$details = FE_Search_AI_Contextual_Retrieval::decide_with_details( '使い方を教えて', [], [] );
+		$this->assertSame( FE_Search_AI_Contextual_Retrieval::DECISION_RETRIEVE, $details['decision'] );
+		$this->assertSame( 'filter_override', $details['reason'] );
+		$this->assertSame( FE_Search_AI_Contextual_Retrieval::DECISION_CLARIFY, $details['heuristic_decision'] );
+		$this->assertSame( 'entity_free', $details['heuristic_reason'] );
 	}
 
 	/**

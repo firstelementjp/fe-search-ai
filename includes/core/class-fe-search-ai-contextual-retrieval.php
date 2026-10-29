@@ -333,24 +333,35 @@ class FE_Search_AI_Contextual_Retrieval {
 	 * @param string $question Sanitized user question.
 	 * @param array  $history  Sanitized conversation history.
 	 * @param array  $settings Plugin settings array.
-	 * @return array { decision, question_entity_count, history_entity_count }.
+	 * @return array {
+	 *     decision, reason (small_talk|entities|clarify_guard|entity_free|
+	 *     empty_question|filter_override), heuristic_decision,
+	 *     heuristic_reason, question_entity_count, history_entity_count
+	 * }.
 	 */
 	public static function decide_with_details( $question, array $history, array $settings ) {
 		$question          = (string) $question;
 		$decision          = self::DECISION_RETRIEVE;
+		$reason            = 'empty_question';
 		$question_entities = [];
 		$history_entities  = [];
 
 		if ( '' !== $question ) {
 			if ( self::is_small_talk( $question ) ) {
 				$decision = self::DECISION_ANSWER;
+				$reason   = 'small_talk';
 			} else {
 				$question_entities = self::extract_entities( $question );
 				$history_entities  = self::extract_history_entities( $history );
-				if ( empty( $question_entities ) && empty( $history_entities ) ) {
-					$decision = self::last_assistant_was_clarifying( $history )
-						? self::DECISION_RETRIEVE
-						: self::DECISION_CLARIFY;
+				if ( ! empty( $question_entities ) || ! empty( $history_entities ) ) {
+					$reason = 'entities';
+				} elseif ( self::last_assistant_was_clarifying( $history ) ) {
+					// Entity-free reply to an assistant question is treated as
+					// an answer to that question, not a new vague topic.
+					$reason = 'clarify_guard';
+				} else {
+					$decision = self::DECISION_CLARIFY;
+					$reason   = 'entity_free';
 				}
 			}
 		}
@@ -368,14 +379,24 @@ class FE_Search_AI_Contextual_Retrieval {
 		 * @param array  $history  Sanitized conversation history.
 		 * @param array  $settings Plugin settings array.
 		 */
+		$heuristic      = $decision;
+		$heuristic_name = $reason;
+
 		$decision = (string) apply_filters( 'fe_search_ai_retrieval_decision', $decision, $question, $history, $settings );
 
 		if ( ! in_array( $decision, [ self::DECISION_RETRIEVE, self::DECISION_ANSWER, self::DECISION_CLARIFY ], true ) ) {
 			$decision = self::DECISION_RETRIEVE;
 		}
 
+		if ( $decision !== $heuristic ) {
+			$reason = 'filter_override';
+		}
+
 		return [
 			'decision'              => $decision,
+			'reason'                => $reason,
+			'heuristic_decision'    => $heuristic,
+			'heuristic_reason'      => $heuristic_name,
 			'question_entity_count' => count( $question_entities ),
 			'history_entity_count'  => count( $history_entities ),
 		];
