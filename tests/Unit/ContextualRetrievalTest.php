@@ -502,6 +502,28 @@ class ContextualRetrievalTest extends TestCase {
 	}
 
 	/**
+	 * Test decide_with_details returns the decision plus entity counts.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_decide_with_details_returns_counts() {
+		$history = [
+			[ 'role' => 'user', 'content' => 'FE Search AI Proは年額いくらですか？' ],
+		];
+		$details = FE_Search_AI_Contextual_Retrieval::decide_with_details( 'もっと安いのは？', $history, [] );
+		$this->assertSame( FE_Search_AI_Contextual_Retrieval::DECISION_RETRIEVE, $details['decision'] );
+		$this->assertSame( 0, $details['question_entity_count'] );
+		$this->assertGreaterThan( 0, $details['history_entity_count'] );
+
+		// Small talk leaves both counts at zero.
+		$details = FE_Search_AI_Contextual_Retrieval::decide_with_details( 'こんにちは', $history, [] );
+		$this->assertSame( FE_Search_AI_Contextual_Retrieval::DECISION_ANSWER, $details['decision'] );
+		$this->assertSame( 0, $details['question_entity_count'] );
+		$this->assertSame( 0, $details['history_entity_count'] );
+	}
+
+	/**
 	 * Test that the decision filter can override the heuristic result.
 	 *
 	 * @since 1.5.0

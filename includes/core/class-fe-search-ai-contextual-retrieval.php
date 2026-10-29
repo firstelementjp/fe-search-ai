@@ -318,8 +318,28 @@ class FE_Search_AI_Contextual_Retrieval {
 	 * @return string One of the DECISION_* constants.
 	 */
 	public static function decide( $question, array $history, array $settings ) {
-		$question = (string) $question;
-		$decision = self::DECISION_RETRIEVE;
+		$details = self::decide_with_details( $question, $history, $settings );
+		return $details['decision'];
+	}
+
+	/**
+	 * Decides how a question should be handled, with diagnostic counts.
+	 *
+	 * Same decision logic as decide() but also returns the entity counts
+	 * that drove it, so callers can log safe numeric metadata explaining
+	 * why a turn retrieved, answered, or asked for clarification.
+	 *
+	 * @since 1.5.0
+	 * @param string $question Sanitized user question.
+	 * @param array  $history  Sanitized conversation history.
+	 * @param array  $settings Plugin settings array.
+	 * @return array { decision, question_entity_count, history_entity_count }.
+	 */
+	public static function decide_with_details( $question, array $history, array $settings ) {
+		$question          = (string) $question;
+		$decision          = self::DECISION_RETRIEVE;
+		$question_entities = [];
+		$history_entities  = [];
 
 		if ( '' !== $question ) {
 			if ( self::is_small_talk( $question ) ) {
@@ -354,7 +374,11 @@ class FE_Search_AI_Contextual_Retrieval {
 			$decision = self::DECISION_RETRIEVE;
 		}
 
-		return $decision;
+		return [
+			'decision'              => $decision,
+			'question_entity_count' => count( $question_entities ),
+			'history_entity_count'  => count( $history_entities ),
+		];
 	}
 
 	/**

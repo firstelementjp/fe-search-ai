@@ -311,7 +311,18 @@ class FE_Search_AI_Chat_Handler {
 			// Decide whether retrieval should run at all. Small talk is
 			// answered without context; underspecified questions get a
 			// clarifying instruction instead of a wasted search.
-			$retrieval_decision = \FESearchAI\Core\FE_Search_AI_Contextual_Retrieval::decide( $question, $history, is_array( $this->options ) ? $this->options : [] );
+			$decision_details   = \FESearchAI\Core\FE_Search_AI_Contextual_Retrieval::decide_with_details( $question, $history, is_array( $this->options ) ? $this->options : [] );
+			$retrieval_decision = $decision_details['decision'];
+			\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
+				'INFO',
+				'Retrieval decision made.',
+				[
+					'decision'              => $retrieval_decision,
+					'question_entity_count' => $decision_details['question_entity_count'],
+					'history_entity_count'  => $decision_details['history_entity_count'],
+				],
+				$sequence_id
+			);
 			if ( \FESearchAI\Core\FE_Search_AI_Contextual_Retrieval::DECISION_CLARIFY === $retrieval_decision ) {
 				$this->turn_instruction = \FESearchAI\Core\FE_Search_AI_Contextual_Retrieval::get_clarify_instruction();
 			}
