@@ -318,6 +318,7 @@ class FE_Search_AI_Chat_Handler {
 				'reason'                => $decision_details['reason'],
 				'question_entity_count' => $decision_details['question_entity_count'],
 				'history_entity_count'  => $decision_details['history_entity_count'],
+				'offered_entity_count'  => $decision_details['offered_entity_count'],
 			];
 			if ( 'filter_override' === $decision_details['reason'] ) {
 				$decision_log['heuristic_decision'] = $decision_details['heuristic_decision'];
@@ -329,8 +330,12 @@ class FE_Search_AI_Chat_Handler {
 				$decision_log,
 				$sequence_id
 			);
-			if ( \FESearchAI\Core\FE_Search_AI_Contextual_Retrieval::DECISION_CLARIFY === $retrieval_decision ) {
-				$this->turn_instruction = \FESearchAI\Core\FE_Search_AI_Contextual_Retrieval::get_clarify_instruction();
+
+			// Resolve intent behavior (retrieve? turn instruction?) so future
+			// agentic intents can plug in via the behavior filter.
+			$intent_behavior = \FESearchAI\Core\FE_Search_AI_Contextual_Retrieval::resolve_intent_behavior( $retrieval_decision, $question, $history, is_array( $this->options ) ? $this->options : [] );
+			if ( '' !== $intent_behavior['instruction'] ) {
+				$this->turn_instruction = $intent_behavior['instruction'];
 			}
 
 			// Resolve the page the visitor was viewing when the question was sent.
@@ -350,7 +355,7 @@ class FE_Search_AI_Chat_Handler {
 			$similar_chunks  = [];
 			$retrieval_start = microtime( true );
 
-			if ( \FESearchAI\Core\FE_Search_AI_Contextual_Retrieval::DECISION_RETRIEVE !== $retrieval_decision ) {
+			if ( empty( $intent_behavior['retrieve'] ) ) {
 				\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
 					'INFO',
 					'Context retrieval skipped by decision gate.',

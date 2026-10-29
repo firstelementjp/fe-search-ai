@@ -218,25 +218,35 @@ class FE_Search_AI_Contextual_Retrieval {
 			$message_limit = self::DEFAULT_HISTORY_MESSAGES;
 		}
 
-		$history_slice = array_slice( $history, -$message_limit );
-		$scored        = [];
-		foreach ( $history_slice as $message ) {
-			if ( ! is_array( $message ) || empty( $message['content'] ) || ! is_string( $message['content'] ) ) {
+		$question_has_entities = ! empty( self::extract_entities( $question ) );
+		$entity_pool           = self::collect_history_entities( array_slice( $history, -$message_limit ) );
+		$scored                = [];
+		foreach ( $entity_pool as $key => $entry ) {
+			// Entities that only appear in assistant questions are "offered"
+			// topics (clarify suggestions). They anchor the query only when
+			// the user's question brings no entity of its own — a vague
+			// reply like "教えて" means accepting the offer, while a
+			// question carrying its own entity is a new direction the
+			// suggestions must not contaminate.
+			$offered_only = 0 === $entry['user'] && 0 === $entry['assistant'] && $entry['offered'] > 0;
+			if ( $question_has_entities && $offered_only ) {
 				continue;
 			}
-			// Entities mentioned in user turns are stronger topic signals than
-			// those that only appear in assistant answers.
-			$weight = ( isset( $message['role'] ) && 'user' === $message['role'] ) ? 2 : 1;
-			foreach ( self::extract_entities( $message['content'] ) as $entity ) {
-				$key = mb_strtolower( $entity );
-				if ( ! isset( $scored[ $key ] ) ) {
-					$scored[ $key ] = [
-						'term'   => $entity,
-						'score'  => 0,
-						'length' => mb_strlen( $entity ),
-					];
-				}
-				$scored[ $key ]['score'] += $weight;
+			$scored[ $key ] = [
+				'term'   => $entry['term'],
+				'score'  => ( 2 * $entry['user'] ) + $entry['assistant'] + $entry['offered'],
+				'length' => $entry['length'],
+			];
+		}
+
+		// An entity-free question ("教えて", "もっと安いのは？") carries
+		// little retrieval signal on its own, so the most recent substantive
+		// user message is appended as the query base.
+		$base = $question;
+		if ( ! $question_has_entities ) {
+			$last_user = self::last_user_message_text( array_slice( $history, -$message_limit ) );
+			if ( '' !== $last_user ) {
+				$base = trim( $question . ' ' . $last_user );
 			}
 		}
 
@@ -247,7 +257,7 @@ class FE_Search_AI_Contextual_Retrieval {
 			}
 		}
 		if ( empty( $scored ) ) {
-			return $question;
+			return $base;
 		}
 
 		usort(
@@ -273,7 +283,7 @@ class FE_Search_AI_Contextual_Retrieval {
 			$max_entities = self::DEFAULT_MAX_ENTITIES;
 		}
 		if ( 0 === $max_entities ) {
-			return $question;
+			return $base;
 		}
 
 		$entities = array_map(
@@ -283,7 +293,7 @@ class FE_Search_AI_Contextual_Retrieval {
 			array_slice( $scored, 0, $max_entities )
 		);
 
-		$retrieval_query = trim( $question . ' ' . implode( ' ', $entities ) );
+		$retrieval_query = trim( $base . ' ' . implode( ' ', $entities ) );
 
 		/**
 		 * Filters the expanded retrieval query before it is used for search.
@@ -315,7 +325,8 @@ class FE_Search_AI_Contextual_Retrieval {
 	 * @param string $question Sanitized user question.
 	 * @param array  $history  Sanitized conversation history.
 	 * @param array  $settings Plugin settings array.
-	 * @return string One of the DECISION_* constants.
+	 * @return string One of the DECISION_* constants, or a custom intent
+	 *                slug supplied by the decision filter.
 	 */
 	public static function decide( $question, array $history, array $settings ) {
 		$details = self::decide_with_details( $question, $history, $settings );
@@ -336,7 +347,8 @@ class FE_Search_AI_Contextual_Retrieval {
 	 * @return array {
 	 *     decision, reason (small_talk|entities|clarify_guard|entity_free|
 	 *     empty_question|filter_override), heuristic_decision,
-	 *     heuristic_reason, question_entity_count, history_entity_count
+	 *     heuristic_reason, question_entity_count, history_entity_count,
+	 *     offered_entity_count
 	 * }.
 	 */
 	public static function decide_with_details( $question, array $history, array $settings ) {
@@ -345,6 +357,7 @@ class FE_Search_AI_Contextual_Retrieval {
 		$reason            = 'empty_question';
 		$question_entities = [];
 		$history_entities  = [];
+		$offered_count     = 0;
 
 		if ( '' !== $question ) {
 			if ( self::is_small_talk( $question ) ) {
@@ -352,7 +365,23 @@ class FE_Search_AI_Contextual_Retrieval {
 				$reason   = 'small_talk';
 			} else {
 				$question_entities = self::extract_entities( $question );
-				$history_entities  = self::extract_history_entities( $history );
+				$entity_pool       = self::collect_history_entities( array_slice( $history, -self::DEFAULT_HISTORY_MESSAGES ) );
+				$history_entities  = array_values(
+					array_map(
+						function ( $entry ) {
+							return $entry['term'];
+						},
+						$entity_pool
+					)
+				);
+				$offered_count     = count(
+					array_filter(
+						$entity_pool,
+						function ( $entry ) {
+							return 0 === $entry['user'] && 0 === $entry['assistant'] && $entry['offered'] > 0;
+						}
+					)
+				);
 				if ( ! empty( $question_entities ) || ! empty( $history_entities ) ) {
 					$reason = 'entities';
 				} elseif ( self::last_assistant_was_clarifying( $history ) ) {
@@ -374,18 +403,32 @@ class FE_Search_AI_Contextual_Retrieval {
 		 *
 		 * @since 1.5.0
 		 *
-		 * @param string $decision One of the DECISION_* constants.
+		 * @param string $decision One of the DECISION_* constants, or a custom
+		 *                         intent slug (e.g. `stats`) when a behavior
+		 *                         provider is registered via
+		 *                         `fe_search_ai_retrieval_intent_behavior`.
 		 * @param string $question Sanitized user question.
 		 * @param array  $history  Sanitized conversation history.
 		 * @param array  $settings Plugin settings array.
+		 * @param array  $details  Heuristic details (reason, entity counts)
+		 *                         a decision model can use as input features.
 		 */
 		$heuristic      = $decision;
 		$heuristic_name = $reason;
+		$details        = [
+			'reason'                => $reason,
+			'question_entity_count' => count( $question_entities ),
+			'history_entity_count'  => count( $history_entities ),
+			'offered_entity_count'  => $offered_count,
+		];
 
-		$decision = (string) apply_filters( 'fe_search_ai_retrieval_decision', $decision, $question, $history, $settings );
+		$decision = (string) apply_filters( 'fe_search_ai_retrieval_decision', $decision, $question, $history, $settings, $details );
 
+		// Custom intent slugs pass through so future agentic routes (stats,
+		// site_info, ...) can be handled by external behavior providers;
+		// anything unparseable still falls back to retrieval.
 		if ( ! in_array( $decision, [ self::DECISION_RETRIEVE, self::DECISION_ANSWER, self::DECISION_CLARIFY ], true ) ) {
-			$decision = self::DECISION_RETRIEVE;
+			$decision = preg_match( '/^[a-z][a-z0-9_]*$/', $decision ) ? $decision : self::DECISION_RETRIEVE;
 		}
 
 		if ( $decision !== $heuristic ) {
@@ -399,6 +442,55 @@ class FE_Search_AI_Contextual_Retrieval {
 			'heuristic_reason'      => $heuristic_name,
 			'question_entity_count' => count( $question_entities ),
 			'history_entity_count'  => count( $history_entities ),
+			'offered_entity_count'  => $offered_count,
+		];
+	}
+
+	/**
+	 * Resolves what a decision intent should do in the chat pipeline.
+	 *
+	 * Built-in intents map to retrieve / answer / clarify behavior. Future
+	 * agentic intents (e.g. a `stats` intent returning aggregate counts, or
+	 * `site_info` answering from site profile data) can register their own
+	 * behavior without touching core code.
+	 *
+	 * @since 1.5.0
+	 * @param string $decision Decision intent slug.
+	 * @param string $question Sanitized user question.
+	 * @param array  $history  Sanitized conversation history.
+	 * @param array  $settings Plugin settings array.
+	 * @return array { retrieve: bool, instruction: string }.
+	 */
+	public static function resolve_intent_behavior( $decision, $question, array $history, array $settings ) {
+		// Unknown/custom intents default to retrieval so an unhandled slug
+		// degrades to the pre-gating behavior rather than a silent no-context
+		// answer.
+		$behavior = [
+			'retrieve'    => ! in_array( $decision, [ self::DECISION_ANSWER, self::DECISION_CLARIFY ], true ),
+			'instruction' => self::DECISION_CLARIFY === $decision ? self::get_clarify_instruction() : '',
+		];
+
+		/**
+		 * Filters the pipeline behavior for a retrieval decision intent.
+		 *
+		 * Custom intents returned via `fe_search_ai_retrieval_decision`
+		 * (e.g. from an external decision model) can define their behavior
+		 * here: whether the retrieval pipeline runs and which per-turn
+		 * instruction is appended to the system prompt.
+		 *
+		 * @since 1.5.0
+		 *
+		 * @param array  $behavior { retrieve: bool, instruction: string }.
+		 * @param string $decision Decision intent slug.
+		 * @param string $question Sanitized user question.
+		 * @param array  $history  Sanitized conversation history.
+		 * @param array  $settings Plugin settings array.
+		 */
+		$behavior = (array) apply_filters( 'fe_search_ai_retrieval_intent_behavior', $behavior, $decision, $question, $history, $settings );
+
+		return [
+			'retrieve'    => ! empty( $behavior['retrieve'] ),
+			'instruction' => isset( $behavior['instruction'] ) ? (string) $behavior['instruction'] : '',
 		];
 	}
 
@@ -463,26 +555,81 @@ class FE_Search_AI_Contextual_Retrieval {
 	}
 
 	/**
-	 * Extracts entity candidates from recent history messages.
+	 * Collects history entities with per-source occurrence counts.
+	 *
+	 * Each entity records how often it appeared in user turns, in
+	 * declarative assistant turns, and in question-form assistant turns
+	 * ("offered" topics such as clarify suggestions). The distinction lets
+	 * callers keep offered entities as anchors for vague replies while
+	 * dropping them when the user steers to a new direction.
 	 *
 	 * @since 1.5.0
-	 * @param array $history Sanitized conversation history.
-	 * @return string[] Candidate terms found in recent history.
+	 * @param array $messages History messages to scan (already sliced).
+	 * @return array Map of lowercase term => { term, user, assistant, offered, length }.
 	 */
-	private static function extract_history_entities( array $history ) {
-		if ( empty( $history ) ) {
-			return [];
-		}
+	private static function collect_history_entities( array $messages ) {
 		$entities = [];
-		foreach ( array_slice( $history, -self::DEFAULT_HISTORY_MESSAGES ) as $message ) {
+		foreach ( $messages as $message ) {
 			if ( ! is_array( $message ) || empty( $message['content'] ) || ! is_string( $message['content'] ) ) {
 				continue;
 			}
+			$role       = isset( $message['role'] ) ? (string) $message['role'] : '';
+			$from_user  = 'user' === $role;
+			$from_offer = 'assistant' === $role && self::text_is_question( $message['content'] );
 			foreach ( self::extract_entities( $message['content'] ) as $entity ) {
-				$entities[ mb_strtolower( $entity ) ] = $entity;
+				$key = mb_strtolower( $entity );
+				if ( ! isset( $entities[ $key ] ) ) {
+					$entities[ $key ] = [
+						'term'      => $entity,
+						'user'      => 0,
+						'assistant' => 0,
+						'offered'   => 0,
+						'length'    => mb_strlen( $entity ),
+					];
+				}
+				if ( $from_user ) {
+					++$entities[ $key ]['user'];
+				} elseif ( $from_offer ) {
+					++$entities[ $key ]['offered'];
+				} else {
+					++$entities[ $key ]['assistant'];
+				}
 			}
 		}
-		return array_values( $entities );
+		return $entities;
+	}
+
+	/**
+	 * Whether a text reads as a question.
+	 *
+	 * Matches interrogative markers anywhere in the message, not only at
+	 * the end, so mixed statements like "知りたいですか？たとえば…" still
+	 * count as questions.
+	 *
+	 * @since 1.5.0
+	 * @param string $content Message text.
+	 * @return bool
+	 */
+	private static function text_is_question( $content ) {
+		return (bool) preg_match( '/[?？]|ですか|ますか|でしょうか|お聞かせ|教えて(?:ください)?/u', (string) $content );
+	}
+
+	/**
+	 * Returns the most recent user message content for query-base expansion.
+	 *
+	 * @since 1.5.0
+	 * @param array $history Sanitized conversation history.
+	 * @return string Last user message text (max 200 chars), or ''.
+	 */
+	private static function last_user_message_text( array $history ) {
+		for ( $i = count( $history ) - 1; $i >= 0; --$i ) {
+			$message = $history[ $i ];
+			if ( ! is_array( $message ) || 'user' !== ( $message['role'] ?? '' ) || empty( $message['content'] ) || ! is_string( $message['content'] ) ) {
+				continue;
+			}
+			return mb_substr( trim( $message['content'] ), 0, 200 );
+		}
+		return '';
 	}
 
 	/**
@@ -505,9 +652,10 @@ class FE_Search_AI_Contextual_Retrieval {
 			if ( '' === $content ) {
 				return false;
 			}
-			// A turn ending with a question mark or containing typical
-			// interrogative endings counts as a clarifying question.
-			return (bool) preg_match( '/[?？]\s*$|(?:ですか|ますか|でしょうか|お聞かせ|教えて(?:ください)?[.。]?\s*$)/u', $content );
+			// Any interrogative marker in the latest assistant turn counts as
+			// a clarifying question, including "question + suggestion" shapes
+			// that end with a statement.
+			return self::text_is_question( $content );
 		}
 		return false;
 	}

@@ -30,6 +30,7 @@ class ContextualRetrievalTest extends TestCase {
 		remove_all_filters( 'fe_search_ai_contextual_retrieval_query' );
 		remove_all_filters( 'fe_search_ai_max_chunks_per_post' );
 		remove_all_filters( 'fe_search_ai_retrieval_decision' );
+		remove_all_filters( 'fe_search_ai_retrieval_intent_behavior' );
 		remove_all_filters( 'fe_search_ai_small_talk_patterns' );
 		remove_all_filters( 'fe_search_ai_clarify_instruction' );
 		remove_all_filters( 'fe_search_ai_entity_max_doc_ratio' );
@@ -165,7 +166,9 @@ class ContextualRetrievalTest extends TestCase {
 				return 1;
 			}
 		);
-		$question = '他に選択肢はある？';
+		// An entity-bearing question keeps the question itself as the query
+		// base, so only the entity cap applies to appended terms.
+		$question = 'Cohereの料金は？';
 		$history  = [
 			[ 'role' => 'user', 'content' => 'Qdrant と Cohere Rerank の違いを教えて' ],
 		];
@@ -173,6 +176,101 @@ class ContextualRetrievalTest extends TestCase {
 		// Only the single highest-scoring entity (longest on tie) is appended.
 		$this->assertStringContainsString( 'Cohere Rerank', $result );
 		$this->assertStringNotContainsString( 'Qdrant', $result );
+	}
+
+	/**
+	 * Test that offered entities (assistant question-form suggestions) are
+	 * dropped when the user's question brings its own entity, so clarify
+	 * suggestions cannot contaminate a new topic direction.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_offered_entities_dropped_for_entity_question() {
+		$question = '東京のエンジニアの仕事を探している';
+		$history  = [
+			[ 'role' => 'user', 'content' => '使い方を教えて' ],
+			[ 'role' => 'assistant', 'content' => 'どの使い方について知りたいですか？たとえば、会員登録や利用規約、プライバシーポリシーについてご案内できます。' ],
+		];
+		$result = FE_Search_AI_Contextual_Retrieval::build_retrieval_query( $question, $history, [] );
+		$this->assertSame( $question, $result );
+	}
+
+	/**
+	 * Test that an entity-free reply accepting an assistant's suggestion
+	 * anchors the query on the offered topics and on the last substantive
+	 * user message.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_offered_entities_anchor_entity_free_reply() {
+		$question = '教えて';
+		$history  = [
+			[ 'role' => 'user', 'content' => '使い方を教えて' ],
+			[ 'role' => 'assistant', 'content' => 'どの使い方について知りたいですか？たとえば、会員登録や利用規約、プライバシーポリシーについてご案内できます。' ],
+		];
+		$result = FE_Search_AI_Contextual_Retrieval::build_retrieval_query( $question, $history, [] );
+		$this->assertStringContainsString( '使い方を教えて', $result );
+		$this->assertStringContainsString( '会員登録', $result );
+	}
+
+	/**
+	 * Test that a question containing an interrogative marker mid-message
+	 * still counts as a clarifying assistant turn, so an entity-free reply
+	 * is guarded against a repeated clarify loop.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_decide_mid_message_question_counts_as_clarify() {
+		$history = [
+			[ 'role' => 'user', 'content' => '使い方を教えて' ],
+			[ 'role' => 'assistant', 'content' => 'どの使い方について知りたいですか？たとえば、求人の探し方をご案内できます' ],
+		];
+		$details = FE_Search_AI_Contextual_Retrieval::decide_with_details( '教えて', $history, [] );
+		$this->assertSame( FE_Search_AI_Contextual_Retrieval::DECISION_RETRIEVE, $details['decision'] );
+		$this->assertSame( 'clarify_guard', $details['reason'] );
+	}
+
+	/**
+	 * Test decide_with_details reports the offered-entity count for
+	 * diagnostic logs and external decision models.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_decide_with_details_reports_offered_count() {
+		$history = [
+			[ 'role' => 'user', 'content' => '使い方を教えて' ],
+			[ 'role' => 'assistant', 'content' => 'どの使い方について知りたいですか？たとえば、会員登録や利用規約、プライバシーポリシーについてご案内できます。' ],
+		];
+		$details = FE_Search_AI_Contextual_Retrieval::decide_with_details( '教えて', $history, [] );
+		$this->assertSame( 3, $details['offered_entity_count'] );
+	}
+
+	/**
+	 * Test the decision filter receives the heuristic details as the fifth
+	 * argument for external decision models.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_decision_filter_receives_details() {
+		$received = null;
+		add_filter(
+			'fe_search_ai_retrieval_decision',
+			function ( $decision, $question, $history, $settings, $details ) use ( &$received ) {
+				$received = $details;
+				return $decision;
+			},
+			10,
+			5
+		);
+		FE_Search_AI_Contextual_Retrieval::decide_with_details( '使い方を教えて', [], [] );
+		$this->assertIsArray( $received );
+		$this->assertArrayHasKey( 'reason', $received );
+		$this->assertArrayHasKey( 'offered_entity_count', $received );
 	}
 
 	/**
@@ -580,7 +678,27 @@ class ContextualRetrievalTest extends TestCase {
 	}
 
 	/**
-	 * Test that an invalid filtered decision falls back to retrieve.
+	 * Test that a custom intent slug passes through for future agentic
+	 * routes (stats, site_info, ...) handled by external behavior providers.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_decision_filter_custom_intent_passes_through() {
+		add_filter(
+			'fe_search_ai_retrieval_decision',
+			function () {
+				return 'stats';
+			}
+		);
+		$this->assertSame(
+			'stats',
+			FE_Search_AI_Contextual_Retrieval::decide( '東京のエンジニアの仕事は何件ある？', [], [] )
+		);
+	}
+
+	/**
+	 * Test that an unparseable filtered decision falls back to retrieve.
 	 *
 	 * @since 1.5.0
 	 * @return void
@@ -589,13 +707,62 @@ class ContextualRetrievalTest extends TestCase {
 		add_filter(
 			'fe_search_ai_retrieval_decision',
 			function () {
-				return 'bogus';
+				return 'INVALID VALUE!!';
 			}
 		);
 		$this->assertSame(
 			FE_Search_AI_Contextual_Retrieval::DECISION_RETRIEVE,
 			FE_Search_AI_Contextual_Retrieval::decide( 'こんにちは', [], [] )
 		);
+	}
+
+	/**
+	 * Test resolve_intent_behavior maps built-in intents and falls back to
+	 * retrieval for unknown slugs.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_resolve_intent_behavior_defaults() {
+		$retrieve = FE_Search_AI_Contextual_Retrieval::resolve_intent_behavior( 'retrieve', 'q', [], [] );
+		$this->assertTrue( $retrieve['retrieve'] );
+		$this->assertSame( '', $retrieve['instruction'] );
+
+		$answer = FE_Search_AI_Contextual_Retrieval::resolve_intent_behavior( 'answer', 'q', [], [] );
+		$this->assertFalse( $answer['retrieve'] );
+
+		$clarify = FE_Search_AI_Contextual_Retrieval::resolve_intent_behavior( 'clarify', 'q', [], [] );
+		$this->assertFalse( $clarify['retrieve'] );
+		$this->assertNotEmpty( $clarify['instruction'] );
+
+		// Unknown slugs degrade to retrieval (pre-gating behavior).
+		$unknown = FE_Search_AI_Contextual_Retrieval::resolve_intent_behavior( 'stats', 'q', [], [] );
+		$this->assertTrue( $unknown['retrieve'] );
+		$this->assertSame( '', $unknown['instruction'] );
+	}
+
+	/**
+	 * Test the intent behavior filter lets an external model define custom
+	 * behavior for its own intent slugs.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_resolve_intent_behavior_filter() {
+		add_filter(
+			'fe_search_ai_retrieval_intent_behavior',
+			function ( $behavior, $decision ) {
+				if ( 'stats' === $decision ) {
+					return [ 'retrieve' => false, 'instruction' => 'STATS MODE' ];
+				}
+				return $behavior;
+			},
+			10,
+			2
+		);
+		$behavior = FE_Search_AI_Contextual_Retrieval::resolve_intent_behavior( 'stats', 'q', [], [] );
+		$this->assertFalse( $behavior['retrieve'] );
+		$this->assertSame( 'STATS MODE', $behavior['instruction'] );
 	}
 
 	/**
