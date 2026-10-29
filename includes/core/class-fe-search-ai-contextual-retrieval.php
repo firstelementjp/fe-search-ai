@@ -110,30 +110,45 @@ class FE_Search_AI_Contextual_Retrieval {
 	}
 
 	/**
-	 * Generic terms that carry little entity value on their own.
+	 * Default maximum document-frequency ratio for entity candidates.
+	 *
+	 * A candidate whose rarest lookup token appears in more than this
+	 * fraction of indexed chunks is treated as ubiquitous site vocabulary
+	 * rather than a topic anchor.
 	 *
 	 * @since 1.5.0
-	 * @var string[]
+	 * @var float
 	 */
-	const DEFAULT_STOP_TERMS = [
-		'プラン',
-		'サービス',
-		'サイト',
-		'ページ',
-		'バージョン',
-		'プラグイン',
-		'アップデート',
-		'インストール',
-		'セットアップ',
-		'オプション',
-		'デフォルト',
-		'カスタム',
-		'エクスポート',
-		'インポート',
-		'ダウンロード',
-		'アップグレード',
-		'エンタープライズ',
-	];
+	const DEFAULT_ENTITY_MAX_DOC_RATIO = 0.5;
+
+	/**
+	 * Returns the entity stop terms merged from all i18n files.
+	 *
+	 * Each `includes/i18n/{locale}.php` file may declare an
+	 * `entity_stop_terms` list of generic terms that carry little entity
+	 * value on their own ("plan", "service", "plugin" ...). Lists from every
+	 * language are merged so visitor text is filtered regardless of the site
+	 * locale, mirroring `small_talk` / `injection_phrases`.
+	 *
+	 * @since 1.5.0
+	 * @return string[] Generic terms excluded from entity candidates.
+	 */
+	private static function get_entity_stop_terms() {
+		$terms    = [];
+		$i18n_dir = FE_SEARCH_AI_PLUGIN_DIR . 'includes/i18n/';
+		$files    = glob( $i18n_dir . '*.php' );
+
+		if ( is_array( $files ) ) {
+			foreach ( $files as $file ) {
+				$lang_data = include $file;
+				if ( ! empty( $lang_data['entity_stop_terms'] ) && is_array( $lang_data['entity_stop_terms'] ) ) {
+					$terms = array_merge( $terms, $lang_data['entity_stop_terms'] );
+				}
+			}
+		}
+
+		return array_values( array_unique( array_map( 'strval', $terms ) ) );
+	}
 
 	/**
 	 * Register filter hooks.
@@ -516,7 +531,7 @@ class FE_Search_AI_Contextual_Retrieval {
 		 * @param string[] $stop_terms Default stop terms.
 		 * @param string   $text       Source text.
 		 */
-		$stop_terms = (array) apply_filters( 'fe_search_ai_contextual_query_stop_terms', self::DEFAULT_STOP_TERMS, $text );
+		$stop_terms = (array) apply_filters( 'fe_search_ai_contextual_query_stop_terms', self::get_entity_stop_terms(), $text );
 		$stop_map   = [];
 		foreach ( $stop_terms as $term ) {
 			$stop_map[ mb_strtolower( (string) $term ) ] = true;
@@ -531,7 +546,191 @@ class FE_Search_AI_Contextual_Retrieval {
 			$unique[ $key ] = $candidate;
 		}
 
-		return array_values( $unique );
+		return self::filter_common_terms( array_values( $unique ) );
+	}
+
+	/**
+	 * Drops candidates that are ubiquitous across the indexed content.
+	 *
+	 * A static stop list cannot know which words are generic on a given site
+	 * ("job" on a job board, "recipe" on a cooking site). This filter
+	 * measures each candidate against the BM25 keyword index instead: the
+	 * candidate is dropped when even its rarest lookup token appears in more
+	 * than `fe_search_ai_entity_max_doc_ratio` of indexed chunks. Terms the
+	 * index does not know are kept, so a missing or empty index disables the
+	 * check entirely.
+	 *
+	 * @since 1.5.0
+	 * @param string[] $candidates Entity candidates after stop-term removal.
+	 * @return string[] Candidates that are discriminating enough to keep.
+	 */
+	private static function filter_common_terms( array $candidates ) {
+		if ( empty( $candidates ) ) {
+			return $candidates;
+		}
+
+		/**
+		 * Filters the maximum document-frequency ratio for entity candidates.
+		 *
+		 * A candidate is dropped when its rarest lookup token appears in more
+		 * than this fraction of indexed chunks. Values outside (0, 1] disable
+		 * the check.
+		 *
+		 * @since 1.5.0
+		 *
+		 * @param float $ratio Default maximum ratio (0.5).
+		 */
+		$ratio = (float) apply_filters( 'fe_search_ai_entity_max_doc_ratio', self::DEFAULT_ENTITY_MAX_DOC_RATIO );
+		if ( $ratio <= 0 || $ratio > 1 ) {
+			return $candidates;
+		}
+
+		$lookup_terms = [];
+		foreach ( $candidates as $candidate ) {
+			foreach ( self::entity_lookup_tokens( $candidate ) as $token ) {
+				$lookup_terms[ $token ] = true;
+			}
+		}
+		$lookup_terms = array_keys( $lookup_terms );
+
+		$stats = [
+			'total_chunks' => self::get_indexed_chunk_count(),
+			'frequencies'  => self::get_term_document_frequencies( $lookup_terms ),
+		];
+
+		/**
+		 * Filters the document-frequency statistics used to detect ubiquitous
+		 * entity candidates.
+		 *
+		 * Mainly intended for tests and for hosts that maintain the keyword
+		 * index outside the default table.
+		 *
+		 * @since 1.5.0
+		 *
+		 * @param array    $stats        Array with `total_chunks` (int) and
+		 *                               `frequencies` (token => document count).
+		 * @param string[] $lookup_terms Normalized tokens being looked up.
+		 */
+		$stats = (array) apply_filters( 'fe_search_ai_entity_document_stats', $stats, $lookup_terms );
+
+		$total       = isset( $stats['total_chunks'] ) ? (int) $stats['total_chunks'] : 0;
+		$frequencies = isset( $stats['frequencies'] ) && is_array( $stats['frequencies'] ) ? $stats['frequencies'] : [];
+		if ( $total <= 0 || empty( $frequencies ) ) {
+			return $candidates;
+		}
+
+		$kept = [];
+		foreach ( $candidates as $candidate ) {
+			$min_df = null;
+			foreach ( self::entity_lookup_tokens( $candidate ) as $token ) {
+				if ( isset( $frequencies[ $token ] ) ) {
+					$min_df = null === $min_df ? (int) $frequencies[ $token ] : min( $min_df, (int) $frequencies[ $token ] );
+				}
+			}
+			// Candidates unknown to the index are rare by definition; a known
+			// but ubiquitous rarest token marks the whole candidate as noise.
+			if ( null !== $min_df && ( $min_df / $total ) > $ratio ) {
+				continue;
+			}
+			$kept[] = $candidate;
+		}
+
+		return $kept;
+	}
+
+	/**
+	 * Returns normalized lookup tokens for a document-frequency check.
+	 *
+	 * Applies the same normalization as the keyword index (lowercase, kana
+	 * width folding, non-alphanumeric stripping) and splits on whitespace so
+	 * a Latin phrase like "FE Search AI Pro" resolves to its rarest word.
+	 *
+	 * @since 1.5.0
+	 * @param string $candidate Entity candidate text.
+	 * @return string[] Normalized tokens (all longer than one character).
+	 */
+	private static function entity_lookup_tokens( $candidate ) {
+		$normalized = mb_strtolower( mb_convert_kana( (string) $candidate, 'as', 'UTF-8' ), 'UTF-8' );
+		$normalized = preg_replace( '/[^\p{L}\p{N}\s]/u', ' ', $normalized );
+		$tokens     = preg_split( '/\s+/', trim( (string) $normalized ), -1, PREG_SPLIT_NO_EMPTY );
+		if ( ! is_array( $tokens ) ) {
+			return [];
+		}
+		return array_values(
+			array_filter(
+				$tokens,
+				function ( $token ) {
+					return mb_strlen( $token ) > 1;
+				}
+			)
+		);
+	}
+
+	/**
+	 * Returns the number of indexed chunks (rows in the vectors table).
+	 *
+	 * Cached per request; entity filtering runs at most once per turn.
+	 *
+	 * @since 1.5.0
+	 * @return int Indexed chunk count, 0 when the table is missing/empty.
+	 */
+	private static function get_indexed_chunk_count() {
+		static $count = null;
+		if ( null !== $count ) {
+			return $count;
+		}
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'fe_search_ai_vectors';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM `{$table}`" );
+
+		return $count;
+	}
+
+	/**
+	 * Returns document frequencies for the given index keywords.
+	 *
+	 * Each keyword_index row pairs a keyword with one chunk, so COUNT(*) per
+	 * keyword is the number of chunks containing it. Results are cached per
+	 * request so repeated entity extractions cost one query.
+	 *
+	 * @since 1.5.0
+	 * @param string[] $terms Normalized index keywords.
+	 * @return array Map of keyword => containing-chunk count.
+	 */
+	private static function get_term_document_frequencies( array $terms ) {
+		static $cache = [];
+		$missing      = array_values( array_diff( $terms, array_keys( $cache ) ) );
+		if ( ! empty( $missing ) ) {
+			global $wpdb;
+			$table        = $wpdb->prefix . 'fe_search_ai_keyword_index';
+			$placeholders = implode( ',', array_fill( 0, count( $missing ), '%s' ) );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$rows = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT `keyword`, COUNT(*) AS `df` FROM `{$table}` WHERE `keyword` IN ({$placeholders}) GROUP BY `keyword`", // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+					$missing
+				),
+				ARRAY_A
+			);
+			foreach ( (array) $rows as $row ) {
+				$cache[ $row['keyword'] ] = (int) $row['df'];
+			}
+			foreach ( $missing as $term ) {
+				if ( ! isset( $cache[ $term ] ) ) {
+					$cache[ $term ] = 0;
+				}
+			}
+		}
+
+		$frequencies = [];
+		foreach ( $terms as $term ) {
+			if ( isset( $cache[ $term ] ) ) {
+				$frequencies[ $term ] = $cache[ $term ];
+			}
+		}
+		return $frequencies;
 	}
 
 	/**

@@ -32,6 +32,42 @@ class ContextualRetrievalTest extends TestCase {
 		remove_all_filters( 'fe_search_ai_retrieval_decision' );
 		remove_all_filters( 'fe_search_ai_small_talk_patterns' );
 		remove_all_filters( 'fe_search_ai_clarify_instruction' );
+		remove_all_filters( 'fe_search_ai_entity_max_doc_ratio' );
+		remove_all_filters( 'fe_search_ai_entity_document_stats' );
+	}
+
+	/**
+	 * Disable the document-frequency check by default so extraction tests do
+	 * not depend on the test database's keyword index contents.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function setUp(): void {
+		parent::setUp();
+		add_filter(
+			'fe_search_ai_entity_document_stats',
+			function () {
+				return [ 'total_chunks' => 0, 'frequencies' => [] ];
+			}
+		);
+	}
+
+	/**
+	 * Re-enables the document-frequency check with injected statistics.
+	 *
+	 * @since 1.5.0
+	 * @param array $stats Stats map: total_chunks and frequencies.
+	 * @return void
+	 */
+	private function inject_document_stats( array $stats ) {
+		remove_all_filters( 'fe_search_ai_entity_document_stats' );
+		add_filter(
+			'fe_search_ai_entity_document_stats',
+			function () use ( $stats ) {
+				return $stats;
+			}
+		);
 	}
 
 	/**
@@ -183,6 +219,119 @@ class ContextualRetrievalTest extends TestCase {
 		$entities = FE_Search_AI_Contextual_Retrieval::extract_entities( 'プランとプラグインについて' );
 		$this->assertNotContains( 'プラン', $entities );
 		$this->assertNotContains( 'プラグイン', $entities );
+	}
+
+	/**
+	 * Test entity stop terms are loaded from the i18n files for every
+	 * language, not only the site locale.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_entity_stop_terms_loaded_from_i18n() {
+		// Japanese default term.
+		$this->assertSame( [], FE_Search_AI_Contextual_Retrieval::extract_entities( 'プラグイン' ) );
+		// English default term merges regardless of site locale.
+		$this->assertSame( [], FE_Search_AI_Contextual_Retrieval::extract_entities( 'Version' ) );
+	}
+
+	/**
+	 * Test custom entity stop terms can be added via the filter, matching
+	 * how Pro merges the site's custom stop words.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_custom_entity_stop_terms_via_filter() {
+		add_filter(
+			'fe_search_ai_contextual_query_stop_terms',
+			function ( $terms ) {
+				$terms[] = '中途採用';
+				return $terms;
+			}
+		);
+		$entities = FE_Search_AI_Contextual_Retrieval::extract_entities( '中途採用と店頭販売について' );
+		$this->assertNotContains( '中途採用', $entities );
+		$this->assertContains( '店頭販売', $entities );
+	}
+
+	/**
+	 * Test ubiquitous terms are dropped by the document-frequency check.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_common_terms_dropped_by_doc_ratio() {
+		$this->inject_document_stats(
+			[
+				'total_chunks' => 10,
+				'frequencies'  => [
+					'ベクトル' => 9,
+					'店頭販売' => 2,
+				],
+			]
+		);
+		$entities = FE_Search_AI_Contextual_Retrieval::extract_entities( 'ベクトル検索と店頭販売' );
+		$this->assertNotContains( 'ベクトル', $entities );
+		$this->assertContains( '店頭販売', $entities );
+	}
+
+	/**
+	 * Test a multi-word candidate survives when its rarest token is
+	 * discriminating even though other tokens are common.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_phrase_survives_when_rarest_token_is_rare() {
+		$this->inject_document_stats(
+			[
+				'total_chunks' => 10,
+				'frequencies'  => [
+					'fe'     => 1,
+					'search' => 6,
+					'ai'     => 8,
+					'pro'    => 5,
+				],
+			]
+		);
+		$entities = FE_Search_AI_Contextual_Retrieval::extract_entities( 'FE Search AI Pro' );
+		$this->assertContains( 'FE Search AI Pro', $entities );
+	}
+
+	/**
+	 * Test the document-frequency check is disabled by a non-positive ratio.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_doc_ratio_check_disabled_with_zero() {
+		add_filter( 'fe_search_ai_entity_max_doc_ratio', '__return_zero' );
+		$this->inject_document_stats(
+			[
+				'total_chunks' => 10,
+				'frequencies'  => [ 'ベクトル' => 10 ],
+			]
+		);
+		$entities = FE_Search_AI_Contextual_Retrieval::extract_entities( 'ベクトル検索' );
+		$this->assertContains( 'ベクトル', $entities );
+	}
+
+	/**
+	 * Test terms unknown to the index are kept as entities.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_unknown_terms_survive_doc_ratio() {
+		$this->inject_document_stats(
+			[
+				'total_chunks' => 10,
+				'frequencies'  => [ 'ベクトル' => 9 ],
+			]
+		);
+		$entities = FE_Search_AI_Contextual_Retrieval::extract_entities( '店頭販売' );
+		$this->assertContains( '店頭販売', $entities );
 	}
 
 	/**

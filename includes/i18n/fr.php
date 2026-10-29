@@ -2,8 +2,8 @@
 /**
  * French language configuration for FE AI Search.
  *
- * Provides stop words and basic prompt injection phrases used when the
- * site locale is set to French.
+ * Provides stop words, prompt injection phrases, small talk patterns, and
+ * entity stop terms used when the site locale is set to French.
  *
  * @package    fe-search-ai
  * @subpackage i18n
@@ -60,5 +60,29 @@ return [
 		'ok(?:ay)?',
 		'au revoir',
 		's\'il (?:vous|te) plaît',
+	],
+	// Generic terms that carry little entity value on their own. Entity
+	// candidates matching these exactly (case-insensitive) are dropped from
+	// contextual query expansion; site-specific generic terms should be
+	// added via the custom stop words setting or the
+	// fe_search_ai_contextual_query_stop_terms filter instead.
+	'entity_stop_terms' => [
+		'forfait',
+		'service',
+		'site',
+		'page',
+		'article',
+		'version',
+		'extension',
+		'mise à jour',
+		'installation',
+		'configuration',
+		'option',
+		'export',
+		'import',
+		'téléchargement',
+		'fonctionnalité',
+		'paramètres',
+		'documentation',
 	],
 ];
