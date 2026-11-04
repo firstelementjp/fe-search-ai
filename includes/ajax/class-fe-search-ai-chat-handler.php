@@ -830,6 +830,37 @@ class FE_Search_AI_Chat_Handler {
 	}
 
 	/**
+	 * Determines whether an OpenAI model accepts sampling parameters.
+	 *
+	 * Reasoning models (o-series, GPT-5, and GPT-6 families) reject parameters
+	 * such as temperature and top_p unless the reasoning effort is "none".
+	 * Since this plugin does not control the reasoning effort, sampling
+	 * parameters are omitted for those models. Detection is name-based:
+	 * GPT-5.x releases that default to "none" (e.g. gpt-5.4-mini) are exempt.
+	 *
+	 * @since 1.4.2
+	 *
+	 * @param string $model The model identifier.
+	 * @return bool True when sampling parameters may be sent to the model.
+	 */
+	private function model_supports_sampling_params( $model ) {
+		$supports = ! (bool) preg_match( '/^(o\d|gpt-5(?!\.)|gpt-6)/i', (string) $model );
+
+		/**
+		 * Filters whether a model accepts sampling parameters (temperature, top_p).
+		 *
+		 * Return false to omit sampling parameters for a model that rejects
+		 * them, or true to restore them for a misdetected model.
+		 *
+		 * @since 1.4.2
+		 *
+		 * @param bool   $supports Whether sampling parameters are supported.
+		 * @param string $model    The model identifier.
+		 */
+		return (bool) apply_filters( 'fe_search_ai_model_supports_sampling_params', $supports, $model );
+	}
+
+	/**
 	 * Streams chat completions from the OpenAI (or compatible) API.
 	 *
 	 * Resolves the appropriate API endpoint and model based on the selected
@@ -994,11 +1025,16 @@ class FE_Search_AI_Chat_Handler {
 		}
 
 		$body = [
-			'model'       => $model,
-			'messages'    => $messages,
-			'stream'      => true,
-			'temperature' => 0.1, // Set low temperature for RAG.
+			'model'    => $model,
+			'messages' => $messages,
+			'stream'   => true,
 		];
+
+		// Reasoning models reject sampling parameters unless reasoning_effort
+		// is "none", so only send temperature when the model supports it.
+		if ( $this->model_supports_sampling_params( $model ) ) {
+			$body['temperature'] = 0.1; // Set low temperature for RAG.
+		}
 
 		if ( 'openai_compatible' === $provider ) {
 			$body['stream'] = false;
@@ -1097,16 +1133,28 @@ class FE_Search_AI_Chat_Handler {
 		curl_setopt( $ch, CURLOPT_TIMEOUT, 120 );
 		curl_setopt( $ch, CURLOPT_HTTPHEADER, [ 'Content-Type: application/json', 'Accept: text/event-stream', 'Authorization: Bearer ' . $api_key ] );
 		$received_text = false;
+		$error_body    = '';
 
 		// The WRITEFUNCTION callback processes the stream chunks as they arrive.
 		curl_setopt(
 			$ch,
 			CURLOPT_WRITEFUNCTION,
-			function ( $curl, $data ) use ( &$received_text ) {
+			function ( $curl, $data ) use ( &$received_text, &$error_body ) {
 				if ( connection_aborted() ) {
 					// The visitor stopped the response; abort the upstream transfer.
 					return 0;
 				}
+
+				// Error responses are plain JSON, not SSE. Capture the body for
+				// logging instead of parsing it as a stream.
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_getinfo
+				if ( (int) curl_getinfo( $curl, CURLINFO_HTTP_CODE ) >= 400 ) {
+					if ( strlen( $error_body ) < 8000 ) {
+						$error_body .= $data;
+					}
+					return strlen( $data );
+				}
+
 				static $stream_buffer = '';
 				$stream_buffer       .= $data;
 
@@ -1187,6 +1235,29 @@ class FE_Search_AI_Chat_Handler {
 			JSON_UNESCAPED_UNICODE
 		) . "\n\n";
 		flush();
+
+		// Log the provider's error details when the API rejected the request.
+		if ( $http_status >= 400 ) {
+			$error_details = [];
+			$decoded_error = json_decode( $error_body, true );
+			if ( is_array( $decoded_error ) && isset( $decoded_error['error'] ) && is_array( $decoded_error['error'] ) ) {
+				$error_details = $decoded_error['error'];
+			}
+			\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
+				'ERROR',
+				'Chat completion stream failed (API Error).',
+				[
+					'provider'      => $provider,
+					'model'         => $model,
+					'http_status'   => $http_status,
+					'error_type'    => $error_details['type'] ?? '',
+					'error_code'    => $error_details['code'] ?? '',
+					'error_param'   => $error_details['param'] ?? '',
+					'error_message' => mb_substr( (string) ( $error_details['message'] ?? '' ), 0, 500 ),
+				],
+				$sequence_id
+			);
+		}
 
 		if ( 200 !== $http_status || $curl_errno || ! $received_text ) {
 			$public_message = __( 'Error: Failed to receive a response from the AI provider.', 'fe-search-ai' );
@@ -1427,7 +1498,6 @@ class FE_Search_AI_Chat_Handler {
 			'model'           => $model,
 			'messages'        => $messages,
 			'stream'          => false,
-			'temperature'     => 0.1,
 			'response_format' => [
 				'type'        => 'json_schema',
 				'json_schema' => [
@@ -1437,6 +1507,12 @@ class FE_Search_AI_Chat_Handler {
 				],
 			],
 		];
+
+		// Reasoning models reject sampling parameters unless reasoning_effort
+		// is "none", so only send temperature when the model supports it.
+		if ( $this->model_supports_sampling_params( $model ) ) {
+			$body['temperature'] = 0.1; // Set low temperature for RAG.
+		}
 
 		// phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged
 		// Extend timeout for non-streaming requests.
@@ -1480,10 +1556,11 @@ class FE_Search_AI_Chat_Handler {
 				'ERROR',
 				'Structured output failed (HTTP Error). Falling back to streaming.',
 				[
-					'provider'    => $provider,
-					'model'       => $model,
-					'http_status' => $http_status,
-					'duration_ms' => $duration,
+					'provider'      => $provider,
+					'model'         => $model,
+					'http_status'   => $http_status,
+					'duration_ms'   => $duration,
+					'error_message' => is_array( $response_body ) ? mb_substr( (string) ( $response_body['error']['message'] ?? '' ), 0, 500 ) : '',
 				]
 			);
 
