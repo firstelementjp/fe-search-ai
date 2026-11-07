@@ -656,4 +656,40 @@ class ChatHandlerTest extends TestCase {
 		$short = apply_filters( 'fe_search_ai_preprocess_user_question', 'short question' );
 		$this->assertSame( 'short question', $short, 'Short questions should pass through unchanged' );
 	}
+
+	/**
+	 * Test the OpenAI reasoning effort resolver defaults and filter.
+	 *
+	 * @since 1.4.2
+	 * @return void
+	 */
+	public function test_resolve_openai_reasoning_effort_defaults_and_filter() {
+		// Default is empty so the provider default applies.
+		$this->assertSame( '', \FESearchAI\Ajax\FE_Search_AI_Chat_Handler::resolve_openai_reasoning_effort( 'gpt-6-luna', 'chat', 'openai' ) );
+
+		// Invalid values are ignored.
+		$invalid = function () {
+			return 'bogus';
+		};
+		add_filter( 'fe_search_ai_openai_reasoning_effort', $invalid );
+		try {
+			$this->assertSame( '', \FESearchAI\Ajax\FE_Search_AI_Chat_Handler::resolve_openai_reasoning_effort( 'gpt-6-luna' ) );
+		} finally {
+			remove_filter( 'fe_search_ai_openai_reasoning_effort', $invalid );
+		}
+
+		// Valid values pass through and the model/purpose args reach the filter.
+		$seen  = [];
+		$valid = function ( $effort, $model, $purpose ) use ( &$seen ) {
+			$seen = [ $model, $purpose ];
+			return 'low';
+		};
+		add_filter( 'fe_search_ai_openai_reasoning_effort', $valid, 10, 3 );
+		try {
+			$this->assertSame( 'low', \FESearchAI\Ajax\FE_Search_AI_Chat_Handler::resolve_openai_reasoning_effort( 'gpt-6-luna', 'summary' ) );
+			$this->assertSame( [ 'gpt-6-luna', 'summary' ], $seen );
+		} finally {
+			remove_filter( 'fe_search_ai_openai_reasoning_effort', $valid );
+		}
+	}
 }

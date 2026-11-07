@@ -25,6 +25,7 @@ FE Search AIは、プロバイダー、検索、インデックス、チャッ�
 | `fe_search_ai_personal_data_patterns`    | `array $patterns`                    | メールアドレスと電話番号のマスキングに使用する正規表現を変更します。                                                                                                                                                                                                       |
 | `fe_search_ai_rate_limit_message`        | `string $message`                    | リクエスト上限到達時にフロントエンドへ表示する翻訳済みメッセージを変更します。                                                                                                                                                                                             |
 | `fe_search_ai_model_supports_sampling_params` | `bool $supports`, `string $model` | OpenAIのチャット補完へ`temperature`などのサンプリングパラメーターを送信するかどうかを変更します。推論モデル（oシリーズ、GPT-5、GPT-6）はreasoning effortが`none`以外では拒否するため、初期値は`false`です。                                                              |
+| `fe_search_ai_openai_reasoning_effort`        | `string $effort`, `string $model`, `string $purpose`, `string $provider` | OpenAIのチャット補完へ送信する`reasoning_effort`を変更します。`''`を返すとプロバイダ既定のまま、`none`・`minimal`・`low`・`medium`・`high`・`xhigh`のいずれかで固定できます。`none`にするとサンプリングパラメーターも再有効化されます。`$purpose`は`chat`、`structured`、`summary`のいずれかです。 |
 
 ## 検索・ランキングフィルター
 

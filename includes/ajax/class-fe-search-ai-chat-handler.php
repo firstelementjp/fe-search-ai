@@ -861,6 +861,45 @@ class FE_Search_AI_Chat_Handler {
 	}
 
 	/**
+	 * Resolves the reasoning effort to send to OpenAI chat models.
+	 *
+	 * An empty string means no effort is sent and the provider's model
+	 * default applies (e.g. "medium" for gpt-6-luna). When "none" is
+	 * resolved, sampling parameters such as temperature become available
+	 * again for reasoning models.
+	 *
+	 * @since 1.4.2
+	 *
+	 * @param string $model    The model identifier.
+	 * @param string $purpose  Call purpose ('chat', 'structured', 'summary').
+	 * @param string $provider The provider slug ('openai' or 'openai_compatible').
+	 * @return string Reasoning effort ('none', 'minimal', 'low', 'medium', 'high', 'xhigh') or '' when unset.
+	 */
+	public static function resolve_openai_reasoning_effort( $model, $purpose = 'chat', $provider = 'openai' ) {
+		/**
+		 * Filters the reasoning effort sent to OpenAI chat models.
+		 *
+		 * Return an empty string to keep the provider default, or one of
+		 * 'none', 'minimal', 'low', 'medium', 'high', 'xhigh' to pin the
+		 * effort level. Resolving 'none' also re-enables sampling
+		 * parameters (temperature) for reasoning models.
+		 *
+		 * @since 1.4.2
+		 *
+		 * @param string $effort   Reasoning effort, empty by default.
+		 * @param string $model    The model identifier.
+		 * @param string $purpose  Call purpose ('chat', 'structured', 'summary').
+		 * @param string $provider The provider slug.
+		 */
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		// Hook name is properly prefixed with fe_search_ai_.
+		$effort = apply_filters( 'fe_search_ai_openai_reasoning_effort', '', $model, $purpose, $provider );
+
+		$allowed = [ 'none', 'minimal', 'low', 'medium', 'high', 'xhigh' ];
+		return is_string( $effort ) && in_array( $effort, $allowed, true ) ? $effort : '';
+	}
+
+	/**
 	 * Streams chat completions from the OpenAI (or compatible) API.
 	 *
 	 * Resolves the appropriate API endpoint and model based on the selected
@@ -1030,9 +1069,20 @@ class FE_Search_AI_Chat_Handler {
 			'stream'   => true,
 		];
 
+		if ( 'openai' === $provider ) {
+			// Ask the API to attach a final usage chunk so token consumption
+			// (including reasoning tokens) can be logged.
+			$body['stream_options'] = [ 'include_usage' => true ];
+
+			$reasoning_effort = self::resolve_openai_reasoning_effort( $model, 'chat', $provider );
+			if ( '' !== $reasoning_effort ) {
+				$body['reasoning_effort'] = $reasoning_effort;
+			}
+		}
+
 		// Reasoning models reject sampling parameters unless reasoning_effort
 		// is "none", so only send temperature when the model supports it.
-		if ( $this->model_supports_sampling_params( $model ) ) {
+		if ( $this->model_supports_sampling_params( $model ) || 'none' === ( $reasoning_effort ?? '' ) ) {
 			$body['temperature'] = 0.1; // Set low temperature for RAG.
 		}
 
@@ -1134,12 +1184,13 @@ class FE_Search_AI_Chat_Handler {
 		curl_setopt( $ch, CURLOPT_HTTPHEADER, [ 'Content-Type: application/json', 'Accept: text/event-stream', 'Authorization: Bearer ' . $api_key ] );
 		$received_text = false;
 		$error_body    = '';
+		$token_usage   = null;
 
 		// The WRITEFUNCTION callback processes the stream chunks as they arrive.
 		curl_setopt(
 			$ch,
 			CURLOPT_WRITEFUNCTION,
-			function ( $curl, $data ) use ( &$received_text, &$error_body ) {
+			function ( $curl, $data ) use ( &$received_text, &$error_body, &$token_usage ) {
 				if ( connection_aborted() ) {
 					// The visitor stopped the response; abort the upstream transfer.
 					return 0;
@@ -1177,6 +1228,11 @@ class FE_Search_AI_Chat_Handler {
 					$chunk = json_decode( $json_data, true );
 					if ( ! is_array( $chunk ) ) {
 						continue;
+					}
+
+					// The final chunk carries token usage when include_usage was requested.
+					if ( isset( $chunk['usage'] ) && is_array( $chunk['usage'] ) ) {
+						$token_usage = $chunk['usage'];
 					}
 
 					if ( isset( $chunk['choices'][0]['delta']['content'] ) ) {
@@ -1323,14 +1379,24 @@ class FE_Search_AI_Chat_Handler {
 			);
 		} else {
 			// INFO: Log the successful completion of the stream.
+			$log_data = [
+				'provider'    => $provider,
+				'model'       => $model,
+				'tokens_used' => (int) ( $token_usage['total_tokens'] ?? 0 ),
+			];
+			if ( isset( $token_usage['prompt_tokens'] ) ) {
+				$log_data['prompt_tokens'] = (int) $token_usage['prompt_tokens'];
+			}
+			if ( isset( $token_usage['completion_tokens'] ) ) {
+				$log_data['completion_tokens'] = (int) $token_usage['completion_tokens'];
+			}
+			if ( isset( $token_usage['completion_tokens_details']['reasoning_tokens'] ) ) {
+				$log_data['reasoning_tokens'] = (int) $token_usage['completion_tokens_details']['reasoning_tokens'];
+			}
 			\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
 				'INFO',
 				'Chat completion stream finished successfully.',
-				[
-					'provider'    => $provider,
-					'model'       => $model,
-					'tokens_used' => $tokens_used ?? 0,
-				],
+				$log_data,
 				$sequence_id
 			);
 		}
@@ -1508,9 +1574,14 @@ class FE_Search_AI_Chat_Handler {
 			],
 		];
 
+		$reasoning_effort = 'openai' === $provider ? self::resolve_openai_reasoning_effort( $model, 'structured', $provider ) : '';
+		if ( '' !== $reasoning_effort ) {
+			$body['reasoning_effort'] = $reasoning_effort;
+		}
+
 		// Reasoning models reject sampling parameters unless reasoning_effort
 		// is "none", so only send temperature when the model supports it.
-		if ( $this->model_supports_sampling_params( $model ) ) {
+		if ( $this->model_supports_sampling_params( $model ) || 'none' === $reasoning_effort ) {
 			$body['temperature'] = 0.1; // Set low temperature for RAG.
 		}
 
@@ -1623,14 +1694,24 @@ class FE_Search_AI_Chat_Handler {
 		echo "data: [DONE]\n\n";
 		flush();
 
+		$log_data = [
+			'provider'    => $provider,
+			'model'       => $model,
+			'duration_ms' => $duration,
+		];
+		$usage    = $response_body['usage'] ?? null;
+		if ( is_array( $usage ) ) {
+			$log_data['tokens_used']       = (int) ( $usage['total_tokens'] ?? 0 );
+			$log_data['prompt_tokens']     = (int) ( $usage['prompt_tokens'] ?? 0 );
+			$log_data['completion_tokens'] = (int) ( $usage['completion_tokens'] ?? 0 );
+			if ( isset( $usage['completion_tokens_details']['reasoning_tokens'] ) ) {
+				$log_data['reasoning_tokens'] = (int) $usage['completion_tokens_details']['reasoning_tokens'];
+			}
+		}
 		\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
 			'INFO',
 			'Structured output chat completed successfully.',
-			[
-				'provider'    => $provider,
-				'model'       => $model,
-				'duration_ms' => $duration,
-			],
+			$log_data,
 			$sequence_id
 		);
 	}
@@ -1808,10 +1889,11 @@ class FE_Search_AI_Chat_Handler {
 		curl_setopt( $ch, CURLOPT_POST, true );
 		curl_setopt( $ch, CURLOPT_POSTFIELDS, wp_json_encode( $body ) );
 		curl_setopt( $ch, CURLOPT_HTTPHEADER, [ 'Content-Type: application/json' ] );
+		$token_usage = null;
 		curl_setopt(
 			$ch,
 			CURLOPT_WRITEFUNCTION,
-			function ( $curl, $data ) {
+			function ( $curl, $data ) use ( &$token_usage ) {
 				if ( connection_aborted() ) {
 					// The visitor stopped the response; abort the upstream transfer.
 					return 0;
@@ -1824,6 +1906,11 @@ class FE_Search_AI_Chat_Handler {
 
 						$json_data = substr( $line, 6 );
 						$chunk     = json_decode( $json_data, true );
+
+						// The final chunk carries token usage metadata.
+						if ( is_array( $chunk ) && isset( $chunk['usageMetadata'] ) && is_array( $chunk['usageMetadata'] ) ) {
+							$token_usage = $chunk['usageMetadata'];
+						}
 
 						if ( is_array( $chunk ) && isset( $chunk['candidates'][0]['content']['parts'][0]['text'] ) ) {
 
@@ -1879,14 +1966,25 @@ class FE_Search_AI_Chat_Handler {
 				]
 			);
 		} else {
+			$log_data = [
+				'provider'    => $provider,
+				'model'       => $model,
+				'duration_ms' => $duration,
+				'tokens_used' => (int) ( $token_usage['totalTokenCount'] ?? 0 ),
+			];
+			if ( isset( $token_usage['promptTokenCount'] ) ) {
+				$log_data['prompt_tokens'] = (int) $token_usage['promptTokenCount'];
+			}
+			if ( isset( $token_usage['candidatesTokenCount'] ) ) {
+				$log_data['completion_tokens'] = (int) $token_usage['candidatesTokenCount'];
+			}
+			if ( isset( $token_usage['thoughtsTokenCount'] ) ) {
+				$log_data['reasoning_tokens'] = (int) $token_usage['thoughtsTokenCount'];
+			}
 			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'INFO',
 				'Chat completion stream finished successfully.',
-				[
-					'provider'    => $provider,
-					'model'       => $model,
-					'duration_ms' => $duration,
-				]
+				$log_data
 			);
 		}
 
@@ -2008,10 +2106,11 @@ class FE_Search_AI_Chat_Handler {
 				'anthropic-version: 2023-06-01',
 			]
 		);
+		$token_usage = [ 'input_tokens' => 0, 'output_tokens' => 0 ];
 		curl_setopt(
 			$ch,
 			CURLOPT_WRITEFUNCTION,
-			function ( $curl, $data ) {
+			function ( $curl, $data ) use ( &$token_usage ) {
 				if ( connection_aborted() ) {
 					// The visitor stopped the response; abort the upstream transfer.
 					return 0;
@@ -2025,6 +2124,12 @@ class FE_Search_AI_Chat_Handler {
 
 						$json_data = substr( $trimmed_line, 6 );
 						$chunk     = json_decode( $json_data, true );
+
+						if ( isset( $chunk['type'] ) && 'message_start' === $chunk['type'] ) {
+							$token_usage['input_tokens'] = (int) ( $chunk['message']['usage']['input_tokens'] ?? 0 );
+						} elseif ( isset( $chunk['type'] ) && 'message_delta' === $chunk['type'] && isset( $chunk['usage'] ) ) {
+							$token_usage['output_tokens'] = (int) ( $chunk['usage']['output_tokens'] ?? 0 );
+						}
 
 						if ( isset( $chunk['type'] )
 						&& 'content_block_delta' === $chunk['type']
@@ -2081,14 +2186,18 @@ class FE_Search_AI_Chat_Handler {
 				]
 			);
 		} else {
+			$log_data = [
+				'provider'          => $provider,
+				'model'             => $model,
+				'duration_ms'       => $duration,
+				'tokens_used'       => (int) ( $token_usage['input_tokens'] + $token_usage['output_tokens'] ),
+				'prompt_tokens'     => (int) $token_usage['input_tokens'],
+				'completion_tokens' => (int) $token_usage['output_tokens'],
+			];
 			\FESearchAI\Core\FE_Search_AI_Logger::log(
 				'INFO',
 				'Chat completion stream finished successfully.',
-				[
-					'provider'    => $provider,
-					'model'       => $model,
-					'duration_ms' => $duration,
-				]
+				$log_data
 			);
 		}
 

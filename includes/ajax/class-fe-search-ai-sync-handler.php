@@ -1271,8 +1271,8 @@ class FE_Search_AI_Sync_Handler {
 		if ( empty( $api_key ) ) {
 			return new WP_Error( 'api_key_missing', __( 'The OpenAI API key is not configured.', 'fe-search-ai' ) );
 		}
-		$model    = 'gpt-5.4-mini';
-		$body     = [
+		$model = 'gpt-5.4-mini';
+		$body  = [
 			'model'       => $model,
 			'messages'    => [
 				[ 'role' => 'system', 'content' => 'You are a helpful assistant.' ],
@@ -1280,6 +1280,12 @@ class FE_Search_AI_Sync_Handler {
 			],
 			'temperature' => 0.1,
 		];
+
+		$reasoning_effort = \FESearchAI\Ajax\FE_Search_AI_Chat_Handler::resolve_openai_reasoning_effort( $model, 'summary', 'openai' );
+		if ( '' !== $reasoning_effort ) {
+			$body['reasoning_effort'] = $reasoning_effort;
+		}
+
 		$response = wp_remote_post(
 			'https://api.openai.com/v1/chat/completions',
 			[
