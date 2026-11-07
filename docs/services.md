@@ -42,6 +42,22 @@ curl -X PUT "https://<your-endpoint>/collections/fe_search_ai" \
 
 Replace `fe_search_ai` with any collection name you like — enter the same name in the plugin's **Collection Name** field.
 
+#### Payload indexes
+
+The plugin deletes points by payload filter (`post_id`, `site_id`) when posts are updated or removed. On Qdrant clusters running in strict mode this requires a payload index on each field; without one, deletes fail with `Index required but not found`. Since version 1.5.0 the plugin creates these indexes automatically the first time a delete hits that error, so no manual step is normally needed. To create them up front:
+
+```bash
+curl -X PUT "https://<your-endpoint>/collections/fe_search_ai/index" \
+  -H "api-key: <your-api-key>" \
+  -H "Content-Type: application/json" \
+  -d '{"field_name": "post_id", "field_schema": {"type": "integer", "lookup": true, "range": false}}'
+
+curl -X PUT "https://<your-endpoint>/collections/fe_search_ai/index" \
+  -H "api-key: <your-api-key>" \
+  -H "Content-Type: application/json" \
+  -d '{"field_name": "site_id", "field_schema": {"type": "integer", "lookup": true, "range": false}}'
+```
+
 ### 3. Check collection information
 
 To verify the collection exists and that the vector size matches your embedding model:

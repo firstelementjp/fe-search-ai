@@ -42,6 +42,22 @@ curl -X PUT "https://<エンドポイント>/collections/fe_search_ai" \
 
 `fe_search_ai` の部分は任意のコレクション名に変更できます。プラグインの**コレクション名**フィールドには同じ名前を入力してください。
 
+#### ペイロードインデックス
+
+プラグインは投稿の更新・削除時にペイロードフィルター（`post_id`、`site_id`）でポイントを削除します。strict mode が有効なQdrantクラスターでは、これらのフィールドにペイロードインデックスが必要です。インデックスがない場合、削除は `Index required but not found` で失敗します。バージョン1.5.0以降、プラグインはこのエラーを検知するとインデックスを自動作成するため、通常は手動での対応は不要です。事前に作成しておく場合は次の通りです。
+
+```bash
+curl -X PUT "https://<エンドポイント>/collections/fe_search_ai/index" \
+  -H "api-key: <APIキー>" \
+  -H "Content-Type: application/json" \
+  -d '{"field_name": "post_id", "field_schema": {"type": "integer", "lookup": true, "range": false}}'
+
+curl -X PUT "https://<エンドポイント>/collections/fe_search_ai/index" \
+  -H "api-key: <APIキー>" \
+  -H "Content-Type: application/json" \
+  -d '{"field_name": "site_id", "field_schema": {"type": "integer", "lookup": true, "range": false}}'
+```
+
 ### 3. コレクション情報の確認
 
 コレクションの存在とベクトルサイズが埋め込みモデルと一致しているかは、次のリクエストで確認できます。

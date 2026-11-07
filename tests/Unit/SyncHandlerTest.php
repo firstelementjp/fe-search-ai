@@ -433,6 +433,97 @@ class SyncHandlerTest extends TestCase {
 	}
 
 	/**
+	 * Test delete_vectors_from_qdrant creates missing payload indexes and retries.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_delete_vectors_from_qdrant_creates_index_and_retries() {
+		$previous_options = get_option( 'fe_search_ai_settings', [] );
+		update_option(
+			'fe_search_ai_settings',
+			[
+				'vector' => [
+					'store'  => 'qdrant',
+					'qdrant' => [
+						'endpoint'   => 'https://qdrant.example.test',
+						'collection' => 'feai_test',
+						'api_key'    => \FESearchAI\Core\FE_Search_AI_Encryption_Helper::encrypt( 'test-qdrant-key' ),
+					],
+				],
+			]
+		);
+
+		$requests     = [];
+		$delete_calls = 0;
+		$http_filter  = function ( $preempt, $args, $url ) use ( &$requests, &$delete_calls ) {
+			$requests[] = [
+				'args' => $args,
+				'url'  => $url,
+			];
+
+			if ( false !== strpos( $url, '/points/delete' ) ) {
+				++$delete_calls;
+				if ( 1 === $delete_calls ) {
+					return [
+						'headers'  => [],
+						'body'     => '{"status":{"error":"Bad request: Index required but not found for \\"post_id\\" of one of the following types: [integer]."}}',
+						'response' => [
+							'code'    => 400,
+							'message' => 'Bad Request',
+						],
+						'cookies'  => [],
+						'filename' => null,
+					];
+				}
+			}
+
+			return [
+				'headers'  => [],
+				'body'     => '{"result":true}',
+				'response' => [
+					'code'    => 200,
+					'message' => 'OK',
+				],
+				'cookies'  => [],
+				'filename' => null,
+			];
+		};
+		add_filter( 'pre_http_request', $http_filter, 10, 3 );
+
+		try {
+			$handler = new \FESearchAI\Ajax\FE_Search_AI_Sync_Handler();
+			$handler->delete_vectors_from_qdrant( 42 );
+
+			$this->assertSame( 2, $delete_calls, 'Delete should be retried once after indexes are created' );
+
+			$index_requests = array_values(
+				array_filter(
+					$requests,
+					function ( $request ) {
+						return false !== strpos( $request['url'], '/index' );
+					}
+				)
+			);
+			$this->assertCount( 2, $index_requests, 'An index request should be sent for each filter key' );
+			$this->assertSame( 'PUT', $index_requests[0]['args']['method'] );
+
+			$indexed_fields = array_map(
+				function ( $request ) {
+					$body = json_decode( $request['args']['body'], true );
+					return $body['field_name'] ?? null;
+				},
+				$index_requests
+			);
+			sort( $indexed_fields );
+			$this->assertSame( [ 'post_id', 'site_id' ], $indexed_fields, 'Indexes should cover the filter payload keys' );
+		} finally {
+			remove_filter( 'pre_http_request', $http_filter, 10 );
+			update_option( 'fe_search_ai_settings', $previous_options );
+		}
+	}
+
+	/**
 	 * Test delete_vectors_from_qdrant is a no-op when Qdrant is disabled.
 	 *
 	 * @since 1.4.1

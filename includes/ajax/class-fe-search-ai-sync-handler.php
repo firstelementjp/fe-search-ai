@@ -974,20 +974,31 @@ class FE_Search_AI_Sync_Handler {
 		$collection = $qdrant_config['collection'];
 		$api_key    = \FESearchAI\Core\FE_Search_AI_Encryption_Helper::decrypt( $qdrant_config['api_key'] );
 
-		$body     = [ 'filter' => [ 'must' => $must ] ];
-		$url      = $endpoint . '/collections/' . rawurlencode( $collection ) . '/points/delete';
-		$response = wp_remote_request(
-			$url,
-			[
-				'method'  => 'POST',
-				'headers' => [
-					'Content-Type' => 'application/json',
-					'api-key'      => $api_key,
-				],
-				'body'    => wp_json_encode( $body ),
-				'timeout' => 20,
-			]
-		);
+		$url          = $endpoint . '/collections/' . rawurlencode( $collection ) . '/points/delete';
+		$request_args = [
+			'method'  => 'POST',
+			'headers' => [
+				'Content-Type' => 'application/json',
+				'api-key'      => $api_key,
+			],
+			'body'    => wp_json_encode( [ 'filter' => [ 'must' => $must ] ] ),
+			'timeout' => 20,
+		];
+		$response     = wp_remote_request( $url, $request_args );
+
+		// Strict-mode collections reject filtered deletes without a payload
+		// index; create the missing indexes once and retry the delete.
+		if ( ! is_wp_error( $response ) ) {
+			$status_code = (int) wp_remote_retrieve_response_code( $response );
+			if ( $status_code < 200 || $status_code >= 300 ) {
+				$body_text = wp_remote_retrieve_body( $response );
+				if ( false !== strpos( $body_text, 'Index required but not found' )
+					&& $this->ensure_qdrant_payload_indexes( $endpoint, $collection, $api_key, $must )
+				) {
+					$response = wp_remote_request( $url, $request_args );
+				}
+			}
+		}
 
 		if ( is_wp_error( $response ) ) {
 			\FESearchAI\Core\FE_Search_AI_Logger::log(
@@ -1014,6 +1025,86 @@ class FE_Search_AI_Sync_Handler {
 				]
 			);
 		}
+	}
+
+	/**
+	 * Creates integer payload indexes for the given filter keys.
+	 *
+	 * Qdrant collections running in strict mode reject filtered deletes
+	 * when a payload index is missing. Creating the indexes on demand
+	 * keeps collections set up before this requirement functional
+	 * without manual intervention.
+	 *
+	 * @since 1.5.0
+	 * @param string $endpoint   Qdrant endpoint URL.
+	 * @param string $collection Collection name.
+	 * @param string $api_key    Decrypted Qdrant API key.
+	 * @param array  $must       Filter conditions whose keys need indexes.
+	 * @return bool True when every required index was created successfully.
+	 */
+	private function ensure_qdrant_payload_indexes( $endpoint, $collection, $api_key, $must ) {
+		$success = true;
+
+		foreach ( $must as $condition ) {
+			$field = isset( $condition['key'] ) ? (string) $condition['key'] : '';
+			if ( '' === $field ) {
+				continue;
+			}
+
+			$response = wp_remote_request(
+				$endpoint . '/collections/' . rawurlencode( $collection ) . '/index',
+				[
+					'method'  => 'PUT',
+					'headers' => [
+						'Content-Type' => 'application/json',
+						'api-key'      => $api_key,
+					],
+					'body'    => wp_json_encode(
+						[
+							'field_name'   => $field,
+							'field_schema' => [
+								'type'   => 'integer',
+								'lookup' => true,
+								'range'  => false,
+							],
+						]
+					),
+					'timeout' => 20,
+				]
+			);
+
+			if ( is_wp_error( $response ) ) {
+				$success = false;
+				\FESearchAI\Core\FE_Search_AI_Logger::log(
+					'ERROR',
+					'Qdrant payload index creation request failed.',
+					[
+						'field'         => $field,
+						'error_code'    => $response->get_error_code(),
+						'error_message' => $response->get_error_message(),
+					]
+				);
+				continue;
+			}
+
+			$status_code = (int) wp_remote_retrieve_response_code( $response );
+			if ( $status_code < 200 || $status_code >= 300 ) {
+				$success    = false;
+				$index_body = wp_remote_retrieve_body( $response );
+				\FESearchAI\Core\FE_Search_AI_Logger::log(
+					'ERROR',
+					'Qdrant payload index creation returned non-2xx status.',
+					[
+						'field'                => $field,
+						'http_status'          => $status_code,
+						'response_body_length' => mb_strlen( $index_body ),
+						'error_summary'        => mb_substr( $index_body, 0, 300 ),
+					]
+				);
+			}
+		}
+
+		return $success;
 	}
 
 	/**
