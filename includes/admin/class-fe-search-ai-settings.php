@@ -1496,6 +1496,12 @@ class FE_Search_AI_Settings {
 					<button type="button" id="fe_search_ai_start_sync" class="button button-secondary">
 						<?php esc_html_e( 'Rebuild Index', 'fe-search-ai' ); ?>
 					</button>
+					<button type="button" id="fe_search_ai_cancel_sync" class="button" style="display:none;">
+						<?php esc_html_e( 'Cancel Sync', 'fe-search-ai' ); ?>
+					</button>
+					<span id="fe_search_ai_unsaved_notice" class="description" style="display:none; color:#d63638;">
+						<?php esc_html_e( 'Settings have unsaved changes. Save before syncing.', 'fe-search-ai' ); ?>
+					</span>
 				</div>
 
 				<div id="fe_search_ai_progress_container">

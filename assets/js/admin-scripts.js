@@ -41,11 +41,17 @@ document.addEventListener('DOMContentLoaded', () => {
 	const tabsWrapper = document.querySelector('.nav-tab-wrapper');
 	const hybridSearchCheckbox = document.querySelector('#fe_search_ai_hybrid_search');
 	const vectorStoreCheckboxes = document.querySelectorAll('.fe-search-ai-vector-store-checkbox');
+	const cancelSyncBtn = document.querySelector('#fe_search_ai_cancel_sync');
+	const unsavedSyncNotice = document.querySelector('#fe_search_ai_unsaved_notice');
+	const settingsForm = document.querySelector('form[action="options.php"]');
 
 	// ==========================================================================
 	// Variables
 	// ==========================================================================
 	let postIDsToSync = []; // Holds the list of post IDs for the batch sync process.
+	let syncCancelled = false; // Set by the cancel button to stop the batch loop.
+	let syncAbortController = null; // Aborts the in-flight batch request.
+	let settingsDirty = false; // True when the settings form has unsaved changes.
 
 	// ==========================================================================
 	// Helper Functions
@@ -185,6 +191,35 @@ document.addEventListener('DOMContentLoaded', () => {
 	const smartSyncBtn = document.querySelector('#fe_search_ai_smart_sync');
 
 	/**
+	 * Restores the sync UI to its idle state after completion, error, or cancel.
+	 *
+	 * Sync buttons stay disabled while the settings form has unsaved changes,
+	 * because sync reads the saved options rather than the current form inputs.
+	 *
+	 * @return {void}
+	 */
+	function finishSyncUI() {
+		rebuildBtn.disabled = settingsDirty;
+		smartSyncBtn.disabled = settingsDirty;
+		statusSpinner.style.display = 'none';
+		if (cancelSyncBtn) {
+			cancelSyncBtn.style.display = 'none';
+		}
+	}
+
+	/**
+	 * Displays the cancelled-sync status message with the processed count.
+	 *
+	 * @param {number} processed  Number of posts processed before cancellation.
+	 * @param {number} totalPosts Total number of posts that were scheduled.
+	 * @return {void}
+	 */
+	function showCancelledStatus(processed, totalPosts) {
+		statusText.innerHTML = `<strong style="color:#d63638;">${fe_search_ai_sync_obj.i18n.sync_cancelled} (${processed} / ${totalPosts} ${fe_search_ai_sync_obj.i18n.items})</strong>`;
+		finishSyncUI();
+	}
+
+	/**
 	 * Initiates a sync process (either full rebuild or smart sync).
 	 *
 	 * @param {string} action              The AJAX action to call.
@@ -192,14 +227,25 @@ document.addEventListener('DOMContentLoaded', () => {
 	 * @return {void}
 	 */
 	async function startSyncProcess(action, confirmationMessage) {
+		if (settingsDirty) {
+			return;
+		}
+
 		// eslint-disable-next-line no-alert
 		if (!confirm(confirmationMessage)) {
 			return;
 		}
 
+		syncCancelled = false;
+		syncAbortController = null;
+
 		// Disable both buttons to prevent multiple clicks.
 		rebuildBtn.disabled = true;
 		smartSyncBtn.disabled = true;
+		if (cancelSyncBtn) {
+			cancelSyncBtn.disabled = false;
+			cancelSyncBtn.style.display = 'inline-block';
+		}
 		statusSpinner.style.display = 'inline-block';
 		statusText.textContent = fe_search_ai_sync_obj.i18n.preparing_sync;
 		progressContainer.style.display = 'block';
@@ -219,21 +265,31 @@ document.addEventListener('DOMContentLoaded', () => {
 			const { total_pages, total_posts, post_ids, batch_size } = response.data;
 			postIDsToSync = post_ids;
 
-			if (total_pages > 0) {
+			if (syncCancelled) {
+				showCancelledStatus(0, total_posts);
+			} else if (total_pages > 0) {
 				processBatch(1, total_pages, total_posts, batch_size);
 			} else {
 				statusText.textContent = fe_search_ai_sync_obj.i18n.no_posts_to_sync;
-				statusSpinner.style.display = 'none';
-				rebuildBtn.disabled = false;
-				smartSyncBtn.disabled = false;
+				finishSyncUI();
 			}
 		} catch (error) {
+			if (syncCancelled) {
+				showCancelledStatus(0, postIDsToSync.length);
+				return;
+			}
 			statusText.innerHTML = `<span style="color:red;">${fe_search_ai_sync_obj.i18n.error} ${error.message}</span>`;
-			statusSpinner.style.display = 'none';
-			rebuildBtn.disabled = false;
-			smartSyncBtn.disabled = false;
+			finishSyncUI();
 		}
 	}
+
+	// Bind the cancel button: set the flag and abort the in-flight request.
+	cancelSyncBtn?.addEventListener('click', e => {
+		e.preventDefault();
+		syncCancelled = true;
+		cancelSyncBtn.disabled = true;
+		syncAbortController?.abort();
+	});
 
 	// Bind click events for manual synchronization buttons.
 	rebuildBtn?.addEventListener('click', e => {
@@ -250,6 +306,30 @@ document.addEventListener('DOMContentLoaded', () => {
 	});
 
 	/**
+	 * Marks the settings form as dirty on genuine user edits and disables the
+	 * sync buttons. Sync reads the saved options, so running it against unsaved
+	 * form values would use stale settings. Programmatic changes (e.g. color
+	 * pickers on init) fire untrusted events and are ignored.
+	 *
+	 * @param {Event} event The input/change event.
+	 * @return {void}
+	 */
+	function markSettingsDirty(event) {
+		if (!event.isTrusted || settingsDirty) {
+			return;
+		}
+		settingsDirty = true;
+		rebuildBtn.disabled = true;
+		smartSyncBtn.disabled = true;
+		if (unsavedSyncNotice) {
+			unsavedSyncNotice.style.display = 'inline';
+		}
+	}
+
+	settingsForm?.addEventListener('input', markSettingsDirty);
+	settingsForm?.addEventListener('change', markSettingsDirty);
+
+	/**
 	 * Processes a single batch of posts during synchronization.
 	 *
 	 * @param {number} currentPage The current batch page.
@@ -260,6 +340,12 @@ document.addEventListener('DOMContentLoaded', () => {
 	 */
 	async function processBatch(currentPage, totalPages, totalPosts, batch_size) {
 		const processed = Math.min((currentPage - 1) * batch_size, totalPosts);
+
+		if (syncCancelled) {
+			showCancelledStatus(processed, totalPosts);
+			return;
+		}
+
 		const progress = totalPosts ? Math.round((processed / totalPosts) * 100) : 0;
 
 		progressBar.style.width = `${progress}%`;
@@ -276,10 +362,12 @@ document.addEventListener('DOMContentLoaded', () => {
 				post_ids: JSON.stringify(postIDsToSync),
 			});
 
+			syncAbortController = new AbortController();
 			responseText = await (
 				await fetch(ajaxurl, {
 					method: 'POST',
 					body: formData,
+					signal: syncAbortController.signal,
 				})
 			).text();
 
@@ -290,9 +378,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					progressBar.textContent = '100%';
 					statusText.innerHTML = `<strong style="color:green;">${fe_search_ai_sync_obj.i18n.sync_complete} (${totalPosts} ${fe_search_ai_sync_obj.i18n.items})</strong>`;
 
-					rebuildBtn.disabled = false;
-					smartSyncBtn.disabled = false;
-					statusSpinner.style.display = 'none';
+					finishSyncUI();
 
 					await wpPost('fe_search_ai_update_sync_timestamp', {
 						nonce: fe_search_ai_sync_obj.nonce,
@@ -311,9 +397,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					progressBar.textContent = '100%';
 					statusText.innerHTML = `<strong style="color:green;">${fe_search_ai_sync_obj.i18n.sync_complete} (${totalPosts} ${fe_search_ai_sync_obj.i18n.items})</strong>`;
 
-					rebuildBtn.disabled = false;
-					smartSyncBtn.disabled = false;
-					statusSpinner.style.display = 'none';
+					finishSyncUI();
 
 					await wpPost('fe_search_ai_update_sync_timestamp', {
 						nonce: fe_search_ai_sync_obj.nonce,
@@ -333,15 +417,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			throw new Error(response.data.message || 'Batch processing failed.');
 		} catch (error) {
+			if (syncCancelled || 'AbortError' === error.name) {
+				showCancelledStatus(processed, totalPosts);
+				return;
+			}
 			if (error instanceof SyntaxError) {
 				// eslint-disable-next-line no-console
 				console.error('Failed to parse JSON. See the raw response above for details.');
 			}
 			statusText.innerHTML = `<span style="color:red;">${fe_search_ai_sync_obj.i18n.batch_error} ${currentPage}.</span>`;
 
-			statusSpinner.style.display = 'none';
-			rebuildBtn.disabled = false;
-			smartSyncBtn.disabled = false;
+			finishSyncUI();
 		}
 	}
 
@@ -351,7 +437,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	// Before submitting the settings form, ensure that if the Pro opt-in checkbox
 	// is enabled, both Terms of Service and Privacy Policy pages are selected.
-	const settingsForm = document.querySelector('form[action="options.php"]');
 	if (settingsForm) {
 		settingsForm.addEventListener('submit', e => {
 			const consentCheckbox = document.querySelector(
