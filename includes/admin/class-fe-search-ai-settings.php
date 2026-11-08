@@ -447,6 +447,7 @@ class FE_Search_AI_Settings {
 		add_settings_field( 'fe_search_ai_site_purpose', __( 'Site Purpose (AI)', 'fe-search-ai' ), [ $this, 'site_purpose_field_html' ], $page_slug, 'fe_search_ai_prompt_section' );
 		add_settings_field( 'fe_search_ai_system_prompt', __( 'Base System Prompt', 'fe-search-ai' ), [ $this, 'system_prompt_field_html' ], $page_slug, 'fe_search_ai_prompt_section' );
 		add_settings_field( 'fe_search_ai_structured_output', __( 'Structured Output', 'fe-search-ai' ), [ $this, 'structured_output_field_html' ], $page_slug, 'fe_search_ai_prompt_section' );
+		add_settings_field( 'fe_search_ai_contextual_query', __( 'Contextual Query Expansion', 'fe-search-ai' ), [ $this, 'contextual_query_field_html' ], $page_slug, 'fe_search_ai_prompt_section' );
 
 		// ------------------
 		// Privacy Tab
@@ -478,7 +479,6 @@ class FE_Search_AI_Settings {
 		add_settings_field( 'fe_search_ai_debug_mode_enabled', __( 'Debug Mode', 'fe-search-ai' ), [ $this, 'debug_mode_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
 		add_settings_field( 'fe_search_ai_log_retention_days', __( 'Log Retention (days)', 'fe-search-ai' ), [ $this, 'log_retention_days_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
 		add_settings_field( 'fe_search_ai_retrieval_trace', __( 'Retrieval Trace Persistence', 'fe-search-ai' ), [ $this, 'retrieval_trace_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
-		add_settings_field( 'fe_search_ai_contextual_query', __( 'Contextual Query Expansion', 'fe-search-ai' ), [ $this, 'contextual_query_field_html' ], $page_slug, 'fe_search_ai_advanced_section' );
 
 		// Data delete
 		add_settings_section( 'fe_search_ai_data_section', __( 'Data Management', 'fe-search-ai' ), null, $page_slug );
@@ -1900,7 +1900,7 @@ class FE_Search_AI_Settings {
 				<?php esc_html_e( 'Expand retrieval queries with conversation context', 'fe-search-ai' ); ?>
 			</label>
 			<p class="description">
-				<?php esc_html_e( 'When a follow-up question omits the subject (e.g. "Is there a cheaper plan?"), entity terms from recent conversation history are appended to the retrieval query. Enabled by default. The expanded query is used only for search — the AI still receives the original question.', 'fe-search-ai' ); ?>
+				<?php esc_html_e( 'When a follow-up question omits the subject (e.g. "Is there a cheaper plan?"), entity terms from recent conversation history are appended to the retrieval query. Enabled by default. The expanded query is used only for search — the AI still receives the original question. When the Pro LLM Query Expansion option (below) is enabled, this serves as the deterministic fallback.', 'fe-search-ai' ); ?>
 			</p>
 		</fieldset>
 		<?php
