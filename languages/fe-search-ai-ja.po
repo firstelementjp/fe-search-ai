@@ -2274,3 +2274,11 @@ msgstr "応答を停止しました。"
 #~ "%s を wp-config.php で定義してください（環境変数を参照することも可能で"
 #~ "す）。WordPress の salt がローテーションされても保存済みキーが無効にならな"
 #~ "くなります。"
+
+#: includes/admin/class-fe-search-ai-settings.php:1900
+msgid "Expand retrieval queries with conversation context"
+msgstr "会話の文脈を使って検索クエリを拡張する"
+
+#: includes/admin/class-fe-search-ai-settings.php:1903
+msgid "When a follow-up question omits the subject (e.g. \"Is there a cheaper plan?\"), entity terms from recent conversation history are appended to the retrieval query. Enabled by default. The expanded query is used only for search — the AI still receives the original question. When the Pro LLM Query Expansion option (below) is enabled, this serves as the deterministic fallback."
+msgstr "「もっと安いプランはないの？」のように主語を省略した追加質問の場合、直近の会話履歴から抽出したエンティティ語を検索クエリに追加します。初期値は有効です。拡張クエリは検索にのみ使用され、AIには元の質問が送られます。下の「LLM Query Expansion」（Pro）が有効な場合、この設定は決定論的フォールバックとして機能します。"
