@@ -35,6 +35,7 @@ class ContextualRetrievalTest extends TestCase {
 		remove_all_filters( 'fe_search_ai_clarify_instruction' );
 		remove_all_filters( 'fe_search_ai_entity_max_doc_ratio' );
 		remove_all_filters( 'fe_search_ai_entity_document_stats' );
+		remove_all_filters( 'fe_search_ai_contextual_query_weak_reply_terms' );
 	}
 
 	/**
@@ -213,6 +214,126 @@ class ContextualRetrievalTest extends TestCase {
 		$result = FE_Search_AI_Contextual_Retrieval::build_retrieval_query( $question, $history, [] );
 		$this->assertStringContainsString( '使い方を教えて', $result );
 		$this->assertStringContainsString( '会員登録', $result );
+	}
+
+	/**
+	 * Test that a pure-filler reply is dropped from the query base so its
+	 * generic tokens cannot pollute the expanded query.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_filler_reply_dropped_from_query_base() {
+		$question = '特に希望なし';
+		$history  = [
+			[ 'role' => 'user', 'content' => '週3日以内で働ける仕事はありますか' ],
+			[ 'role' => 'assistant', 'content' => '職種や雇用形態の希望はありますか？' ],
+		];
+		$result = FE_Search_AI_Contextual_Retrieval::build_retrieval_query( $question, $history, [] );
+		$this->assertStringNotContainsString( '特に', $result );
+		$this->assertStringNotContainsString( '希望なし', $result );
+		$this->assertStringContainsString( '週3日以内で働ける仕事はありますか', $result );
+	}
+
+	/**
+	 * Test that "教えて" style bare prompts are also treated as filler.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_bare_prompt_reply_is_filler() {
+		$question = '教えて';
+		$history  = [
+			[ 'role' => 'user', 'content' => '東京のエンジニアの仕事を探している' ],
+			[ 'role' => 'assistant', 'content' => 'どのような条件をお探しですか？' ],
+		];
+		$result = FE_Search_AI_Contextual_Retrieval::build_retrieval_query( $question, $history, [] );
+		$this->assertSame( '東京のエンジニアの仕事を探している', explode( ' ', $result )[0] );
+		$this->assertStringNotContainsString( '教えて 東京', $result );
+	}
+
+	/**
+	 * Test that a reply carrying content survives alongside the last user
+	 * message in the query base.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_substantive_reply_keeps_question_text() {
+		$question = 'もっと安いのは？';
+		$history  = [
+			[ 'role' => 'user', 'content' => '会員登録プランを教えて' ],
+		];
+		$result = FE_Search_AI_Contextual_Retrieval::build_retrieval_query( $question, $history, [] );
+		$this->assertStringContainsString( 'もっと安いのは？', $result );
+		$this->assertStringContainsString( '会員登録プランを教えて', $result );
+	}
+
+	/**
+	 * Test that the weak-reply term list can be replaced via filter, so sites
+	 * can extend or trim the filler vocabulary.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_weak_reply_terms_filter_overrides_defaults() {
+		add_filter(
+			'fe_search_ai_contextual_query_weak_reply_terms',
+			function () {
+				return [];
+			}
+		);
+		$question = '特に希望なし';
+		$history  = [
+			[ 'role' => 'user', 'content' => '週3日以内で働ける仕事はありますか' ],
+		];
+		$result = FE_Search_AI_Contextual_Retrieval::build_retrieval_query( $question, $history, [] );
+		$this->assertStringContainsString( '特に希望なし', $result );
+	}
+
+	/**
+	 * Test that the retrieval-query filter fires even when no entities were
+	 * appended, so model-based rewriters can replace the query on every
+	 * retrieve turn (regression: entity-free replies used to bypass the
+	 * filter entirely).
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_retrieval_query_filter_fires_when_no_entities() {
+		$question = '特に希望なし';
+		$history  = [
+			[ 'role' => 'user', 'content' => '週3日以内で働ける仕事はありますか' ],
+			[ 'role' => 'assistant', 'content' => '希望はありますか？' ],
+		];
+		add_filter(
+			'fe_search_ai_contextual_retrieval_query',
+			function ( $query ) {
+				return 'REWRITTEN';
+			}
+		);
+		$result = FE_Search_AI_Contextual_Retrieval::build_retrieval_query( $question, $history, [] );
+		$this->assertSame( 'REWRITTEN', $result );
+	}
+
+	/**
+	 * Test that the retrieval-query filter also fires when history is empty,
+	 * so single-turn questions can be rewritten too.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_retrieval_query_filter_fires_with_empty_history() {
+		add_filter(
+			'fe_search_ai_contextual_retrieval_query',
+			function ( $query, $question ) {
+				return $question . ' REWRITTEN';
+			},
+			10,
+			2
+		);
+		$result = FE_Search_AI_Contextual_Retrieval::build_retrieval_query( '東京の求人', [], [] );
+		$this->assertSame( '東京の求人 REWRITTEN', $result );
 	}
 
 	/**

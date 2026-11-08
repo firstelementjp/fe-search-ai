@@ -200,112 +200,125 @@ class FE_Search_AI_Contextual_Retrieval {
 	 * @return string The query to use for context retrieval.
 	 */
 	public static function build_retrieval_query( $question, array $history, array $settings ) {
-		$question = (string) $question;
-		if ( '' === $question || empty( $history ) || ! self::is_contextual_query_enabled( $settings ) ) {
-			return $question;
-		}
+		$question  = (string) $question;
+		$entities  = [];
+		$retrieval = $question;
 
-		/**
-		 * Filters how many recent history messages are scanned for entities.
-		 *
-		 * @since 1.5.0
-		 *
-		 * @param int    $messages Default message count (6).
-		 * @param string $question User question.
-		 */
-		$message_limit = (int) apply_filters( 'fe_search_ai_contextual_query_history_messages', self::DEFAULT_HISTORY_MESSAGES, $question );
-		if ( $message_limit <= 0 ) {
-			$message_limit = self::DEFAULT_HISTORY_MESSAGES;
-		}
+		if ( '' !== $question && ! empty( $history ) && self::is_contextual_query_enabled( $settings ) ) {
 
-		$question_has_entities = ! empty( self::extract_entities( $question ) );
-		$entity_pool           = self::collect_history_entities( array_slice( $history, -$message_limit ) );
-		$scored                = [];
-		foreach ( $entity_pool as $key => $entry ) {
-			// Entities that only appear in assistant questions are "offered"
-			// topics (clarify suggestions). They anchor the query only when
-			// the user's question brings no entity of its own — a vague
-			// reply like "教えて" means accepting the offer, while a
-			// question carrying its own entity is a new direction the
-			// suggestions must not contaminate.
-			$offered_only = 0 === $entry['user'] && 0 === $entry['assistant'] && $entry['offered'] > 0;
-			if ( $question_has_entities && $offered_only ) {
-				continue;
+			/**
+			 * Filters how many recent history messages are scanned for entities.
+			 *
+			 * @since 1.5.0
+			 *
+			 * @param int    $messages Default message count (6).
+			 * @param string $question User question.
+			 */
+			$message_limit = (int) apply_filters( 'fe_search_ai_contextual_query_history_messages', self::DEFAULT_HISTORY_MESSAGES, $question );
+			if ( $message_limit <= 0 ) {
+				$message_limit = self::DEFAULT_HISTORY_MESSAGES;
 			}
-			$scored[ $key ] = [
-				'term'   => $entry['term'],
-				'score'  => ( 2 * $entry['user'] ) + $entry['assistant'] + $entry['offered'],
-				'length' => $entry['length'],
-			];
-		}
 
-		// An entity-free question ("教えて", "もっと安いのは？") carries
-		// little retrieval signal on its own, so the most recent substantive
-		// user message is appended as the query base.
-		$base = $question;
-		if ( ! $question_has_entities ) {
-			$last_user = self::last_user_message_text( array_slice( $history, -$message_limit ) );
-			if ( '' !== $last_user ) {
-				$base = trim( $question . ' ' . $last_user );
-			}
-		}
-
-		// Drop entities already present in the question.
-		foreach ( array_keys( $scored ) as $key ) {
-			if ( false !== mb_stripos( $question, $scored[ $key ]['term'] ) ) {
-				unset( $scored[ $key ] );
-			}
-		}
-		if ( empty( $scored ) ) {
-			return $base;
-		}
-
-		usort(
-			$scored,
-			function ( $a, $b ) {
-				if ( $a['score'] !== $b['score'] ) {
-					return $b['score'] - $a['score'];
+			$question_has_entities = ! empty( self::extract_entities( $question ) );
+			$entity_pool           = self::collect_history_entities( array_slice( $history, -$message_limit ) );
+			$scored                = [];
+			foreach ( $entity_pool as $key => $entry ) {
+				// Entities that only appear in assistant questions are "offered"
+				// topics (clarify suggestions). They anchor the query only when
+				// the user's question brings no entity of its own — a vague
+				// reply like "教えて" means accepting the offer, while a
+				// question carrying its own entity is a new direction the
+				// suggestions must not contaminate.
+				$offered_only = 0 === $entry['user'] && 0 === $entry['assistant'] && $entry['offered'] > 0;
+				if ( $question_has_entities && $offered_only ) {
+					continue;
 				}
-				return $b['length'] - $a['length'];
+				$scored[ $key ] = [
+					'term'   => $entry['term'],
+					'score'  => ( 2 * $entry['user'] ) + $entry['assistant'] + $entry['offered'],
+					'length' => $entry['length'],
+				];
 			}
-		);
 
-		/**
-		 * Filters the maximum number of entity terms appended to the query.
-		 *
-		 * @since 1.5.0
-		 *
-		 * @param int    $max_entities Default maximum (3).
-		 * @param string $question     User question.
-		 */
-		$max_entities = (int) apply_filters( 'fe_search_ai_contextual_query_max_entities', self::DEFAULT_MAX_ENTITIES, $question );
-		if ( $max_entities < 0 ) {
-			$max_entities = self::DEFAULT_MAX_ENTITIES;
+			// An entity-free question ("教えて", "もっと安いのは？") carries
+			// little retrieval signal on its own, so the most recent substantive
+			// user message is appended as the query base. Pure filler replies
+			// ("特に希望なし") are dropped entirely: their tokens ("特に",
+			// "希望", "なし") index-match generic content and would pull the
+			// expanded query away from the topic under discussion.
+			$base = $question;
+			if ( ! $question_has_entities ) {
+				$last_user = self::last_user_message_text( array_slice( $history, -$message_limit ) );
+				if ( '' !== $last_user ) {
+					$base = self::question_is_filler( $question )
+						? $last_user
+						: trim( $question . ' ' . $last_user );
+				}
+			}
+
+			// Drop entities already present in the question.
+			foreach ( array_keys( $scored ) as $key ) {
+				if ( false !== mb_stripos( $question, $scored[ $key ]['term'] ) ) {
+					unset( $scored[ $key ] );
+				}
+			}
+
+			if ( ! empty( $scored ) ) {
+				usort(
+					$scored,
+					function ( $a, $b ) {
+						if ( $a['score'] !== $b['score'] ) {
+							return $b['score'] - $a['score'];
+						}
+						return $b['length'] - $a['length'];
+					}
+				);
+
+				/**
+				 * Filters the maximum number of entity terms appended to the query.
+				 *
+				 * @since 1.5.0
+				 *
+				 * @param int    $max_entities Default maximum (3).
+				 * @param string $question     User question.
+				 */
+				$max_entities = (int) apply_filters( 'fe_search_ai_contextual_query_max_entities', self::DEFAULT_MAX_ENTITIES, $question );
+				if ( $max_entities < 0 ) {
+					$max_entities = self::DEFAULT_MAX_ENTITIES;
+				}
+
+				if ( $max_entities > 0 ) {
+					$entities  = array_map(
+						function ( $item ) {
+							return $item['term'];
+						},
+						array_slice( $scored, 0, $max_entities )
+					);
+					$retrieval = trim( $base . ' ' . implode( ' ', $entities ) );
+				} else {
+					$retrieval = $base;
+				}
+			} else {
+				$retrieval = $base;
+			}
 		}
-		if ( 0 === $max_entities ) {
-			return $base;
-		}
-
-		$entities = array_map(
-			function ( $item ) {
-				return $item['term'];
-			},
-			array_slice( $scored, 0, $max_entities )
-		);
-
-		$retrieval_query = trim( $base . ' ' . implode( ' ', $entities ) );
 
 		/**
 		 * Filters the expanded retrieval query before it is used for search.
 		 *
+		 * Fires on every retrieve decision — including when no entities were
+		 * appended or contextual expansion is disabled — so model-based
+		 * rewriters (e.g. the Pro LLM query expansion) can replace the
+		 * deterministic result unconditionally.
+		 *
 		 * @since 1.5.0
 		 *
-		 * @param string   $retrieval_query Expanded query.
-		 * @param string   $question        Original user question.
-		 * @param string[] $entities        Entity terms that were appended.
-		 * @param array    $history         Sanitized conversation history.
+		 * @param string   $retrieval Expanded query (or the original question).
+		 * @param string   $question  Original user question.
+		 * @param string[] $entities  Entity terms that were appended.
+		 * @param array    $history   Sanitized conversation history.
 		 */
-		return (string) apply_filters( 'fe_search_ai_contextual_retrieval_query', $retrieval_query, $question, $entities, $history );
+		return (string) apply_filters( 'fe_search_ai_contextual_retrieval_query', $retrieval, $question, $entities, $history );
 	}
 
 	/**
@@ -612,6 +625,72 @@ class FE_Search_AI_Contextual_Retrieval {
 	 */
 	private static function text_is_question( $content ) {
 		return (bool) preg_match( '/[?？]|ですか|ますか|でしょうか|お聞かせ|教えて(?:ください)?/u', (string) $content );
+	}
+
+	/**
+	 * Whether a question consists only of filler/vague terms.
+	 *
+	 * Used to drop pure-filler replies ("特に希望なし", "教えて", "うん")
+	 * from the expanded retrieval query so their tokens do not pollute
+	 * keyword and vector search. A question that retains any content
+	 * after filler removal ("もっと安いのは？") keeps contributing to the
+	 * query base.
+	 *
+	 * @since 1.5.0
+	 * @param string $question Sanitized user question.
+	 * @return bool
+	 */
+	private static function question_is_filler( $question ) {
+		$rest = (string) $question;
+		$rest = preg_replace( '/[\s　、。,.!！?？〜~…・「」『』\'"]/u', '', $rest );
+		if ( '' === $rest ) {
+			return true;
+		}
+
+		/**
+		 * Filters the filler terms stripped when detecting vague replies.
+		 *
+		 * @since 1.5.0
+		 *
+		 * @param string[] $terms    Filler terms.
+		 * @param string   $question Original user question.
+		 */
+		$terms = (array) apply_filters( 'fe_search_ai_contextual_query_weak_reply_terms', self::get_weak_reply_terms(), $question );
+		usort(
+			$terms,
+			function ( $a, $b ) {
+				return mb_strlen( (string) $b ) - mb_strlen( (string) $a );
+			}
+		);
+		foreach ( $terms as $term ) {
+			$term = (string) $term;
+			if ( '' !== $term ) {
+				$rest = str_replace( $term, '', $rest );
+			}
+		}
+
+		// Single leftover characters cannot anchor a search meaningfully.
+		return mb_strlen( $rest ) < 2;
+	}
+
+	/**
+	 * Returns the default filler terms treated as carrying no search intent.
+	 *
+	 * @since 1.5.0
+	 * @return string[]
+	 */
+	private static function get_weak_reply_terms() {
+		return [
+			'特に希望なし', '特になし', '特にない', '特に', 'とくに',
+			'希望なし', '希望', 'なし', 'ない', '無し', 'ありません',
+			'ください', 'お願い', 'おねがい', '頼む', 'たのむ',
+			'教えて', 'おしえて', 'お聞かせ',
+			'ですか', 'ますか', 'でしょうか', 'でしょう', 'です', 'ます',
+			'うん', 'はい', 'いいえ', 'いや', 'ええ', 'そう',
+			'何でも', 'なんでも', 'どれでも', 'どちらでも', '全部', 'ぜんぶ', 'すべて',
+			'大丈夫', 'だいじょうぶ', '問題ない', '問題なし', 'いい',
+			'何', 'なん', 'なに', 'どれ',
+		];
 	}
 
 	/**
