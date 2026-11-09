@@ -1900,7 +1900,7 @@ class FE_Search_AI_Settings {
 				<?php esc_html_e( 'Expand retrieval queries with conversation context', 'fe-search-ai' ); ?>
 			</label>
 			<p class="description">
-				<?php esc_html_e( 'When a follow-up question omits the subject (e.g. "Is there a cheaper plan?"), entity terms from recent conversation history are appended to the retrieval query. Enabled by default. The expanded query is used only for search — the AI still receives the original question. When the Pro LLM Query Expansion option (below) is enabled, this serves as the deterministic fallback.', 'fe-search-ai' ); ?>
+				<?php esc_html_e( 'When a follow-up question omits the subject (e.g. "Is there a cheaper plan?"), entity terms from recent conversation history are appended to the retrieval query. Enabled by default. The expanded query is used only for search — the AI still receives the original question. When the Pro LLM Query Expansion option is enabled, this serves as the fallback.', 'fe-search-ai' ); ?>
 			</p>
 		</fieldset>
 		<?php
