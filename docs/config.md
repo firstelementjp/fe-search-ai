@@ -17,7 +17,7 @@ One password field per provider. Keys are encrypted before being stored in the d
 
 | Provider           | Purpose                         | Default model               |
 | ------------------ | ------------------------------- | --------------------------- |
-| OpenAI (GPT)       | Chat completions and embeddings | `gpt-5.4-mini`              |
+| OpenAI (GPT)       | Chat completions and embeddings | `gpt-6-luna`                |
 | Anthropic (Claude) | Chat completions                | `claude-haiku-4-5-20251001` |
 | Google (Gemini)    | Chat completions and embeddings | `gemini-2.5-flash`          |
 | Cohere (Rerank)    | Result reranking                | `rerank-v3.5`               |
@@ -50,7 +50,7 @@ Appears when a Pro license is active. Each provider gets a dropdown of preset mo
 
 | Field                           | Presets                                                                    |
 | ------------------------------- | -------------------------------------------------------------------------- |
-| **OpenAI (GPT) Model**          | `gpt-5.4-mini` (default), `gpt-5.4`                                        |
+| **OpenAI (GPT) Model**          | `gpt-6-luna` (default), `gpt-5.4-mini`, `gpt-5.4`                                        |
 | **Anthropic (Claude) Model**    | `claude-haiku-4-5-20251001` (default), `claude-sonnet-4-6`                 |
 | **Google (Gemini) Model**       | `gemini-2.5-flash` (default), `gemini-2.5-pro`                             |
 | **Cohere Rerank Model**         | `rerank-v3.5` (default), `rerank-v4.0-fast`, `rerank-v4.0-pro`             |

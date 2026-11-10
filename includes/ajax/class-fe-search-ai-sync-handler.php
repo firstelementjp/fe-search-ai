@@ -1271,7 +1271,7 @@ class FE_Search_AI_Sync_Handler {
 		if ( empty( $api_key ) ) {
 			return new WP_Error( 'api_key_missing', __( 'The OpenAI API key is not configured.', 'fe-search-ai' ) );
 		}
-		$model = 'gpt-5.4-mini';
+		$model = 'gpt-6-luna';
 		$body  = [
 			'model'       => $model,
 			'messages'    => [

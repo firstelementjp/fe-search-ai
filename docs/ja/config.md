@@ -17,7 +17,7 @@
 
 | プロバイダー       | 用途                    | デフォルトモデル            |
 | ------------------ | ----------------------- | --------------------------- |
-| OpenAI (GPT)       | チャット補完とEmbedding | `gpt-5.4-mini`              |
+| OpenAI (GPT)       | チャット補完とEmbedding | `gpt-6-luna`                |
 | Anthropic (Claude) | チャット補完            | `claude-haiku-4-5-20251001` |
 | Google (Gemini)    | チャット補完とEmbedding | `gemini-2.5-flash`          |
 | Cohere (Rerank)    | 検索結果のリランク      | `rerank-v3.5`               |
@@ -50,7 +50,7 @@ Proライセンスが有効な場合に表示されます。プロバイダー�
 
 | フィールド                      | プリセット                                                             |
 | ------------------------------- | ---------------------------------------------------------------------- |
-| **OpenAI (GPT) Model**          | `gpt-5.4-mini`（デフォルト）、`gpt-5.4`                                |
+| **OpenAI (GPT) Model**          | `gpt-6-luna`（デフォルト）、`gpt-5.4-mini`、`gpt-5.4`                                |
 | **Anthropic (Claude) Model**    | `claude-haiku-4-5-20251001`（デフォルト）、`claude-sonnet-4-6`         |
 | **Google (Gemini) Model**       | `gemini-2.5-flash`（デフォルト）、`gemini-2.5-pro`                     |
 | **Cohere Rerank Model**         | `rerank-v3.5`（デフォルト）、`rerank-v4.0-fast`、`rerank-v4.0-pro`     |

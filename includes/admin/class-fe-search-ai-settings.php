@@ -974,7 +974,7 @@ class FE_Search_AI_Settings {
 				'name'          => 'OpenAI (GPT)',
 				'api_url'       => 'https://platform.openai.com/api-keys',
 				'description'   => __( 'Enter your OpenAI API key.', 'fe-search-ai' ),
-				'default_model' => 'gpt-5.4-mini',
+				'default_model' => 'gpt-6-luna',
 			],
 			'anthropic' => [
 				'name'          => 'Anthropic (Claude)',
