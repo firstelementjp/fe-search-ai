@@ -1011,7 +1011,7 @@ class FE_Search_AI_Chat_Handler {
 			);
 		}
 
-		$model = 'gpt-5.4-mini'; // Default
+		$model = 'gpt-6-luna'; // Default
 		if ( $this->is_license_active ) {
 			// Read Pro settings for model selection.
 			$pro_settings = get_option( 'fe_search_ai_pro_settings', [] );
@@ -1501,7 +1501,7 @@ class FE_Search_AI_Chat_Handler {
 			return;
 		}
 
-		$model = 'gpt-5.4-mini'; // Default.
+		$model = 'gpt-6-luna'; // Default.
 		if ( $this->is_license_active ) {
 			if ( 'openai_compatible' === $provider ) {
 				$model = $this->options['model']['openai_compatible'] ?? $model;
@@ -1945,6 +1945,26 @@ class FE_Search_AI_Chat_Handler {
 		// Execute the request.
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_exec
 		curl_exec( $ch );
+
+		// Surface upstream HTTP failures to the client instead of ending
+		// the stream silently.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_getinfo
+		$http_code = (int) curl_getinfo( $ch, CURLINFO_HTTP_CODE );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_errno
+		if ( curl_errno( $ch ) ) {
+			echo 'data: ' . wp_json_encode( [ 'error' => 'Upstream request failed.' ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+		} elseif ( 200 !== $http_code ) {
+			echo 'data: ' . wp_json_encode( [ 'error' => 'Provider request failed (HTTP ' . $http_code . ').' ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
+				'ERROR',
+				'Chat completion stream failed (upstream HTTP error).',
+				[
+					'provider'    => $provider,
+					'model'       => $model,
+					'http_status' => $http_code,
+				]
+			);
+		}
 		echo "data: [DONE]\n\n";
 		flush();
 
@@ -2166,6 +2186,26 @@ class FE_Search_AI_Chat_Handler {
 
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_exec
 		curl_exec( $ch );
+
+		// Surface upstream HTTP failures to the client instead of ending
+		// the stream silently.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_getinfo
+		$http_code = (int) curl_getinfo( $ch, CURLINFO_HTTP_CODE );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_errno
+		if ( curl_errno( $ch ) ) {
+			echo 'data: ' . wp_json_encode( [ 'error' => 'Upstream request failed.' ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+		} elseif ( 200 !== $http_code ) {
+			echo 'data: ' . wp_json_encode( [ 'error' => 'Provider request failed (HTTP ' . $http_code . ').' ], JSON_UNESCAPED_UNICODE ) . "\n\n";
+			\FESearchAI\Core\FE_Search_AI_Logger::log(
+				'ERROR',
+				'Chat completion stream failed (upstream HTTP error).',
+				[
+					'provider'    => $provider,
+					'model'       => $model,
+					'http_status' => $http_code,
+				]
+			);
+		}
 		echo "data: [DONE]\n\n";
 		flush();
 
