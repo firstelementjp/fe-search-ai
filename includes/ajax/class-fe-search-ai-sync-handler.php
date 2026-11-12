@@ -1322,18 +1322,20 @@ class FE_Search_AI_Sync_Handler {
 		if ( empty( $api_key ) ) {
 			return new WP_Error( 'api_key_missing', __( 'The Google Cloud API key is not configured.', 'fe-search-ai' ) );
 		}
-		$model    = 'gemini-2.5-flash';
-		$url      = sprintf(
+		$model = 'gemini-2.5-flash';
+		$url   = sprintf(
 			'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s',
 			rawurlencode( $model ),
 			rawurlencode( $api_key )
 		);
-		$body     = [
-			'contents'         => [
+		$body  = [
+			'contents' => [
 				[ 'role' => 'user', 'parts' => [ [ 'text' => $prompt ] ] ],
 			],
-			'generationConfig' => [ 'temperature' => 0.1 ],
 		];
+		if ( \FESearchAI\Ajax\FE_Search_AI_Chat_Handler::gemini_supports_sampling_params( $model ) ) {
+			$body['generationConfig'] = [ 'temperature' => 0.1 ];
+		}
 		$response = wp_remote_post(
 			$url,
 			[ 'headers' => [ 'Content-Type' => 'application/json' ], 'body' => wp_json_encode( $body ), 'timeout' => 60 ]
@@ -1363,13 +1365,15 @@ class FE_Search_AI_Sync_Handler {
 		if ( empty( $api_key ) ) {
 			return new WP_Error( 'api_key_missing', __( 'The Anthropic API key is not configured.', 'fe-search-ai' ) );
 		}
-		$model    = 'claude-haiku-4-5-20251001';
-		$body     = [
-			'model'       => $model,
-			'max_tokens'  => 1024,
-			'temperature' => 0.1,
-			'messages'    => [ [ 'role' => 'user', 'content' => $prompt ] ],
+		$model = 'claude-haiku-4-5-20251001';
+		$body  = [
+			'model'      => $model,
+			'max_tokens' => 1024,
+			'messages'   => [ [ 'role' => 'user', 'content' => $prompt ] ],
 		];
+		if ( \FESearchAI\Ajax\FE_Search_AI_Chat_Handler::claude_supports_sampling_params( $model ) ) {
+			$body['temperature'] = 0.1;
+		}
 		$response = wp_remote_post(
 			'https://api.anthropic.com/v1/messages',
 			[

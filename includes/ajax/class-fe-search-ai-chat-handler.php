@@ -861,6 +861,77 @@ class FE_Search_AI_Chat_Handler {
 	}
 
 	/**
+	 * Determines whether a Claude model accepts sampling parameters.
+	 *
+	 * Claude 5.x and later models run adaptive thinking permanently, so
+	 * Anthropic rejects sampling parameters such as temperature, top_p,
+	 * and top_k with a 400 error. Detection is name-based: the major
+	 * version is read from IDs like 'claude-haiku-5-5' or
+	 * 'claude-fable-5-2'. Unrecognized IDs default to sending them.
+	 *
+	 * @since 1.4.2
+	 *
+	 * @param string $model The model identifier.
+	 * @return bool True when sampling parameters may be sent to the model.
+	 */
+	public static function claude_supports_sampling_params( $model ) {
+		$supports = true;
+		if ( preg_match( '/claude-[a-z]+-([0-9]+)/i', (string) $model, $matches ) ) {
+			$supports = (int) $matches[1] < 5;
+		}
+
+		/**
+		 * Filters whether a Claude model accepts sampling parameters (temperature, top_p, top_k).
+		 *
+		 * Return false to omit sampling parameters for a model that rejects
+		 * them, or true to restore them for a misdetected model.
+		 *
+		 * @since 1.4.2
+		 *
+		 * @param bool   $supports Whether sampling parameters are supported.
+		 * @param string $model    The model identifier.
+		 */
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		// Hook name is properly prefixed with fe_search_ai_.
+		return (bool) apply_filters( 'fe_search_ai_claude_supports_sampling_params', $supports, $model );
+	}
+
+	/**
+	 * Determines whether a Gemini model accepts sampling parameters.
+	 *
+	 * Gemini 3.x and later models reject sampling parameters such as
+	 * temperature, topP, and topK with a 400 INVALID_ARGUMENT error.
+	 * Detection is name-based: the major version is read from IDs like
+	 * 'gemini-3.5-flash-lite'. Unrecognized IDs default to sending them.
+	 *
+	 * @since 1.4.2
+	 *
+	 * @param string $model The model identifier.
+	 * @return bool True when sampling parameters may be sent to the model.
+	 */
+	public static function gemini_supports_sampling_params( $model ) {
+		$supports = true;
+		if ( preg_match( '/gemini-([0-9]+)/i', (string) $model, $matches ) ) {
+			$supports = (int) $matches[1] < 3;
+		}
+
+		/**
+		 * Filters whether a Gemini model accepts sampling parameters (temperature, topP, topK).
+		 *
+		 * Return false to omit sampling parameters for a model that rejects
+		 * them, or true to restore them for a misdetected model.
+		 *
+		 * @since 1.4.2
+		 *
+		 * @param bool   $supports Whether sampling parameters are supported.
+		 * @param string $model    The model identifier.
+		 */
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		// Hook name is properly prefixed with fe_search_ai_.
+		return (bool) apply_filters( 'fe_search_ai_gemini_supports_sampling_params', $supports, $model );
+	}
+
+	/**
 	 * Resolves the reasoning effort to send to OpenAI chat models.
 	 *
 	 * An empty string means no effort is sent and the provider's model
@@ -1796,8 +1867,12 @@ class FE_Search_AI_Chat_Handler {
 
 		// DEBUG: Log the final system prompt that will be sent to the AI
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			$system_prompt_data = array_shift( $messages );
-			$system_prompt_text = $system_prompt_data['content'];
+			$system_prompt_text = '';
+			foreach ( $messages as $message ) {
+				if ( 'system' === ( $message['role'] ?? '' ) ) {
+					$system_prompt_text = (string) $message['content'];
+				}
+			}
 			\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
 				'DEBUG',
 				'System prompt prepared for chat completion.',
@@ -1809,8 +1884,6 @@ class FE_Search_AI_Chat_Handler {
 				],
 				$sequence_id
 			);
-			// Put the system prompt back
-			array_unshift( $messages, $system_prompt_data );
 		}
 
 		// DEBUG: Log a view of the prompt payload before sending to Gemini.
@@ -1821,10 +1894,12 @@ class FE_Search_AI_Chat_Handler {
 			$messages_copy = $messages;
 			$system_length = 0;
 			$system_hash   = '';
-			if ( ! empty( $messages_copy ) && isset( $messages_copy[0]['role'] ) && 'system' === $messages_copy[0]['role'] ) {
-				$system_text   = (string) ( $messages_copy[0]['content'] ?? '' );
-				$system_length = strlen( $system_text );
-				$system_hash   = md5( $system_text );
+			foreach ( $messages_copy as $message_copy ) {
+				if ( 'system' === ( $message_copy['role'] ?? '' ) ) {
+					$system_text   = (string) ( $message_copy['content'] ?? '' );
+					$system_length = strlen( $system_text );
+					$system_hash   = md5( $system_text );
+				}
 			}
 			\FESearchAI\Core\FE_Search_AI_Logger::log_with_sequence(
 				'DEBUG',
@@ -1841,11 +1916,18 @@ class FE_Search_AI_Chat_Handler {
 			);
 		}
 
-		$system_prompt_data = array_shift( $messages );
-		$system_prompt_text = $system_prompt_data['content'];
-
-		$gemini_contents = [];
+		// build_prompt_messages() appends the system message last, so the
+		// system prompt must be located by role, not by array position.
+		// Taking the first element would misread a history message as the
+		// system prompt and leave 'model' as the first content role, which
+		// Gemini rejects with a 400 INVALID_ARGUMENT error.
+		$system_prompt_text = '';
+		$gemini_contents    = [];
 		foreach ( $messages as $message ) {
+			if ( 'system' === ( $message['role'] ?? '' ) ) {
+				$system_prompt_text = (string) $message['content'];
+				continue;
+			}
 			$role = ( 'assistant' === $message['role'] ) ? 'model' : 'user';
 			if ( ! empty( $gemini_contents ) && end( $gemini_contents )['role'] === $role ) {
 				continue;
@@ -1854,6 +1936,18 @@ class FE_Search_AI_Chat_Handler {
 				'role'  => $role,
 				'parts' => [
 					[ 'text' => $message['content'] ],
+				],
+			];
+		}
+
+		// Gemini requires at least one content entry; the current question
+		// already lives in the system prompt, so reuse it as the user turn
+		// only when history produced no usable messages.
+		if ( empty( $gemini_contents ) ) {
+			$gemini_contents[] = [
+				'role'  => 'user',
+				'parts' => [
+					[ 'text' => $question ],
 				],
 			];
 		}
@@ -1871,10 +1965,15 @@ class FE_Search_AI_Chat_Handler {
 					[ 'text' => $system_prompt_text ],
 				],
 			],
-			'generationConfig'  => [
-				'temperature' => 0.1, // RAG用に低い温度を設定
-			],
 		];
+
+		// Gemini 3.x and later models reject sampling parameters such as
+		// temperature with a 400 INVALID_ARGUMENT error.
+		if ( self::gemini_supports_sampling_params( $model ) ) {
+			$body['generationConfig'] = [
+				'temperature' => 0.1, // Set low temperature for RAG.
+			];
+		}
 
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_init
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
@@ -2098,12 +2197,17 @@ class FE_Search_AI_Chat_Handler {
 		}
 
 		$body = [
-			'model'       => $model,
-			'max_tokens'  => 4096,
-			'messages'    => $messages['messages'],
-			'stream'      => true,
-			'temperature' => 0.1, // Set low temperature for RAG.
+			'model'      => $model,
+			'max_tokens' => 4096,
+			'messages'   => $messages['messages'],
+			'stream'     => true,
 		];
+
+		// Claude 5.x and later models run adaptive thinking permanently and
+		// reject sampling parameters such as temperature.
+		if ( self::claude_supports_sampling_params( $model ) ) {
+			$body['temperature'] = 0.1; // Set low temperature for RAG.
+		}
 
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_init
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt

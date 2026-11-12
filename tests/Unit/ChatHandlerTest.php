@@ -692,4 +692,59 @@ class ChatHandlerTest extends TestCase {
 			remove_filter( 'fe_search_ai_openai_reasoning_effort', $valid );
 		}
 	}
+
+	/**
+	 * Test Claude sampling parameter support detection and filter.
+	 *
+	 * @since 1.4.2
+	 * @return void
+	 */
+	public function test_claude_supports_sampling_params() {
+		$this->assertTrue( \FESearchAI\Ajax\FE_Search_AI_Chat_Handler::claude_supports_sampling_params( 'claude-haiku-4-5-20251001' ) );
+		$this->assertTrue( \FESearchAI\Ajax\FE_Search_AI_Chat_Handler::claude_supports_sampling_params( 'claude-sonnet-4-5' ) );
+		$this->assertTrue( \FESearchAI\Ajax\FE_Search_AI_Chat_Handler::claude_supports_sampling_params( 'claude-3-5-sonnet-20241022' ) );
+		$this->assertTrue( \FESearchAI\Ajax\FE_Search_AI_Chat_Handler::claude_supports_sampling_params( 'unrecognized-id' ) );
+
+		$this->assertFalse( \FESearchAI\Ajax\FE_Search_AI_Chat_Handler::claude_supports_sampling_params( 'claude-haiku-5-5' ) );
+		$this->assertFalse( \FESearchAI\Ajax\FE_Search_AI_Chat_Handler::claude_supports_sampling_params( 'claude-sonnet-5-5' ) );
+		$this->assertFalse( \FESearchAI\Ajax\FE_Search_AI_Chat_Handler::claude_supports_sampling_params( 'claude-fable-5-2' ) );
+		$this->assertFalse( \FESearchAI\Ajax\FE_Search_AI_Chat_Handler::claude_supports_sampling_params( 'claude-opus-6-0' ) );
+
+		$force = function () {
+			return true;
+		};
+		add_filter( 'fe_search_ai_claude_supports_sampling_params', $force );
+		try {
+			$this->assertTrue( \FESearchAI\Ajax\FE_Search_AI_Chat_Handler::claude_supports_sampling_params( 'claude-haiku-5-5' ) );
+		} finally {
+			remove_filter( 'fe_search_ai_claude_supports_sampling_params', $force );
+		}
+	}
+
+	/**
+	 * Test Gemini sampling parameter support detection and filter.
+	 *
+	 * @since 1.4.2
+	 * @return void
+	 */
+	public function test_gemini_supports_sampling_params() {
+		$this->assertTrue( \FESearchAI\Ajax\FE_Search_AI_Chat_Handler::gemini_supports_sampling_params( 'gemini-2.5-flash' ) );
+		$this->assertTrue( \FESearchAI\Ajax\FE_Search_AI_Chat_Handler::gemini_supports_sampling_params( 'gemini-2.5-pro' ) );
+		$this->assertTrue( \FESearchAI\Ajax\FE_Search_AI_Chat_Handler::gemini_supports_sampling_params( 'gemini-1.5-flash' ) );
+		$this->assertTrue( \FESearchAI\Ajax\FE_Search_AI_Chat_Handler::gemini_supports_sampling_params( 'unrecognized-id' ) );
+
+		$this->assertFalse( \FESearchAI\Ajax\FE_Search_AI_Chat_Handler::gemini_supports_sampling_params( 'gemini-3.5-flash-lite' ) );
+		$this->assertFalse( \FESearchAI\Ajax\FE_Search_AI_Chat_Handler::gemini_supports_sampling_params( 'gemini-3.6-flash' ) );
+		$this->assertFalse( \FESearchAI\Ajax\FE_Search_AI_Chat_Handler::gemini_supports_sampling_params( 'gemini-4-argon' ) );
+
+		$force = function () {
+			return true;
+		};
+		add_filter( 'fe_search_ai_gemini_supports_sampling_params', $force );
+		try {
+			$this->assertTrue( \FESearchAI\Ajax\FE_Search_AI_Chat_Handler::gemini_supports_sampling_params( 'gemini-3.5-flash-lite' ) );
+		} finally {
+			remove_filter( 'fe_search_ai_gemini_supports_sampling_params', $force );
+		}
+	}
 }
