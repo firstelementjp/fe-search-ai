@@ -79,6 +79,19 @@ class FE_Search_AI_Chat_Handler {
 	private $turn_instruction = '';
 
 	/**
+	 * Whether the retrieval pipeline was skipped for the current request.
+	 *
+	 * Set when the decision gate resolves to a non-retrieve intent
+	 * (answer, clarify, or a custom intent) so the empty-context
+	 * placeholder can state that no search was performed instead of
+	 * implying no matching content exists.
+	 *
+	 * @since 1.5.0
+	 * @var bool
+	 */
+	private $retrieval_skipped = false;
+
+	/**
 	 * Constructor: Initializes the chat handler with dependencies and hooks.
 	 *
 	 * Sets up the chat functionality by loading plugin options, checking license
@@ -337,6 +350,7 @@ class FE_Search_AI_Chat_Handler {
 			if ( '' !== $intent_behavior['instruction'] ) {
 				$this->turn_instruction = $intent_behavior['instruction'];
 			}
+			$this->retrieval_skipped = empty( $intent_behavior['retrieve'] );
 
 			// Resolve the page the visitor was viewing when the question was sent.
 			$this->context_post = $this->resolve_context_post( $request->get_param( 'context_post_id' ) );
@@ -2559,9 +2573,14 @@ class FE_Search_AI_Chat_Handler {
 			$context_str .= "\n--- Legal Documents ---\n" . $legal_context;
 		}
 
-		// Ensure there is content when no context exists.
+		// Ensure there is content when no context exists. A turn where the
+		// decision gate skipped retrieval (answer/clarify) gets a different
+		// placeholder than a search that found nothing, so the model does
+		// not read it as "no matching content exists on the site".
 		if ( '' === $context_str ) {
-			$context_str = '[No relevant information found for this query]';
+			$context_str = $this->retrieval_skipped
+				? '[No site search was performed for this turn]'
+				: '[No relevant information found for this query]';
 		}
 
 		// Now replace all placeholders with the constructed values

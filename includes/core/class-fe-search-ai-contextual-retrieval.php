@@ -547,14 +547,19 @@ class FE_Search_AI_Contextual_Retrieval {
 	/**
 	 * Returns the instruction appended to the system prompt in clarify mode.
 	 *
+	 * Explains that retrieval was intentionally skipped so the model does not
+	 * follow the generic "say the information was not found" rule against an
+	 * empty Search Results section.
+	 *
 	 * @since 1.5.0
 	 * @return string
 	 */
 	public static function get_clarify_instruction() {
 		$instruction = "\n\n## Current Turn Instruction\n" .
-			'The user\'s question does not specify what product, page, or topic it refers to. ' .
-			'Do NOT attempt to answer it yet. Reply with a short question asking what they would like to know about, ' .
-			'and suggest one or two likely topics if helpful.';
+			'The user\'s question does not specify what product, page, or topic it refers to, so no site search was performed for this turn. ' .
+			'Do NOT attempt to answer it yet, and do NOT say the information was not found or is unavailable — ' .
+			'the Search Results section is empty only because retrieval was intentionally skipped, not because the answer is missing. ' .
+			'Reply with a short question asking what they would like to know about, and suggest one or two likely topics if helpful.';
 
 		/**
 		 * Filters the instruction injected into the system prompt when the

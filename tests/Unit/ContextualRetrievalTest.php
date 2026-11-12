@@ -915,4 +915,20 @@ class ContextualRetrievalTest extends TestCase {
 		);
 		$this->assertSame( 'CUSTOM', FE_Search_AI_Contextual_Retrieval::get_clarify_instruction() );
 	}
+
+	/**
+	 * Test the clarify instruction suppresses the generic "not found" answer.
+	 *
+	 * Retrieval is skipped on clarify decisions, so the model must not read
+	 * the empty Search Results section as "no matching content exists" and
+	 * declare the information missing instead of asking a question.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_clarify_instruction_forbids_not_found_answer() {
+		$instruction = FE_Search_AI_Contextual_Retrieval::get_clarify_instruction();
+		$this->assertStringContainsString( 'no site search was performed', $instruction );
+		$this->assertStringContainsString( 'do NOT say the information was not found', $instruction );
+	}
 }
