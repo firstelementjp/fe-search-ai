@@ -362,7 +362,7 @@ class FE_Search_AI_Settings {
 	 */
 	public function auto_sync_field_html() {
 		$sync_options  = $this->options['sync'] ?? [];
-		$realtime_sync = ! empty( $sync_options['realtime_sync'] );
+		$realtime_sync = $sync_options['realtime_sync'] ?? true;
 		$import_sync   = ! empty( $sync_options['import_sync'] );
 		?>
 		<input type="hidden" name="fe_search_ai_settings[sync][realtime_sync]" value="0">

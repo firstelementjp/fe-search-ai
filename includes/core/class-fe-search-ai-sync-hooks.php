@@ -155,9 +155,9 @@ class FE_Search_AI_Sync_Hooks {
 			return;
 		}
 
-		// Real-time indexing is opt-in; when disabled, published posts are
-		// only indexed by a manual bulk sync.
-		if ( empty( $this->options['sync']['realtime_sync'] ) ) {
+		// Real-time indexing defaults to on (matching pre-option behavior);
+		// when disabled, published posts are only indexed by a manual bulk sync.
+		if ( ! ( $this->options['sync']['realtime_sync'] ?? true ) ) {
 			return;
 		}
 

@@ -382,6 +382,11 @@ class SyncHooksTest extends TestCase {
 			]
 		);
 
+		// wp_insert_post() fires 'save_post', which other Sync_Hooks instances
+		// constructed by earlier tests still listen to; clear the queue so only
+		// this instance's behavior is asserted.
+		delete_option( 'fe_search_ai_sync_queue' );
+
 		$sync_hooks->sync_single_post_on_update( $post_id, get_post( $post_id ) );
 
 		$queue = get_option( 'fe_search_ai_sync_queue', [] );
@@ -392,18 +397,18 @@ class SyncHooksTest extends TestCase {
 
 	/**
 	 * Test sync_single_post_on_update queues a published post when
-	 * the realtime_sync option is enabled.
+	 * the realtime_sync option is unset, matching the default-on behavior
+	 * that predates the option.
 	 *
 	 * @since 1.5.0
 	 * @return void
 	 */
-	public function test_sync_single_post_on_update_queues_when_realtime_sync_enabled() {
+	public function test_sync_single_post_on_update_queues_by_default() {
 		update_option(
 			'fe_search_ai_settings',
 			[
 				'sync' => [
-					'realtime_sync' => true,
-					'targets'       => [
+					'targets' => [
 						'post' => [ 'enabled' => true ],
 					],
 				],
@@ -421,10 +426,14 @@ class SyncHooksTest extends TestCase {
 			]
 		);
 
+		// Clear queue entries added by Sync_Hooks instances left subscribed to
+		// 'save_post' by earlier tests, so only this instance is asserted.
+		delete_option( 'fe_search_ai_sync_queue' );
+
 		$sync_hooks->sync_single_post_on_update( $post_id, get_post( $post_id ) );
 
 		$queue = get_option( 'fe_search_ai_sync_queue', [] );
-		$this->assertArrayHasKey( $post_id, $queue, 'Published post should be queued when realtime sync is enabled' );
+		$this->assertArrayHasKey( $post_id, $queue, 'Published post should be queued when realtime sync is unset' );
 
 		// The constructor registers 'save_post'; remove it so this instance's
 		// cached options do not affect later tests in the randomized run order.
