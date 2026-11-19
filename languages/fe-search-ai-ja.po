@@ -518,6 +518,45 @@ msgstr "同期"
 msgid "Sync Controls"
 msgstr "同期コントロール"
 
+#: includes/admin/class-fe-search-ai-settings.php:450
+msgid "Automatic Sync"
+msgstr "自動同期"
+
+#: includes/admin/class-fe-search-ai-settings.php:451
+msgid "Automatic Indexing"
+msgstr "自動インデックス化"
+
+#: includes/admin/class-fe-search-ai-settings.php:371
+msgid "Index posts in the background when they are created or updated"
+msgstr "投稿の作成・更新時にバックグラウンドでインデックス化する"
+
+#: includes/admin/class-fe-search-ai-settings.php:374
+msgid ""
+"When enabled, saving a post queues it for background indexing via WP-Cron. "
+"Deleting or unpublishing a post always removes it from the index regardless "
+"of this setting. When disabled, use the Sync Controls above to update the "
+"index manually."
+msgstr ""
+"有効にすると、投稿の保存時に WP-Cron 経由のバックグラウンドインデックス"
+"化キューに追加されます。この設定に関わらず、投稿の削除や非公開化は常に"
+"インデックスから除外します。無効の場合は、上の同期コントロールから手動"
+"でインデックスを更新してください。"
+
+#: includes/admin/class-fe-search-ai-settings.php:379
+msgid "Index posts in the background after a bulk CSV import"
+msgstr "一括 CSV インポート後にバックグラウンドでインデックス化する"
+
+#: includes/admin/class-fe-search-ai-settings.php:382
+msgid ""
+"When enabled, posts created or updated by FE CSV Import & Export are queued "
+"for background indexing. Large imports can generate many embedding API "
+"requests and may incur significant API costs."
+msgstr ""
+"有効にすると、FE CSV Import & Export で作成・更新された投稿がバックグラ"
+"ウンドインデックス化のキューに追加されます。大規模なインポートでは大量"
+"の埋め込み API リクエストが発生し、大きな API コストがかかる場合があり"
+"ます。"
+
 #: includes/admin/class-fe-search-ai-settings.php:411
 msgid "Content to Sync"
 msgstr "同期させるコンテンツ"
