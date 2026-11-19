@@ -352,6 +352,161 @@ class SyncHooksTest extends TestCase {
 	}
 
 	/**
+	 * Test sync_single_post_on_update does not queue a published post when
+	 * the realtime_sync option is disabled (the default for new installs).
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_sync_single_post_on_update_skips_when_realtime_sync_disabled() {
+		update_option(
+			'fe_search_ai_settings',
+			[
+				'sync' => [
+					'realtime_sync' => false,
+					'targets'       => [
+						'post' => [ 'enabled' => true ],
+					],
+				],
+			]
+		);
+
+		$sync_handler = $this->createMock( 'FESearchAI\Ajax\FE_Search_AI_Sync_Handler' );
+		$sync_hooks   = new \FESearchAI\Core\FE_Search_AI_Sync_Hooks( $sync_handler );
+
+		$post_id = wp_insert_post(
+			[
+				'post_title'   => 'test_realtime_sync_disabled',
+				'post_content' => 'Content',
+				'post_status'  => 'publish',
+			]
+		);
+
+		$sync_hooks->sync_single_post_on_update( $post_id, get_post( $post_id ) );
+
+		$queue = get_option( 'fe_search_ai_sync_queue', [] );
+		$this->assertArrayNotHasKey( $post_id, $queue, 'Published post should not be queued when realtime sync is disabled' );
+
+		wp_delete_post( $post_id, true );
+	}
+
+	/**
+	 * Test sync_single_post_on_update queues a published post when
+	 * the realtime_sync option is enabled.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_sync_single_post_on_update_queues_when_realtime_sync_enabled() {
+		update_option(
+			'fe_search_ai_settings',
+			[
+				'sync' => [
+					'realtime_sync' => true,
+					'targets'       => [
+						'post' => [ 'enabled' => true ],
+					],
+				],
+			]
+		);
+
+		$sync_handler = $this->createMock( 'FESearchAI\Ajax\FE_Search_AI_Sync_Handler' );
+		$sync_hooks   = new \FESearchAI\Core\FE_Search_AI_Sync_Hooks( $sync_handler );
+
+		$post_id = wp_insert_post(
+			[
+				'post_title'   => 'test_realtime_sync_enabled',
+				'post_content' => 'Content',
+				'post_status'  => 'publish',
+			]
+		);
+
+		$sync_hooks->sync_single_post_on_update( $post_id, get_post( $post_id ) );
+
+		$queue = get_option( 'fe_search_ai_sync_queue', [] );
+		$this->assertArrayHasKey( $post_id, $queue, 'Published post should be queued when realtime sync is enabled' );
+
+		// The constructor registers 'save_post'; remove it so this instance's
+		// cached options do not affect later tests in the randomized run order.
+		remove_action( 'save_post', [ $sync_hooks, 'sync_single_post_on_update' ] );
+
+		wp_delete_post( $post_id, true );
+	}
+
+	/**
+	 * Test enqueue_posts_for_sync queues multiple posts in one call and
+	 * ignores duplicates and invalid IDs.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_enqueue_posts_for_sync_queues_multiple_posts() {
+		$sync_handler = $this->createMock( 'FESearchAI\Ajax\FE_Search_AI_Sync_Handler' );
+		$sync_hooks   = new \FESearchAI\Core\FE_Search_AI_Sync_Hooks( $sync_handler );
+
+		$sync_hooks->enqueue_posts_for_sync( [ 10, 20, 20, 0, -5 ] );
+
+		$queue = get_option( 'fe_search_ai_sync_queue', [] );
+		$this->assertCount( 2, $queue, 'Only valid unique post IDs should be queued' );
+		$this->assertArrayHasKey( 10, $queue );
+		$this->assertArrayHasKey( 20, $queue );
+		$this->assertTrue(
+			$this->has_scheduled_queue_event(),
+			'A queue processing cron event should be scheduled'
+		);
+	}
+
+	/**
+	 * Test sync_imported_posts_batch queues the IDs provided by the importer.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_sync_imported_posts_batch_enqueues_posts() {
+		$sync_handler = $this->createMock( 'FESearchAI\Ajax\FE_Search_AI_Sync_Handler' );
+		$sync_hooks   = new \FESearchAI\Core\FE_Search_AI_Sync_Hooks( $sync_handler );
+
+		$sync_hooks->sync_imported_posts_batch( [ 30, 40 ] );
+
+		$queue = get_option( 'fe_search_ai_sync_queue', [] );
+		$this->assertArrayHasKey( 30, $queue );
+		$this->assertArrayHasKey( 40, $queue );
+	}
+
+	/**
+	 * Test the import batch hook is only subscribed when import_sync is on.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function test_import_batch_hook_registered_only_when_enabled() {
+		$sync_handler = $this->createMock( 'FESearchAI\Ajax\FE_Search_AI_Sync_Handler' );
+
+		$disabled_hooks = new \FESearchAI\Core\FE_Search_AI_Sync_Hooks( $sync_handler );
+		$this->assertFalse(
+			has_action( 'fe_csv_import_export_import_batch_completed', [ $disabled_hooks, 'sync_imported_posts_batch' ] ),
+			'Import batch hook should not be registered when import_sync is disabled'
+		);
+
+		update_option(
+			'fe_search_ai_settings',
+			[
+				'sync' => [
+					'import_sync' => true,
+				],
+			]
+		);
+
+		$enabled_hooks = new \FESearchAI\Core\FE_Search_AI_Sync_Hooks( $sync_handler );
+		$this->assertNotFalse(
+			has_action( 'fe_csv_import_export_import_batch_completed', [ $enabled_hooks, 'sync_imported_posts_batch' ] ),
+			'Import batch hook should be registered when import_sync is enabled'
+		);
+
+		remove_action( 'fe_csv_import_export_import_batch_completed', [ $enabled_hooks, 'sync_imported_posts_batch' ] );
+	}
+
+	/**
 	 * Test index_post never chunks a password-protected post
 	 *
 	 * @since 1.4.1

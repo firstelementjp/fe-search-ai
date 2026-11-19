@@ -116,6 +116,12 @@ class FE_Search_AI_Sync_Hooks {
 		add_action( 'wp_trash_post', [ $this, 'remove_post_from_sync' ] );
 		add_action( 'delete_post', [ $this, 'remove_post_from_sync' ] );
 		add_action( self::CRON_HOOK, [ $this, 'process_sync_queue' ] );
+
+		if ( ! empty( $this->options['sync']['import_sync'] ) ) {
+			// This hook is fired by FE CSV Import & Export, not by this plugin.
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+			add_action( 'fe_csv_import_export_import_batch_completed', [ $this, 'sync_imported_posts_batch' ] );
+		}
 	}
 
 	/**
@@ -146,6 +152,12 @@ class FE_Search_AI_Sync_Hooks {
 		// protected) must not remain in the index.
 		if ( 'publish' !== $post->post_status || '' !== $post->post_password ) {
 			$this->remove_post_from_sync( $post_id );
+			return;
+		}
+
+		// Real-time indexing is opt-in; when disabled, published posts are
+		// only indexed by a manual bulk sync.
+		if ( empty( $this->options['sync']['realtime_sync'] ) ) {
 			return;
 		}
 
@@ -186,19 +198,46 @@ class FE_Search_AI_Sync_Hooks {
 	 * @return void
 	 */
 	public function enqueue_post_for_sync( $post_id ) {
-		$post_id = (int) $post_id;
-		$queue   = get_option( self::QUEUE_OPTION, [] );
+		$this->enqueue_posts_for_sync( [ $post_id ] );
+	}
 
+	/**
+	 * Adds multiple posts to the background sync queue in a single write.
+	 *
+	 * Used by bulk operations (e.g. CSV import) where enqueueing each post
+	 * separately would perform one option write and one cron event per post.
+	 * The queue deduplicates post IDs, and a single runner event drains the
+	 * whole queue.
+	 *
+	 * @since 1.5.0
+	 * @param  array<int, int> $post_ids The IDs of the posts to queue.
+	 * @return void
+	 */
+	public function enqueue_posts_for_sync( $post_ids ) {
+		if ( ! is_array( $post_ids ) ) {
+			return;
+		}
+
+		$queue = get_option( self::QUEUE_OPTION, [] );
 		if ( ! is_array( $queue ) ) {
 			$queue = [];
 		}
 
-		if ( isset( $queue[ $post_id ] ) ) {
-			// Already queued; a runner is guaranteed by the first enqueue.
+		$added = false;
+		foreach ( $post_ids as $post_id ) {
+			$post_id = (int) $post_id;
+			if ( $post_id <= 0 || isset( $queue[ $post_id ] ) ) {
+				continue;
+			}
+			$queue[ $post_id ] = time();
+			$added             = true;
+		}
+
+		if ( ! $added ) {
+			// Everything was already queued; a runner is guaranteed by the first enqueue.
 			return;
 		}
 
-		$queue[ $post_id ] = time();
 		$this->save_queue( $queue );
 
 		// A unique argument avoids WP-Cron's duplicate-event rejection window.
@@ -207,6 +246,22 @@ class FE_Search_AI_Sync_Hooks {
 		if ( function_exists( 'spawn_cron' ) ) {
 			spawn_cron();
 		}
+	}
+
+	/**
+	 * Queues posts persisted by a supported bulk importer for indexing.
+	 *
+	 * Hooked to 'fe_csv_import_export_import_batch_completed' (fired by the
+	 * FE CSV Import & Export plugin) when the "Sync on Bulk Import" sync
+	 * option is enabled. Importers bypass wp_insert_post(), so 'save_post'
+	 * never fires for their rows; this hook restores index updates for them.
+	 *
+	 * @since 1.5.0
+	 * @param  array<int, int> $post_ids Post IDs persisted in the completed batch.
+	 * @return void
+	 */
+	public function sync_imported_posts_batch( $post_ids ) {
+		$this->enqueue_posts_for_sync( is_array( $post_ids ) ? $post_ids : [] );
 	}
 
 	/**

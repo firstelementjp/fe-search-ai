@@ -181,6 +181,11 @@ class FE_Search_AI_Settings {
 							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_sync_ui_section' ); ?>
 						</table>
 
+						<?php do_settings_sections( 'fe_search_ai_auto_sync_section' ); ?>
+						<table class="form-table">
+							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_auto_sync_section' ); ?>
+						</table>
+
 						<?php do_settings_sections( 'fe_search_ai_sync_advanced_section' ); ?>
 						<table class="form-table">
 							<?php do_settings_fields( 'fe-search-ai', 'fe_search_ai_sync_advanced_section' ); ?>
@@ -346,6 +351,40 @@ class FE_Search_AI_Settings {
 	}
 
 	/**
+	 * Renders the checkboxes controlling automatic index updates.
+	 *
+	 * Both triggers are opt-in because indexing calls paid AI provider APIs.
+	 * Removing deleted or unpublished posts from the index always runs,
+	 * regardless of these settings.
+	 *
+	 * @since 1.5.0
+	 * @return void
+	 */
+	public function auto_sync_field_html() {
+		$sync_options  = $this->options['sync'] ?? [];
+		$realtime_sync = ! empty( $sync_options['realtime_sync'] );
+		$import_sync   = ! empty( $sync_options['import_sync'] );
+		?>
+		<input type="hidden" name="fe_search_ai_settings[sync][realtime_sync]" value="0">
+		<label>
+			<input type="checkbox" name="fe_search_ai_settings[sync][realtime_sync]" value="1" <?php checked( $realtime_sync ); ?>>
+			<?php esc_html_e( 'Index posts in the background when they are created or updated', 'fe-search-ai' ); ?>
+		</label>
+		<p class="description">
+			<?php esc_html_e( 'When enabled, saving a post queues it for background indexing via WP-Cron. Deleting or unpublishing a post always removes it from the index regardless of this setting. When disabled, use the Sync Controls above to update the index manually.', 'fe-search-ai' ); ?>
+		</p>
+		<input type="hidden" name="fe_search_ai_settings[sync][import_sync]" value="0">
+		<label>
+			<input type="checkbox" name="fe_search_ai_settings[sync][import_sync]" value="1" <?php checked( $import_sync ); ?>>
+			<?php esc_html_e( 'Index posts in the background after a bulk CSV import', 'fe-search-ai' ); ?>
+		</label>
+		<p class="description">
+			<?php esc_html_e( 'When enabled, posts created or updated by FE CSV Import & Export are queued for background indexing. Large imports can generate many embedding API requests and may incur significant API costs.', 'fe-search-ai' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
 	 * Initialize the Settings API: Register the master setting and define sections/fields.
 	 *
 	 * This method registers the main settings group and defines all sections
@@ -406,6 +445,10 @@ class FE_Search_AI_Settings {
 		// Sync Controls Section
 		add_settings_section( 'fe_search_ai_sync_ui_section', __( 'Synchronization', 'fe-search-ai' ), null, $page_slug );
 		add_settings_field( 'fe_search_ai_sync_ui', __( 'Sync Controls', 'fe-search-ai' ), [ $this, 'sync_ui_field_html' ], $page_slug, 'fe_search_ai_sync_ui_section' );
+
+		// Automatic Sync Section
+		add_settings_section( 'fe_search_ai_auto_sync_section', __( 'Automatic Sync', 'fe-search-ai' ), null, $page_slug );
+		add_settings_field( 'fe_search_ai_auto_sync', __( 'Automatic Indexing', 'fe-search-ai' ), [ $this, 'auto_sync_field_html' ], $page_slug, 'fe_search_ai_auto_sync_section' );
 
 		// Sync Targets Section
 		add_settings_section( 'fe_search_ai_sync_options_section', __( 'Content to Sync', 'fe-search-ai' ), null, $page_slug );
@@ -2781,6 +2824,9 @@ class FE_Search_AI_Settings {
 		} else {
 			$new_input['sync']['use_summary_for_embedding'] = true;
 		}
+		// Automatic indexing triggers are opt-in because they incur API costs.
+		$new_input['sync']['realtime_sync'] = ! empty( $sync_input['realtime_sync'] );
+		$new_input['sync']['import_sync']   = ! empty( $sync_input['import_sync'] );
 		// Per-post-type targets (post types, taxonomies, custom fields).
 		$new_input['sync']['targets'] = $this->sanitize_sync_targets( $sync_input['targets'] ?? [] );
 		// Normalize include / exclude to arrays before accessing ['ids'] to avoid TypeError

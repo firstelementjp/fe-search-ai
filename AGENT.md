@@ -246,6 +246,7 @@ Optional announcement integrations (announce job in release.yml, all opt-in):
 - Filters: `fe_search_ai_bm25_candidate_limit`, `fe_search_ai_bm25_k1`, `fe_search_ai_bm25_b`.
 - Realtime indexing in `SyncHooks` stores the same metadata.
 - Realtime indexing is queued (`fe_search_ai_sync_queue` option) and processed in the background by the `fe_search_ai_process_sync_queue` WP-Cron event, so `save_post` never blocks on embedding/summary API calls. Set `fe_search_ai_realtime_sync_background` to `false` to index synchronously.
+- Automatic indexing triggers are opt-in (`sync.realtime_sync` for `save_post`, `sync.import_sync` for bulk imports via the `fe_csv_import_export_import_batch_completed` action fired by FE CSV Import & Export). Removing deleted or unpublished posts from the index always runs regardless of these settings.
 
 ## GitHub Releases Updater
 
